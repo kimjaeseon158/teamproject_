@@ -1,5 +1,5 @@
 // src/adminpage/js/useAddPersonLogic.js
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Panel_PostData } from "./admnsdbPost";
 
 export function useAddPersonLogic(existingEmployees, onSave, onClose) {
@@ -16,14 +16,12 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
     addressDetail: ""
   });
 
-  const generateEmployeeNumber = () => {
-    const prefix = "SEOSAN";
-    const numbers = existingEmployees
-      .map((e) => parseInt(e.company?.split("_")[1]))
-      .filter((n) => !isNaN(n));
-    const last = numbers.length > 0 ? Math.max(...numbers) : 0;
-    return `${prefix}_${String(last + 1).padStart(3, "0")}`;
-  };
+  const generateEmployeeNumber = useCallback(() => {
+    if (!existingEmployees || existingEmployees.length === 0) return "1000";
+    const numbers = existingEmployees.map((e) => parseInt(e.employeeNumber));
+    const maxNumber = Math.max(...numbers);
+    return String(maxNumber + 1);
+  }, [existingEmployees]); 
 
   useEffect(() => {
     if (existingEmployees && existingEmployees.length >= 0) {

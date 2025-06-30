@@ -3,6 +3,8 @@ import AdminInformation from "./adminInformation";
 import AddPersonModal from "./addPersonModal";
 import AddButton from "./adminAddBtn";
 import UserContext from "../../login/js/userContext";
+import { deleteEmployees } from "../js/adminPageDelete";
+import { updateEmployee } from "../js/adminPageUpdate";
 import { fetchFilteredPeople } from "../js/adminPageLogic";
 import "../css/adminPage.css";
 
@@ -10,6 +12,8 @@ const initialSearchForm = {
   employee_number: "",
   user_name: "",
   phone_number: "",
+  resident_number: "", 
+  address: "",          
   sortKey: "",
   sortDirection: "",
 };
@@ -38,13 +42,20 @@ const AdminPage = () => {
     setSelectedPerson(null);
   };
 
-  const handleSave = (updatedPerson) => {
-    setPeopleData((prev) =>
-      prev.map((item) =>
-        item.employee_number === updatedPerson.employee_number ? updatedPerson : item
-      )
-    );
-    setSelectedPerson(null);
+  const handleSave = async (updatedPerson) => {
+    const result = await updateEmployee(updatedPerson);
+
+    if (result.success) {
+      setPeopleData((prev) =>
+        prev.map((item) =>
+          item.employee_number === updatedPerson.employee_number ? updatedPerson : item
+        )
+      );
+      alert("업데이트 성공!");
+      setSelectedPerson(null);
+    } else {
+      alert("업데이트 실패: " + (result.error || "서버 오류"));
+    }
   };
 
   const handleaddLow = () => {
@@ -67,11 +78,27 @@ const AdminPage = () => {
     }));
   };
 
-  const handleDeleteSelected = () => {
-    const remaining = peopleData.filter((person) => !checkedItems[person.employee_number]);
-    setPeopleData(remaining);
-    setCheckedItems({});
+  const handleDeleteSelected = async () => {
+    const employeeNumbers = Object.entries(checkedItems)
+      .filter(([_, checked]) => checked)
+      .map(([empNo]) => empNo);
+
+    const result = await deleteEmployees(employeeNumbers);
+
+    if (result.success) {
+      // 삭제 성공한 사원 제외하고 상태 갱신
+      const remaining = peopleData.filter(
+        (person) => !employeeNumbers.includes(person.employee_number)
+      );
+      setPeopleData(remaining);
+      setCheckedItems({});
+      alert("삭제가 완료되었습니다.");
+    } else {
+      console.error("삭제 실패:", result.failedItems || result.error);
+      alert("삭제 중 오류가 발생했습니다. 콘솔을 확인하세요.");
+    }
   };
+
 
   const [columnWidths, setColumnWidths] = useState({
     employee_number: 150,
@@ -148,14 +175,15 @@ const AdminPage = () => {
       [name]: value,
     }));
   };
-
   const applySearch = async () => {
-    const { employee_number, user_name, phone_number, sortKey, sortDirection } = searchForm;
+    const { employee_number, user_name, phone_number, resident_number, address, sortKey, sortDirection } = searchForm;
 
     const filters = {};
     if (employee_number.trim()) filters.employee_number = employee_number.trim();
     if (user_name.trim()) filters.user_name = user_name.trim();
     if (phone_number.trim()) filters.phone_number = phone_number.trim();
+    if (resident_number.trim()) filters.resident_number = resident_number.trim();
+    if (address.trim()) filters.address = address.trim();
 
     const sort = sortKey && sortDirection ? { key: sortKey, direction: sortDirection } : null;
 
@@ -269,6 +297,28 @@ const AdminPage = () => {
               />
             </label>
             <label>
+              주민등록번호:
+              <input
+                type="text"
+                name="resident_number"
+                value={searchForm.resident_number}
+                onChange={handleSearchFormChange}
+                placeholder="주민등록번호 입력"
+                className="searchModal__input"
+              />
+            </label>
+            <label>
+              주소:
+              <input
+                type="text"
+                name="address"
+                value={searchForm.address}
+                onChange={handleSearchFormChange}
+                placeholder="주소 입력"
+                className="searchModal__input"
+              />
+            </label>
+            <label>
               정렬 기준:
               <select
                 name="sortKey"
@@ -279,6 +329,8 @@ const AdminPage = () => {
                 <option value="">선택 안함</option>
                 <option value="employee_number">사원 번호</option>
                 <option value="user_name">이름</option>
+                <option value="resident_number">주민등록번호</option>
+                <option value="address">주소</option>
                 <option value="phone_number">전화번호</option>
               </select>
             </label>

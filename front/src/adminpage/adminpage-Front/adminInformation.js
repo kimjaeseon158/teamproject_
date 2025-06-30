@@ -1,7 +1,6 @@
-import React, { useContext } from "react";
+import React  from "react";
 import AdminPanel from "../adminpage-Front/admnsButon";
 import '../css/adminInformation.css';
-import UserContext from "../../login/js/userContext";
 import { useAdminInformationLogic } from "../js/useAdminInformationLogic";
 
 const AdminInformation = ({ person, onClose, onSave }) => {

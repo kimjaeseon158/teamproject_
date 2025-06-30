@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React  from "react";
 import { useAddPersonLogic } from "../js/useAddPersonLogic"; // 로직 훅
 import "../css/showAddmodel.css";
 

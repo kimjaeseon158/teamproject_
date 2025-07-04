@@ -47,7 +47,10 @@ class BaseModelHandler(APIView):
                 serializer = User_Login_InfoSerializer(instance, data=data, partial=True)
                 if serializer.is_valid():
                     updated_instance = serializer.save()
-                    return serializer, updated_instance
+
+                    data      = User_Login_Info.objects.all()
+                    user_data = User_InfoSerializer(data, many=True)
+                    return {'success': True, 'message': '업데이트 성공', 'user_data': user_data.data}, None
                 return None, serializer.errors
             except User_Login_Info.DoesNotExist:
                 return None, {"error": f"User_Login_Info with id={employee_number} does not exist"}

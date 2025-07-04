@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import ItemSerializer, User_Login_InfoSerializer, Work_InfoSerializer
+from .serializers import ItemSerializer, User_Login_InfoSerializer, Work_InfoSerializer, User_InfoSerializer
 from .auth_utils import check_user_credentials, check_admin_credentials
 from .models import User_Login_Info
 
@@ -33,7 +33,10 @@ class BaseModelHandler(APIView):
             try:
                 user = User_Login_Info.objects.get(employee_number=employee_number)
                 user.delete()
-                return {'success': True, 'message': '삭제 성공'}, None
+                
+                data      = User_Login_Info.objects.all()
+                user_data = User_InfoSerializer(data, many=True)
+                return {'success': True, 'message': '삭제 성공', 'user_data' : user_data.data}, None
             except User_Login_Info.DoesNotExist:
                 return None, {'error': '해당 사용자가 존재하지 않습니다.'}
             

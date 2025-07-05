@@ -24,6 +24,7 @@
 ![DBeaver](https://img.shields.io/badge/DBeaver-4A90E2?style=for-the-badge&logo=dbeaver&logoColor=white)
 ![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
 ![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
+![Notion](https://img.shields.io/badge/Notion-%23000000.svg?style=for-the-badge&logo=notion&logoColor=white)
 ![npm version](https://img.shields.io/npm/v/package-name.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 

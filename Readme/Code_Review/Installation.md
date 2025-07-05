@@ -69,7 +69,7 @@ npm install concurrently --save-dev
 ```
 
 - `concurrently`는 여러개의 명령어를 동시에 실행 하게 지원을 해주는 라이브러리 입니다
-- 이를 사용하면 `npm start` 명령어 하나로 두 서버를 병렬 실행할 수 있어 개발이 편리해집니다.
+- 이를 사용하면 `npm start` 명령어 하나로 두 서버를 같이 실행할 수 있어 개발이 편리해집니다.
 
 ### 3-4. concurrently 사용 예시 ( 파일명 : package.json )
 ```js

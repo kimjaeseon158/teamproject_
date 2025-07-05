@@ -61,8 +61,7 @@ npm --version
 ```bash
 npm install
 ```
-
-- `http://localhost:3000`에서 앱이 열리면 설치 성공
+- `package.json`에 명시된 라이브러리들이 설치됩니다.
 
 ### 3-3. concurrently 설치
 ```bash
@@ -85,4 +84,5 @@ npm install concurrently --save-dev
 ```bash
 npm start
 ```
-
+- 명령어 실행 후 브라우저가 자동으로 열리며,
+`http://localhost:3000`에서 React 앱이 정상적으로 표시되면 설치가 성공적으로 완료된 것입니다.

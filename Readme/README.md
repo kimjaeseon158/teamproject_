@@ -41,7 +41,7 @@
 
 이 프로젝트는 **React (프론트엔드)**와 **Django (백엔드)**를 사용하여 개발되었으며, **SQLite3**를 데이터베이스로 사용합니다.
 
-👉 [설치 가이드 보기](./Code_Review/INSTALLATION.md)
+👉 [설치 가이드 보기](./Code_Review/Installation.md)
 
 ##  🔍코드 리뷰 보기
 

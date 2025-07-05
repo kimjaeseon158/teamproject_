@@ -7,30 +7,33 @@ cd your-project
 
 ## 2. 백엔드(Django) 설정
 
-### 1.가상환경 생성 및 활성화
+### 2-0.Python 및 pip 설치 확인
+```bash
+python --version
+```
+```bash
+python3 --version
+```
+-> 버전 확인 후 python이 없을 시  https://www.python.org에서 Python 3.x 버전을 설치
 
 ```bash
-python -m venv venv
-# macOS/Linux
-source venv/bin/activate
-# Windows
-venv\Scripts\activate
+pip --version
 ```
-### 2. 패키지 설치 
-
+-> 버전 확인 후 없으면 Python 설치 시 "Add Python to PATH"를 체크했는지 확인하고, Python을 먼저 설치 완료한 경우 python -m ensurepip로 설치 가능
 ```bash
-pip install -r requirements.txt
+python -m ensurepip
 ```
 
-### 3. 데이터베이스 초기화 
-
+### 2-1.Django 설치
 ```bash
-python manage.py makemigrations
-python manage.py migrate
+pip install django
+```
+설치 확인
+```bash
+python -m django --version
 ```
 
-### 4.개발 서버 실행
-
+### 2-2.개발 서버 실행
 ```bash
 python manage.py runserver
 ```

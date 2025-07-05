@@ -41,13 +41,7 @@ python manage.py runserver
 
 ## 3.프론트엔드(React) 설정
 
-### 3-0. frontend 디렉토리로 이동
-
-```bash
-cd front
-```
-
-### 3-1. Node.js 설치 확인
+### 3-0. Node.js 설치 확인
 
 ```bash
 node --version
@@ -56,14 +50,14 @@ npm --version
 - 만약 설치되어 있지 않거나 명령어가 인식되지 않는다면,  
   [Node.js 공식 사이트](https://nodejs.org/)에서 Node.js (v18 이상 권장)를 다운로드 및 설치하세요.
 
-### 3-2. 필수 모듈 설치 
+### 3-1. 필수 모듈 설치 
 
 ```bash
 npm install
 ```
 - `package.json`에 명시된 라이브러리들이 설치됩니다.
 
-### 3-3. concurrently 설치
+### 3-2. concurrently 설치
 ```bash
 npm install concurrently --save-dev
 ```
@@ -71,7 +65,7 @@ npm install concurrently --save-dev
 - `concurrently`는 여러개의 명령어를 동시에 실행 하게 지원을 해주는 라이브러리 입니다
 - 이를 사용하면 `npm start` 명령어 하나로 두 서버를 같이 실행할 수 있어 개발이 편리해집니다.
 
-### 3-4. concurrently 사용 예시 ( 파일명 : package.json )
+### 3-3. concurrently 사용 예시 ( 파일명 : package.json )
 ```js
 {
   "scripts": {
@@ -82,7 +76,7 @@ npm install concurrently --save-dev
 }
 ```
 
-### 3-5. 설치 확인 및 실행 테스트
+### 3-4. 설치 확인 및 실행 테스트
 ```bash
 npm start
 ```

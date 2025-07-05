@@ -73,10 +73,12 @@ npm install concurrently --save-dev
 
 ### 3-4. concurrently 사용 예시 ( 파일명 : package.json )
 ```js
-"scripts": {
-  "start-server": "cd ../back/myproject && python manage.py runserver",
-  "start-client": "react-scripts start",
-  "start": "concurrently \"npm run start-server\" \"npm run start-client\""
+{
+  "scripts": {
+    "start-server": "cd ../back/myproject && python manage.py runserver",
+    "start-client": "react-scripts start",
+    "start": "concurrently \"npm run start-server\" \"npm run start-client\""
+  }
 }
 ```
 

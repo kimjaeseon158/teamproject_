@@ -43,6 +43,9 @@
 
 👉 [설치 가이드 보기](./Code_Review/Installation.md)
 
+## 📁PROJECT 폴더 구조
+
+```
 TRAMPROJECT_
 │
 ├── Back/
@@ -96,6 +99,7 @@ TRAMPROJECT_
 │                └── logindata.js                # 로그인 API 호출
 │                └── userContext.js              # 로그인 사용자 정보 관리
 │                └── validation.js               # 로그인 유효성 검사
+```
 
 ##  🔍코드 리뷰 보기
 

@@ -33,10 +33,11 @@ pip install django
 python -m django --version
 ```
 
-### 2-2.개발 서버 실행
+### 2-2.개발 서버 실행 동작 확인
 ```bash
 python manage.py runserver
 ```
+-> 최종적으로 Django가 실행이 정상적 동작이 확인 되면 추후 서버 실행은 npm start시 같이 실행이 되도록 코드 작성이 되어 있음
 
 ## 3.프론트엔드(React) 설정
 

@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect, useRef } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import AdminInformation from "./adminInformation";
 import AddPersonModal from "./addPersonModal";
 import AddButton from "./adminAddBtn";
@@ -7,13 +7,14 @@ import { deleteEmployees } from "../js/adminPageDelete";
 import { updateEmployee } from "../js/adminPageUpdate";
 import { fetchFilteredPeople } from "../js/adminPageLogic";
 import "../css/adminPage.css";
+import { useResizableTable } from "./adminResizableTable";
 
 const initialSearchForm = {
   employee_number: "",
   user_name: "",
   phone_number: "",
-  resident_number: "", 
-  address: "",          
+  resident_number: "",
+  address: "",
   sortKey: "",
   sortDirection: "",
 };
@@ -33,6 +34,39 @@ const AdminPage = () => {
       setPeopleData(userData);
     }
   }, [userData, peopleData]);
+
+  // 초기 열 너비 및 행 높이
+  const initialColumnWidths = {
+    employee_number: 150,
+    user_name: 150,
+    resident_number: 150,
+    address: 200,
+    phone_number: 150,
+  };
+
+  // 초기 행 높이 설정 (기본 40)
+  const initialRowHeights = {};
+  peopleData.forEach((p) => {
+    initialRowHeights[p.employee_number] = 40;
+  });
+
+  const {
+    columnWidths,
+    rowHeights,
+    onColumnMouseDown,
+    onRowMouseDown,
+    handleColumnDoubleClick,
+    setRowHeights,
+  } = useResizableTable(initialColumnWidths, initialRowHeights);
+
+  useEffect(() => {
+    // peopleData 변경 시 행 높이 초기화
+    const resetHeights = {};
+    peopleData.forEach((p) => {
+      resetHeights[p.employee_number] = 40;
+    });
+    setRowHeights(resetHeights);
+  }, [peopleData, setRowHeights]);
 
   const handleRowClick = (person) => {
     setSelectedPerson(person);
@@ -86,7 +120,6 @@ const AdminPage = () => {
     const result = await deleteEmployees(employeeNumbers);
 
     if (result.success) {
-      // 삭제 성공한 사원 제외하고 상태 갱신
       const remaining = peopleData.filter(
         (person) => !employeeNumbers.includes(person.employee_number)
       );
@@ -97,66 +130,6 @@ const AdminPage = () => {
       console.error("삭제 실패:", result.failedItems || result.error);
       alert("삭제 중 오류가 발생했습니다. 콘솔을 확인하세요.");
     }
-  };
-
-
-  const [columnWidths, setColumnWidths] = useState({
-    employee_number: 150,
-    user_name: 150,
-    resident_number: 150,
-    address: 200,
-    phone_number: 150,
-  });
-
-  const resizingCol = useRef(null);
-  const startX = useRef(0);
-  const startWidth = useRef(0);
-
-  const onMouseDown = (e, colKey) => {
-    e.preventDefault();
-    resizingCol.current = colKey;
-    startX.current = e.clientX;
-    startWidth.current = columnWidths[colKey];
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-  };
-
-  const onMouseMove = (e) => {
-    if (!resizingCol.current) return;
-    const deltaX = e.clientX - startX.current;
-    const newWidth = Math.max(startWidth.current + deltaX, 50);
-    setColumnWidths((prev) => ({
-      ...prev,
-      [resizingCol.current]: newWidth,
-    }));
-  };
-
-  const onMouseUp = () => {
-    resizingCol.current = null;
-    window.removeEventListener("mousemove", onMouseMove);
-    window.removeEventListener("mouseup", onMouseUp);
-  };
-
-  const handleDoubleClick = (colKey) => {
-    const texts = [
-      ...peopleData.map(person => String(person[colKey] ?? "")),
-      colKey // 헤더 텍스트도 포함
-    ];
-
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d");
-    context.font = "16px Arial";
-
-    const maxWidth = texts.reduce((max, text) => {
-      const metrics = context.measureText(text);
-      return Math.max(max, metrics.width);
-    }, 0);
-
-    const adjustedWidth = Math.ceil(maxWidth + 40);
-    setColumnWidths((prev) => ({
-      ...prev,
-      [colKey]: adjustedWidth,
-    }));
   };
 
   const openSearchModal = () => {
@@ -175,6 +148,7 @@ const AdminPage = () => {
       [name]: value,
     }));
   };
+
   const applySearch = async () => {
     const { employee_number, user_name, phone_number, resident_number, address, sortKey, sortDirection } = searchForm;
 
@@ -192,13 +166,14 @@ const AdminPage = () => {
     closeSearchModal();
   };
 
+  // 헤더 셀 렌더링
   const renderResizableTH = (label, colKey) => (
-    <th style={{ width: columnWidths[colKey] }}>
+    <th style={{ width: columnWidths[colKey], position: "relative" }}>
       {label}
       <div
         className="column-resizer"
-        onMouseDown={(e) => onMouseDown(e, colKey)}
-        onDoubleClick={() => handleDoubleClick(colKey)}
+        onMouseDown={(e) => onColumnMouseDown(e, colKey)}
+        onDoubleClick={() => handleColumnDoubleClick(colKey, peopleData)}
       />
     </th>
   );
@@ -232,13 +207,25 @@ const AdminPage = () => {
         </thead>
         <tbody>
           {peopleData.map((item) => (
-            <tr key={item.employee_number} onClick={() => handleRowClick(item)} style={{ cursor: "pointer" }}>
+            <tr
+              key={item.employee_number}
+              onClick={() => handleRowClick(item)}
+              style={{
+                cursor: "pointer",
+                height: rowHeights[item.employee_number] || 40,
+                position: "relative",
+              }}
+            >
               <td style={{ width: 30 }} onClick={(e) => e.stopPropagation()}>
                 <input
                   type="checkbox"
                   className="custom-checkbox"
                   checked={!!checkedItems[item.employee_number]}
                   onChange={() => handleCheckboxChange(item.employee_number)}
+                />
+                <div
+                  className="row-resizer"
+                  onMouseDown={(e) => onRowMouseDown(e, item.employee_number)}
                 />
               </td>
               <td style={{ width: columnWidths.employee_number }}>{item.employee_number}</td>
@@ -364,4 +351,3 @@ const AdminPage = () => {
 };
 
 export default AdminPage;
-

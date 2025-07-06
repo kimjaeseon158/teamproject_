@@ -3,7 +3,7 @@ import AdminInformation from "./adminInformation";
 import AddPersonModal from "./addPersonModal";
 import AddButton from "./adminAddBtn";
 import UserContext from "../../login/js/userContext";
-import { deleteEmployees } from "../js/adminPageDelete";
+import { deleteEmployee } from "../js/adminPageDelete";
 import { updateEmployee } from "../js/adminPageUpdate";
 import { fetchFilteredPeople } from "../js/adminPageLogic";
 import "../css/adminPage.css";
@@ -46,10 +46,9 @@ const AdminPage = () => {
 
   // 초기 행 높이 설정 (기본 40)
   const initialRowHeights = {};
-  peopleData.forEach((p) => {
+  (Array.isArray(peopleData) ? peopleData : []).forEach((p) => {
     initialRowHeights[p.employee_number] = 40;
   });
-
   const {
     columnWidths,
     rowHeights,
@@ -76,21 +75,19 @@ const AdminPage = () => {
     setSelectedPerson(null);
   };
 
+  
   const handleSave = async (updatedPerson) => {
     const result = await updateEmployee(updatedPerson);
 
     if (result.success) {
-      setPeopleData((prev) =>
-        prev.map((item) =>
-          item.employee_number === updatedPerson.employee_number ? updatedPerson : item
-        )
-      );
+      setPeopleData(result.updatedList);  // 항상 배열임을 보장!
       alert("업데이트 성공!");
       setSelectedPerson(null);
     } else {
       alert("업데이트 실패: " + (result.error || "서버 오류"));
     }
   };
+
 
   const handleaddLow = () => {
     setShowAddModal(true);
@@ -112,26 +109,29 @@ const AdminPage = () => {
     }));
   };
 
-  const handleDeleteSelected = async () => {
-    const employeeNumbers = Object.entries(checkedItems)
-      .filter(([_, checked]) => checked)
-      .map(([empNo]) => empNo);
+const handleDeleteSelected = async () => {
+    // 체크된 사원번호 중 첫 번째 하나만 가져오기
+    const employeeNumber = Object.entries(checkedItems)
+      .find(([_, checked]) => checked)?.[0];  // 체크된 첫번째 키(empNo) 혹은 undefined
 
-    const result = await deleteEmployees(employeeNumbers);
+    if (!employeeNumber) {
+      alert("삭제할 사원을 선택해주세요.");
+      return;
+    }
+
+    // 단일 삭제 함수 호출 (deleteEmployee - 한 명만 삭제)
+    const result = await deleteEmployee(employeeNumber);
+
+    console.log("deleteEmployee 함수 반환:", result);
 
     if (result.success) {
-      const remaining = peopleData.filter(
-        (person) => !employeeNumbers.includes(person.employee_number)
-      );
-      setPeopleData(remaining);
+      setPeopleData(result.user_data);
       setCheckedItems({});
       alert("삭제가 완료되었습니다.");
     } else {
-      console.error("삭제 실패:", result.failedItems || result.error);
-      alert("삭제 중 오류가 발생했습니다. 콘솔을 확인하세요.");
+      alert("삭제 중 오류가 발생했습니다: " + result.message);
     }
   };
-
   const openSearchModal = () => {
     setSearchForm(initialSearchForm);
     setShowSearchModal(true);

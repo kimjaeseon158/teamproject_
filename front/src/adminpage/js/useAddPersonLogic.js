@@ -15,13 +15,24 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
     address: "",
     addressDetail: ""
   });
-
   const generateEmployeeNumber = useCallback(() => {
-    if (!existingEmployees || existingEmployees.length === 0) return "1000";
-    const numbers = existingEmployees.map((e) => parseInt(e.employeeNumber));
-    const maxNumber = Math.max(...numbers);
-    return String(maxNumber + 1);
-  }, [existingEmployees]); 
+    if (!existingEmployees || existingEmployees.length === 0) return "E1000";
+
+    // 숫자만 뽑아서 배열 생성
+    const numbers = existingEmployees
+      .filter((e) => e.employeeNumber)
+      .map((e) => {
+        const numPart = e.employeeNumber.replace(/[^0-9]/g, "");
+        return parseInt(numPart, 10) || 0;
+      });
+
+    const maxNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
+    const nextNumber = maxNumber === 0 ? 1000 : maxNumber + 1;
+
+    // 숫자를 4자리로 패딩하고 E 붙임
+    return `E${nextNumber.toString().padStart(4, "0")}`;
+  }, [existingEmployees]);
+
 
   useEffect(() => {
     if (existingEmployees && existingEmployees.length >= 0) {

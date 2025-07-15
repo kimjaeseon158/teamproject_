@@ -129,7 +129,7 @@ useEffect(() => {
     try {
       const result = await Panel_PostData(panel_post_data);
       console.log("전송 성공", result);
-      onClose();
+      alert("사원 정보 등록이 완료 되었습니다.")
     } catch (err) {
       console.error(err);
       alert("데이터 전송 실패");

@@ -2,9 +2,9 @@ import React  from "react";
 import { useAddPersonLogic } from "../js/useAddPersonLogic"; // 로직 훅
 import "../css/showAddmodel.css";
 
-const AddPersonModal = ({ onSave, onClose, existingEmployees }) => {
+const AddPersonModal = ({ onClose, existingEmployees }) => {
   const { formData, handleChange, handleSubmitBase, setFormData } =
-    useAddPersonLogic(existingEmployees, onClose);
+    useAddPersonLogic(existingEmployees,  onClose);
 
   // 다음 주소 API
   const handleAddressSearch = () => {

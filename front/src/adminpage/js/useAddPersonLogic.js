@@ -16,19 +16,29 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
     addressDetail: ""
   });
 
-  const generateEmployeeNumber = useCallback(() => {
-    if (!existingEmployees || existingEmployees.length === 0) return "1000";
-    const numbers = existingEmployees.map((e) => parseInt(e.employeeNumber));
-    const maxNumber = Math.max(...numbers);
-    return String(maxNumber + 1);
-  }, [existingEmployees]); 
+const generateEmployeeNumber = useCallback(() => {
+  if (!existingEmployees || existingEmployees.length === 0) return "E0001";
 
-  useEffect(() => {
-    if (existingEmployees && existingEmployees.length >= 0) {
-      const newNumber = generateEmployeeNumber();
-      setFormData((prev) => ({ ...prev, employeeNumber: newNumber }));
-    }
-  }, [existingEmployees]);
+  const numbers = existingEmployees
+    .map((e) => {
+      const empNum = e?.employee_number;
+      const match = empNum?.match(/^E(\d{4})$/);
+      return match ? parseInt(match[1]) : null;
+    })
+    .filter((num) => num !== null);
+
+  if (numbers.length === 0) return "E0001";
+
+  const maxNumber = Math.max(...numbers);
+  const nextNumber = maxNumber + 1;
+  return `E${String(nextNumber).padStart(4, "0")}`;
+}, [existingEmployees]);
+
+useEffect(() => {
+  const newNumber = generateEmployeeNumber();
+
+  setFormData((prev) => ({ ...prev, employeeNumber: newNumber }));
+}, [existingEmployees, generateEmployeeNumber]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

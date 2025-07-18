@@ -22,11 +22,17 @@ class BaseModelHandler(APIView):
             return None, serializer.errors
 
         elif data_type == 'user_login_info':
+            success    = False
             serializer = User_Login_InfoSerializer(data=data)
+            
             if serializer.is_valid():
-                instance = serializer.save()
-                return serializer, instance
-            return None, serializer.errors
+                user_save_instance = serializer.save()
+                success            = True
+                
+            data      = User_Login_Info.objects.all()
+            user_data = User_InfoSerializer(data, many=True)
+            
+            return {'success': success, 'user_data' : user_data.data}, None
         
         elif data_type == 'user_info_delete':
             employee_number = data.get('employee_number')

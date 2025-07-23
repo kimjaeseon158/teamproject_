@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import locationsList from "../../calenderTest/js/locationsList";
+import { formatPhoneNumber, formatResidentNumber  } from "../js/utils";
 
 export function useAdminInformationLogic(person, onClose, onSave) {
   const [formData, setFormData] = useState(person);
@@ -11,9 +12,16 @@ export function useAdminInformationLogic(person, onClose, onSave) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+    let formattedValue = value;
 
+    if (name === "phone_number") {
+      formattedValue = formatPhoneNumber(value);
+    } else if (name === "resident_number") {
+      formattedValue = formatResidentNumber(value);
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: formattedValue }));
+  };
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(formData);

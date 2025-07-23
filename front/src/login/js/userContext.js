@@ -20,6 +20,7 @@ export const UserProvider = ({ children }) => {
     const savedUser = sessionStorage.getItem("userRole");
     const savedName = sessionStorage.getItem("userName");
     const savedEmpNum = sessionStorage.getItem("employeeNumber");
+    //?? 새로고침 재통신을 위한 저장
     const savedUserData = sessionStorage.getItem("userData");
 
     if (savedUser) {

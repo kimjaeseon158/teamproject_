@@ -8,6 +8,7 @@ import { updateEmployee } from "../js/adminPageUpdate";
 import { fetchFilteredPeople } from "../js/adminPageLogic";
 import "../css/adminPage.css";
 import { useResizableTable } from "./adminResizableTable";
+import { formatResidentNumber ,formatPhoneNumber  } from "../js/utils";
 
 const initialSearchForm = {
   employee_number: "",
@@ -128,7 +129,6 @@ const AdminPage = () => {
       alert("삭제가 완료되었습니다.");
     } else {
       console.error("삭제 실패:", result.failedItems || result.error);
-      alert("삭제 중 오류가 발생했습니다. 콘솔을 확인하세요.");
     }
   };
 
@@ -143,9 +143,17 @@ const AdminPage = () => {
 
   const handleSearchFormChange = (e) => {
     const { name, value } = e.target;
+    let formattedValue = value;
+
+    if (name === "resident_number") {
+      formattedValue = formatResidentNumber(value);
+    } else if (name === "phone_number") {
+      formattedValue = formatPhoneNumber(value);
+    }
+
     setSearchForm((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: formattedValue,
     }));
   };
 

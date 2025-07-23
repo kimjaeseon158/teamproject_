@@ -35,11 +35,11 @@ const AdminInformation = ({ person, onClose, onSave }) => {
           </div>
           <div>
             <label>이름: </label>
-            <span>{formData.user_name}</span>
+             <input name="user_name" value={formData.user_name || ""} onChange={handleChange} />
           </div>
           <div>
             <label>주민등록번호: </label>
-            <span>{formData.resident_number}</span>
+            <input name="resident_number" value={formData.resident_number || ""} onChange={handleChange} />
           </div>
           <div>
             <label>주소: </label>

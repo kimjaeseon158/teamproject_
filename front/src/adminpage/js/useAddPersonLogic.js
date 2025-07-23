@@ -1,6 +1,7 @@
 // src/adminpage/js/useAddPersonLogic.js
 import { useEffect, useState, useCallback } from "react";
 import { Panel_PostData } from "./admnsdbPost";
+import { formatPhoneNumber, formatResidentNumber  } from "../js/utils";
 
 export function useAddPersonLogic(existingEmployees, onSave, onClose) {
   const [formData, setFormData] = useState({
@@ -43,12 +44,7 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
     const { name, value } = e.target;
 
     if (name === "rsdnNmbr") {
-      const clean = value.replace(/[^0-9]/g, "").slice(0, 13);
-      let formatted = clean;
-      if (clean.length > 6) {
-        formatted = clean.slice(0, 6) + "-" + clean.slice(6);
-      }
-
+      const formatted = formatResidentNumber(value);
       setFormData((prev) => ({
         ...prev,
         rsdnNmbr: formatted,
@@ -57,23 +53,7 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
     }
 
     else if (name === "phoneNumber") {
-      const clean = value.replace(/[^0-9]/g, "").slice(0, 11);
-      let formatted = clean;
-
-      if (clean.length >= 11) {
-        formatted = clean.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3");
-      } else if (clean.length >= 7) {
-        formatted = clean.replace(/(\d{3})(\d{4})(\d*)/, (_, g1, g2, g3) => {
-          return g3 ? `${g1}-${g2}-${g3}` : `${g1}-${g2}`;
-        });
-      } else if (clean.length >= 4) {
-        formatted = clean.replace(/(\d{3})(\d*)/, (_, g1, g2) => {
-          return g2 ? `${g1}-${g2}` : g1;
-        });
-      } else {
-        formatted = clean;
-      }
-
+      const formatted = formatPhoneNumber(value);
       setFormData((prev) => ({
         ...prev,
         phoneNumber: formatted,
@@ -81,12 +61,18 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
     }
 
     else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      // 일반 입력 필드 처리
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // formData에서 필요한 값들 비구조화 할당
     const {
       people,
       rsdnNmbr,
@@ -96,24 +82,14 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
       pw,
       carrier,
       address,
-      addressDetail
+      addressDetail,
     } = formData;
 
+    // 필수 필드 체크
     if (!people || !rsdnNmbr || !phoneNumber) {
       alert("모든 필드를 입력하세요");
       return;
     }
-
-    const fullData = {
-      people,
-      rsdnNmbr,
-      phoneNumber,
-      company: employeeNumber,
-      id,
-      pw,
-    };
-
-    onSave(fullData);
 
     const panel_post_data = {
       data_type: "user_login_info",
@@ -133,12 +109,20 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
       const result = await Panel_PostData(panel_post_data);
       console.log("전송 응답:", result);
 
-      if (
-        result?.data?.success === true ||
-        result?.message?.includes("처리 완료") ||
-        result?.data?.employee_number
-      ) {
+      if (result?.data?.success === true || result?.message?.includes("처리 완료")) {
         alert("사원 정보 등록이 완료 되었습니다.");
+
+        const newPerson = {
+          employee_number: employeeNumber,
+          user_name: people,
+          phone_number: phoneNumber,
+          mobile_carrier: carrier,
+          resident_number: rsdnNmbr,
+          address: address + " " + addressDetail,
+        };
+
+        onSave(newPerson);
+        onClose();
       } else {
         const errorMsg = result?.data?.message || result?.message || "서버에서 실패 응답을 받았습니다.";
         alert("등록 실패: " + errorMsg);
@@ -148,6 +132,7 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
       alert("서버 요청 실패: 네트워크 또는 서버 오류입니다.");
     }
   };
+
 
   return {
     formData,

@@ -19,28 +19,28 @@ const Login = () => {
         admin_codeError: ""
     });
     const [login_check_message, setlogin_check_message] = useState("");
-    const [fadeOut, setFadeOut] = useState(false);
+    const [fade_out, setfade_out] = useState(false);
 
-    const rgxCnd = {
-        adminId: /^[A-Za-z0-9]{4,16}$/,
-        adminPassword: /^[A-Za-z0-9]{4,14}$/,
-        adminOtp: /^\d{6}$/,  // 숫자 6자리
-        staffId: /^[A-Za-z0-9]{4,16}$/,
-        staffPw: /^[A-Za-z0-9]{4,14}$/
+    const validation_Patterns = {
+        admin_Id: /^[A-Za-z0-9]{4,16}$/,
+        admin_Password: /^[A-Za-z0-9]{4,14}$/,
+        admin_Otp: /^\d{6}$/,  // 숫자 6자리
+        user_Id: /^[A-Za-z0-9]{4,16}$/,
+        user_Pw: /^[A-Za-z0-9]{4,14}$/
     };
 
-    const handleChange = (e) => {
+    const handle_Change = (e) => {
         const { id, value } = e.target;
         switch (id) {
-            case "adminId":
-            case "staffId":
+            case "admin_Id":
+            case "user_Id":
                 setId(value);
                 break;
-            case "adminPassword":
-            case "staffPw":
+            case "admin_Password":
+            case "user_Pw":
                 setPassword(value);
                 break;
-            case "adminOtp":
+            case "admin_Otp":
                 if (/^\d*$/.test(value)) { // 숫자만 입력 허용
                     setadmin_code(value);
                 }
@@ -61,7 +61,7 @@ const Login = () => {
             admin_code,
             setadmin_code,
             role,
-            rgxCnd,
+            validation_Patterns,
             setErrors
         });
 
@@ -69,7 +69,7 @@ const Login = () => {
             const loginsuccess = await HandleLogin(id, password, isValid.dataType, admin_code);
 
             if (loginsuccess.success === "admin") {
-                setFadeOut(true);
+                setfade_out(true);
                 setUser("admin");
                 setUserData(loginsuccess.user_Data)
                 sessionStorage.setItem("userRole", "admin");
@@ -78,7 +78,7 @@ const Login = () => {
                     navigate('/adminPage');
                 }, 500);
             } else if (loginsuccess.success === "user") {
-                setFadeOut(true);
+                setfade_out(true);
                 setUser(loginsuccess.name);
                 setEmployeeNumber(loginsuccess.employee_number);
                 sessionStorage.setItem("userRole", "user");
@@ -99,7 +99,7 @@ const Login = () => {
     };
 
     return (
-        <form className={`loginBK ${fadeOut ? 'fade-out' : ''}`} onSubmit={handlecheck}>
+        <form className={`loginBK ${fade_out ? 'fade-out' : ''}`} onSubmit={handlecheck}>
             <div className="userchoice">
                 <div className="userchoice_sub">
                     <motion.div
@@ -118,9 +118,9 @@ const Login = () => {
                     </motion.button>
                     <motion.button
                         type="button"
-                        className="Staff"
-                        onClick={() => setRole("staff")}
-                        animate={{ color: role === "staff" ? "#fff" : "#333" }}
+                        className="user"
+                        onClick={() => setRole("user")}
+                        animate={{ color: role === "user" ? "#fff" : "#333" }}
                         whileTap={{ scale: 0.9 }}
                     >
                         사원
@@ -140,33 +140,33 @@ const Login = () => {
                 <div className="admin_subbox">
                     <input
                         type="text"
-                        id="adminId"
+                        id="admin_Id"
                         className="id"
                         placeholder="아이디"
                         value={id}
-                        onChange={handleChange}
+                        onChange={handle_Change}
                     />
                     <span className="error">{errors.idError}</span>
                 </div>
                 <div className="admin_subbox">
                     <input
                         type="password"
-                        id="adminPassword"
+                        id="admin_Password"
                         className="password"
                         placeholder="비밀번호"
                         value={password}
-                        onChange={handleChange}
+                        onChange={handle_Change}
                     />
                     <span className="error">{errors.passwordError}</span>
                 </div>
                 <div className="admin_subbox">
                     <input
                         type="text"
-                        id="adminOtp"
+                        id="admin_Otp"
                         className="otp"
                         placeholder="인증코드 (6자리 숫자)"
                         value={admin_code}
-                        onChange={handleChange}
+                        onChange={handle_Change}
                         maxLength={6}
                     />
                     <span className="error">{errors.admin_codeError}</span>
@@ -178,32 +178,32 @@ const Login = () => {
 
             {/* 사원 로그인 */}
             <motion.div
-                className="Staff-register"
+                className="user-register"
                 initial={{ opacity: 0, x: 20 }}
-                animate={role === "staff" ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
+                animate={role === "user" ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
-                style={{ display: role === "staff" ? "flex" : "none" }}
+                style={{ display: role === "user" ? "flex" : "none" }}
             >
                 <h1>사원</h1>
-                <div className="staff_subbox">
+                <div className="user_subbox">
                     <input
                         type="text"
-                        id="staffId"
+                        id="user_Id"
                         className="id"
                         placeholder="아이디"
                         value={id}
-                        onChange={handleChange}
+                        onChange={handle_Change}
                     />
                     <span className="error">{errors.idError}</span>
                 </div>
-                <div className="staff_subbox">
+                <div className="user_subbox">
                     <input
                         type="password"
-                        id="staffPw"
+                        id="user_Pw"
                         className="password"
                         placeholder="비밀번호"
                         value={password}
-                        onChange={handleChange}
+                        onChange={handle_Change}
                     />
                     <span className="error">{errors.passwordError}</span>
                 </div>

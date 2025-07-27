@@ -1,7 +1,7 @@
-export const validation = async ({ id, password, admin_code, role, rgxCnd, setErrors }) => {
-    const idRegex = role === "admin" ? rgxCnd.adminId : rgxCnd.staffId;
-    const passwordRegex = role === "admin" ? rgxCnd.adminPassword : rgxCnd.staffPw;
-    const otpRegex = role === "admin" ? rgxCnd.adminOtp : null;
+export const validation = async ({ id, password, admin_code, role, validation_Patterns, setErrors }) => {
+    const idRegex = role === "admin" ? validation_Patterns.admin_Id : validation_Patterns.user_Id;
+    const passwordRegex = role === "admin" ? validation_Patterns.admin_Password : validation_Patterns.user_Pw;
+    const otpRegex = role === "admin" ? validation_Patterns.admin_Otp : null;
 
     const newErrors = {
         idError: idRegex.test(id) ? "" : "아이디를 잘못 입력하셨습니다",

@@ -3,15 +3,14 @@ import { useAddPersonLogic } from "../js/useAddPersonLogic"; // 로직 훅
 import "../css/showAddmodel.css";
 
 const AddPersonModal = ({ onClose, onSave, existingEmployees }) => {
-  const { form_Data, handleChange, handleSubmitBase, setform_Data } =
+  const { formData, handleChange, handleSubmitBase, setFormData } =
     useAddPersonLogic(existingEmployees, onSave, onClose);
 
-  // 다음 주소 API
   const handleAddressSearch = () => {
     new window.daum.Postcode({
       oncomplete: function (data) {
         const fullAddress = data.address;
-        setform_Data((prev) => ({
+        setFormData((prev) => ({
           ...prev,
           address: fullAddress,
         }));
@@ -19,20 +18,19 @@ const AddPersonModal = ({ onClose, onSave, existingEmployees }) => {
     }).open();
   };
 
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    handleSubmitBase(e); // 내부적으로 onSaveWithFullAddress 호출
+    handleSubmitBase(e);
   };
 
   const fields = [
-    { label: "사원번호", name: "employee_Number", value: form_Data.employee_Number, readOnly: true },
-    { label: "이름", name: "people", value: form_Data.people, placeholder: "ex)홍길동", maxLength: 8 },
-    { label: "주민등록번호", name: "resident_Number", value: form_Data.masked_Resident_Number, placeholder: "ex)000000-0******" },
+    { label: "사원번호", name: "employee_Number", value: formData.employee_Number, readOnly: true },
+    { label: "이름", name: "people", value: formData.people, placeholder: "ex)홍길동", maxLength: 8 },
+    { label: "주민등록번호", name: "resident_Number", value: formData.masked_Resident_Number, placeholder: "ex)000000-0******" },
     { label: "전화번호", name: "phone_Number" },
-    { label: "주소", name: "address", value: form_Data.address, placeholder: "ex) 충청남도 OO시 OO군..." },
-    { label: "ID", name: "id", value: form_Data.id, placeholder: "ex)hong123", maxLength: 12 },
-    { label: "비밀번호", name: "pw", value: form_Data.pw, placeholder: "ex)1234", maxLength: 16 },
+    { label: "주소", name: "address", value: formData.address, placeholder: "ex) 충청남도 OO시 OO군..." },
+    { label: "ID", name: "id", value: formData.id, placeholder: "ex)hong123", maxLength: 12 },
+    { label: "비밀번호", name: "pw", value: formData.pw, placeholder: "ex)1234", maxLength: 16 },
   ];
 
   return (
@@ -43,11 +41,11 @@ const AddPersonModal = ({ onClose, onSave, existingEmployees }) => {
           {fields.map((field, idx) => {
             if (field.name === "phone_Number") {
               return (
-                <div className="form-row flex-row" key={idx}>      
-                  <label>{field.label} :</label> 
+                <div className="form-row flex-row" key={idx}>
+                  <label>{field.label} :</label>
                   <select
                     name="carrier"
-                    value={form_Data.carrier || ""}
+                    value={formData.carrier || ""}
                     onChange={handleChange}
                     className="carrier-select"
                   >
@@ -60,7 +58,7 @@ const AddPersonModal = ({ onClose, onSave, existingEmployees }) => {
                   <input
                     type="text"
                     name="phone_Number"
-                    value={form_Data.phone_Number}
+                    value={formData.phone_Number || ""}
                     onChange={handleChange}
                     placeholder="ex)010-1234-5678"
                     maxLength={13}
@@ -74,8 +72,8 @@ const AddPersonModal = ({ onClose, onSave, existingEmployees }) => {
                     <label>{field.label} :</label>
                     <input
                       type="text"
-                      name="adress"
-                      value={form_Data.address}
+                      name="address"  
+                      value={formData.address || ""}
                       readOnly
                       placeholder={field.placeholder}
                     />
@@ -86,7 +84,7 @@ const AddPersonModal = ({ onClose, onSave, existingEmployees }) => {
                     <input
                       type="text"
                       name="address_Detail"
-                      value={form_Data.address_Detail}
+                      value={formData.address_Detail || ""}
                       onChange={handleChange}
                       placeholder="ex) 아파트, 동/호수 등"
                     />
@@ -98,12 +96,12 @@ const AddPersonModal = ({ onClose, onSave, existingEmployees }) => {
                 <div className="form-row" key={idx}>
                   <label>{field.label} :</label>
                   {field.readOnly ? (
-                    <span>{field.value}</span>
+                    <span>{field.value || ""}</span>
                   ) : (
                     <input
                       type="text"
                       name={field.name}
-                      value={field.value}
+                      value={field.value || ""}
                       onChange={handleChange}
                       placeholder={field.placeholder}
                       maxLength={field.maxLength}
@@ -122,3 +120,4 @@ const AddPersonModal = ({ onClose, onSave, existingEmployees }) => {
 };
 
 export default AddPersonModal;
+

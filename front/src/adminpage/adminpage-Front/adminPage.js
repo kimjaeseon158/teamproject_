@@ -32,8 +32,9 @@ const AdminPage = () => {
 
   useEffect(() => {
     if (userData && userData.length > 0 && people_Data.length === 0) {
-      setpeople_Data(userData);
+      setpeople_Data(sortByEmployeeNumber(userData));
     }
+
   }, [userData, people_Data]);
 
   // 초기 열 너비 및 행 높이
@@ -92,8 +93,15 @@ const AdminPage = () => {
       alert("업데이트 실패: " + (result.error || "서버 오류"));
     }
   };
-
-  const handleaddLow = () => {
+  const sortByEmployeeNumber = (data) => {
+  // 사원번호가 문자열일 경우, 숫자로 변환해 정렬
+    return data.slice().sort((a, b) => {
+      const numA = parseInt(a.employee_number.replace(/\D/g, ""), 10);
+      const numB = parseInt(b.employee_number.replace(/\D/g, ""), 10);
+      return numA - numB;
+    });
+  };
+    const handleaddLow = () => {
     setShowAddModal(true);
   };
 
@@ -124,7 +132,7 @@ const AdminPage = () => {
       const remaining = people_Data.filter(
         (person) => !employee_Numbers.includes(person.employee_number)
       );
-      setpeople_Data(remaining);
+      setpeople_Data(sortByEmployeeNumber(remaining));
       setchecked_Items({});
       alert("삭제가 완료되었습니다.");
     } else {
@@ -158,21 +166,44 @@ const AdminPage = () => {
   };
 
   const applySearch = async () => {
-    const { employee_number, user_name, phone_number, resident_number, address, sort_Key, sort_Direction } = search_Form;
+  const { employee_number, user_name, phone_number, resident_number, address, sort_Key, sort_Direction } = search_Form;
 
-    const filters = {};
-    if (employee_number.trim()) filters.employee_number = employee_number.trim();
-    if (user_name.trim()) filters.user_name = user_name.trim();
-    if (phone_number.trim()) filters.phone_number = phone_number.trim();
-    if (resident_number.trim()) filters.resident_number = resident_number.trim();
-    if (address.trim()) filters.address = address.trim();
+  if (
+    !employee_number.trim() &&
+    !user_name.trim() &&
+    !phone_number.trim() &&
+    !resident_number.trim() &&
+    !address.trim()
+  ) {
+    alert("검색어를 하나 이상 입력해주세요.");
+    return;
+  }
+  console.log(typeof employee_number)
+  const filters = {};
+  if (employee_number.trim()) filters.employee_number = employee_number.trim();
+  if (user_name.trim()) filters.user_name = user_name.trim();
+  if (phone_number.trim()) filters.phone_number = phone_number.trim();
+  if (resident_number.trim()) filters.resident_number = resident_number.trim();
+  if (address.trim()) filters.address = address.trim();
 
-    const sort = sort_Key && sort_Direction ? { key: sort_Key, direction: sort_Direction } : null;
+  const sort = sort_Key && sort_Direction ? { key: sort_Key, direction: sort_Direction } : null;
 
-    const result = await fetchFilteredPeople({ filters, sort });
-    setpeople_Data(result);
-    closeSearchModal();
-  };
+  // 서버에서 실제 사람 배열만 받음
+  let result = await fetchFilteredPeople({ filters, sort });
+
+  if (sort && sort.key === "employee_number") {
+    result = sortByEmployeeNumber(result);
+    if (sort.direction === "desc") {
+      result = result.reverse();
+    }
+  } else if (!sort) {
+    result = sortByEmployeeNumber(result);
+  }
+  setpeople_Data(result);
+  closeSearchModal();
+};
+
+
 
   // 헤더 셀 렌더링
   const renderResizableTH = (label, colKey) => (
@@ -322,7 +353,6 @@ const AdminPage = () => {
                 onChange={handlesearch_FormChange}
                 className="searchModal__select"
               >
-                <option value="">선택 안함</option>
                 <option value="employee_number">사원 번호</option>
                 <option value="user_name">이름</option>
                 <option value="resident_number">주민등록번호</option>
@@ -338,7 +368,6 @@ const AdminPage = () => {
                 onChange={handlesearch_FormChange}
                 className="searchModal__select"
               >
-                <option value="">선택 안함</option>
                 <option value="asc">오름차순</option>
                 <option value="desc">내림차순</option>
               </select>

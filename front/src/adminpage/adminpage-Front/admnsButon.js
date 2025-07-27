@@ -10,7 +10,7 @@ const AdminPanel = ({ onClose, locations : initLocations }) => {
     daily_Pay,
     showAddPanel,
     setShowAddPanel,
-    handleWageChange,
+    handledaily_PayChange,
     handleDeletLocation,
     handleSave,
     handleAddNewCompany,
@@ -29,7 +29,7 @@ const AdminPanel = ({ onClose, locations : initLocations }) => {
                 type="text"
                 placeholder="일급 입력"
                 value={daily_Pay[location]}
-                onChange={(e) => handleWageChange(location, e.target.value)}
+                onChange={(e) => handledaily_PayChange(location, e.target.value)}
               />
               <span
                 className="location-delete"

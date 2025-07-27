@@ -107,10 +107,9 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
 
     try {
       const result = await Panel_PostData(panel_post_data);
-      console.log("전송 응답:", result);
+      console.log("전송 응답:", result.data.success);
 
-      if (result?.data?.success === true || result?.message?.includes("처리 완료")) {
-        alert("사원 정보 등록이 완료 되었습니다.");
+      if (result.data.success === true) {
 
         const newPerson = {
           employee_number: employee_Number,
@@ -120,12 +119,13 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
           resident_number: resident_Number,
           address: address + " " + address_Detail,
         };
-
+        
         onSave(newPerson);
+        alert("사원 정보 등록이 완료 되었습니다.");
         onClose();
       } else {
-        const errorMsg = result?.data?.message || result?.message || "서버에서 실패 응답을 받았습니다.";
-        alert("등록 실패: " + errorMsg);
+        alert("등록 실패" );
+        onClose();
       }
     } catch (err) {
       console.error("서버 오류:", err);

@@ -7,7 +7,7 @@ import AddWagePanel from "../adminpage-Front/addPanel";
 const AdminPanel = ({ onClose, locations : initLocations }) => {
   const {
     locations,
-    wages,
+    daily_Pay,
     showAddPanel,
     setShowAddPanel,
     handleWageChange,
@@ -28,7 +28,7 @@ const AdminPanel = ({ onClose, locations : initLocations }) => {
               <input
                 type="text"
                 placeholder="일급 입력"
-                value={wages[location]}
+                value={daily_Pay[location]}
                 onChange={(e) => handleWageChange(location, e.target.value)}
               />
               <span

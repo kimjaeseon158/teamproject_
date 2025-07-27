@@ -13,7 +13,7 @@ export function useAdminPanelLogic(initLocations, onClose) {
     return initial;
   });
 
-  const handleWageChange = (location, value) => {
+  const handledaily_PayChange = (location, value) => {
     setdaily_Pay((prev) => ({
       ...prev,
       [location]: value,
@@ -44,13 +44,13 @@ export function useAdminPanelLogic(initLocations, onClose) {
     }
   };
 
-  const handleAddNewCompany = (company, wage) => {
+  const handleAddNewCompany = (company, daily_Pay) => {
     if (locations.includes(company)) {
       alert("이미 존재하는 회사입니다.");
       return;
     }
     setLocations((prev) => [...prev, company]);
-    setdaily_Pay((prev) => ({ ...prev, [company]: wage }));
+    setdaily_Pay((prev) => ({ ...prev, [company]: daily_Pay }));
   };
 
   return {
@@ -58,7 +58,7 @@ export function useAdminPanelLogic(initLocations, onClose) {
     daily_Pay,
     showAddPanel,
     setShowAddPanel,
-    handleWageChange,
+    handledaily_PayChange,
     handleDeletLocation,
     handleSave,
     handleAddNewCompany,

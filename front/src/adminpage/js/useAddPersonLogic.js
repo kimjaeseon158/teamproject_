@@ -1,7 +1,7 @@
 // src/adminpage/js/useAddPersonLogic.js
 import { useEffect, useState, useCallback } from "react";
 import { Panel_PostData } from "./admnsdbPost";
-import { formatphone_Number, formatResidentNumber  } from "../js/utils";
+import { formatPhoneNumber, formatResidentNumber  } from "../js/utils";
 
 export function useAddPersonLogic(existingEmployees, onSave, onClose) {
   const [formData, setFormData] = useState({
@@ -53,7 +53,7 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
     }
 
     else if (name === "phone_Number") {
-      const formatted = formatphone_Number(value);
+      const formatted = formatPhoneNumber(value);
       setFormData((prev) => ({
         ...prev,
         phone_Number: formatted,

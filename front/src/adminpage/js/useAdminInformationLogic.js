@@ -12,15 +12,15 @@ export function useAdminInformationLogic(person, onClose, onSave) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    let formattedValue = value;
+    let formatted_Value = value;
 
     if (name === "phone_number") {
-      formattedValue = formatPhoneNumber(value);
+      formatted_Value = formatPhoneNumber(value);
     } else if (name === "resident_number") {
-      formattedValue = formatResidentNumber(value);
+      formatted_Value = formatResidentNumber(value);
     }
 
-    setFormData((prev) => ({ ...prev, [name]: formattedValue }));
+    setFormData((prev) => ({ ...prev, [name]: formatted_Value }));
   };
   const handleSubmit = (e) => {
     e.preventDefault();

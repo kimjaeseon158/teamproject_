@@ -21,7 +21,7 @@
 }
 
 /* 모달 내부 박스 */
-.searchModal__content {
+.searchModal_content {
   background: white;
   padding: 20px 30px;
   border-radius: 8px;
@@ -30,8 +30,8 @@
 }
 
 /* 모달 내부 인풋, 셀렉트 */
-.searchModal__content input[type="text"],
-.searchModal__content select {
+.searchModal_content input[type="text"],
+.searchModal_content select {
   width: 100%;
   padding: 8px 10px;
   margin-top: 6px;
@@ -43,15 +43,15 @@
   transition: border-color 0.2s ease;
 }
 
-.searchModal__content input[type="text"]:focus,
-.searchModal__content select:focus {
+.searchModal_content input[type="text"]:focus,
+.searchModal_content select:focus {
   outline: none;
   border-color: #1976d2;
   box-shadow: 0 0 6px rgba(25, 118, 210, 0.5);
 }
 
 /* 버튼 스타일 */
-.searchModal__content button {
+.searchModal_content button {
   padding: 10px 18px;
   font-weight: 600;
   border-radius: 5px;
@@ -62,15 +62,15 @@
   transition: background-color 0.2s ease;
 }
 
-.searchModal__content button:hover {
+.searchModal_content button:hover {
   background-color: #1565c0;
 }
 
-.searchModal__content button:last-child {
+.searchModal_content button:last-child {
   background-color: #e91e63;
   margin-left: 10px;
 }
 
-.searchModal__content button:last-child:hover {
+.searchModal_content button:last-child:hover {
   background-color: #c2185b;
 }

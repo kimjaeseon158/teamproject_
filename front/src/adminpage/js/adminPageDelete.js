@@ -1,10 +1,10 @@
-export const deleteEmployees = async (employeeNumbers) => {
+export const deleteEmployees = async (employee_Numbers) => {
   try {
     const results = []; // 각 사원의 삭제 결과 저장
-    const deletedUsers = []; // 삭제된 유저 데이터 저장
+    const deleted_Users = []; // 삭제된 유저 데이터 저장
     const failed = []; // 실패한 요청들 저장
 
-    for (const empNo of employeeNumbers) {
+    for (const empNo of employee_Numbers) {
       const body = {
         data_type: "user_info_delete",
         data: {
@@ -42,7 +42,7 @@ export const deleteEmployees = async (employeeNumbers) => {
 
       if (success) {
         console.log(` ${empNo} 삭제 성공`);
-        deletedUsers.push(...userData); // 여러 명 삭제되었을 수도 있음
+        deleted_Users.push(...userData); // 여러 명 삭제되었을 수도 있음
         results.push({ employee_number: empNo, success: true });
       } else {
         console.warn(`${empNo} 삭제 실패`);
@@ -59,13 +59,13 @@ export const deleteEmployees = async (employeeNumbers) => {
       return {
         success: false,
         failedItems: failed,
-        deletedUsers,
+        deleted_Users,
         allResults: results,
       };
     }
     return {
       success: true,
-      deletedUsers,
+      deleted_Users,
       allResults: results,
     };
   } catch (err) {

@@ -1,8 +1,8 @@
-export const updateEmployee = async (employeeData) => {
+export const updateEmployee = async (employee_Data) => {
   try {
     const body = {
       data_type: "user_info_update",
-      data: employeeData,
+      data: employee_Data,
     };
 
     const response = await fetch("http://localhost:8000/api/items/", {
@@ -20,7 +20,7 @@ export const updateEmployee = async (employeeData) => {
       throw new Error(result?.error || "업데이트 실패");
     }
 
-    return { success: true, updated: result.updated || employeeData };
+    return { success: true, updated: result.updated || employee_Data };
   } catch (error) {
     console.error("업데이트 에러:", error);
     return { success: false, error: error.message };

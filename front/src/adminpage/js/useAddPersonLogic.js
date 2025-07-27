@@ -1,23 +1,23 @@
 // src/adminpage/js/useAddPersonLogic.js
 import { useEffect, useState, useCallback } from "react";
 import { Panel_PostData } from "./admnsdbPost";
-import { formatPhoneNumber, formatResidentNumber  } from "../js/utils";
+import { formatphone_Number, formatResidentNumber  } from "../js/utils";
 
 export function useAddPersonLogic(existingEmployees, onSave, onClose) {
   const [formData, setFormData] = useState({
-    employeeNumber: "",
+    employee_Number: "",
     people: "",
-    rsdnNmbr: "",
-    maskedRsdnNmbr: "",
-    phoneNumber: "",
+    resident_Number: "",
+    masked_Resident_Number: "",
+    phone_Number: "",
     id: "",
     pw: "",
     carrier: "",
     address: "",
-    addressDetail: ""
+    address_Detail: ""
   });
 
-  const generateEmployeeNumber = useCallback(() => {
+  const generate_employee_Number = useCallback(() => {
     if (!existingEmployees || existingEmployees.length === 0) return "E0001";
 
     const numbers = existingEmployees
@@ -30,33 +30,33 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
 
     if (numbers.length === 0) return "E0001";
 
-    const maxNumber = Math.max(...numbers);
-    const nextNumber = maxNumber + 1;
-    return `E${String(nextNumber).padStart(4, "0")}`;
+    const max_Number = Math.max(...numbers);
+    const next_Number = max_Number + 1;
+    return `E${String(next_Number).padStart(4, "0")}`;
   }, [existingEmployees]);
 
   useEffect(() => {
-    const newNumber = generateEmployeeNumber();
-    setFormData((prev) => ({ ...prev, employeeNumber: newNumber }));
-  }, [existingEmployees, generateEmployeeNumber]);
+    const new_Number = generate_employee_Number();
+    setFormData((prev) => ({ ...prev, employee_Number: new_Number }));
+  }, [existingEmployees, generate_employee_Number]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    if (name === "rsdnNmbr") {
+    if (name === "resident_Number") {
       const formatted = formatResidentNumber(value);
       setFormData((prev) => ({
         ...prev,
-        rsdnNmbr: formatted,
-        maskedRsdnNmbr: formatted,
+        resident_Number: formatted,
+        masked_Resident_Number: formatted,
       }));
     }
 
-    else if (name === "phoneNumber") {
-      const formatted = formatPhoneNumber(value);
+    else if (name === "phone_Number") {
+      const formatted = formatphone_Number(value);
       setFormData((prev) => ({
         ...prev,
-        phoneNumber: formatted,
+        phone_Number: formatted,
       }));
     }
 
@@ -75,18 +75,18 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
     // formData에서 필요한 값들 비구조화 할당
     const {
       people,
-      rsdnNmbr,
-      phoneNumber,
-      employeeNumber,
+      resident_Number,
+      phone_Number,
+      employee_Number,
       id,
       pw,
       carrier,
       address,
-      addressDetail,
+      address_Detail,
     } = formData;
 
     // 필수 필드 체크
-    if (!people || !rsdnNmbr || !phoneNumber) {
+    if (!people || !resident_Number || !phone_Number) {
       alert("모든 필드를 입력하세요");
       return;
     }
@@ -94,14 +94,14 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
     const panel_post_data = {
       data_type: "user_login_info",
       data: {
-        employee_number: employeeNumber,
+        employee_number: employee_Number,
         user_name: people,
         user_id: id,
         password: pw,
-        phone_number: phoneNumber,
+        phone_number: phone_Number,
         mobile_carrier: carrier,
-        resident_number: rsdnNmbr,
-        address: address + " " + addressDetail,
+        resident_number: resident_Number,
+        address: address + " " + address_Detail,
       },
     };
 
@@ -113,12 +113,12 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
         alert("사원 정보 등록이 완료 되었습니다.");
 
         const newPerson = {
-          employee_number: employeeNumber,
+          employee_number: employee_Number,
           user_name: people,
-          phone_number: phoneNumber,
+          phone_number: phone_Number,
           mobile_carrier: carrier,
-          resident_number: rsdnNmbr,
-          address: address + " " + addressDetail,
+          resident_number: resident_Number,
+          address: address + " " + address_Detail,
         };
 
         onSave(newPerson);

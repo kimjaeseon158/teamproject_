@@ -3,7 +3,7 @@ import { useAddPersonLogic } from "../js/useAddPersonLogic"; // 로직 훅
 import "../css/showAddmodel.css";
 
 const AddPersonModal = ({ onClose, onSave, existingEmployees }) => {
-  const { formData, handleChange, handleSubmitBase, setFormData } =
+  const { form_Data, handleChange, handleSubmitBase, setform_Data } =
     useAddPersonLogic(existingEmployees, onSave, onClose);
 
   // 다음 주소 API
@@ -11,7 +11,7 @@ const AddPersonModal = ({ onClose, onSave, existingEmployees }) => {
     new window.daum.Postcode({
       oncomplete: function (data) {
         const fullAddress = data.address;
-        setFormData((prev) => ({
+        setform_Data((prev) => ({
           ...prev,
           address: fullAddress,
         }));
@@ -26,13 +26,13 @@ const AddPersonModal = ({ onClose, onSave, existingEmployees }) => {
   };
 
   const fields = [
-    { label: "사원번호", name: "employeeNumber", value: formData.employeeNumber, readOnly: true },
-    { label: "이름", name: "people", value: formData.people, placeholder: "ex)홍길동", maxLength: 8 },
-    { label: "주민등록번호", name: "rsdnNmbr", value: formData.maskedRsdnNmbr, placeholder: "ex)000000-0******" },
-    { label: "전화번호", name: "phoneNumber" },
-    { label: "주소", name: "address", value: formData.address, placeholder: "ex) 충청남도 OO시 OO군..." },
-    { label: "ID", name: "id", value: formData.id, placeholder: "ex)hong123", maxLength: 12 },
-    { label: "비밀번호", name: "pw", value: formData.pw, placeholder: "ex)1234", maxLength: 16 },
+    { label: "사원번호", name: "employee_Number", value: form_Data.employee_Number, readOnly: true },
+    { label: "이름", name: "people", value: form_Data.people, placeholder: "ex)홍길동", maxLength: 8 },
+    { label: "주민등록번호", name: "resident_Number", value: form_Data.masked_Resident_Number, placeholder: "ex)000000-0******" },
+    { label: "전화번호", name: "phone_Number" },
+    { label: "주소", name: "address", value: form_Data.address, placeholder: "ex) 충청남도 OO시 OO군..." },
+    { label: "ID", name: "id", value: form_Data.id, placeholder: "ex)hong123", maxLength: 12 },
+    { label: "비밀번호", name: "pw", value: form_Data.pw, placeholder: "ex)1234", maxLength: 16 },
   ];
 
   return (
@@ -41,13 +41,13 @@ const AddPersonModal = ({ onClose, onSave, existingEmployees }) => {
         <h3>새 사람 추가</h3>
         <form onSubmit={handleSubmit}>
           {fields.map((field, idx) => {
-            if (field.name === "phoneNumber") {
+            if (field.name === "phone_Number") {
               return (
-                <div className="form-row flex-row" key={idx}>
-                  <label>{field.label} :</label>
+                <div className="form-row flex-row" key={idx}>      
+                  <label>{field.label} :</label> 
                   <select
                     name="carrier"
-                    value={formData.carrier || ""}
+                    value={form_Data.carrier || ""}
                     onChange={handleChange}
                     className="carrier-select"
                   >
@@ -59,8 +59,8 @@ const AddPersonModal = ({ onClose, onSave, existingEmployees }) => {
                   </select>
                   <input
                     type="text"
-                    name="phoneNumber"
-                    value={formData.phoneNumber}
+                    name="phone_Number"
+                    value={form_Data.phone_Number}
                     onChange={handleChange}
                     placeholder="ex)010-1234-5678"
                     maxLength={13}
@@ -75,7 +75,7 @@ const AddPersonModal = ({ onClose, onSave, existingEmployees }) => {
                     <input
                       type="text"
                       name="adress"
-                      value={formData.address}
+                      value={form_Data.address}
                       readOnly
                       placeholder={field.placeholder}
                     />
@@ -85,8 +85,8 @@ const AddPersonModal = ({ onClose, onSave, existingEmployees }) => {
                     <label>상세 주소 :</label>
                     <input
                       type="text"
-                      name="addressDetail"
-                      value={formData.addressDetail}
+                      name="address_Detail"
+                      value={form_Data.address_Detail}
                       onChange={handleChange}
                       placeholder="ex) 아파트, 동/호수 등"
                     />

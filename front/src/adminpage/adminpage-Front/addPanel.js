@@ -1,16 +1,16 @@
 import React, { useState } from "react";
 
-const AddWagePanel = ({ onSave, onClose }) => {
+const Adddaily_PayPanel = ({ onSave, onClose }) => {
   const [company, setCompany] = useState("");
-  const [wage, setWage] = useState("");
+  const [daily_Pay, setdaily_Pay] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!company || !wage) {
+    if (!company || !daily_Pay) {
       alert("회사명과 일급을 입력하세요.");
       return;
     }
-    onSave(company, wage);  // 저장 콜백 호출
+    onSave(company, daily_Pay);  // 저장 콜백 호출
   };
 
   return (
@@ -24,8 +24,8 @@ const AddWagePanel = ({ onSave, onClose }) => {
         />
         <input
           placeholder="일급"
-          value={wage}
-          onChange={(e) => setWage(e.target.value)}
+          value={daily_Pay}
+          onChange={(e) => setdaily_Pay(e.target.value)}
         />
         <button type="button" onClick={handleSubmit}>저장</button>
         <button type="button" onClick={onClose}>취소</button>
@@ -34,4 +34,4 @@ const AddWagePanel = ({ onSave, onClose }) => {
   );
 };
 
-export default AddWagePanel;
+export default Adddaily_PayPanel;

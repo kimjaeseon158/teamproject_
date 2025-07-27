@@ -5,7 +5,7 @@ export function useAdminPanelLogic(initLocations, onClose) {
   const [locations, setLocations] = useState(initLocations);
   const [showAddPanel, setShowAddPanel] = useState(false);
 
-  const [wages, setWages] = useState(() => {
+  const [daily_Pay, setdaily_Pay] = useState(() => {
     const initial = {};
     initLocations.forEach((loc) => {
       initial[loc] = "";
@@ -14,7 +14,7 @@ export function useAdminPanelLogic(initLocations, onClose) {
   });
 
   const handleWageChange = (location, value) => {
-    setWages((prev) => ({
+    setdaily_Pay((prev) => ({
       ...prev,
       [location]: value,
     }));
@@ -22,7 +22,7 @@ export function useAdminPanelLogic(initLocations, onClose) {
 
   const handleDeletLocation = (locationDelet) => {
     setLocations((prev) => prev.filter((loc) => loc !== locationDelet));
-    setWages((prev) => {
+    setdaily_Pay((prev) => {
       const copy = { ...prev };
       delete copy[locationDelet];
       return copy;
@@ -33,7 +33,7 @@ export function useAdminPanelLogic(initLocations, onClose) {
     e.preventDefault();
     const payLoad = {
       data_type: "user_login_info",
-      data: wages,
+      data: daily_Pay,
     };
     try {
       const result = await Panel_PostData(payLoad);
@@ -50,12 +50,12 @@ export function useAdminPanelLogic(initLocations, onClose) {
       return;
     }
     setLocations((prev) => [...prev, company]);
-    setWages((prev) => ({ ...prev, [company]: wage }));
+    setdaily_Pay((prev) => ({ ...prev, [company]: wage }));
   };
 
   return {
     locations,
-    wages,
+    daily_Pay,
     showAddPanel,
     setShowAddPanel,
     handleWageChange,

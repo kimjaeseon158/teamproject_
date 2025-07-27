@@ -1,13 +1,7 @@
 from django.db import models
 from django.contrib.auth.hashers import make_password
 
-class Item(models.Model):
-    name        = models.CharField(max_length=100)  # 항목 이름
-    description = models.TextField()  # 항목 설명
-
-    def __str__(self):
-        return self.name  # Item의 이름을 반환
-
+# User 관련 테이블
 
 class User_Login_Info(models.Model):
     employee_number = models.CharField(max_length=50, primary_key=True)
@@ -33,6 +27,24 @@ class User_Login_Info(models.Model):
             self.password = make_password(self.password)
         super().save(*args, **kwargs)
 
+class User_Work_Info(models.Model):
+    employee_number = models.ForeignKey(User_Login_Info, on_delete=models.CASCADE) # FK 선언
+    user_name       = models.CharField(max_length=50)                              # 사용자 이름
+    work_start      = models.DateTimeField()                                       # 작업 시작 시간 (날짜 + 시간)
+    work_end        = models.DateTimeField()                                       # 작업 종료 시간 (날짜 + 시간)
+    total_time      = models.CharField(max_length=20)                              # 일한 총 시간 (시간 간격)
+    work_date       = models.DateField()                                           # 근무 날짜
+    work_place      = models.CharField(max_length=100)                             # 근무 장소
+
+
+class User_Work_Pay(models.Model):
+    employee_number = models.ForeignKey(User_Login_Info, on_delete=models.CASCADE)  # FK 선언
+    company         = models.CharField(max_length=50)                               # 회사명
+    daily_wages     = models.IntegerField()                                         # 일급
+
+
+
+# Admin 관련 테이블 
 
 class Admin_Login_Info(models.Model):
     admin_name = models.CharField(max_length=50)       # 관리자 이름
@@ -45,18 +57,3 @@ class Admin_Login_Info(models.Model):
         if not self.password.startswith('pbkdf2_'):  # Django 기본 prefix 체크
             self.password = make_password(self.password)
         super().save(*args, **kwargs)
-
-class Work_Info(models.Model):
-    employee_number = models.ForeignKey(User_Login_Info, on_delete=models.CASCADE) # FK 선언
-    user_name       = models.CharField(max_length=50)                              # 사용자 이름
-    work_start      = models.DateTimeField()                                       # 작업 시작 시간 (날짜 + 시간)
-    work_end        = models.DateTimeField()                                       # 작업 종료 시간 (날짜 + 시간)
-    total_time      = models.CharField(max_length=20)                              # 일한 총 시간 (시간 간격)
-    work_date       = models.DateField()                                           # 근무 날짜
-    work_place      = models.CharField(max_length=100)                             # 근무 장소
-
-
-class Work_Pay(models.Model):
-    employee_number = models.ForeignKey(User_Login_Info, on_delete=models.CASCADE)  # FK 선언
-    company         = models.CharField(max_length=50)                               # 회사명
-    daily_wages     = models.IntegerField()                                         # 일급

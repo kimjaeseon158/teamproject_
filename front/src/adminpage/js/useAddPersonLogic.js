@@ -9,7 +9,7 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
     people: "",
     resident_Number: "",
     masked_Resident_Number: "",
-    phone_Number: "",
+    phone_Number: "010-",
     id: "",
     pw: "",
     carrier: "",
@@ -84,6 +84,26 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
       address,
       address_Detail,
     } = formData;
+
+
+    if (!people || !resident_Number || !phone_Number) {
+      alert("모든 필드를 입력하세요");
+      return;
+    }
+
+    // 주민등록번호 자릿수 검사 (예: 숫자 13자리, 6자리-7자리 형식)
+    const residentDigits = resident_Number.replace(/[^0-9]/g, "");
+    if (residentDigits.length !== 13) {
+      alert("주민등록번호는 13자리 숫자여야 합니다.");
+      return;
+    }
+
+    // 전화번호 자릿수 검사 (예: 숫자 11자리, 010-1234-5678 형태)
+    const phoneDigits = phone_Number.replace(/[^0-9]/g, "");
+    if (phoneDigits.length !== 11) {
+      alert("전화번호는 11자리 숫자여야 합니다.");
+      return;
+    }
 
     // 필수 필드 체크
     if (!people || !resident_Number || !phone_Number) {

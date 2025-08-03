@@ -28,6 +28,13 @@ export const updateEmployee = async (employee_Data) => {
       return { success: true, updatedList: [] }; // 예외 처리
     }
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+    return { success: true, updated: result.updated || employee_Data };
+>>>>>>> c66fd11173063976473653de3af95a0783d29d5a
+>>>>>>> 4b9716fed92023a39aac0c85bae08bca894b0642
   } catch (error) {
     console.error("업데이트 에러:", error);
     return { success: false, error: error.message };

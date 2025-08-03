@@ -16,6 +16,10 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
     address: "",
     address_Detail: ""
   });
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 4b9716fed92023a39aac0c85bae08bca894b0642
   const generateEmployeeNumber = useCallback(() => {
     if (!existingEmployees || existingEmployees.length === 0) return "E1000";
 
@@ -34,6 +38,29 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
     return `E${nextNumber.toString().padStart(4, "0")}`;
   }, [existingEmployees]);
 
+<<<<<<< HEAD
+=======
+=======
+
+  const generate_employee_Number = useCallback(() => {
+    if (!existingEmployees || existingEmployees.length === 0) return "E0001";
+
+    const numbers = existingEmployees
+      .map((e) => {
+        const empNum = e?.employee_number;
+        const match = empNum?.match(/^E(\d{4})$/);
+        return match ? parseInt(match[1]) : null;
+      })
+      .filter((num) => num !== null);
+
+    if (numbers.length === 0) return "E0001";
+
+    const max_Number = Math.max(...numbers);
+    const next_Number = max_Number + 1;
+    return `E${String(next_Number).padStart(4, "0")}`;
+  }, [existingEmployees]);
+>>>>>>> c66fd11173063976473653de3af95a0783d29d5a
+>>>>>>> 4b9716fed92023a39aac0c85bae08bca894b0642
 
   useEffect(() => {
     const new_Number = generate_employee_Number();

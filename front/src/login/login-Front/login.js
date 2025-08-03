@@ -9,74 +9,66 @@ import UserContext from "../js/userContext";
 const Login = () => {
     const { setUser, setEmployeeNumber, setUserData } = useContext(UserContext);
     const navigate = useNavigate();
-    const [id, setId] = useState("");
-    const [password, setPassword] = useState("");
-    const [admin_code, setadmin_code] = useState("");
+
+    const [adminId, setAdminId] = useState("");
+    const [adminPassword, setAdminPassword] = useState("");
+    const [adminCode, setAdminCode] = useState("");
+
+    const [userId, setUserId] = useState("");
+    const [userPassword, setUserPassword] = useState("");
+
     const [role, setRole] = useState("admin");
     const [errors, setErrors] = useState({
         idError: "",
         passwordError: "",
         admin_codeError: ""
     });
-    const [login_check_message, setlogin_check_message] = useState("");
-    const [fadeOut, setFadeOut] = useState(false);
 
-    const rgxCnd = {
-        adminId: /^[A-Za-z0-9]{4,16}$/,
-        adminPassword: /^[A-Za-z0-9]{4,14}$/,
-        adminOtp: /^\d{6}$/,  // 숫자 6자리
-        staffId: /^[A-Za-z0-9]{4,16}$/,
-        staffPw: /^[A-Za-z0-9]{4,14}$/
-    };
+    const [adminLoginError, setAdminLoginError] = useState("");
+    const [userLoginError, setUserLoginError] = useState("");
+    const [fade_out, setFadeOut] = useState(false);
 
-    const handleChange = (e) => {
-        const { id, value } = e.target;
-        switch (id) {
-            case "adminId":
-            case "staffId":
-                setId(value);
-                break;
-            case "adminPassword":
-            case "staffPw":
-                setPassword(value);
-                break;
-            case "adminOtp":
-                if (/^\d*$/.test(value)) { // 숫자만 입력 허용
-                    setadmin_code(value);
-                }
-                break;
-            default:
-                console.log("값이 입력되지 않음");
-        }
+    const validation_Patterns = {
+        admin_Id: /^[A-Za-z0-9]{4,16}$/,
+        admin_Password: /^[A-Za-z0-9]{4,14}$/,
+        admin_Otp: /^\d{6}$/,
+        user_Id: /^[A-Za-z0-9]{4,16}$/,
+        user_Pw: /^[A-Za-z0-9]{4,14}$/
     };
 
     const handlecheck = async (e) => {
         e.preventDefault();
 
+        setAdminLoginError("");
+        setUserLoginError("");
+
+        const currentId = role === "admin" ? adminId : userId;
+        const setId = role === "admin" ? setAdminId : setUserId;
+        const currentPassword = role === "admin" ? adminPassword : userPassword;
+        const setPassword = role === "admin" ? setAdminPassword : setUserPassword;
+
         const isValid = await validation({
-            id,
+            id: currentId,
             setId,
-            password,
+            password: currentPassword,
             setPassword,
-            admin_code,
-            setadmin_code,
+            admin_code: adminCode,
+            setadmin_code: setAdminCode,
             role,
-            rgxCnd,
+            validation_Patterns,
             setErrors
         });
 
         if (isValid.success) {
-            const loginsuccess = await HandleLogin(id, password, isValid.dataType, admin_code);
+            const loginsuccess = await HandleLogin(currentId, currentPassword, isValid.dataType, adminCode);
 
             if (loginsuccess.success === "admin") {
                 setFadeOut(true);
                 setUser("admin");
-                setUserData(loginsuccess.user_Data)
+                setUserData(loginsuccess.user_Data);
                 sessionStorage.setItem("userRole", "admin");
                 sessionStorage.setItem("userData", JSON.stringify(loginsuccess.user_Data));
-                setTimeout(() => {
-                    navigate('/adminPage');
-                }, 500);
+                setTimeout(() => navigate('/adminPage'), 500);
             } else if (loginsuccess.success === "user") {
                 setFadeOut(true);
                 setUser(loginsuccess.name);
@@ -84,22 +76,25 @@ const Login = () => {
                 sessionStorage.setItem("userRole", "user");
                 sessionStorage.setItem("userName", loginsuccess.name);
                 sessionStorage.setItem("employeeNumber", loginsuccess.employee_number);
-
-                setTimeout(() => {
-                    navigate('/data');
-                }, 500);
+                setTimeout(() => navigate('/data'), 500);
             } else {
-                setlogin_check_message("아이디 및 비밀번호, 인증코드가 틀렸습니다.");
+                if (role === "admin") {
+                    setAdminLoginError("아이디 및 비밀번호, 인증코드가 틀렸습니다.");
+                } else {
+                    setUserLoginError("아이디 및 비밀번호가 틀렸습니다.");
+                }
             }
         }
 
-        setId("");
-        setPassword("");
-        setadmin_code("");
+        setAdminId("");
+        setAdminPassword("");
+        setAdminCode("");
+        setUserId("");
+        setUserPassword("");
     };
 
     return (
-        <form className={`loginBK ${fadeOut ? 'fade-out' : ''}`} onSubmit={handlecheck}>
+        <form className={`loginBK ${fade_out ? 'fade-out' : ''}`} onSubmit={handlecheck}>
             <div className="userchoice">
                 <div className="userchoice_sub">
                     <motion.div
@@ -118,9 +113,9 @@ const Login = () => {
                     </motion.button>
                     <motion.button
                         type="button"
-                        className="Staff"
-                        onClick={() => setRole("staff")}
-                        animate={{ color: role === "staff" ? "#fff" : "#333" }}
+                        className="user"
+                        onClick={() => setRole("user")}
+                        animate={{ color: role === "user" ? "#fff" : "#333" }}
                         whileTap={{ scale: 0.9 }}
                     >
                         사원
@@ -140,75 +135,87 @@ const Login = () => {
                 <div className="admin_subbox">
                     <input
                         type="text"
-                        id="adminId"
+                        id="admin_Id"
                         className="id"
                         placeholder="아이디"
-                        value={id}
-                        onChange={handleChange}
+                        value={adminId}
+                        onChange={(e) => setAdminId(e.target.value)}
+                        onKeyDown={(e) => e.key === ' ' && e.preventDefault()}
                     />
                     <span className="error">{errors.idError}</span>
                 </div>
                 <div className="admin_subbox">
                     <input
                         type="password"
-                        id="adminPassword"
+                        id="admin_Password"
                         className="password"
                         placeholder="비밀번호"
-                        value={password}
-                        onChange={handleChange}
+                        value={adminPassword}
+                        onChange={(e) => setAdminPassword(e.target.value)}
+                        onKeyDown={(e) => e.key === ' ' && e.preventDefault()}
                     />
                     <span className="error">{errors.passwordError}</span>
                 </div>
                 <div className="admin_subbox">
                     <input
-                        type="text"
-                        id="adminOtp"
-                        className="otp"
-                        placeholder="인증코드 (6자리 숫자)"
-                        value={admin_code}
-                        onChange={handleChange}
-                        maxLength={6}
+                    type="password"
+                    id="admin_Otp"
+                    className="otp"
+                    placeholder="인증코드"
+                    value={adminCode}
+                    onChange={(e) => {
+                        const value = e.target.value;
+                        if (/^\d*$/.test(value)) {
+                        setAdminCode(value);
+                        }
+                    }}
+                    onKeyDown={(e) => e.key === ' ' && e.preventDefault()}
+                    maxLength={6}
+                    autoComplete="off"
+                    name="no-autocomplete-admin-otp"
                     />
                     <span className="error">{errors.admin_codeError}</span>
                 </div>
-                <div className="check_message" style={{ display: login_check_message ? 'flex' : 'none' }}>
-                    <span className="tooltip" style={{ color: 'red' }}>{login_check_message}</span>
+                <div className="check_message" style={{ display: adminLoginError ? 'flex' : 'none' }}>
+                    <span className="tooltip" style={{ color: 'red' }}>{adminLoginError}</span>
                 </div>
             </motion.div>
 
             {/* 사원 로그인 */}
             <motion.div
-                className="Staff-register"
+                className="user-register"
                 initial={{ opacity: 0, x: 20 }}
-                animate={role === "staff" ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
+                animate={role === "user" ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
-                style={{ display: role === "staff" ? "flex" : "none" }}
+                style={{ display: role === "user" ? "flex" : "none" }}
             >
                 <h1>사원</h1>
-                <div className="staff_subbox">
+                <div className="user_subbox">
                     <input
                         type="text"
-                        id="staffId"
+                        id="user_Id"
                         className="id"
                         placeholder="아이디"
-                        value={id}
-                        onChange={handleChange}
+                        value={userId}
+                        onChange={(e) => setUserId(e.target.value)}
+                        onKeyDown={(e) => e.key === ' ' && e.preventDefault()}
                     />
                     <span className="error">{errors.idError}</span>
                 </div>
-                <div className="staff_subbox">
+                <div className="user_subbox">
                     <input
                         type="password"
-                        id="staffPw"
+                        id="user_Pw"
                         className="password"
                         placeholder="비밀번호"
-                        value={password}
-                        onChange={handleChange}
+                        value={userPassword}
+                        onChange={(e) => setUserPassword(e.target.value)}
+                        onKeyDown={(e) => e.key === ' ' && e.preventDefault()}
                     />
                     <span className="error">{errors.passwordError}</span>
                 </div>
-                <div className="check_message" style={{ display: login_check_message ? 'flex' : 'none' }}>
-                    <span className="tooltip" style={{ color: 'red' }}>{login_check_message}</span>
+                <div className="check_message" style={{ display: userLoginError ? 'flex' : 'none' }}>
+                    <span className="tooltip" style={{ color: 'red' }}>{userLoginError}</span>
                 </div>
             </motion.div>
 
@@ -218,5 +225,3 @@ const Login = () => {
 };
 
 export default Login;
-
-

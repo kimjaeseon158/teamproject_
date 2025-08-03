@@ -1,16 +1,33 @@
 import React, { useState } from "react";
 
-const AddWagePanel = ({ onSave, onClose }) => {
+const Adddaily_PayPanel = ({ onSave, onClose }) => {
   const [company, setCompany] = useState("");
-  const [wage, setWage] = useState("");
+  const [daily_Pay, setdaily_Pay] = useState("");
+
+  // 숫자만, 0 이상 정수만 입력 허용하는 onChange 핸들러
+  const handleDailyPayChange = (e) => {
+    const value = e.target.value;
+    if (value === "") {
+      setdaily_Pay("");
+      return;
+    }
+    const numberValue = Number(value);
+    if (!Number.isNaN(numberValue) && Number.isInteger(numberValue) && numberValue >= 0) {
+      setdaily_Pay(value);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!company || !wage) {
+    if (!company.trim() || daily_Pay === "") {
       alert("회사명과 일급을 입력하세요.");
       return;
     }
-    onSave(company, wage);  // 저장 콜백 호출
+    if (!Number.isInteger(Number(daily_Pay)) || Number(daily_Pay) < 0) {
+      alert("일급은 0 이상의 정수만 입력 가능합니다.");
+      return;
+    }
+    onSave(company.trim(), Number(daily_Pay));
   };
 
   return (
@@ -24,8 +41,13 @@ const AddWagePanel = ({ onSave, onClose }) => {
         />
         <input
           placeholder="일급"
-          value={wage}
-          onChange={(e) => setWage(e.target.value)}
+          value={daily_Pay}
+          onChange={handleDailyPayChange}
+          min="0"
+          step="1"
+          onKeyDown={(e) => {
+            if (e.key === " ") e.preventDefault(); // 스페이스바 입력 차단
+          }}
         />
         <button type="button" onClick={handleSubmit}>저장</button>
         <button type="button" onClick={onClose}>취소</button>
@@ -34,4 +56,4 @@ const AddWagePanel = ({ onSave, onClose }) => {
   );
 };
 
-export default AddWagePanel;
+export default Adddaily_PayPanel;

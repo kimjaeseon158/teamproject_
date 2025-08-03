@@ -8,15 +8,17 @@ import { updateEmployee } from "../js/adminPageUpdate";
 import { fetchFilteredPeople } from "../js/adminPageLogic";
 import "../css/adminPage.css";
 import { useResizableTable } from "./adminResizableTable";
+import { formatResidentNumber ,formatPhoneNumber  } from "../js/utils";
 
-const initialSearchForm = {
+const initialsearch_Form = {
   employee_number: "",
   user_name: "",
   phone_number: "",
   resident_number: "",
   address: "",
-  sortKey: "",
-  sortDirection: "",
+  carrier: "",
+  sort_Key: "",
+  sort_Direction: "",
 };
 
 const AdminPage = () => {
@@ -25,18 +27,19 @@ const AdminPage = () => {
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
-  const [checkedItems, setCheckedItems] = useState({});
-  const [peopleData, setPeopleData] = useState([]);
-  const [searchForm, setSearchForm] = useState(initialSearchForm);
+  const [checked_Items, setchecked_Items] = useState({});
+  const [people_Data, setpeople_Data] = useState([]);
+  const [search_Form, setsearch_Form] = useState(initialsearch_Form);
 
   useEffect(() => {
-    if (userData && userData.length > 0 && peopleData.length === 0) {
-      setPeopleData(userData);
+    if (userData && userData.length > 0 && people_Data.length === 0) {
+      setpeople_Data(sortByEmployeeNumber(userData));
     }
-  }, [userData, peopleData]);
+
+  }, [userData, people_Data]);
 
   // 초기 열 너비 및 행 높이
-  const initialColumnWidths = {
+  const initial_Column_Widths = {
     employee_number: 150,
     user_name: 150,
     resident_number: 150,
@@ -45,27 +48,33 @@ const AdminPage = () => {
   };
 
   // 초기 행 높이 설정 (기본 40)
+<<<<<<< HEAD
   const initialRowHeights = {};
   (Array.isArray(peopleData) ? peopleData : []).forEach((p) => {
     initialRowHeights[p.employee_number] = 40;
+=======
+  const initial_Row_Heights = {};
+  people_Data.forEach((p) => {
+    initial_Row_Heights[p.employee_number] = 40;
+>>>>>>> c66fd11173063976473653de3af95a0783d29d5a
   });
   const {
-    columnWidths,
-    rowHeights,
+    column_Widths,
+    row_Heights,
     onColumnMouseDown,
     onRowMouseDown,
     handleColumnDoubleClick,
-    setRowHeights,
-  } = useResizableTable(initialColumnWidths, initialRowHeights);
+    setrow_Heights,
+  } = useResizableTable(initial_Column_Widths, initial_Row_Heights);
 
   useEffect(() => {
-    // peopleData 변경 시 행 높이 초기화
-    const resetHeights = {};
-    peopleData.forEach((p) => {
-      resetHeights[p.employee_number] = 40;
+    // people_Data 변경 시 행 높이 초기화
+    const reset_Heights = {};
+    people_Data.forEach((p) => {
+      reset_Heights[p.employee_number] = 40;
     });
-    setRowHeights(resetHeights);
-  }, [peopleData, setRowHeights]);
+    setrow_Heights(reset_Heights);
+  }, [people_Data, setrow_Heights]);
 
   const handleRowClick = (person) => {
     setSelectedPerson(person);
@@ -94,7 +103,7 @@ const AdminPage = () => {
   };
 
   const handleSaveNewPerson = (newPerson) => {
-    setPeopleData((prev) => [...prev, newPerson]);
+    setpeople_Data((prev) => [...prev, newPerson]);
     setShowAddModal(false);
   };
 
@@ -103,7 +112,7 @@ const AdminPage = () => {
   };
 
   const handleCheckboxChange = (employee_number) => {
-    setCheckedItems((prev) => ({
+    setchecked_Items((prev) => ({
       ...prev,
       [employee_number]: !prev[employee_number],
     }));
@@ -133,7 +142,7 @@ const handleDeleteSelected = async () => {
     }
   };
   const openSearchModal = () => {
-    setSearchForm(initialSearchForm);
+    setsearch_Form(initialsearch_Form);
     setShowSearchModal(true);
   };
 
@@ -141,50 +150,82 @@ const handleDeleteSelected = async () => {
     setShowSearchModal(false);
   };
 
-  const handleSearchFormChange = (e) => {
+  const handlesearch_FormChange = (e) => {
     const { name, value } = e.target;
-    setSearchForm((prev) => ({
+    let formatted_Value = value;
+ 
+    if (name === "resident_number") {
+      formatted_Value = formatResidentNumber(value);
+    } else if (name === "phone_number") {
+      formatted_Value = formatPhoneNumber(value);
+    }
+
+    setsearch_Form((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: formatted_Value,
     }));
   };
 
   const applySearch = async () => {
-    const { employee_number, user_name, phone_number, resident_number, address, sortKey, sortDirection } = searchForm;
+  const { employee_number, user_name, phone_number, resident_number, address, sort_Key, sort_Direction } = search_Form;
 
-    const filters = {};
-    if (employee_number.trim()) filters.employee_number = employee_number.trim();
-    if (user_name.trim()) filters.user_name = user_name.trim();
-    if (phone_number.trim()) filters.phone_number = phone_number.trim();
-    if (resident_number.trim()) filters.resident_number = resident_number.trim();
-    if (address.trim()) filters.address = address.trim();
+  if (
+    !employee_number.trim() &&
+    !user_name.trim() &&
+    !phone_number.trim() &&
+    !resident_number.trim() &&
+    !address.trim()
+  ) {
+    alert("검색어를 하나 이상 입력해주세요.");
+    return;
+  }
+  console.log(typeof employee_number)
+  const filters = {};
+  if (employee_number.trim()) filters.employee_number = employee_number.trim();
+  if (user_name.trim()) filters.user_name = user_name.trim();
+  if (phone_number.trim()) filters.phone_number = phone_number.trim();
+  if (resident_number.trim()) filters.resident_number = resident_number.trim();
+  if (address.trim()) filters.address = address.trim();
 
-    const sort = sortKey && sortDirection ? { key: sortKey, direction: sortDirection } : null;
+  const sort = sort_Key && sort_Direction ? { key: sort_Key, direction: sort_Direction } : null;
 
-    const result = await fetchFilteredPeople({ filters, sort });
-    setPeopleData(result);
-    closeSearchModal();
-  };
+  // 서버에서 실제 사람 배열만 받음
+  let result = await fetchFilteredPeople({ filters, sort });
+
+  if (sort && sort.key === "employee_number") {
+    result = sortByEmployeeNumber(result);
+    if (sort.direction === "desc") {
+      result = result.reverse();
+    }
+  } else if (!sort) {
+    result = sortByEmployeeNumber(result);
+  }
+  setpeople_Data(result);
+  closeSearchModal();
+};
+
+
 
   // 헤더 셀 렌더링
   const renderResizableTH = (label, colKey) => (
-    <th style={{ width: columnWidths[colKey], position: "relative" }}>
+    <th style={{ width: column_Widths[colKey], position: "relative" }}>
       {label}
       <div
         className="column-resizer"
         onMouseDown={(e) => onColumnMouseDown(e, colKey)}
-        onDoubleClick={() => handleColumnDoubleClick(colKey, peopleData)}
+        onDoubleClick={() => handleColumnDoubleClick(colKey, people_Data)}
       />
     </th>
   );
 
+
   return (
     <div className="adminPage_Bk">
-      <div style={{ marginBottom: 10 }}>
+      <div className="adminPage-btn">
         <AddButton onAdd={handleaddLow} />
         <button
           onClick={handleDeleteSelected}
-          disabled={Object.values(checkedItems).every((checked) => !checked)}
+          disabled={Object.values(checked_Items).every((checked) => !checked)}
           style={{ marginLeft: 10 }}
         >
           선택 삭제
@@ -206,13 +247,13 @@ const handleDeleteSelected = async () => {
           </tr>
         </thead>
         <tbody>
-          {peopleData.map((item) => (
+          {people_Data.map((item) => (
             <tr
               key={item.employee_number}
               onClick={() => handleRowClick(item)}
               style={{
                 cursor: "pointer",
-                height: rowHeights[item.employee_number] || 40,
+                height: row_Heights[item.employee_number] || 40,
                 position: "relative",
               }}
             >
@@ -220,7 +261,7 @@ const handleDeleteSelected = async () => {
                 <input
                   type="checkbox"
                   className="custom-checkbox"
-                  checked={!!checkedItems[item.employee_number]}
+                  checked={!!checked_Items[item.employee_number]}
                   onChange={() => handleCheckboxChange(item.employee_number)}
                 />
                 <div
@@ -228,11 +269,14 @@ const handleDeleteSelected = async () => {
                   onMouseDown={(e) => onRowMouseDown(e, item.employee_number)}
                 />
               </td>
-              <td style={{ width: columnWidths.employee_number }}>{item.employee_number}</td>
-              <td style={{ width: columnWidths.user_name }}>{item.user_name}</td>
-              <td style={{ width: columnWidths.resident_number }}>{item.resident_number}</td>
-              <td style={{ width: columnWidths.address }}>{item.address}</td>
-              <td style={{ width: columnWidths.phone_number }}>{item.phone_number}</td>
+              <td style={{ width: column_Widths.employee_number }}>{item.employee_number}</td>
+              <td style={{ width: column_Widths.user_name }}>{item.user_name}</td>
+              <td style={{ width: column_Widths.resident_number }}>{item.resident_number}</td>
+              <td style={{ width: column_Widths.address }}>{item.address}</td>
+              <td style={{ width: column_Widths.phone_number }}>
+                [&nbsp;{item.mobile_carrier}&nbsp;]     &nbsp;  
+                {item.phone_number}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -243,22 +287,22 @@ const handleDeleteSelected = async () => {
       )}
 
       {showAddModal && (
-        <AddPersonModal onSave={handleSaveNewPerson} onClose={handleCloseAddModal} existingEmployees={peopleData} />
+        <AddPersonModal onSave={handleSaveNewPerson} onClose={handleCloseAddModal} existingEmployees={people_Data} />
       )}
 
       {showSearchModal && (
         <div className="searchModal" onClick={closeSearchModal}>
-          <div className="searchModal__content" onClick={(e) => e.stopPropagation()}>
+          <div className="searchModal_content" onClick={(e) => e.stopPropagation()}>
             <h3>검색 / 정렬 조건 입력</h3>
             <label>
               사원 번호:
               <input
                 type="text"
                 name="employee_number"
-                value={searchForm.employee_number}
-                onChange={handleSearchFormChange}
+                value={search_Form.employee_number}
+                onChange={handlesearch_FormChange}
                 placeholder="사원번호 입력"
-                className="searchModal__input"
+                className="searchModal_input"
               />
             </label>
             <label>
@@ -266,10 +310,10 @@ const handleDeleteSelected = async () => {
               <input
                 type="text"
                 name="user_name"
-                value={searchForm.user_name}
-                onChange={handleSearchFormChange}
+                value={search_Form.user_name}
+                onChange={handlesearch_FormChange}
                 placeholder="이름 입력"
-                className="searchModal__input"
+                className="searchModal_input"
               />
             </label>
             <label>
@@ -277,10 +321,10 @@ const handleDeleteSelected = async () => {
               <input
                 type="text"
                 name="phone_number"
-                value={searchForm.phone_number}
-                onChange={handleSearchFormChange}
+                value={search_Form.phone_number}
+                onChange={handlesearch_FormChange}
                 placeholder="전화번호 입력"
-                className="searchModal__input"
+                className="searchModal_input"
               />
             </label>
             <label>
@@ -288,10 +332,10 @@ const handleDeleteSelected = async () => {
               <input
                 type="text"
                 name="resident_number"
-                value={searchForm.resident_number}
-                onChange={handleSearchFormChange}
+                value={search_Form.resident_number}
+                onChange={handlesearch_FormChange}
                 placeholder="주민등록번호 입력"
-                className="searchModal__input"
+                className="searchModal_input"
               />
             </label>
             <label>
@@ -299,21 +343,20 @@ const handleDeleteSelected = async () => {
               <input
                 type="text"
                 name="address"
-                value={searchForm.address}
-                onChange={handleSearchFormChange}
+                value={search_Form.address}
+                onChange={handlesearch_FormChange}
                 placeholder="주소 입력"
-                className="searchModal__input"
+                className="searchModal_input"
               />
             </label>
             <label>
               정렬 기준:
               <select
-                name="sortKey"
-                value={searchForm.sortKey}
-                onChange={handleSearchFormChange}
+                name="sort_Key"
+                value={search_Form.sort_Key}
+                onChange={handlesearch_FormChange}
                 className="searchModal__select"
               >
-                <option value="">선택 안함</option>
                 <option value="employee_number">사원 번호</option>
                 <option value="user_name">이름</option>
                 <option value="resident_number">주민등록번호</option>
@@ -324,22 +367,21 @@ const handleDeleteSelected = async () => {
             <label>
               정렬 방식:
               <select
-                name="sortDirection"
-                value={searchForm.sortDirection}
-                onChange={handleSearchFormChange}
+                name="sort_Direction"
+                value={search_Form.sort_Direction}
+                onChange={handlesearch_FormChange}
                 className="searchModal__select"
               >
-                <option value="">선택 안함</option>
                 <option value="asc">오름차순</option>
                 <option value="desc">내림차순</option>
               </select>
             </label>
 
-            <div className="searchModal__btnGroup">
-              <button onClick={applySearch} className="searchModal__btnApply">
+            <div className="searchModal_btnGroup">
+              <button onClick={applySearch} className="searchModal_btnApply">
                 적용
               </button>
-              <button onClick={closeSearchModal} className="searchModal__btnCancel">
+              <button onClick={closeSearchModal} className="searchModal_btnCancel">
                 취소
               </button>
             </div>

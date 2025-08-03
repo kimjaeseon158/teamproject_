@@ -23,7 +23,6 @@ const AdminInformation = ({ person, onClose, onSave }) => {
       </div>
     );
   }
-
   return (
     <div className="modal-backdrop">
       <div className="modal-content">
@@ -35,11 +34,11 @@ const AdminInformation = ({ person, onClose, onSave }) => {
           </div>
           <div>
             <label>이름: </label>
-            <span>{formData.user_name}</span>
+             <input name="user_name" value={formData.user_name || ""} onChange={handleChange} />
           </div>
           <div>
             <label>주민등록번호: </label>
-            <span>{formData.resident_number}</span>
+            <input name="resident_number" value={formData.resident_number || ""} onChange={handleChange} />
           </div>
           <div>
             <label>주소: </label>
@@ -47,7 +46,23 @@ const AdminInformation = ({ person, onClose, onSave }) => {
           </div>
           <div>
             <label>전화번호: </label>
-            <input name="phone_number" value={formData.phone_number || ""} onChange={handleChange} />
+            <select
+              name="mobile_carrier"
+              value={formData.mobile_carrier || ""}
+              onChange={handleChange}
+              style={{ margin: '6px', width : '60px' }}
+            >
+              <option value="">통신사 선택</option>
+              <option value="SKT">SKT</option>
+              <option value="KT">KT</option>
+              <option value="LGU+">LG U+</option>
+              <option value="알뜰폰">알뜰폰</option>
+            </select>
+            <input
+              name="phone_number"
+              value={formData.phone_number || ""}
+              onChange={handleChange}
+            />
           </div>
           <button type="submit">저장</button>
           <button type="button" className="closeBtn" onClick={onClose}>X</button>

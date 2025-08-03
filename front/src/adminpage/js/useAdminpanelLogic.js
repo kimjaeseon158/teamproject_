@@ -5,7 +5,7 @@ export function useAdminPanelLogic(initLocations, onClose) {
   const [locations, setLocations] = useState(initLocations);
   const [showAddPanel, setShowAddPanel] = useState(false);
 
-  const [wages, setWages] = useState(() => {
+  const [daily_Pay, setdaily_Pay] = useState(() => {
     const initial = {};
     initLocations.forEach((loc) => {
       initial[loc] = "";
@@ -13,8 +13,8 @@ export function useAdminPanelLogic(initLocations, onClose) {
     return initial;
   });
 
-  const handleWageChange = (location, value) => {
-    setWages((prev) => ({
+  const handledaily_PayChange = (location, value) => {
+    setdaily_Pay((prev) => ({
       ...prev,
       [location]: value,
     }));
@@ -22,7 +22,7 @@ export function useAdminPanelLogic(initLocations, onClose) {
 
   const handleDeletLocation = (locationDelet) => {
     setLocations((prev) => prev.filter((loc) => loc !== locationDelet));
-    setWages((prev) => {
+    setdaily_Pay((prev) => {
       const copy = { ...prev };
       delete copy[locationDelet];
       return copy;
@@ -33,7 +33,7 @@ export function useAdminPanelLogic(initLocations, onClose) {
     e.preventDefault();
     const payLoad = {
       data_type: "user_login_info",
-      data: wages,
+      data: daily_Pay,
     };
     try {
       const result = await Panel_PostData(payLoad);
@@ -44,21 +44,21 @@ export function useAdminPanelLogic(initLocations, onClose) {
     }
   };
 
-  const handleAddNewCompany = (company, wage) => {
+  const handleAddNewCompany = (company, daily_Pay) => {
     if (locations.includes(company)) {
       alert("이미 존재하는 회사입니다.");
       return;
     }
     setLocations((prev) => [...prev, company]);
-    setWages((prev) => ({ ...prev, [company]: wage }));
+    setdaily_Pay((prev) => ({ ...prev, [company]: daily_Pay }));
   };
 
   return {
     locations,
-    wages,
+    daily_Pay,
     showAddPanel,
     setShowAddPanel,
-    handleWageChange,
+    handledaily_PayChange,
     handleDeletLocation,
     handleSave,
     handleAddNewCompany,

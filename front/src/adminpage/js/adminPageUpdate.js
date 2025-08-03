@@ -1,9 +1,9 @@
-export const updateEmployee = async (employeeData) => {
+export const updateEmployee = async (employee_Data) => {
   try {
     console.log(employeeData)
     const body = {
       data_type: "user_info_update",
-      data: employeeData,
+      data: employee_Data,
     };
 
     const response = await fetch("http://localhost:8000/api/items/", {

@@ -1,32 +1,31 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import ItemSerializer, User_Login_InfoSerializer, Work_InfoSerializer, User_InfoSerializer
+from .serializers import User_Login_InfoSerializer, User_Work_InfoSerializer, User_InfoSerializer
 from .auth_utils import check_user_credentials, check_admin_credentials
 from .models import User_Login_Info
 
 class BaseModelHandler(APIView):
     def handle_data(self, data_type, data):
-        if data_type == 'item':
-            serializer = ItemSerializer(data=data)
-            if serializer.is_valid():
-                instance = serializer.save()
-                return serializer, instance
-            return None, serializer.errors
+        if data_type == 'user_login_info':
+            success                    = False
+            user_login_info_serializer = User_Login_InfoSerializer(data=data)
+            
+            if user_login_info_serializer.is_valid():
+                user_login_info_save = user_login_info_serializer.save()
+                success              = True
+                
+            data      = User_Login_Info.objects.all()
+            user_data = User_InfoSerializer(data, many=True)
+            return {'success': success, 'user_data' : user_data.data}, None
         
-        elif data_type == 'work_info':
-            serializer = Work_InfoSerializer(data=data)
-            if serializer.is_valid():
-                instance = serializer.save()
-                return serializer, instance
-            return None, serializer.errors
-
-        elif data_type == 'user_login_info':
-            serializer = User_Login_InfoSerializer(data=data)
-            if serializer.is_valid():
-                instance = serializer.save()
-                return serializer, instance
-            return None, serializer.errors
+        elif data_type == 'user_work_info':
+            user_work_info_serializer = User_Work_InfoSerializer(data=data)
+            
+            if user_work_info_serializer.is_valid():
+                work_info_save_instance = user_work_info_serializer.save()
+                return {'success': True}, None
+            return None, {'success': False}
         
         elif data_type == 'user_info_delete':
             employee_number = data.get('employee_number')
@@ -36,24 +35,24 @@ class BaseModelHandler(APIView):
                 
                 data      = User_Login_Info.objects.all()
                 user_data = User_InfoSerializer(data, many=True)
-                return {'success': True, 'message': '삭제 성공', 'user_data' : user_data.data}, None
+                return {'success': True, 'user_data' : user_data.data}, None
             except User_Login_Info.DoesNotExist:
-                return None, {'error': '해당 사용자가 존재하지 않습니다.'}
+                return None, {'success': False}
             
         elif data_type == 'user_info_update':
             employee_number = data.get('employee_number')
             try:
-                instance = User_Login_Info.objects.get(employee_number=employee_number)
-                serializer = User_Login_InfoSerializer(instance, data=data, partial=True)
-                if serializer.is_valid():
-                    updated_instance = serializer.save()
+                user                       = User_Login_Info.objects.get(employee_number=employee_number)
+                user_login_info_serializer = User_Login_InfoSerializer(user, data=data, partial=True)
+                if user_login_info_serializer.is_valid():
+                    user_info_update_save = user_login_info_serializer.save()
 
                     data      = User_Login_Info.objects.all()
                     user_data = User_InfoSerializer(data, many=True)
-                    return {'success': True, 'message': '업데이트 성공', 'user_data': user_data.data}, None
-                return None, serializer.errors
+                    return {'success': True, 'user_data': user_data.data}, None
+                return None, {'success': False}
             except User_Login_Info.DoesNotExist:
-                return None, {"error": f"User_Login_Info with id={employee_number} does not exist"}
+                return None, {'success': False}
     
         elif data_type == 'check_user_login':  # 'check_user_login으로 변경해야함'
              user_id  = data.get('id')
@@ -62,9 +61,9 @@ class BaseModelHandler(APIView):
              success, user_name, employee_number = check_user_credentials(user_id, password)
      
              if success:
-                 return {'success': True, 'message': 'Login successful', 'user_name': user_name, 'employee_number' : employee_number}, None
+                 return {'success': True, 'user_name': user_name, 'employee_number' : employee_number}, None
              else:
-                 return None, {'success': False, 'message': 'Invalid credentials'}
+                 return None, {'success': False}
              
         elif data_type == 'check_admin_login':
                  admin_id   = data.get('id')
@@ -74,13 +73,13 @@ class BaseModelHandler(APIView):
                  success, user_data = check_admin_credentials(admin_id, password, admin_code)
          
                  if success:
-                     return {'success': True, 'message': 'Login successful', 'user_data': user_data}, None
+                     return {'success': True, 'user_data': user_data}, None
                  else:
-                     return None, {'success': False, 'message': 'Invalid credentials'}
+                     return None, {'success': False}
                  
         elif data_type == 'table_filtering':
             filtering = data.get('filtering', {})  # 조건을 가져옵니다.
-            sorting    = data.get('sorting')  # 정렬 기준을 가져옵니다.
+            sorting   = data.get('sorting')        # 정렬 기준을 가져옵니다.
         
             try:
                 filters = {}
@@ -101,11 +100,9 @@ class BaseModelHandler(APIView):
         
                 result = list(queryset.values())
                 return {'success': True, 'data': result}, None
-        
             except Exception as e:
-                return None, {'error': str(e)}
-
-        return None, {'error': 'Unknown data_type'}
+                return None, {'success': False}
+        return None, {'success': False}
     
 
         

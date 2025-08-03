@@ -5,13 +5,21 @@ export const calculateDurationInHours = (start, finish) => {
   const startTotalMinutes = startH * 60 + startM;
   const finishTotalMinutes = finishH * 60 + finishM;
 
-  const diffMinutes = finishTotalMinutes - startTotalMinutes;
-  let hours = diffMinutes > 0 ? diffMinutes / 60 : 0;
+  let duration = finishTotalMinutes - startTotalMinutes;
 
-  if (hours > 4) hours -= 1;
-  return hours;
+  // 점심시간 범위
+  const lunchStart = 12 * 60; // 12:00
+  const lunchEnd = 13 * 60;   // 13:00
+
+  // 점심시간이 작업 시간 범위에 겹치는지 체크
+  const isLunchIncluded = startTotalMinutes < lunchEnd && finishTotalMinutes > lunchStart;
+
+  if (isLunchIncluded) {
+    duration -= 60; // 1시간 차감
+  }
+
+  return duration > 0 ? duration / 60 : 0;
 };
-
 export const convertHoursToHMS = (floatHours) => {
   const hours = Math.floor(floatHours);
   const minutes = Math.floor((floatHours - hours) * 60);
@@ -26,11 +34,21 @@ export const calculateDurationInHM = (start, end) => {
 
   const startDate = new Date(0, 0, 0, sh, sm);
   const endDate = new Date(0, 0, 0, eh, em);
-  const diffMs = endDate - startDate;
+
+  let diffMs = endDate - startDate;
 
   if (diffMs <= 0) return "";
 
-  const diffMins = Math.floor(diffMs / 1000 / 60);
+  const diffMinsTotal = Math.floor(diffMs / 1000 / 60);
+  let diffMins = diffMinsTotal;
+
+  // 5시간(300분) 이상이면 1시간(60분) 차감
+  if (diffMinsTotal >= 300) {
+    diffMins -= 60;
+  }
+
+  if (diffMins <= 0) return "";
+
   const hours = Math.floor(diffMins / 60);
   const minutes = diffMins % 60;
 

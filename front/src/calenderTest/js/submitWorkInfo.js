@@ -7,6 +7,7 @@ const submitWorkInfo = async ({
   totalWorkTime,
   location,
 }) => {
+  console.log(employeeNumber)
   const formattedDate = selectedDate instanceof Date
     ? selectedDate.toLocaleDateString()
     : `${selectedDate.formatted}`;
@@ -14,7 +15,7 @@ const submitWorkInfo = async ({
   const totalTimeString = totalWorkTime;
 
   const newRecord = {
-    data_type: "work_info",
+    data_type: "user_work_info",
     data: {
       user_name: user,
       work_start: `${formattedDate} ${startTime}:00`,
@@ -22,7 +23,7 @@ const submitWorkInfo = async ({
       total_time: totalTimeString,
       work_date: formattedDate,
       work_place: location,
-      employee_number: Number(employeeNumber),
+      employee_number: employeeNumber,
     },
   };
 

@@ -1,20 +1,22 @@
 // src/adminpage/js/useAddPersonLogic.js
 import { useEffect, useState, useCallback } from "react";
 import { Panel_PostData } from "./admnsdbPost";
+import { formatPhoneNumber, formatResidentNumber  } from "../js/utils";
 
 export function useAddPersonLogic(existingEmployees, onSave, onClose) {
   const [formData, setFormData] = useState({
-    employeeNumber: "",
+    employee_Number: "",
     people: "",
-    rsdnNmbr: "",
-    maskedRsdnNmbr: "",
-    phoneNumber: "",
+    resident_Number: "",
+    masked_Resident_Number: "",
+    phone_Number: "010-",
     id: "",
     pw: "",
-    carrier: "",  // 추가
+    carrier: "",
     address: "",
-    addressDetail: ""
+    address_Detail: ""
   });
+<<<<<<< HEAD
   const generateEmployeeNumber = useCallback(() => {
     if (!existingEmployees || existingEmployees.length === 0) return "E1000";
 
@@ -33,114 +35,151 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
     return `E${nextNumber.toString().padStart(4, "0")}`;
   }, [existingEmployees]);
 
+=======
+
+  const generate_employee_Number = useCallback(() => {
+    if (!existingEmployees || existingEmployees.length === 0) return "E0001";
+
+    const numbers = existingEmployees
+      .map((e) => {
+        const empNum = e?.employee_number;
+        const match = empNum?.match(/^E(\d{4})$/);
+        return match ? parseInt(match[1]) : null;
+      })
+      .filter((num) => num !== null);
+
+    if (numbers.length === 0) return "E0001";
+
+    const max_Number = Math.max(...numbers);
+    const next_Number = max_Number + 1;
+    return `E${String(next_Number).padStart(4, "0")}`;
+  }, [existingEmployees]);
+>>>>>>> c66fd11173063976473653de3af95a0783d29d5a
 
   useEffect(() => {
-    if (existingEmployees && existingEmployees.length >= 0) {
-      const newNumber = generateEmployeeNumber();
-      setFormData((prev) => ({ ...prev, employeeNumber: newNumber }));
-    }
-  }, [existingEmployees]);
+    const new_Number = generate_employee_Number();
+    setFormData((prev) => ({ ...prev, employee_Number: new_Number }));
+  }, [existingEmployees, generate_employee_Number]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // 주민등록번호 포맷
-    if (name === "rsdnNmbr") {
-      const clean = value.replace(/[^0-9]/g, "").slice(0, 13);
-      let formatted = clean;
-      if (clean.length > 6) {
-        formatted = clean.slice(0, 6) + "-" + clean.slice(6);
-      }
-
+    if (name === "resident_Number") {
+      const formatted = formatResidentNumber(value);
       setFormData((prev) => ({
         ...prev,
-        rsdnNmbr: formatted,
-        maskedRsdnNmbr: formatted,
+        resident_Number: formatted,
+        masked_Resident_Number: formatted,
       }));
     }
 
-    // 전화번호 포맷
-    else if (name === "phoneNumber") {
-      const clean = value.replace(/[^0-9]/g, "").slice(0, 11);
-      let formatted = clean;
-
-      if (clean.length >= 11) {
-        // 3-4-4 자리 완전한 번호
-        formatted = clean.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3");
-      } else if (clean.length >= 7) {
-        // 3-4-남은자리
-        formatted = clean.replace(/(\d{3})(\d{4})(\d*)/, (_, g1, g2, g3) => {
-          return g3 ? `${g1}-${g2}-${g3}` : `${g1}-${g2}`;
-        });
-      } else if (clean.length >= 4) {
-        // 3-남은자리
-        formatted = clean.replace(/(\d{3})(\d*)/, (_, g1, g2) => {
-          return g2 ? `${g1}-${g2}` : g1;
-        });
-      } else {
-        formatted = clean;
-      }
-
+    else if (name === "phone_Number") {
+      const formatted = formatPhoneNumber(value);
       setFormData((prev) => ({
         ...prev,
-        phoneNumber: formatted,
+        phone_Number: formatted,
       }));
     }
 
-    // 기본 처리
     else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      // 일반 입력 필드 처리
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { people, rsdnNmbr, phoneNumber, employeeNumber, id, pw, carrier, address, addressDetail } = formData;
 
-    if (!people || !rsdnNmbr || !phoneNumber) {
+    // formData에서 필요한 값들 비구조화 할당
+    const {
+      people,
+      resident_Number,
+      phone_Number,
+      employee_Number,
+      id,
+      pw,
+      carrier,
+      address,
+      address_Detail,
+    } = formData;
+
+
+    if (!people || !resident_Number || !phone_Number) {
       alert("모든 필드를 입력하세요");
       return;
     }
 
-    const fullData = {
-      people,
-      rsdnNmbr,
-      phoneNumber,
-      company: employeeNumber,
-      id,
-      pw,
-    };
+    // 주민등록번호 자릿수 검사 (예: 숫자 13자리, 6자리-7자리 형식)
+    const residentDigits = resident_Number.replace(/[^0-9]/g, "");
+    if (residentDigits.length !== 13) {
+      alert("주민등록번호는 13자리 숫자여야 합니다.");
+      return;
+    }
 
-    onSave(fullData);
+    // 전화번호 자릿수 검사 (예: 숫자 11자리, 010-1234-5678 형태)
+    const phoneDigits = phone_Number.replace(/[^0-9]/g, "");
+    if (phoneDigits.length !== 11) {
+      alert("전화번호는 11자리 숫자여야 합니다.");
+      return;
+    }
+
+    // 필수 필드 체크
+    if (!people || !resident_Number || !phone_Number) {
+      alert("모든 필드를 입력하세요");
+      return;
+    }
 
     const panel_post_data = {
       data_type: "user_login_info",
       data: {
-        employee_number: employeeNumber,
+        employee_number: employee_Number,
         user_name: people,
         user_id: id,
         password: pw,
-        phone_number: phoneNumber,
-        mobile_carrier : carrier,
-        resident_number: rsdnNmbr,
-        address : address + " " + addressDetail 
+        phone_number: phone_Number,
+        mobile_carrier: carrier,
+        resident_number: resident_Number,
+        address: address + " " + address_Detail,
       },
     };
 
     try {
       const result = await Panel_PostData(panel_post_data);
-      console.log("전송 성공", result);
-      onClose();
+      console.log("전송 응답:", result.data.success);
+
+      if (result.data.success === true) {
+
+        const newPerson = {
+          employee_number: employee_Number,
+          user_name: people,
+          phone_number: phone_Number,
+          mobile_carrier: carrier,
+          resident_number: resident_Number,
+          address: address + " " + address_Detail,
+        };
+        
+        onSave(newPerson);
+        alert("사원 정보 등록이 완료 되었습니다.");
+        onClose();
+      } else {
+        alert("등록 실패" );
+        onClose();
+      }
     } catch (err) {
-      console.error(err);
-      alert("데이터 전송 실패");
+      console.error("서버 오류:", err);
+      alert("서버 요청 실패: 네트워크 또는 서버 오류입니다.");
     }
   };
+
 
   return {
     formData,
     handleChange,
-    handleSubmitBase: handleSubmit, 
+    handleSubmitBase: handleSubmit,
     setFormData,
   };
 }
+

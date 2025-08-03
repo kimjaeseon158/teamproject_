@@ -3,7 +3,7 @@ import AdminInformation from "./adminInformation";
 import AddPersonModal from "./addPersonModal";
 import AddButton from "./adminAddBtn";
 import UserContext from "../../login/js/userContext";
-import { deleteEmployee } from "../js/adminPageDelete";
+import { deleteEmployees } from "../js/adminPageDelete";
 import { updateEmployee } from "../js/adminPageUpdate";
 import { fetchFilteredPeople } from "../js/adminPageLogic";
 import "../css/adminPage.css";
@@ -48,16 +48,11 @@ const AdminPage = () => {
   };
 
   // 초기 행 높이 설정 (기본 40)
-<<<<<<< HEAD
-  const initialRowHeights = {};
-  (Array.isArray(peopleData) ? peopleData : []).forEach((p) => {
-    initialRowHeights[p.employee_number] = 40;
-=======
   const initial_Row_Heights = {};
   people_Data.forEach((p) => {
     initial_Row_Heights[p.employee_number] = 40;
->>>>>>> c66fd11173063976473653de3af95a0783d29d5a
   });
+
   const {
     column_Widths,
     row_Heights,
@@ -84,40 +79,21 @@ const AdminPage = () => {
     setSelectedPerson(null);
   };
 
-  
   const handleSave = async (updatedPerson) => {
     const result = await updateEmployee(updatedPerson);
 
     if (result.success) {
-<<<<<<< HEAD
-      setPeopleData(result.updatedList);  // 항상 배열임을 보장!
-=======
-<<<<<<< HEAD
-      setPeopleData(result.updatedList);  // 항상 배열임을 보장!
-=======
       setpeople_Data((prev) =>
         prev.map((item) =>
           item.employee_number === updatedPerson.employee_number ? updatedPerson : item
         )
       );
->>>>>>> c66fd11173063976473653de3af95a0783d29d5a
->>>>>>> 4b9716fed92023a39aac0c85bae08bca894b0642
       alert("업데이트 성공!");
       setSelectedPerson(null);
     } else {
       alert("업데이트 실패: " + (result.error || "서버 오류"));
     }
   };
-<<<<<<< HEAD
-
-
-  const handleaddLow = () => {
-=======
-<<<<<<< HEAD
-
-
-  const handleaddLow = () => {
-=======
   const sortByEmployeeNumber = (data) => {
   // 사원번호가 문자열일 경우, 숫자로 변환해 정렬
     return data.slice().sort((a, b) => {
@@ -127,8 +103,6 @@ const AdminPage = () => {
     });
   };
     const handleaddLow = () => {
->>>>>>> c66fd11173063976473653de3af95a0783d29d5a
->>>>>>> 4b9716fed92023a39aac0c85bae08bca894b0642
     setShowAddModal(true);
   };
 
@@ -148,34 +122,6 @@ const AdminPage = () => {
     }));
   };
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 4b9716fed92023a39aac0c85bae08bca894b0642
-const handleDeleteSelected = async () => {
-    // 체크된 사원번호 중 첫 번째 하나만 가져오기
-    const employeeNumber = Object.entries(checkedItems)
-      .find(([_, checked]) => checked)?.[0];  // 체크된 첫번째 키(empNo) 혹은 undefined
-
-    if (!employeeNumber) {
-      alert("삭제할 사원을 선택해주세요.");
-      return;
-    }
-
-    // 단일 삭제 함수 호출 (deleteEmployee - 한 명만 삭제)
-    const result = await deleteEmployee(employeeNumber);
-
-    console.log("deleteEmployee 함수 반환:", result);
-
-    if (result.success) {
-      setPeopleData(result.user_data);
-      setCheckedItems({});
-      alert("삭제가 완료되었습니다.");
-    } else {
-      alert("삭제 중 오류가 발생했습니다: " + result.message);
-<<<<<<< HEAD
-=======
-=======
   const handleDeleteSelected = async () => {
     const employee_Numbers = Object.entries(checked_Items)
       .filter(([_, checked]) => checked)
@@ -192,10 +138,9 @@ const handleDeleteSelected = async () => {
       alert("삭제가 완료되었습니다.");
     } else {
       console.error("삭제 실패:", result.failedItems || result.error);
->>>>>>> c66fd11173063976473653de3af95a0783d29d5a
->>>>>>> 4b9716fed92023a39aac0c85bae08bca894b0642
     }
   };
+
   const openSearchModal = () => {
     setsearch_Form(initialsearch_Form);
     setShowSearchModal(true);

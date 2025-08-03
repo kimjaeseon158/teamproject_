@@ -1,42 +1,3 @@
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 4b9716fed92023a39aac0c85bae08bca894b0642
-export const deleteEmployee = async (employeeNumber) => {
-  try {
-    const body = {
-      data_type: "user_info_delete",
-      data: { employee_number: employeeNumber },
-    };
-
-    const response = await fetch("http://127.0.0.1:8000/api/items/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      throw new Error(`서버 오류: ${response.status} ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    console.log("서버 응답:", result);
-
-    if (!result.data?.success) {
-      return { success: false, message: result.data?.message || "삭제 실패", user_data: [] };
-    }
-
-    return {
-      success: true,
-      message: result.data.message || "삭제 성공",
-      user_data: result.data.user_data || [],
-    };
-  } catch (error) {
-    console.error("삭제 요청 에러:", error);
-    return { success: false, message: error.message, user_data: [] };
-<<<<<<< HEAD
-=======
-=======
 export const deleteEmployees = async (employee_Numbers) => {
   try {
     const results = []; // 각 사원의 삭제 결과 저장
@@ -110,7 +71,5 @@ export const deleteEmployees = async (employee_Numbers) => {
   } catch (err) {
     console.error("삭제 중 예외 발생:", err);
     return { success: false, error: err.message };
->>>>>>> c66fd11173063976473653de3af95a0783d29d5a
->>>>>>> 4b9716fed92023a39aac0c85bae08bca894b0642
   }
 };

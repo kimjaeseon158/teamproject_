@@ -16,31 +16,6 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
     address: "",
     address_Detail: ""
   });
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 4b9716fed92023a39aac0c85bae08bca894b0642
-  const generateEmployeeNumber = useCallback(() => {
-    if (!existingEmployees || existingEmployees.length === 0) return "E1000";
-
-    // 숫자만 뽑아서 배열 생성
-    const numbers = existingEmployees
-      .filter((e) => e.employeeNumber)
-      .map((e) => {
-        const numPart = e.employeeNumber.replace(/[^0-9]/g, "");
-        return parseInt(numPart, 10) || 0;
-      });
-
-    const maxNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
-    const nextNumber = maxNumber === 0 ? 1000 : maxNumber + 1;
-
-    // 숫자를 4자리로 패딩하고 E 붙임
-    return `E${nextNumber.toString().padStart(4, "0")}`;
-  }, [existingEmployees]);
-
-<<<<<<< HEAD
-=======
-=======
 
   const generate_employee_Number = useCallback(() => {
     if (!existingEmployees || existingEmployees.length === 0) return "E0001";
@@ -59,8 +34,6 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
     const next_Number = max_Number + 1;
     return `E${String(next_Number).padStart(4, "0")}`;
   }, [existingEmployees]);
->>>>>>> c66fd11173063976473653de3af95a0783d29d5a
->>>>>>> 4b9716fed92023a39aac0c85bae08bca894b0642
 
   useEffect(() => {
     const new_Number = generate_employee_Number();
@@ -154,7 +127,26 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
 
     try {
       const result = await Panel_PostData(panel_post_data);
-      console.log("전송 성공", result);
+      console.log("전송 응답:", result.data.success);
+
+      if (result.data.success === true) {
+
+        const newPerson = {
+          employee_number: employee_Number,
+          user_name: people,
+          phone_number: phone_Number,
+          mobile_carrier: carrier,
+          resident_number: resident_Number,
+          address: address + " " + address_Detail,
+        };
+        
+        onSave(newPerson);
+        alert("사원 정보 등록이 완료 되었습니다.");
+        onClose();
+      } else {
+        alert("등록 실패" );
+        onClose();
+      }
     } catch (err) {
       console.error("서버 오류:", err);
       alert("서버 요청 실패: 네트워크 또는 서버 오류입니다.");
@@ -169,4 +161,3 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
     setFormData,
   };
 }
-

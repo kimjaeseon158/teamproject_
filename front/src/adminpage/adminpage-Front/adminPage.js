@@ -10,6 +10,18 @@ import "../css/adminPage.css";
 import { useResizableTable } from "./adminResizableTable";
 import { formatResidentNumber ,formatPhoneNumber  } from "../js/utils";
 
+
+import {
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  Checkbox,
+  Box,
+} from "@chakra-ui/react";
+
 const initialsearch_Form = {
   employee_number: "",
   user_name: "",
@@ -234,53 +246,111 @@ const AdminPage = () => {
           검색 / 정렬
         </button>
       </div>
+      <Table
+        variant="simple"
+        size="sm"
+        sx={{
+          "th, td": {
+            py: "2px",
+            px: "2px",
+            fontSize: "sm",
+            height: "28px",
+            textAlign: "center",
+          },
+        }}
+      >
+        <Thead>
+          <Tr>
+            <Th w="20px" textAlign="center" /> {/* 체크박스 너비 고정 */}
+            <Th w={column_Widths.employee_number}>사원 번호</Th>
+            <Th w={column_Widths.user_name}>이름</Th>
+            <Th w={column_Widths.resident_number}>주민등록번호</Th>
+            <Th w={column_Widths.address}>주소</Th>
+            <Th w={column_Widths.phone_number}>전화번호</Th>
+          </Tr>
+        </Thead>
 
-      <table>
-        <thead>
-          <tr>
-            <th style={{ width: 30 }}></th>
-            {renderResizableTH("사원 번호", "employee_number")}
-            {renderResizableTH("이름", "user_name")}
-            {renderResizableTH("주민등록번호", "resident_number")}
-            {renderResizableTH("주소", "address")}
-            {renderResizableTH("전화번호", "phone_number")}
-          </tr>
-        </thead>
-        <tbody>
+        <Tbody>
           {people_Data.map((item) => (
-            <tr
+            <Tr
               key={item.employee_number}
               onClick={() => handleRowClick(item)}
-              style={{
-                cursor: "pointer",
-                height: row_Heights[item.employee_number] || 40,
-                position: "relative",
-              }}
+              _hover={{ bg: "gray.100" }}
+              cursor="pointer"
+              h="28px"
+              position="relative"
             >
-              <td style={{ width: 30 }} onClick={(e) => e.stopPropagation()}>
-                <input
-                  type="checkbox"
-                  className="custom-checkbox"
-                  checked={!!checked_Items[item.employee_number]}
-                  onChange={() => handleCheckboxChange(item.employee_number)}
-                />
-                <div
-                  className="row-resizer"
-                  onMouseDown={(e) => onRowMouseDown(e, item.employee_number)}
-                />
-              </td>
-              <td style={{ width: column_Widths.employee_number }}>{item.employee_number}</td>
-              <td style={{ width: column_Widths.user_name }}>{item.user_name}</td>
-              <td style={{ width: column_Widths.resident_number }}>{item.resident_number}</td>
-              <td style={{ width: column_Widths.address }}>{item.address}</td>
-              <td style={{ width: column_Widths.phone_number }}>
-                [&nbsp;{item.mobile_carrier}&nbsp;]     &nbsp;  
-                {item.phone_number}
-              </td>
-            </tr>
+              <Td w="20px" onClick={(e) => e.stopPropagation()} px="1">
+                <Box
+                  position="relative"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <Checkbox
+                    size="sm"
+                    isChecked={!!checked_Items[item.employee_number]}
+                    onChange={() => handleCheckboxChange(item.employee_number)}
+                       sx={{
+                        "& .chakra-checkbox__control": {
+                          width: "16px",
+                          height: "16px",
+                          borderRadius: "4px",
+                          m: 0,
+                        },
+                        "& .chakra-checkbox__label": {
+                          display: "none", // 텍스트 숨김
+                        },
+                        lineHeight: "1",
+                        p: 0,
+                        m: 0,
+                      }}
+                  />
+                  {/* 리사이저 핸들 */}
+                  <Box
+                    className="row-resizer"
+                    onMouseDown={(e) => onRowMouseDown(e, item.employee_number)}
+                    position="absolute"
+                    right={0}
+                    top={0}
+                    bottom={0}
+                    width="4px"
+                    cursor="col-resize"
+                  />
+                </Box>
+              </Td>
+
+              {/* 나머지 셀 */}
+              <Td>
+                <Box borderRadius="md" px="2" py="0.5" textAlign="center">
+                  {item.employee_number}
+                </Box>
+              </Td>
+              <Td>
+                <Box borderRadius="md" px="2" py="0.5" textAlign="center">
+                  {item.user_name}
+                </Box>
+              </Td>
+              <Td>
+                <Box borderRadius="md" px="2" py="0.5" textAlign="center">
+                  {item.resident_number}
+                </Box>
+              </Td>
+              <Td>
+                <Box borderRadius="md" px="2" py="0.5" textAlign="center">
+                  {item.address}
+                </Box>
+              </Td>
+              <Td>
+                <Box borderRadius="md" px="2" py="0.5" textAlign="center">
+                  [&nbsp;{item.mobile_carrier}&nbsp;]&nbsp;{item.phone_number}
+                </Box>
+              </Td>
+            </Tr>
           ))}
-        </tbody>
-      </table>
+        </Tbody>
+      </Table>
+
 
       {selectedPerson && (
         <AdminInformation person={selectedPerson} onClose={handleCloseModal} onSave={handleSave} />

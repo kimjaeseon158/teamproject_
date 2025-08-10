@@ -1,15 +1,45 @@
 import React, { useEffect, useState } from "react";
+import { Calendar, momentLocalizer } from "react-big-calendar";
+import moment from "moment";
+import {
+  Box,
+  Button,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  FormControl,
+  FormLabel,
+  Input,
+  useDisclosure,
+  useToast,
+  Select,
+} from "@chakra-ui/react";
 
-const CLIENT_ID = "150097873816-sjo6bj7v2u1n7usqkn5us3eq878665f8.apps.googleusercontent.com";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+
+import { login } from "../js/googleAuth"; // 구글 로그인 기능 분리한 파일 임포트
+
+const localizer = momentLocalizer(moment);
+
 const API_KEY = "AIzaSyCGRWAVWoRJuCslUhRcoWxMJkyIZ7jUJRw";
-const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
-const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
+const DISCOVERY_DOCS = [
+  "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest",
+];
 
 export default function Overview() {
+  const [calendars, setCalendars] = useState([]);
   const [events, setEvents] = useState([]);
   const [gapiLoaded, setGapiLoaded] = useState(false);
   const [accessToken, setAccessToken] = useState(null);
+  const [selectedCalendarId, setSelectedCalendarId] = useState(null);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [newEvent, setNewEvent] = useState({ title: "", start: "", end: "" });
+  const toast = useToast();
 
+  // 1. gapi 스크립트 로드 및 초기화
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://apis.google.com/js/api.js";
@@ -23,80 +53,265 @@ export default function Overview() {
       });
     };
     document.body.appendChild(script);
-
-    // GIS 스크립트는 index.html에서 미리 추가해 주세요
   }, []);
 
+  // 캘린더 목록 불러오기
   useEffect(() => {
-    if (!gapiLoaded) return;
-
-    // GIS 로그인 버튼 초기화
-    window.google.accounts.id.initialize({
-      client_id: CLIENT_ID,
-      callback: handleCredentialResponse,
-      // auto_select: false,
-    });
-
-    window.google.accounts.id.renderButton(
-      document.getElementById("googleSignInDiv"),
-      { theme: "outline", size: "large" }
-    );
-  }, [gapiLoaded]);
-
-  // 로그인 후 ID 토큰을 받아서 access token 요청
-  function handleCredentialResponse(response) {
-    const id_token = response.credential;
-
-    // access token 요청
-    window.google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: SCOPES,
-      callback: (tokenResponse) => {
-        if (tokenResponse.error) {
-          console.error("토큰 요청 오류:", tokenResponse);
-          return;
-        }
-        setAccessToken(tokenResponse.access_token);
-      },
-    }).requestAccessToken({ prompt: 'consent' }); // 사용자 동의 UI 강제 표시
-  }
-
-  useEffect(() => {
-    if (!accessToken) return;
-
-    // gapi에 토큰 직접 세팅 (비공식 API)
+    if (!gapiLoaded || !accessToken) return;
     window.gapi.client.setToken({ access_token: accessToken });
+    window.gapi.client.calendar.calendarList
+      .list()
+      .then((response) => {
+        const items = response.result.items || [];
+        setCalendars(items);
+        if (items.length > 0) setSelectedCalendarId(items[0].id);
+      })
+      .catch((e) => {
+        console.error("캘린더 목록 불러오기 실패:", e);
+      });
+  }, [gapiLoaded, accessToken]);
 
-    // 캘린더 이벤트 불러오기
-    window.gapi.client.calendar.events.list({
-      calendarId: "primary",
-      timeMin: new Date().toISOString(),
-      showDeleted: false,
-      singleEvents: true,
-      maxResults: 10,
-      orderBy: "startTime",
-    }).then(response => {
-      setEvents(response.result.items || []);
-    }).catch(e => {
-      console.error("캘린더 이벤트 불러오기 실패:", e);
-    });
-  }, [accessToken]);
+  // 이벤트 불러오기
+  useEffect(() => {
+    if (!gapiLoaded || !accessToken || !selectedCalendarId) return;
+
+    window.gapi.client.calendar.events
+      .list({
+        calendarId: selectedCalendarId,
+        timeMin: new Date().toISOString(),
+        showDeleted: false,
+        singleEvents: true,
+        maxResults: 100,
+        orderBy: "startTime",
+      })
+      .then((response) => {
+        const fetchedEvents = response.result.items || [];
+        const formattedEvents = fetchedEvents.map((e) => ({
+          id: e.id,
+          title: e.summary || "(제목 없음)",
+          start: new Date(e.start.dateTime || e.start.date),
+          end: new Date(e.end.dateTime || e.end.date),
+        }));
+        setEvents(formattedEvents);
+      })
+      .catch((e) => {
+        console.error("이벤트 불러오기 실패:", e);
+      });
+  }, [gapiLoaded, accessToken, selectedCalendarId]);
+
+  // 이벤트 등록 함수
+  const addEvent = () => {
+    if (!newEvent.title || !newEvent.start || !newEvent.end) {
+      toast({
+        title: "모든 필드를 입력하세요",
+        status: "warning",
+        duration: 2000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    const event = {
+      summary: newEvent.title,
+      start: { dateTime: new Date(newEvent.start).toISOString() },
+      end: { dateTime: new Date(newEvent.end).toISOString() },
+    };
+
+    window.gapi.client.calendar.events
+      .insert({
+        calendarId: selectedCalendarId,
+        resource: event,
+      })
+      .then(() => {
+        toast({
+          title: "이벤트가 등록되었습니다",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+        onClose();
+        setNewEvent({ title: "", start: "", end: "" });
+        // 이벤트 다시 불러오기
+        return window.gapi.client.calendar.events.list({
+          calendarId: selectedCalendarId,
+          timeMin: new Date().toISOString(),
+          showDeleted: false,
+          singleEvents: true,
+          maxResults: 100,
+          orderBy: "startTime",
+        });
+      })
+      .then((response) => {
+        const fetchedEvents = response.result.items || [];
+        const formattedEvents = fetchedEvents.map((e) => ({
+          id: e.id,
+          title: e.summary || "(제목 없음)",
+          start: new Date(e.start.dateTime || e.start.date),
+          end: new Date(e.end.dateTime || e.end.date),
+        }));
+        setEvents(formattedEvents);
+      })
+      .catch((error) => {
+        toast({
+          title: "이벤트 등록 실패",
+          description: error.message,
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      });
+  };
 
   return (
-    <div>
-      <h2>Google Calendar Events</h2>
-      <div id="googleSignInDiv"></div>
+    <Box
+      p={6}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        boxSizing: "border-box",
+      }}
+    >
+      {/* 상단: 로그인, 캘린더 선택, 캘린더 */}
+      <Box
+        flex="2" // 상단 영역 좀 더 넓게
+        mb={4}
+        border="1px solid #ddd"
+        borderRadius="8px"
+        overflow="hidden"
+        display="flex"
+        flexDirection="column"
+      >
+        {!accessToken && (
+          <Button
+            colorScheme="blue"
+            onClick={() => login(setAccessToken, toast)}
+            m={4}
+            width="130px"
+          >
+            구글 로그인하기
+          </Button>
+        )}
 
-      {events.length === 0 ? (
-        <p>로그인 후 이벤트가 표시됩니다.</p>
-      ) : (
-        <ul>
-          {events.map(event => {
-            const start = event.start.dateTime || event.start.date;
-            return <li key={event.id}>{start} - {event.summary}</li>;
-          })}
-        </ul>
-      )}
-    </div>
+        {calendars.length > 0 && (
+          <FormControl m={4} maxW="200px">
+            <FormLabel>캘린더 선택</FormLabel>
+            <Select
+              value={selectedCalendarId || ""}
+              onChange={(e) => setSelectedCalendarId(e.target.value)}
+            >
+              {calendars.map((cal) => (
+                <option key={cal.id} value={cal.id}>
+                  {cal.summary}
+                </option>
+              ))}
+            </Select>
+          </FormControl>
+        )}
+
+        {/* 일정 등록 모달 열기 버튼 */}
+        <Button
+          colorScheme="blue"
+          onClick={onOpen}
+          m={4}
+          disabled={!accessToken}
+          width="130px"
+        >
+          일정 등록하기
+        </Button>
+
+        <Box flex="1" p={4} style={{ minHeight: 0 }}>
+          <Calendar
+            localizer={localizer}
+            events={events}
+            startAccessor="start"
+            endAccessor="end"
+            style={{ height: "100%" }}
+          />
+        </Box>
+      </Box>
+
+      {/* 하단 좌우 분할 영역 */}
+      <Box
+        flex="1" // 하단 영역은 상단의 절반 높이 정도
+        display="flex"
+        gap={4}
+        border="1px solid #ddd"
+        borderRadius="8px"
+        overflow="hidden"
+      >
+        {/* 좌측: 총 지출액 */}
+        <Box
+          flex="1"
+          bg="#f9f9f9"
+          p={4}
+          overflowY="auto"
+          display="flex"
+          flexDirection="column"
+          justifyContent="center"
+          alignItems="center"
+        >
+          <h3>총 지출액</h3>
+          <p style={{ fontSize: "2rem", fontWeight: "bold" }}>₩123,456</p>
+        </Box>
+
+        {/* 우측: 승인 대기중 */}
+        <Box
+          flex="2" // 승인 대기중 영역은 좌측보다 넓게 잡기
+          bg="#f0f0f0"
+          p={4}
+          overflowY="auto"
+          display="flex"
+          flexDirection="column"
+        >
+          <h3>승인 대기중</h3>
+          <ul style={{ marginTop: 10, paddingLeft: 20 }}>
+            {/* 승인 대기중 리스트 예시 */}
+            <li>요청 1</li>
+            <li>요청 2</li>
+            <li>요청 3</li>
+          </ul>
+        </Box>
+      </Box>
+
+      {/* 일정 등록 모달 */}
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>일정 등록</ModalHeader>
+          <ModalBody>
+            <FormControl mb={3}>
+              <FormLabel>제목</FormLabel>
+              <Input
+                value={newEvent.title}
+                onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+              />
+            </FormControl>
+            <FormControl mb={3}>
+              <FormLabel>시작 시간</FormLabel>
+              <Input
+                type="datetime-local"
+                value={newEvent.start}
+                onChange={(e) => setNewEvent({ ...newEvent, start: e.target.value })}
+              />
+            </FormControl>
+            <FormControl mb={3}>
+              <FormLabel>종료 시간</FormLabel>
+              <Input
+                type="datetime-local"
+                value={newEvent.end}
+                onChange={(e) => setNewEvent({ ...newEvent, end: e.target.value })}
+              />
+            </FormControl>
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={addEvent} disabled={!accessToken}>
+              등록
+            </Button>
+            <Button onClick={onClose}>취소</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </Box>
   );
 }

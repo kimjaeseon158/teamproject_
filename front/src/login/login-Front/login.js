@@ -87,7 +87,7 @@ const Login = () => {
         setUserData(loginsuccess.user_Data);
         sessionStorage.setItem("userRole", "admin");
         sessionStorage.setItem("userData", JSON.stringify(loginsuccess.user_Data));
-        setTimeout(() => navigate("/adminPage"), 500);
+        setTimeout(() => navigate("/dashboard"), 500);
       } else if (loginsuccess.success === "user") {
         setFadeOut(true);
         setUser(loginsuccess.name);

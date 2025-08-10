@@ -4,6 +4,7 @@ import './index.css';
 import Login from './login/login-Front/login';
 import Calendar from './calenderTest/calenderFront/calender';
 import AdminPage from './adminpage/adminpage-Front/adminPage';
+import Dashboard from "./dashboard/dashboard"; 
 import AdminInformation from './adminpage/adminpage-Front/adminInformation';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -32,14 +33,15 @@ const Root = () => {
                 </RequireAuth>
               }
             />
+            {/* 대시보드 라우트 (기존 /adminpage 대신) */}
             <Route
-              path="/adminpage"
+              path="/dashboard/*"
               element={
                 <RequireAuth>
-                  <AdminPage />
+                  <Dashboard />
                 </RequireAuth>
               }
-            />
+              />
             <Route path="/admin-info" element={<AdminInformation />} />
           </Routes>
         </BrowserRouter>

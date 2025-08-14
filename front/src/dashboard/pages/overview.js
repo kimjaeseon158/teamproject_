@@ -22,6 +22,7 @@ import {
 
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { login } from "../js/googleAuth";
+import FinanceChart from "../components/FinalCahart"; // 추가
 
 const localizer = momentLocalizer(moment);
 const API_KEY = "AIzaSyCGRWAVWoRJuCslUhRcoWxMJkyIZ7jUJRw";
@@ -47,7 +48,6 @@ export default function Overview() {
   const [isEditing, setIsEditing] = useState(false);
   const toast = useToast();
 
-  // 날짜 포맷 변환 함수 (Date → yyyy-MM-ddTHH:mm)
   const formatDateForInput = (date) => {
     const d = new Date(date);
     const pad = (n) => String(n).padStart(2, "0");
@@ -126,7 +126,6 @@ export default function Overview() {
       });
       return;
     }
-
     const resource = {
       summary: modalEvent.title,
       description: modalEvent.description,
@@ -134,7 +133,6 @@ export default function Overview() {
       start: { dateTime: new Date(modalEvent.start).toISOString() },
       end: { dateTime: new Date(modalEvent.end).toISOString() },
     };
-
     window.gapi.client.calendar.events
       .insert({
         calendarId: selectedCalendarId,
@@ -208,7 +206,7 @@ export default function Overview() {
   };
 
   return (
-    <Box p={6} style={{ display: "flex", flexDirection: "column", height: "100vh", boxSizing: "border-box" }}>
+    <Box p={6} style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       {/* 상단 */}
       <Box mb={4} border="1px solid #ddd" borderRadius="8px" p={4}>
         <Flex justify="space-between" align="center" mb={4}>
@@ -270,9 +268,10 @@ export default function Overview() {
 
       {/* 하단 */}
       <Flex flex="1" gap={4} border="1px solid #ddd" borderRadius="8px" overflow="hidden">
-        <Box flex="2" bg="#f9f9f9" p={4} display="flex" flexDirection="column" justifyContent="center" alignItems="center">
+        <Box flex="2" bg="#f9f9f9" p={4} display="flex" flexDirection="column" alignItems="center">
           <h3>총 지출액</h3>
           <p style={{ fontSize: "2rem", fontWeight: "bold" }}>₩123,456</p>
+          <FinanceChart /> {/* 그래프 */}
         </Box>
         <Box flex="1" bg="#f0f0f0" p={4} overflowY="auto" display="flex" flexDirection="column">
           <h3>승인 대기중</h3>

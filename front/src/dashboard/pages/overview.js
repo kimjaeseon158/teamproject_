@@ -268,20 +268,59 @@ export default function Overview() {
 
       {/* 하단 */}
       <Flex flex="1" gap={4} border="1px solid #ddd" borderRadius="8px" overflow="hidden">
-        <Box flex="2" bg="#f9f9f9" p={4} display="flex" flexDirection="column" alignItems="center">
+        <Box
+          flex="2"
+          bg="#f9f9f9"
+          p={4}
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          position="relative"  // <- 추가
+        >
           <h3>총 지출액</h3>
           <p style={{ fontSize: "2rem", fontWeight: "bold" }}>₩123,456</p>
           <FinanceChart /> {/* 그래프 */}
+
+          {/* 오른쪽 위 상세보기 버튼 */}
+          <Button
+            size="sm"
+            position="absolute"
+            top="10px"
+            right="10px"
+            onClick={() => window.location.href = "/dashboard/total-sales"}
+          >
+            상세보기
+          </Button>
         </Box>
-        <Box flex="1" bg="#f0f0f0" p={4} overflowY="auto" display="flex" flexDirection="column">
+        <Box
+          flex="1"
+          bg="#f0f0f0"
+          p={4}
+          overflowY="auto"
+          display="flex"
+          flexDirection="column"
+          position="relative" // <- 추가
+        >
           <h3>승인 대기중</h3>
+          
           <ul style={{ marginTop: 10, paddingLeft: 20 }}>
             <li>요청 1</li>
             <li>요청 2</li>
             <li>요청 3</li>
           </ul>
+
+          {/* 오른쪽 위 버튼 */}
+          <Button
+            size="sm"
+            position="absolute"
+            top="10px"
+            right="10px"
+            onClick={() => window.location.href = "/dashboard/approval"}
+          >
+            상세보기
+          </Button>
         </Box>
-      </Flex>
+              </Flex>
 
       {/* 모달 */}
       <Modal isOpen={isOpen} onClose={onClose} isCentered>

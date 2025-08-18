@@ -1,7 +1,8 @@
 import React from "react";
+import { Box, Button } from "@chakra-ui/react";
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
@@ -19,17 +20,30 @@ const FinanceChart = () => {
   ];
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={data}>
-        <CartesianGrid stroke="#f5f5f5" />
-        <XAxis dataKey="month" />
-        <YAxis />
-        <Tooltip />
-        <Legend />
-        <Line type="monotone" dataKey="income" stroke="#82ca9d" strokeWidth={2} name="수입" />
-        <Line type="monotone" dataKey="expense" stroke="#ff7f7f" strokeWidth={2} name="지출" />
-      </LineChart>
-    </ResponsiveContainer>
+    <Box position="relative" w="100%" h="350px">
+      {/* 차트 */}
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} barCategoryGap="30%" barGap={10}>
+          <CartesianGrid stroke="#f5f5f5" />
+          <XAxis dataKey="month" tickLine={false} />
+          <YAxis tickLine={false} />
+          <Tooltip />
+          <Legend />
+          <Bar
+            dataKey="income"
+            fill="#82ca9d"
+            name="수입"
+            barSize={40}
+          />
+          <Bar
+            dataKey="expense"
+            fill="#ff7f7f"
+            name="지출"
+            barSize={40}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </Box>
   );
 };
 

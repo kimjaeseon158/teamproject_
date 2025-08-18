@@ -9,7 +9,7 @@ import { fetchFilteredPeople } from "../js/adminPageLogic";
 import "../css/adminPage.css";
 import { useResizableTable } from "./adminResizableTable";
 import { formatResidentNumber ,formatPhoneNumber  } from "../js/utils";
-
+import { FaPlus, FaTrash, FaSearch } from "react-icons/fa";
 
 import {
   Table,
@@ -20,6 +20,8 @@ import {
   Td,
   Checkbox,
   Box,
+  IconButton, 
+  Tooltip 
 } from "@chakra-ui/react";
 
 const initialsearch_Form = {
@@ -216,6 +218,14 @@ const AdminPage = () => {
   closeSearchModal();
 };
 
+const toggleAll = () => {
+  const allChecked = Object.values(checked_Items).every((c) => c);
+  const newChecked = {};
+  people_Data.forEach((p) => {
+    newChecked[p.employee_number] = !allChecked; // 모두 선택 또는 모두 해제
+  });
+  setchecked_Items(newChecked);
+};
 
 
   // 헤더 셀 렌더링
@@ -234,123 +244,76 @@ const AdminPage = () => {
   return (
     <div className="adminPage_Bk">
       <div className="adminPage-btn">
-        <AddButton onAdd={handleaddLow} />
-        <button
-          onClick={handleDeleteSelected}
-          disabled={Object.values(checked_Items).every((checked) => !checked)}
-          style={{ marginLeft: 10 }}
-        >
-          선택 삭제
-        </button>
-        <button onClick={openSearchModal} style={{ marginLeft: 10 }}>
-          검색 / 정렬
-        </button>
+        <AddButton
+          onAdd={handleaddLow}
+          onDelete={handleDeleteSelected}
+          onSearch={openSearchModal}
+          disableDelete={Object.values(checked_Items).every((c) => !c)}
+        />
       </div>
-      <Table
-        variant="simple"
-        size="sm"
-        sx={{
-          "th, td": {
-            py: "2px",
-            px: "2px",
-            fontSize: "sm",
-            height: "28px",
-            textAlign: "center",
-          },
-        }}
-      >
-        <Thead>
-          <Tr>
-            <Th w="20px" textAlign="center" /> {/* 체크박스 너비 고정 */}
-            <Th w={column_Widths.employee_number}>사원 번호</Th>
-            <Th w={column_Widths.user_name}>이름</Th>
-            <Th w={column_Widths.resident_number}>주민등록번호</Th>
-            <Th w={column_Widths.address}>주소</Th>
-            <Th w={column_Widths.phone_number}>전화번호</Th>
-          </Tr>
-        </Thead>
+      <Box width="100%" overflowX="auto" p={4} bg="#f9f9f9" borderRadius="md">
+        <Table
+          variant="simple"
+          size="md"
+          sx={{
+            "th, td": {
+              py: "8px", // 세로 여백
+              px: "12px", // 가로 여백
+              fontSize: "md",
+              textAlign: "center",
+            },
+          }}
+        >
+          <Thead>
+            <Tr>
+              <Th w="60px" textAlign="center">선택</Th>
+              <Th minWidth="120px">사원 번호</Th>
+              <Th minWidth="120px">이름</Th>
+              <Th minWidth="150px">주민등록번호</Th>
+              <Th minWidth="200px">주소</Th>
+              <Th minWidth="150px">전화번호</Th>
+            </Tr>
+          </Thead>
 
-        <Tbody>
-          {people_Data.map((item) => (
-            <Tr
-              key={item.employee_number}
-              onClick={() => handleRowClick(item)}
-              _hover={{ bg: "gray.100" }}
-              cursor="pointer"
-              h="28px"
-              position="relative"
-            >
-              <Td w="20px" onClick={(e) => e.stopPropagation()} px="1">
-                <Box
-                  position="relative"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                >
+          <Tbody>
+            {people_Data.map((item) => (
+              <Tr
+                key={item.employee_number}
+                onClick={() => handleRowClick(item)}
+                _hover={{ bg: "gray.100" }}
+                cursor="pointer"
+                position="relative"
+              >
+                <Td w="60px" onClick={(e) => e.stopPropagation()} px="2">
                   <Checkbox
-                    size="sm"
+                    size="md"
                     isChecked={!!checked_Items[item.employee_number]}
                     onChange={() => handleCheckboxChange(item.employee_number)}
-                       sx={{
-                        "& .chakra-checkbox__control": {
-                          width: "16px",
-                          height: "16px",
-                          borderRadius: "4px",
-                          m: 0,
-                        },
-                        "& .chakra-checkbox__label": {
-                          display: "none", // 텍스트 숨김
-                        },
-                        lineHeight: "1",
-                        p: 0,
-                        m: 0,
-                      }}
+                    sx={{
+                      "& .chakra-checkbox__control": {
+                        width: "20px",
+                        height: "20px",
+                        borderRadius: "6px",
+                      },
+                      "& .chakra-checkbox__label": {
+                        display: "none",
+                      },
+                    }}
                   />
-                  {/* 리사이저 핸들 */}
-                  <Box
-                    className="row-resizer"
-                    onMouseDown={(e) => onRowMouseDown(e, item.employee_number)}
-                    position="absolute"
-                    right={0}
-                    top={0}
-                    bottom={0}
-                    width="4px"
-                    cursor="col-resize"
-                  />
-                </Box>
-              </Td>
+                </Td>
 
-              {/* 나머지 셀 */}
-              <Td>
-                <Box borderRadius="md" px="2" py="0.5" textAlign="center">
-                  {item.employee_number}
-                </Box>
-              </Td>
-              <Td>
-                <Box borderRadius="md" px="2" py="0.5" textAlign="center">
-                  {item.user_name}
-                </Box>
-              </Td>
-              <Td>
-                <Box borderRadius="md" px="2" py="0.5" textAlign="center">
-                  {item.resident_number}
-                </Box>
-              </Td>
-              <Td>
-                <Box borderRadius="md" px="2" py="0.5" textAlign="center">
-                  {item.address}
-                </Box>
-              </Td>
-              <Td>
-                <Box borderRadius="md" px="2" py="0.5" textAlign="center">
-                  [&nbsp;{item.mobile_carrier}&nbsp;]&nbsp;{item.phone_number}
-                </Box>
-              </Td>
-            </Tr>
-          ))}
-        </Tbody>
-      </Table>
-
+                <Td minWidth="120px">{item.employee_number}</Td>
+                <Td minWidth="120px">{item.user_name}</Td>
+                <Td minWidth="150px">{item.resident_number}</Td>
+                <Td minWidth="200px">{item.address}</Td>
+                <Td minWidth="150px">
+                  [{item.mobile_carrier}] {item.phone_number}
+                </Td>
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      </Box>
 
       {selectedPerson && (
         <AdminInformation person={selectedPerson} onClose={handleCloseModal} onSave={handleSave} />

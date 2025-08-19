@@ -16,19 +16,19 @@ import {
   FormControl,
   FormLabel,
   Input,
+  Tag,
   useDisclosure,
   useToast,
 } from "@chakra-ui/react";
 
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { login } from "../js/googleAuth";
-import FinanceChart from "../components/FinalCahart"; // 추가
+import FinanceChart from "../components/FinalCahart"; // 그래프 컴포넌트
+import { employees } from "../js/employeeData";
 
 const localizer = momentLocalizer(moment);
 const API_KEY = "AIzaSyCGRWAVWoRJuCslUhRcoWxMJkyIZ7jUJRw";
-const DISCOVERY_DOCS = [
-  "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest",
-];
+const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
 
 export default function Overview() {
   const [calendars, setCalendars] = useState([]);
@@ -70,7 +70,7 @@ export default function Overview() {
     document.body.appendChild(script);
   }, []);
 
-  // 캘린더 목록
+  // 캘린더 목록 불러오기
   useEffect(() => {
     if (!gapiLoaded || !accessToken) return;
     window.gapi.client.setToken({ access_token: accessToken });
@@ -115,99 +115,12 @@ export default function Overview() {
     fetchEvents();
   }, [gapiLoaded, accessToken, selectedCalendarId]);
 
-  // 이벤트 등록
-  const addEvent = () => {
-    if (!modalEvent.title || !modalEvent.start || !modalEvent.end) {
-      toast({
-        title: "모든 필드를 입력하세요",
-        status: "warning",
-        duration: 2000,
-        isClosable: true,
-      });
-      return;
-    }
-    const resource = {
-      summary: modalEvent.title,
-      description: modalEvent.description,
-      location: modalEvent.location,
-      start: { dateTime: new Date(modalEvent.start).toISOString() },
-      end: { dateTime: new Date(modalEvent.end).toISOString() },
-    };
-    window.gapi.client.calendar.events
-      .insert({
-        calendarId: selectedCalendarId,
-        resource,
-      })
-      .then(() => {
-        toast({ title: "등록 완료", status: "success", duration: 2000, isClosable: true });
-        onClose();
-        setModalEvent({ id: "", title: "", description: "", location: "", start: "", end: "" });
-        fetchEvents();
-      })
-      .catch((e) => toast({ title: "등록 실패", description: e.message, status: "error" }));
-  };
-
-  // 이벤트 수정
-  const editEvent = () => {
-    const resource = {
-      summary: modalEvent.title,
-      description: modalEvent.description,
-      location: modalEvent.location,
-      start: { dateTime: new Date(modalEvent.start).toISOString() },
-      end: { dateTime: new Date(modalEvent.end).toISOString() },
-    };
-    window.gapi.client.calendar.events
-      .update({
-        calendarId: selectedCalendarId,
-        eventId: modalEvent.id,
-        resource,
-      })
-      .then(() => {
-        toast({ title: "수정 완료", status: "success", duration: 2000, isClosable: true });
-        onClose();
-        setModalEvent({ id: "", title: "", description: "", location: "", start: "", end: "" });
-        fetchEvents();
-      })
-      .catch((e) => toast({ title: "수정 실패", description: e.message, status: "error" }));
-  };
-
-  // 이벤트 삭제
-  const deleteEvent = () => {
-    window.gapi.client.calendar.events
-      .delete({ calendarId: selectedCalendarId, eventId: modalEvent.id })
-      .then(() => {
-        toast({ title: "삭제 완료", status: "success", duration: 2000, isClosable: true });
-        onClose();
-        setModalEvent({ id: "", title: "", description: "", location: "", start: "", end: "" });
-        fetchEvents();
-      })
-      .catch((e) => toast({ title: "삭제 실패", description: e.message, status: "error" }));
-  };
-
-  // 이벤트 클릭
-  const handleEventClick = (event) => {
-    setModalEvent({
-      id: event.id,
-      title: event.title,
-      description: event.description,
-      location: event.location,
-      start: formatDateForInput(event.start),
-      end: formatDateForInput(event.end),
-    });
-    setIsEditing(true);
-    onOpen();
-  };
-
-  // 새 이벤트 클릭
-  const handleNewEvent = () => {
-    setModalEvent({ id: "", title: "", description: "", location: "", start: "", end: "" });
-    setIsEditing(false);
-    onOpen();
-  };
+  // 🔹 Overview에 표시할 대기중 사원
+  const pendingEmployees = employees.filter((emp) => emp.status === "대기중");
 
   return (
     <Box p={6} style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
-      {/* 상단 */}
+      {/* 상단 캘린더 영역 */}
       <Box mb={4} border="1px solid #ddd" borderRadius="8px" p={4}>
         <Flex justify="space-between" align="center" mb={4}>
           {!accessToken && (
@@ -228,7 +141,11 @@ export default function Overview() {
               </Select>
             </FormControl>
           )}
-          <Button colorScheme="blue" onClick={handleNewEvent} disabled={!accessToken}>
+          <Button colorScheme="blue" onClick={() => {
+            setModalEvent({ id: "", title: "", description: "", location: "", start: "", end: "" });
+            setIsEditing(false);
+            onOpen();
+          }} disabled={!accessToken}>
             일정 등록하기
           </Button>
         </Flex>
@@ -245,7 +162,18 @@ export default function Overview() {
               selectable
               views={["month", "week", "day"]}
               defaultView="month"
-              onSelectEvent={handleEventClick}
+              onSelectEvent={(event) => {
+                setModalEvent({
+                  id: event.id,
+                  title: event.title,
+                  description: event.description,
+                  location: event.location,
+                  start: formatDateForInput(event.start),
+                  end: formatDateForInput(event.end),
+                });
+                setIsEditing(true);
+                onOpen();
+              }}
             />
           </Box>
 
@@ -266,22 +194,12 @@ export default function Overview() {
         </Flex>
       </Box>
 
-      {/* 하단 */}
+      {/* 하단 영역 */}
       <Flex flex="1" gap={4} border="1px solid #ddd" borderRadius="8px" overflow="hidden">
-        <Box
-          flex="2"
-          bg="#f9f9f9"
-          p={4}
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          position="relative"  // <- 추가
-        >
+        <Box flex="2" bg="#f9f9f9" p={4} display="flex" flexDirection="column" alignItems="center" position="relative">
           <h3>총 지출액</h3>
           <p style={{ fontSize: "2rem", fontWeight: "bold" }}>₩123,456</p>
-          <FinanceChart /> {/* 그래프 */}
-
-          {/* 오른쪽 위 상세보기 버튼 */}
+          <FinanceChart />
           <Button
             size="sm"
             position="absolute"
@@ -292,24 +210,10 @@ export default function Overview() {
             상세보기
           </Button>
         </Box>
-        <Box
-          flex="1"
-          bg="#f0f0f0"
-          p={4}
-          overflowY="auto"
-          display="flex"
-          flexDirection="column"
-          position="relative" // <- 추가
-        >
-          <h3>승인 대기중</h3>
-          
-          <ul style={{ marginTop: 10, paddingLeft: 20 }}>
-            <li>요청 1</li>
-            <li>요청 2</li>
-            <li>요청 3</li>
-          </ul>
 
-          {/* 오른쪽 위 버튼 */}
+        {/* 승인 대기중 사원 표시 */}
+        <Box flex="1" bg="#f0f0f0" p={4} overflowY="auto" display="flex" flexDirection="column" position="relative">
+          <h3>승인 대기중</h3>
           <Button
             size="sm"
             position="absolute"
@@ -319,8 +223,17 @@ export default function Overview() {
           >
             상세보기
           </Button>
+          <ul style={{ marginTop: 10, paddingLeft: 10 }}>
+            {pendingEmployees.map((emp) => (
+              <li key={emp.id} style={{ marginBottom: "12px" }}>
+                <strong>{emp.name}</strong><br/>
+                <span>사번: {emp.employeeNumber} / 신청일: {emp.date}</span><br/>
+                <Tag size="sm" colorScheme="yellow">{emp.status}</Tag>
+              </li>
+            ))}
+          </ul>
         </Box>
-              </Flex>
+      </Flex>
 
       {/* 모달 */}
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
@@ -353,11 +266,11 @@ export default function Overview() {
           <ModalFooter>
             {isEditing ? (
               <>
-                <Button colorScheme="blue" mr={3} onClick={editEvent}>수정</Button>
-                <Button colorScheme="red" mr={3} onClick={deleteEvent}>삭제</Button>
+                <Button colorScheme="blue" mr={3}>수정</Button>
+                <Button colorScheme="red" mr={3}>삭제</Button>
               </>
             ) : (
-              <Button colorScheme="blue" mr={3} onClick={addEvent}>등록</Button>
+              <Button colorScheme="blue" mr={3}>등록</Button>
             )}
             <Button onClick={onClose}>취소</Button>
           </ModalFooter>

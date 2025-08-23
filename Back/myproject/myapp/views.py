@@ -44,23 +44,29 @@ class CheckAdminLoginAPIView(APIView):
             return Response({'success': False}, status=status.HTTP_400_BAD_REQUEST)
 
 class UserLoginInfoAPIView(APIView):
-    permission_classes = [AllowAny]  # 로그인은 인증 없이 접근 가능
-
-
+    permission_classes = [AllowAny]
 
     def post(self, request):
         data = request.data
         serializer = User_Login_InfoSerializer(data=data)
         if serializer.is_valid():
-            serializer.save()
-            success = True     
-        else:
-            success = False
+            user_instance = serializer.save()
+            
+            # JWT 토큰 생성
+            refresh = RefreshToken.for_user(user_instance)
+            access = refresh.access_token
+
             all_data = User_Login_Info.objects.all()
             user_data = User_InfoSerializer(all_data, many=True)
 
+            return Response({
+                'success': True,
+                'user_data': user_data.data,
+                'access': str(access),
+                'refresh': str(refresh)
+            })
 
-        return Response({'success': success, 'user_data': user_data.data}), None 
+        return Response({'success': False})
 
 # ----------------------
 # 2 데이터 처리 뷰

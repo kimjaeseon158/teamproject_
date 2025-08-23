@@ -20,9 +20,9 @@ export async function fetchFilteredPeople(queryParams) {
     });
 
     const result = await res.json();
-    console.log(result)
-    if (Array.isArray(result?.data?.data)) {
-      return result.data.data;
+    console.log(result.data)
+    if (Array.isArray(result?.data)) {
+      return result.data;
     } else {
       console.warn("예상하지 않은 응답 구조:", result);
       return [];

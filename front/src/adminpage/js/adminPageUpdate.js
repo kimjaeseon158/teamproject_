@@ -9,7 +9,7 @@ export const updateEmployee = async (employee_Data) => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(employee_Data),
       credentials: "include"
     });
 

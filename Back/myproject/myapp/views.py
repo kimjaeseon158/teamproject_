@@ -1,6 +1,9 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+
 from .serializers import User_Login_InfoSerializer, User_Work_InfoSerializer, User_InfoSerializer
 from .auth_utils import check_user_credentials, check_admin_credentials
 from .models import User_Login_Info
@@ -17,14 +20,18 @@ class BaseModelHandler(APIView):
                 
             data      = User_Login_Info.objects.all()
             user_data = User_InfoSerializer(data, many=True)
-            return {'success': success, 'user_data' : user_data.data}, None
+            return {'success'   : success, 
+                    'user_data' : user_data.data
+            }, None
         
         elif data_type == 'user_work_info':
             user_work_info_serializer = User_Work_InfoSerializer(data=data)
             
             if user_work_info_serializer.is_valid():
                 work_info_save_instance = user_work_info_serializer.save()
-                return {'success': True}, None
+                
+                return {'success': True,
+                }, None
             return None, {'success': False}
         
         elif data_type == 'user_info_delete':
@@ -35,7 +42,9 @@ class BaseModelHandler(APIView):
                 
                 data      = User_Login_Info.objects.all()
                 user_data = User_InfoSerializer(data, many=True)
-                return {'success': True, 'user_data' : user_data.data}, None
+                return {'success'   : True, 
+                        'user_data' : user_data.data
+                }, None
             except User_Login_Info.DoesNotExist:
                 return None, {'success': False}
             
@@ -49,33 +58,45 @@ class BaseModelHandler(APIView):
 
                     data      = User_Login_Info.objects.all()
                     user_data = User_InfoSerializer(data, many=True)
-                    return {'success': True, 'user_data': user_data.data}, None
+                    return {'success'  : True, 
+                            'user_data': user_data.data
+                    }, None
                 return None, {'success': False}
             except User_Login_Info.DoesNotExist:
                 return None, {'success': False}
     
-        elif data_type == 'check_user_login':  # 'check_user_login으로 변경해야함'
+        elif data_type == 'check_user_login':
              user_id  = data.get('id')
              password = data.get('password')
      
              success, user_name, employee_number = check_user_credentials(user_id, password)
      
              if success:
-                 return {'success': True, 'user_name': user_name, 'employee_number' : employee_number}, None
+                return {'success'         : True, 
+                        'user_name'       : user_name, 
+                        'employee_number' : employee_number
+                }, None
              else:
-                 return None, {'success': False}
+                return None, {'success': False}
              
         elif data_type == 'check_admin_login':
-                 admin_id   = data.get('id')
-                 password   = data.get('password')
-                 admin_code = data.get('admin_code')
-         
-                 success, user_data = check_admin_credentials(admin_id, password, admin_code)
-         
-                 if success:
-                     return {'success': True, 'user_data': user_data}, None
-                 else:
-                     return None, {'success': False}
+                admin_id   = data.get('id')
+                password   = data.get('password')
+                admin_code = data.get('admin_code')
+        
+                success, user_data = check_admin_credentials(admin_id, password, admin_code)
+ 
+                if success:
+                    refresh = RefreshToken.for_user(user)
+                    
+                    return {
+                       'success'   : True,
+                       'user_data' : user_data,
+                       'access'    : str(refresh.access_token),
+                       'refresh'   : str(refresh),
+                    }, None
+                else:
+                   return None, {'success': False}
                  
         elif data_type == 'table_filtering':
             filtering = data.get('filtering', {})  # 조건을 가져옵니다.
@@ -99,7 +120,9 @@ class BaseModelHandler(APIView):
                     queryset = queryset.order_by(sorting)
         
                 result = list(queryset.values())
-                return {'success': True, 'data': result}, None
+                return {'success': True, 
+                        'data': result
+                }, None
             except Exception as e:
                 return None, {'success': False}
         return None, {'success': False}
@@ -108,6 +131,8 @@ class BaseModelHandler(APIView):
         
 
 class ItemUserProfileHandler(BaseModelHandler):
+    permission_classes = [IsAuthenticated]
+    
     def post(self, request):
         print("받은 데이터:", request.data)
 
@@ -122,8 +147,8 @@ class ItemUserProfileHandler(BaseModelHandler):
                 serializer.data if hasattr(serializer, 'data') else serializer
             )
             return Response({
-                'message': f'{data_type} 처리 완료!',
-                'data': response_data
+                'message' : f'{data_type} 처리 완료!',
+                'data'    : response_data
             }, status=status.HTTP_200_OK)
 
         return Response(instance, status=status.HTTP_400_BAD_REQUEST)

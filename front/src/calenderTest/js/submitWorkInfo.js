@@ -15,8 +15,6 @@ const submitWorkInfo = async ({
   const totalTimeString = totalWorkTime;
 
   const newRecord = {
-    data_type: "user_work_info",
-    data: {
       user_name: user,
       work_start: `${formattedDate} ${startTime}:00`,
       work_end: `${formattedDate} ${finishTime}:00`,
@@ -24,10 +22,9 @@ const submitWorkInfo = async ({
       work_date: formattedDate,
       work_place: location,
       employee_number: employeeNumber,
-    },
   };
 
-  const response = await fetch("http://127.0.0.1:8000/api/items/", {
+  const response = await fetch("http://127.0.0.1:8000/api/user_work_info/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

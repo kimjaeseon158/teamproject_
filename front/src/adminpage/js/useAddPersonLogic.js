@@ -112,8 +112,6 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
     }
 
     const panel_post_data = {
-      data_type: "user_login_info",
-      data: {
         employee_number: employee_Number,
         user_name: people,
         user_id: id,
@@ -122,7 +120,6 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
         mobile_carrier: carrier,
         resident_number: resident_Number,
         address: address + " " + address_Detail,
-      },
     };
 
     try {

@@ -1,11 +1,10 @@
 export const updateEmployee = async (employee_Data) => {
   try {
     const body = {
-      data_type: "user_info_update",
-      data: employee_Data,
+      employee_Data,
     };
 
-    const response = await fetch("http://localhost:8000/api/items/", {
+    const response = await fetch("http://localhost:8000/api/user_info_update/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

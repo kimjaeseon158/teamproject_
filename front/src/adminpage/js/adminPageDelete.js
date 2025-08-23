@@ -6,15 +6,12 @@ export const deleteEmployees = async (employee_Numbers) => {
 
     for (const empNo of employee_Numbers) {
       const body = {
-        data_type: "user_info_delete",
-        data: {
           employee_number: empNo, // 서버에서 요구하는 구조
-        },
       };
 
       console.log("DELETE 요청 바디:", body);
 
-      const response = await fetch("http://localhost:8000/api/items/", {
+      const response = await fetch("http://localhost:8000/api/user_info_delete/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

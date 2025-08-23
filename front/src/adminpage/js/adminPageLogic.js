@@ -1,8 +1,6 @@
 export async function fetchFilteredPeople(queryParams) {
   try {
     const payload = {
-      data_type: "table_filtering",
-      data: {
         filtering: queryParams.filters,
         ...(queryParams.sort?.direction
           ? {
@@ -12,10 +10,9 @@ export async function fetchFilteredPeople(queryParams) {
                   : queryParams.sort.key,
             }
           : {}),
-      },
     };
 
-    const res = await fetch("http://127.0.0.1:8000/api/items/", {
+    const res = await fetch("http://127.0.0.1:8000/api/table_filtering/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

@@ -4,7 +4,7 @@ export const HandleLogin = async (id, password, dataType, admin_code) => {
             ? { id, password, admin_code }
             : { id, password };
 
-        const response = await fetch("http://127.0.0.1:8000/api/items/", {
+        const response = await fetch("http://127.0.0.1:8000/api/login/", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -13,20 +13,20 @@ export const HandleLogin = async (id, password, dataType, admin_code) => {
                 data_type: dataType,
                 data: loginData
             }),
-            // credentials: "include" // ✅ HttpOnly 쿠키 사용 시 필요
+            credentials: "include" // ✅ HttpOnly 쿠키 사용 시 필요
         });
 
         const data = await response.json();
         console.log("로그인 응답 전체 데이터:", data);
 
         // HttpOnly 쿠키 기반이므로 access/refresh 토큰은 프론트에서 직접 다루지 않음
-        if (data.message === "check_user_login 처리 완료!") {
+        if (data.success && dataType === "check_user_login") {
             return {
                 success: "user",
                 employee_number: data?.data?.employee_number ?? null,
                 name: data?.data?.user_name ?? null
             };
-        } else if (data.message === "check_admin_login 처리 완료!") {
+        } else if (data.success && dataType === "check_admin_login") {
             return {
                 success: "admin",
                 user_Data: data?.data?.user_data ?? null
@@ -34,7 +34,7 @@ export const HandleLogin = async (id, password, dataType, admin_code) => {
         } else {
             return {
                 success: false,
-                message: data?.message || "로그인 실패"
+                message: "로그인 실패"
             };
         }
     } catch (error) {

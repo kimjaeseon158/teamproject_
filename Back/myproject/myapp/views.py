@@ -3,18 +3,19 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework import status
 
-from .serializers import User_Login_InfoSerializer, User_Work_InfoSerializer, User_InfoSerializer
+from .serializers import User_Login_InfoSerializer, User_InfoSerializer, User_Work_InfoSerializer
 from .auth_utils import check_user_credentials, check_admin_credentials
+from .jwt_utils import CookieJWTAuthentication
 from .models import User_Login_Info, Admin_Login_Info
 
-
 # ----------------------
-# 1 로그인 뷰
+# 1️⃣ 관리자 로그인
 # ----------------------
 class CheckAdminLoginAPIView(APIView):
-    permission_classes = [AllowAny]  # 로그인은 인증 없이 접근 가능
+    permission_classes = [AllowAny]
 
     def post(self, request):
         admin_id   = request.data.get('id')
@@ -24,25 +25,37 @@ class CheckAdminLoginAPIView(APIView):
         success, user_data = check_admin_credentials(admin_id, password, admin_code)
 
         if success:
-            # 실제 admin 객체 가져오기
             admin_instance = Admin_Login_Info.objects.get(admin_id=admin_id)
 
-            # JWT 토큰 생성
             refresh = RefreshToken()
             refresh['admin_id']   = admin_instance.admin_id
             refresh['admin_name'] = admin_instance.admin_name
-            refresh['role']       = 'admin'  # 필요시 payload 추가
+            refresh['role']       = 'admin'
             access = refresh.access_token
 
-            return Response({
-                'success'   : True,
-                'user_data' : user_data,
-                'access'    : str(access),
-                'refresh'   : str(refresh)
-            }, status=status.HTTP_200_OK)
-        else:
-            return Response({'success': False}, status=status.HTTP_400_BAD_REQUEST)
+            response = Response({
+                'success': True,
+                'user_data': user_data,
+                'access'   : str(access),
+                'refresh': str(refresh)
+            })
 
+            # http-only 쿠키로 access token 전달
+            response.set_cookie(
+                key="access_token",
+                value=str(access),
+                httponly=True,
+                secure=False,  # 개발 환경
+                samesite='Lax'
+            )
+            return response
+
+        return Response({'success': False}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ----------------------
+# 2️⃣ 일반 유저 로그인
+# ----------------------
 class UserLoginInfoAPIView(APIView):
     permission_classes = [AllowAny]
 
@@ -52,27 +65,36 @@ class UserLoginInfoAPIView(APIView):
         if serializer.is_valid():
             user_instance = serializer.save()
             
-            # JWT 토큰 생성
             refresh = RefreshToken.for_user(user_instance)
             access = refresh.access_token
 
             all_data = User_Login_Info.objects.all()
             user_data = User_InfoSerializer(all_data, many=True)
 
-            return Response({
+            response = Response({
                 'success': True,
                 'user_data': user_data.data,
-                'access': str(access),
                 'refresh': str(refresh)
             })
 
+            response.set_cookie(
+                key="access_token",
+                value=str(access),
+                httponly=True,
+                secure=False,
+                samesite='Lax'
+            )
+
+            return response
+
         return Response({'success': False})
+
 
 # ----------------------
 # 2 데이터 처리 뷰
 # ----------------------
 class UserWorkInfoAPIView(APIView):
-    permission_classes = [IsAuthenticated]  # 로그인 후 토큰 필요
+    authentication_classes = [CookieJWTAuthentication]
     
     def post(self, request):
         data = request.data
@@ -83,7 +105,7 @@ class UserWorkInfoAPIView(APIView):
         return Response({'success': False})    
                          
 class UserInfoDeleteAPIView(APIView):
-    permission_classes = [IsAuthenticated]  # 로그인 후 토큰 필요
+    authentication_classes = [CookieJWTAuthentication]
 
 
     def post(self, request):
@@ -98,7 +120,7 @@ class UserInfoDeleteAPIView(APIView):
             return Response({'success': False})
         
 class UserInfoUpdateAPIView(APIView):
-    permission_classes = [IsAuthenticated]  # 로그인 후 토큰 필요    
+    authentication_classes = [CookieJWTAuthentication]    
 
     def post(self, request):
         employee_number = request.data.get('employee_number')
@@ -115,7 +137,7 @@ class UserInfoUpdateAPIView(APIView):
             return Response({'success': False})
 
 class CheckUserLoginAPIView(APIView):
-    permission_classes = [IsAuthenticated]  # 로그인 후 토큰 필요
+    authentication_classes = [CookieJWTAuthentication]
 
     def post(self, request):
         user_id = request.data.get('id')
@@ -130,12 +152,16 @@ class CheckUserLoginAPIView(APIView):
         return Response({'success': False})
 
 class TableFilteringAPIView(APIView):
-    permission_classes = [IsAuthenticated]  # 로그인 후 토큰 필요
+    authentication_classes = [CookieJWTAuthentication]
 
     def post(self, request):
-        filtering = request.data.get('filtering', {})
-        sorting = request.data.get('sorting')
         try:
+            # 이제 user가 request.user로 접근 가능
+            user = request.user
+
+            filtering = request.data.get('filtering', {})
+            sorting = request.data.get('sorting')
+
             filters = {}
             for key, value in filtering.items():
                 if isinstance(value, str):
@@ -148,8 +174,9 @@ class TableFilteringAPIView(APIView):
             queryset = User_Login_Info.objects.filter(**filters)
             if sorting:
                 queryset = queryset.order_by(sorting)
-            result = list(queryset.values())
-            return Response({'success': True, 'data': result})
-        except Exception:
-            return Response({'success': False})                
 
+            result = list(queryset.values())
+            return Response({'success': True, 'data': result}, status=200)
+
+        except Exception as e:
+            return Response({'success': False, 'message': str(e)}, status=500)

@@ -3,19 +3,26 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@chakra-ui/react": "^2.10.9",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "axios": "^1.8.3",
     "cra-template": "1.2.0",
     "date-fns": "^4.1.0",
     "express": "^4.21.2",
-    "framer-motion": "^12.4.1",
+    "framer-motion": "^12.23.12",
+    "moment": "^2.30.1",
     "react": "^19.0.0",
+    "react-big-calendar": "^1.19.4",
     "react-dom": "^19.0.0",
+    "react-icons": "^5.5.0",
     "react-router-dom": "^7.3.0",
     "react-scripts": "5.0.1",
+    "recharts": "^3.1.2",
     "web-vitals": "^4.2.4"
   },
   "scripts": {
-    "start-server": "cd ../back/myproject && python manage.py runserver", 
+    "start-server": "cd ../back/myproject && python manage.py runserver",
     "start-client": "react-scripts start",
     "start": "concurrently \"npm run start-server\" \"npm run start-client\"",
     "build": "react-scripts build",
@@ -23,7 +30,9 @@
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
-    "extends": ["react-app"] 
+    "extends": [
+      "react-app"
+    ]
   },
   "browserslist": {
     "production": [

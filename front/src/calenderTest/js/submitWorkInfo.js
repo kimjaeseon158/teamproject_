@@ -33,6 +33,7 @@ const submitWorkInfo = async ({
       "Content-Type": "application/json",
     },
     body: JSON.stringify(newRecord),
+    credentials: "include"
   });
 
   const data = await response.json();

@@ -20,6 +20,7 @@ export const deleteEmployees = async (employee_Numbers) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
+        credentials: "include"
       });
 
       const text = await response.text();

@@ -12,33 +12,29 @@ export const HandleLogin = async (id, password, dataType, admin_code) => {
             body: JSON.stringify({
                 data_type: dataType,
                 data: loginData
-            })
+            }),
+            // credentials: "include" // ✅ HttpOnly 쿠키 사용 시 필요
         });
 
         const data = await response.json();
-
-        // 응답 구조를 먼저 확인
         console.log("로그인 응답 전체 데이터:", data);
 
-        // 메시지로 로그인 성공 판단
+        // HttpOnly 쿠키 기반이므로 access/refresh 토큰은 프론트에서 직접 다루지 않음
         if (data.message === "check_user_login 처리 완료!") {
             return {
                 success: "user",
-                message: data.message,
                 employee_number: data?.data?.employee_number ?? null,
                 name: data?.data?.user_name ?? null
             };
         } else if (data.message === "check_admin_login 처리 완료!") {
             return {
                 success: "admin",
-                message: data.message,
                 user_Data: data?.data?.user_data ?? null
             };
         } else {
-            // 로그인 실패 또는 메시지 불일치
             return {
                 success: false,
-                message: data?.message || "알 수 없는 오류 발생"
+                message: data?.message || "로그인 실패"
             };
         }
     } catch (error) {

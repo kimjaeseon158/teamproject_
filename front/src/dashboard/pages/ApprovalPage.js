@@ -133,7 +133,7 @@ export default function ApprovePage() {
                   </Box>
                 </Flex>
                 <Box flex="1">
-                  <strong>특근:</strong>{" "}
+                    <strong>특근:</strong>{" "}
                   {selectedEmployee.specialWorkChecked
                     ? selectedEmployee.specialWorkDuration
                     : "없음"}

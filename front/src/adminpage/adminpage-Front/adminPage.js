@@ -9,7 +9,6 @@ import { fetchFilteredPeople } from "../js/adminPageLogic";
 import "../css/adminPage.css";
 import { useResizableTable } from "./adminResizableTable";
 import { formatResidentNumber ,formatPhoneNumber  } from "../js/utils";
-import { FaPlus, FaTrash, FaSearch } from "react-icons/fa";
 
 import {
   Table,
@@ -20,8 +19,6 @@ import {
   Td,
   Checkbox,
   Box,
-  IconButton, 
-  Tooltip 
 } from "@chakra-ui/react";
 
 const initialsearch_Form = {
@@ -34,7 +31,6 @@ const initialsearch_Form = {
   sort_Key: "",
   sort_Direction: "",
 };
-
 const AdminPage = () => {
   const { userData } = useContext(UserContext);
 
@@ -68,11 +64,6 @@ const AdminPage = () => {
   });
 
   const {
-    column_Widths,
-    row_Heights,
-    onColumnMouseDown,
-    onRowMouseDown,
-    handleColumnDoubleClick,
     setrow_Heights,
   } = useResizableTable(initial_Column_Widths, initial_Row_Heights);
 
@@ -217,30 +208,7 @@ const AdminPage = () => {
   setpeople_Data(result);
   closeSearchModal();
 };
-
-const toggleAll = () => {
-  const allChecked = Object.values(checked_Items).every((c) => c);
-  const newChecked = {};
-  people_Data.forEach((p) => {
-    newChecked[p.employee_number] = !allChecked; // 모두 선택 또는 모두 해제
-  });
-  setchecked_Items(newChecked);
-};
-
-
-  // 헤더 셀 렌더링
-  const renderResizableTH = (label, colKey) => (
-    <th style={{ width: column_Widths[colKey], position: "relative" }}>
-      {label}
-      <div
-        className="column-resizer"
-        onMouseDown={(e) => onColumnMouseDown(e, colKey)}
-        onDoubleClick={() => handleColumnDoubleClick(colKey, people_Data)}
-      />
-    </th>
-  );
-
-
+  
   return (
     <div className="adminPage_Bk">
       <div className="adminPage-btn">

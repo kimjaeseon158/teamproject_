@@ -6,6 +6,7 @@ export const Panel_PostData = async (data) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data), // wages 객체를 직접 전송
+      credentials: "include"
     });
 
     const result = await response.json();

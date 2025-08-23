@@ -19,6 +19,7 @@ export async function fetchFilteredPeople(queryParams) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
+      credentials: "include"
     });
 
     const result = await res.json();

@@ -9,7 +9,6 @@ import {
   VStack,
   Flex,
   Text,
-  useToast,
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -22,7 +21,6 @@ const MotionBox = motion(Box);
 const Login = () => {
   const { setUser, setEmployeeNumber, setUserData } = useContext(UserContext);
   const navigate = useNavigate();
-  const toast = useToast();
 
   const [adminId, setAdminId] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
@@ -31,7 +29,7 @@ const Login = () => {
   const [userId, setUserId] = useState("");
   const [userPassword, setUserPassword] = useState("");
 
-  const [role, setRole] = useState("user"); // 사원 먼저 보이도록 초기값 "user"
+  const [role, setRole] = useState("user");
   const [errors, setErrors] = useState({
     idError: "",
     passwordError: "",
@@ -57,15 +55,13 @@ const Login = () => {
     setUserLoginError("");
 
     const currentId = role === "admin" ? adminId : userId;
-    const setId = role === "admin" ? setAdminId : setUserId;
     const currentPassword = role === "admin" ? adminPassword : userPassword;
-    const setPassword = role === "admin" ? setAdminPassword : setUserPassword;
 
     const isValid = await validation({
       id: currentId,
-      setId,
+      setId: role === "admin" ? setAdminId : setUserId,
       password: currentPassword,
-      setPassword,
+      setPassword: role === "admin" ? setAdminPassword : setUserPassword,
       admin_code: adminCode,
       setadmin_code: setAdminCode,
       role,
@@ -77,8 +73,7 @@ const Login = () => {
       const loginsuccess = await HandleLogin(
         currentId,
         currentPassword,
-        isValid.dataType,
-        adminCode
+        role === "admin" ? adminCode : undefined
       );
 
       if (loginsuccess.success === "admin") {
@@ -86,7 +81,10 @@ const Login = () => {
         setUser("admin");
         setUserData(loginsuccess.user_Data);
         sessionStorage.setItem("userRole", "admin");
-        sessionStorage.setItem("userData", JSON.stringify(loginsuccess.user_Data));
+        sessionStorage.setItem(
+          "userData",
+          JSON.stringify(loginsuccess.user_Data)
+        );
         setTimeout(() => navigate("/dashboard"), 500);
       } else if (loginsuccess.success === "user") {
         setFadeOut(true);
@@ -94,7 +92,10 @@ const Login = () => {
         setEmployeeNumber(loginsuccess.employee_number);
         sessionStorage.setItem("userRole", "user");
         sessionStorage.setItem("userName", loginsuccess.name);
-        sessionStorage.setItem("employeeNumber", loginsuccess.employee_number);
+        sessionStorage.setItem(
+          "employeeNumber",
+          loginsuccess.employee_number
+        );
         setTimeout(() => navigate("/data"), 500);
       } else {
         if (role === "admin") {
@@ -121,7 +122,6 @@ const Login = () => {
         px={4}
         className={fadeOut ? "fade-out" : ""}
       >
-        {/* Role Toggle */}
         <Flex
           mb={6}
           bg="gray.200"
@@ -164,7 +164,6 @@ const Login = () => {
           </Button>
         </Flex>
 
-        {/* 로그인 폼 */}
         <VStack
           as={MotionBox}
           spacing={4}
@@ -184,20 +183,20 @@ const Login = () => {
             {role === "admin" ? "관리자 로그인" : "사원 로그인"}
           </Text>
 
-          {/* ID */}
           <FormControl isInvalid={errors.idError}>
             <FormLabel>아이디</FormLabel>
             <Input
               value={role === "admin" ? adminId : userId}
               onChange={(e) =>
-                role === "admin" ? setAdminId(e.target.value) : setUserId(e.target.value)
+                role === "admin"
+                  ? setAdminId(e.target.value)
+                  : setUserId(e.target.value)
               }
               onKeyDown={preventSpace}
             />
             <FormErrorMessage>{errors.idError}</FormErrorMessage>
           </FormControl>
 
-          {/* PW */}
           <FormControl isInvalid={errors.passwordError}>
             <FormLabel>비밀번호</FormLabel>
             <Input
@@ -213,7 +212,6 @@ const Login = () => {
             <FormErrorMessage>{errors.passwordError}</FormErrorMessage>
           </FormControl>
 
-          {/* 관리자일 때만 OTP 입력 */}
           {role === "admin" && (
             <FormControl isInvalid={errors.admin_codeError}>
               <FormLabel>인증코드</FormLabel>
@@ -234,14 +232,12 @@ const Login = () => {
             </FormControl>
           )}
 
-          {/* 로그인 실패 메시지 */}
           {(adminLoginError || userLoginError) && (
             <Text color="red.500" fontSize="sm" textAlign="center" w="100%">
               {adminLoginError || userLoginError}
             </Text>
           )}
 
-          {/* 버튼 */}
           <Button
             colorScheme="blue"
             type="submit"

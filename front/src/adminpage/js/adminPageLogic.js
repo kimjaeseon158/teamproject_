@@ -12,7 +12,7 @@ export async function fetchFilteredPeople(queryParams) {
           : {}),
     };
 
-    const res = await fetch("http://127.0.0.1:8000/api/table_filtering/", {
+    const res = await fetch("/api/table_filtering/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

@@ -6,7 +6,7 @@ export const HandleLogin = async (id, password, admin_code) => {
       : { id, password };   
     console.log(loginData)        
 
-    const response = await fetch("http://127.0.0.1:8000/api/check_admin_login/", {
+    const response = await fetch("/api/check_admin_login/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

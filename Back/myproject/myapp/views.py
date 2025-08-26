@@ -1,16 +1,37 @@
 # views.py
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.exceptions import AuthenticationFailed
-from rest_framework import status
+from rest_framework.views                import APIView
+from rest_framework.response             import Response
+from rest_framework_simplejwt.exceptions import TokenError    
+from rest_framework_simplejwt.tokens     import RefreshToken, AccessToken
+from rest_framework.permissions          import AllowAny
+from rest_framework.exceptions           import AuthenticationFailed
+from rest_framework                      import status
 
 from .serializers import User_Login_InfoSerializer, User_InfoSerializer, User_Work_InfoSerializer
-from .auth_utils import check_user_credentials, check_admin_credentials
-from .jwt_utils import CookieJWTAuthentication
-from .models import User_Login_Info, Admin_Login_Info
+from .auth_utils  import check_user_credentials, check_admin_credentials
+from .jwt_utils   import get_user_from_cookie, get_user_from_token
+from .models      import User_Login_Info, Admin_Login_Info
 
+
+# ------------------- Refresh API -------------------
+class TokenRefreshAPIView(APIView):
+    permission_classes = []  # 인증 필요 없음
+
+    def post(self, request):
+        refresh_token = request.COOKIES.get("refresh_token")
+        if not refresh_token:
+            return Response({'success': False, 'message': 'Refresh token missing'}, status=401)
+
+        try:
+            refresh_obj = RefreshToken(refresh_token)
+            new_access = refresh_obj.access_token
+
+            response = Response({'success': True})
+            response.set_cookie("access_token", str(new_access), httponly=True, secure=False, samesite='Lax')
+            return response
+        except Exception:
+            return Response({'success': False, 'message': 'Invalid refresh token'}, status=401) 
+        
 # ----------------------
 # 1️⃣ 관리자 로그인
 # ----------------------
@@ -18,6 +39,7 @@ class CheckAdminLoginAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        print("test")
         admin_id   = request.data.get('id')
         password   = request.data.get('password')
         admin_code = request.data.get('admin_code')
@@ -41,13 +63,8 @@ class CheckAdminLoginAPIView(APIView):
             })
 
             # http-only 쿠키로 access token 전달
-            response.set_cookie(
-                key="access_token",
-                value=str(access),
-                httponly=True,
-                secure=False,  # 개발 환경
-                samesite='Lax'
-            )
+            response.set_cookie("access_token",  str(access),  httponly=True, secure=False, samesite='Lax', path='/')
+            response.set_cookie("refresh_token", str(refresh), httponly=True, secure=False, samesite='Lax', path='/')
             return response
 
         return Response({'success': False}, status=status.HTTP_400_BAD_REQUEST)
@@ -66,9 +83,9 @@ class UserLoginInfoAPIView(APIView):
             user_instance = serializer.save()
             
             refresh = RefreshToken.for_user(user_instance)
-            access = refresh.access_token
+            access  = refresh.access_token
 
-            all_data = User_Login_Info.objects.all()
+            all_data  = User_Login_Info.objects.all()
             user_data = User_InfoSerializer(all_data, many=True)
 
             response = Response({
@@ -77,13 +94,8 @@ class UserLoginInfoAPIView(APIView):
                 'refresh': str(refresh)
             })
 
-            response.set_cookie(
-                key="access_token",
-                value=str(access),
-                httponly=True,
-                secure=False,
-                samesite='Lax'
-            )
+            response.set_cookie("access_token",  str(access),  httponly=True, secure=False, samesite='Lax')
+            response.set_cookie("refresh_token", str(refresh), httponly=True, secure=False, samesite='Lax')
 
             return response
 
@@ -94,9 +106,9 @@ class UserLoginInfoAPIView(APIView):
 # 2 데이터 처리 뷰
 # ----------------------
 class UserWorkInfoAPIView(APIView):
-    authentication_classes = [CookieJWTAuthentication]
-    
     def post(self, request):
+        user = get_user_from_cookie(request)
+        
         data = request.data
         serializer = User_Work_InfoSerializer(data=data)
         if serializer.is_valid():
@@ -105,10 +117,9 @@ class UserWorkInfoAPIView(APIView):
         return Response({'success': False})    
                          
 class UserInfoDeleteAPIView(APIView):
-    authentication_classes = [CookieJWTAuthentication]
-
-
     def post(self, request):
+        user = get_user_from_cookie(request)
+        
         employee_number = request.data.get('employee_number')
         try:
             user = User_Login_Info.objects.get(employee_number=employee_number)
@@ -120,9 +131,9 @@ class UserInfoDeleteAPIView(APIView):
             return Response({'success': False})
         
 class UserInfoUpdateAPIView(APIView):
-    authentication_classes = [CookieJWTAuthentication]    
-
     def post(self, request):
+        user = get_user_from_cookie(request)
+        
         employee_number = request.data.get('employee_number')
         try:
             user = User_Login_Info.objects.get(employee_number=employee_number)
@@ -137,9 +148,9 @@ class UserInfoUpdateAPIView(APIView):
             return Response({'success': False})
 
 class CheckUserLoginAPIView(APIView):
-    authentication_classes = [CookieJWTAuthentication]
-
     def post(self, request):
+        user = get_user_from_cookie(request)
+        
         user_id = request.data.get('id')
         password = request.data.get('password')
         success, user_name, employee_number = check_user_credentials(user_id, password)
@@ -152,13 +163,48 @@ class CheckUserLoginAPIView(APIView):
         return Response({'success': False})
 
 class TableFilteringAPIView(APIView):
-    authentication_classes = [CookieJWTAuthentication]
-
+    """
+    Access Token 만료 시 Refresh Token으로 자동 갱신 후 요청 처리
+    """
     def post(self, request):
         try:
-            # 이제 user가 request.user로 접근 가능
-            user = request.user
+            user = None
+            new_access_response = None
 
+            # 1️⃣ Access Token 확인
+            try:
+                user = get_user_from_cookie(request)
+            except AuthenticationFailed:
+                # ⬇️ 이 부분을 추가/수정하세요.
+                print("--- AUTHENTICATION FAILED ---")
+                print("Cookies received by Django:", request.COOKIES) # 이 로그를 반드시 확인하세요!
+                
+                refresh_token = request.COOKIES.get("refresh_token")
+                if not refresh_token:
+                    return Response({'success': False, 'message': 'Authentication failed'}, status=401)
+
+                try:
+                    refresh_obj = RefreshToken(refresh_token)
+                    new_access = refresh_obj.access_token
+
+                    # 새 Access Token 쿠키 세팅
+                    new_access_response = Response()
+                    new_access_response.set_cookie(
+                        key="access_token",
+                        value=str(new_access),
+                        httponly=True,
+                        secure=False,  # 개발 환경
+                        samesite='Lax',
+                        path='/'
+                    )
+
+                    # 새 토큰으로 사용자 인증
+                    user = get_user_from_token(str(new_access))
+
+                except TokenError:
+                    return Response({'success': False, 'message': 'Refresh token expired'}, status=401)
+
+            # 2️⃣ 필터링 및 정렬 처리
             filtering = request.data.get('filtering', {})
             sorting = request.data.get('sorting')
 
@@ -176,7 +222,13 @@ class TableFilteringAPIView(APIView):
                 queryset = queryset.order_by(sorting)
 
             result = list(queryset.values())
-            return Response({'success': True, 'data': result}, status=200)
+
+            # 3️⃣ 새 Access Token 쿠키가 있는 경우 통합 반환
+            if new_access_response:
+                new_access_response.data = {'success': True, 'data': result}
+                return new_access_response
+
+            return Response({'success': True, 'data': result})
 
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=500)

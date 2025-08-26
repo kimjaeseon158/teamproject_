@@ -1,10 +1,13 @@
 import { Box, VStack, Link } from "@chakra-ui/react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate  } from "react-router-dom";
 
 export default function Sidebar() {
+
+  const navigate = useNavigate();
+
   return (
     <Box w="250px" bg="gray.800" color="white" p="4" display="flex" flexDirection="column">
-      <Box fontSize="2xl" fontWeight="bold" mb="8">Dashboard</Box>
+      <Box cursor="pointer"  fontSize="2xl" fontWeight="bold" mb="8"   onClick={() => navigate("/dashboard")} >Dashboard</Box>
       <VStack align="stretch" spacing={4}>
         <Link as={NavLink} to="/dashboard" _hover={{ color: "teal.300" }} end>
           Home

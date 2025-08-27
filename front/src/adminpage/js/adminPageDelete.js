@@ -35,8 +35,9 @@ export const deleteEmployees = async (employee_Numbers) => {
         continue;
       }
 
-      const success = parsed?.data?.success;
-      const userData = parsed?.data?.user_data || [];
+    const success = parsed?.success;
+    const userData = parsed?.user_data || [];
+
 
       if (success) {
         console.log(` ${empNo} 삭제 성공`);

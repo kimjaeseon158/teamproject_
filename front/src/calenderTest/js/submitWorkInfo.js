@@ -24,7 +24,7 @@ const submitWorkInfo = async ({
       employee_number: employeeNumber,
   };
 
-  const response = await fetch("http://127.0.0.1:8000/api/user_work_info/", {
+  const response = await fetch("/api/user_work_info/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

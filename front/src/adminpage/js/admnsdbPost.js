@@ -1,6 +1,6 @@
 export const Panel_PostData = async (data) => {
   try {
-    const response = await fetch("http://127.0.0.1:8000/api/user_login_info/", {
+    const response = await fetch("/api/user_login_info/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

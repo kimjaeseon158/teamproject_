@@ -11,7 +11,7 @@ export const deleteEmployees = async (employee_Numbers) => {
 
       console.log("DELETE 요청 바디:", body);
 
-      const response = await fetch("http://localhost:8000/api/user_info_delete/", {
+      const response = await fetch("/api/user_info_delete/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

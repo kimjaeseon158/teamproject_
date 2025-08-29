@@ -57,3 +57,18 @@ class Admin_Login_Info(models.Model):
         if not self.password.startswith('pbkdf2_'):  # Django 기본 prefix 체크
             self.password = make_password(self.password)
         super().save(*args, **kwargs)
+
+# 매출 테이블(임시 사용)
+class RevenueInfo(models.Model):
+    company_name    = models.CharField(max_length=100)                              # 회사명
+    revenue_date    = models.DateField()                                            # 날짜 (YYYY-MM-DD)
+    income          = models.DecimalField(max_digits=12, decimal_places=2)          # 수입금
+
+# 지출 테이블(임시 사용)
+class ExpenseInfo(models.Model):
+    expense_date      = models.DateField()                                           # 날짜 (YYYY-MM-DD)
+    total_amount      = models.DecimalField(max_digits=12, decimal_places=2)         # 총일금
+    food_expense      = models.DecimalField(max_digits=12, decimal_places=2)         # 식비
+    material_expense  = models.DecimalField(max_digits=12, decimal_places=2)         # 자재비
+    transport_expense = models.DecimalField(max_digits=12, decimal_places=2)         # 교통비
+    etc_expense       = models.DecimalField(max_digits=12, decimal_places=2)         # 기타

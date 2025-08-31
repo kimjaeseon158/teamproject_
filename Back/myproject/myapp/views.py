@@ -105,9 +105,7 @@ class CheckUserLoginAPIView(APIView):
 # ----------------------
 # 2 데이터 처리 뷰
 # ----------------------
-
-class AdminUserListAPIView(APIView):
-
+class UserInfoListAPIView(APIView):
     def get(self, request):
         try:
             user = None
@@ -333,7 +331,7 @@ class UserInfoUpdateAPIView(APIView):
             return Response({'success': False, 'message': str(e)}, status=500)
 
 
-class TableFilteringAPIView(APIView):
+class UserTableFilteringAPIView(APIView):
     """
     Access Token 만료 시 Refresh Token으로 자동 갱신 후 요청 처리
     """

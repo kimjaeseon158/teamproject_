@@ -73,7 +73,7 @@ class CheckAdminLoginAPIView(APIView):
 # ----------------------
 # 2️⃣ 일반 유저 로그인
 # ----------------------
-class UserLoginInfoAPIView(APIView):
+class CheckUserLoginAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -105,6 +105,58 @@ class UserLoginInfoAPIView(APIView):
 # ----------------------
 # 2 데이터 처리 뷰
 # ----------------------
+
+class AdminUserListAPIView(APIView):
+
+    def get(self, request):
+        try:
+            user = None
+            new_access_response = None
+
+            # 1️⃣ Access Token 확인
+            try:
+                user = get_user_from_cookie(request)
+
+            except AuthenticationFailed:
+                refresh_token = request.COOKIES.get("refresh_token")
+                if not refresh_token:
+                    return Response({'success': False, 'message': 'Authentication failed'}, status=401)
+
+                try:
+                    refresh_obj = RefreshToken(refresh_token)
+                    new_access = refresh_obj.access_token
+
+                    # 새 Access Token 쿠키 세팅
+                    new_access_response = Response()
+                    new_access_response.set_cookie(
+                        key="access_token",
+                        value=str(new_access),
+                        httponly=True,
+                        secure=False,
+                        samesite='Lax',
+                        path='/'
+                    )
+
+                    # 새 토큰으로 사용자 인증
+                    user = get_user_from_token(str(new_access))
+
+                except TokenError:
+                    return Response({'success': False, 'message': 'Refresh token expired'}, status=401)
+
+            # 2️⃣ 유저 정보 가져오기
+            users = User_Login_Info.objects.all()
+            user_data = User_InfoSerializer(users, many=True)
+
+            # 3️⃣ 새 Access Token 쿠키가 있는 경우 통합 반환
+            if new_access_response:
+                new_access_response.data = {'success': True, 'users': user_data.data}
+                return new_access_response
+
+            return Response({'success': True, 'users': user_data.data})
+
+        except Exception as e:
+            return Response({'success': False, 'message': str(e)}, status=500)
+
 class UserWorkInfoAPIView(APIView):
     def post(self, request):
         try:
@@ -280,57 +332,6 @@ class UserInfoUpdateAPIView(APIView):
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=500)
 
-class CheckUserLoginAPIView(APIView):
-    def post(self, request):
-        try:
-            user = None
-            new_access_response = None
-
-            # 1️⃣ Access Token 확인
-            try:
-                user = get_user_from_cookie(request)
-            except AuthenticationFailed:
-                refresh_token = request.COOKIES.get("refresh_token")
-                if not refresh_token:
-                    return Response({'success': False, 'message': 'Authentication failed'}, status=401)
-
-                try:
-                    refresh_obj = RefreshToken(refresh_token)
-                    new_access = refresh_obj.access_token
-
-                    # 새 Access Token 쿠키 세팅
-                    new_access_response = Response()
-                    new_access_response.set_cookie(
-                        key="access_token",
-                        value=str(new_access),
-                        httponly=True,
-                        secure=False,
-                        samesite='Lax',
-                        path='/'
-                    )
-
-                    # 새 토큰으로 사용자 인증
-                    user = get_user_from_token(str(new_access))
-
-                except TokenError:
-                    return Response({'success': False, 'message': 'Refresh token expired'}, status=401)
-
-            # 2️⃣ 사용자 아이디/비번 체크
-            user_id = request.data.get('id')
-            password = request.data.get('password')
-            success, user_name, employee_number = check_user_credentials(user_id, password)
-
-            result = {'user_name': user_name, 'employee_number': employee_number} if success else {}
-
-            # 3️⃣ 새 Access Token 쿠키가 있는 경우 통합 반환
-            if new_access_response:
-                new_access_response.data = {'success': success, 'data': result}
-                return new_access_response
-
-            return Response({'success': success, 'data': result})
-
-        except Exception as e:
-            return Response({'success': False, 'message': str(e)}, status=500)
 
 class TableFilteringAPIView(APIView):
     """

@@ -44,7 +44,7 @@ class CheckAdminLoginAPIView(APIView):
         password   = request.data.get('password')
         admin_code = request.data.get('admin_code')
 
-        success, user_data = check_admin_credentials(admin_id, password, admin_code)
+        success = check_admin_credentials(admin_id, password, admin_code)
 
         if success:
             admin_instance = Admin_Login_Info.objects.get(admin_id=admin_id)
@@ -57,8 +57,7 @@ class CheckAdminLoginAPIView(APIView):
 
             response = Response({
                 'success': True,
-                'user_data': user_data,
-                'access'   : str(access),
+                'access' : str(access),
                 'refresh': str(refresh)
             })
 
@@ -77,29 +76,31 @@ class CheckUserLoginAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        data = request.data
-        serializer = User_Login_InfoSerializer(data=data)
-        if serializer.is_valid():
-            user_instance = serializer.save()
-            
+        user_id  = request.data.get('user_id')
+        password = request.data.get('password')
+
+        success, user_name, employee_number = check_user_credentials(user_id, password)
+
+        if success:
+            user_instance = User_Login_Info.objects.get(user_id=user_id)
+    
             refresh = RefreshToken.for_user(user_instance)
             access  = refresh.access_token
 
-            all_data  = User_Login_Info.objects.all()
-            user_data = User_InfoSerializer(all_data, many=True)
-
             response = Response({
-                'success': True,
-                'user_data': user_data.data,
-                'refresh': str(refresh)
+                'success'        : True,
+                'user_name'      : user_name,
+                'employee_number': employee_number,
+                'access'         : str(access),                
+                'refresh'        : str(refresh)
             })
 
             response.set_cookie("access_token",  str(access),  httponly=True, secure=False, samesite='Lax')
             response.set_cookie("refresh_token", str(refresh), httponly=True, secure=False, samesite='Lax')
-
             return response
 
-        return Response({'success': False})
+        return Response({'success': False}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 # ----------------------

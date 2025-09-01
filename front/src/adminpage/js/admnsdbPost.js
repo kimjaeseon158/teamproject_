@@ -1,7 +1,7 @@
 export const Panel_PostData = async (data) => {
   try {
-    const response = await fetch("/api/user_login_info/", {
-      method: "POST",
+    const response = await fetch("/api/user_info_list/", {
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
       },

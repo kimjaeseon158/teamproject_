@@ -23,23 +23,26 @@ export const UserProvider = ({ children }) => {
     //?? 새로고침 재통신을 위한 저장
     const savedUserData = sessionStorage.getItem("userData");
 
-    if (savedUser) {
-      if (savedUser === "admin") {
-        setUser("admin");
-        if (savedUserData) {
-          setUserData(JSON.parse(savedUserData));
+    if (savedUserData) {
+      try {
+        const parsed = JSON.parse(savedUserData);
+        if (Array.isArray(parsed)) {
+          setUserData(parsed);
+        } else {
+          setUserData([]); // 안전하게 기본값 유지
         }
-      } else if (savedUser === "user") {
-        setUser(savedName);
-        setEmployeeNumber(savedEmpNum);
+      } catch (e) {
+        console.error("userData parsing error:", e);
+        setUserData([]);
       }
     }
+
     setLoading(false);
   }, []);
 
   // userData가 변경될 때마다 sessionStorage에도 저장해줍니다.
   useEffect(() => {
-    if (user === "admin" && userData.length > 0) {
+    if (user === "admin" && Array.isArray(userData) && userData.length > 0) {
       sessionStorage.setItem("userData", JSON.stringify(userData));
     }
   }, [userData, user]);

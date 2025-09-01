@@ -1,6 +1,6 @@
 // src/adminpage/js/useAddPersonLogic.js
 import { useEffect, useState, useCallback } from "react";
-import { Panel_PostData } from "./admnsdbPost";
+import { AddUser_PostData } from "../js/adminPageAddPerson";
 import { formatPhoneNumber, formatResidentNumber  } from "../js/utils";
 
 export function useAddPersonLogic(existingEmployees, onSave, onClose) {
@@ -123,7 +123,7 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
     };
 
     try {
-      const result = await Panel_PostData(panel_post_data);
+      const result = await AddUser_PostData(panel_post_data);
       console.log("전송 응답:", result.data.success);
 
       if (result.data.success === true) {

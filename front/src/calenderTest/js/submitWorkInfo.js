@@ -22,6 +22,7 @@ const submitWorkInfo = async ({
       work_date: formattedDate,
       work_place: location,
       employee_number: employeeNumber,
+      state : `status`
   };
 
   const response = await fetch("/api/user_work_info/", {

@@ -31,6 +31,7 @@ class TokenRefreshAPIView(APIView):
             return response
         except Exception:
             return Response({'success': False, 'message': 'Invalid refresh token'}, status=401) 
+
         
 # ----------------------
 # 1️⃣ 관리자 로그인
@@ -327,6 +328,63 @@ class UserInfoUpdateAPIView(APIView):
                 return new_access_response
 
             return Response({'success': success, 'user_data': result})
+
+        except Exception as e:
+            return Response({'success': False, 'message': str(e)}, status=500)
+
+class UserInfoAddAPIView(APIView):
+    def post(self, request):
+        try:
+            user = None
+            new_access_response = None
+
+            # 1️⃣ Access Token 확인
+            try:
+                user = get_user_from_cookie(request)
+            except AuthenticationFailed:
+                refresh_token = request.COOKIES.get("refresh_token")
+                if not refresh_token:
+                    return Response({'success': False, 'message': 'Authentication failed'}, status=401)
+
+                try:
+                    refresh_obj = RefreshToken(refresh_token)
+                    new_access = refresh_obj.access_token
+
+                    # 새 Access Token 쿠키 세팅
+                    new_access_response = Response()
+                    new_access_response.set_cookie(
+                        key="access_token",
+                        value=str(new_access),
+                        httponly=True,
+                        secure=False,
+                        samesite='Lax',
+                        path='/'
+                    )
+
+                    # 새 토큰으로 사용자 인증
+                    user = get_user_from_token(str(new_access))
+
+                except TokenError:
+                    return Response({'success': False, 'message': 'Refresh token expired'}, status=401)
+
+            # 2️⃣ 새로운 사용자 생성
+            serializer = User_Login_InfoSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                all_data = User_Login_Info.objects.all()
+                user_data = User_InfoSerializer(all_data, many=True)
+                result = user_data.data
+                success = True
+            else:
+                result = serializer.errors
+                success = False
+
+            # 3️⃣ 새 Access Token 쿠키가 있는 경우 통합 반환
+            if new_access_response:
+                new_access_response.data = {'success': success, 'user_data': result}
+                return new_access_response
+
+            return Response({'success': success, 'user_data': result}, status=201 if success else 400)
 
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=500)

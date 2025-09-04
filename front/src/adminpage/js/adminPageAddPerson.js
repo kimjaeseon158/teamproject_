@@ -1,6 +1,6 @@
 export const AddUser_PostData = async (data) => {
   try {
-    const response = await fetch("/api/add_user/", {
+    const response = await fetch("/api/user_info_add/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

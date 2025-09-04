@@ -123,25 +123,37 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
     };
 
     try {
-      const result = await AddUser_PostData(panel_post_data);
-      console.log("전송 응답:", result.data.success);
+      const result = await AddUser_PostData(panel_post_data); // 여기서 result 선언
+      console.log("전송 응답:", result);
 
-      if (result.data.success === true) {
+      if (result.success) {
+        const addedUser = result.users?.[result.users.length - 1];
 
-        const newPerson = {
-          employee_number: employee_Number,
-          user_name: people,
-          phone_number: phone_Number,
-          mobile_carrier: carrier,
-          resident_number: resident_Number,
-          address: address + " " + address_Detail,
-        };
-        
-        onSave(newPerson);
+        if (addedUser) {
+          onSave({
+            employee_number: addedUser.employee_number,
+            user_name: addedUser.user_name,
+            phone_number: addedUser.phone_number,
+            mobile_carrier: addedUser.mobile_carrier,
+            resident_number: addedUser.resident_number,
+            address: addedUser.address,
+          });
+        } else {
+          // users 배열이 없으면 formData 사용
+          onSave({
+            employee_number: formData.employee_Number,
+            user_name: formData.people,
+            phone_number: formData.phone_Number,
+            mobile_carrier: formData.carrier,
+            resident_number: formData.resident_Number,
+            address: formData.address + " " + formData.address_Detail,
+          });
+        }
+
         alert("사원 정보 등록이 완료 되었습니다.");
         onClose();
       } else {
-        alert("등록 실패" );
+        alert("등록 실패");
         onClose();
       }
     } catch (err) {

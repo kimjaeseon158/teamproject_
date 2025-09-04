@@ -25,7 +25,7 @@ const submitWorkInfo = async ({
       state : `status`
   };
 
-  const response = await fetch("/api/ user_info_add/", {
+  const response = await fetch("/api/ user_work_info/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

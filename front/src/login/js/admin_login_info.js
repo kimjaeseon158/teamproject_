@@ -1,10 +1,7 @@
 export const HandleLogin = async (id, password, admin_code) => {
   try {
     // admin_code가 존재하면 관리자 로그인, 없으면 일반 로그인
-    const loginData = admin_code
-      ? { id, password, admin_code }  
-      : { id, password };   
-    console.log(loginData)        
+    const loginData = { id, password, admin_code }       
 
     const response = await fetch("/api/check_admin_login/", {
       method: "POST",
@@ -22,12 +19,6 @@ export const HandleLogin = async (id, password, admin_code) => {
       return {
         success: "admin",
         user_Data: data?.user_data ?? null
-      };
-    } else if (data.success) {
-      return {
-        success: "user",
-        employee_number: data?.employee_number ?? null,
-        name: data?.user_name ?? null
       };
     } else {
       return {

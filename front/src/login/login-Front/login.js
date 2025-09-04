@@ -13,7 +13,8 @@ import {
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { validation } from "../js/validation";
-import { HandleLogin } from "../js/logindata";
+import { HandleLogin } from "../js/admin_login_info";   // 관리자 로그인 전용
+import { Handle_User_Login } from "../js/user_login_info"; // 사원 로그인 전용
 import UserContext from "../js/userContext";
 
 const MotionBox = motion(Box);
@@ -57,6 +58,7 @@ const Login = () => {
     const currentId = role === "admin" ? adminId : userId;
     const currentPassword = role === "admin" ? adminPassword : userPassword;
 
+    // 공통 유효성 검사
     const isValid = await validation({
       id: currentId,
       setId: role === "admin" ? setAdminId : setUserId,
@@ -69,40 +71,39 @@ const Login = () => {
       setErrors,
     });
 
-    if (isValid.success) {
-      const loginsuccess = await HandleLogin(
-        currentId,
-        currentPassword,
-        role === "admin" ? adminCode : undefined
-      );
+    if (!isValid.success) return;
+
+    let loginsuccess;
+
+    if (role === "admin") {
+      // 👉 관리자 로그인 API 호출
+      loginsuccess = await HandleLogin(currentId, currentPassword, adminCode);
 
       if (loginsuccess.success === "admin") {
         setFadeOut(true);
         setUser("admin");
         setUserData(loginsuccess.user_Data);
         sessionStorage.setItem("userRole", "admin");
-        sessionStorage.setItem(
-          "userData",
-          JSON.stringify(loginsuccess.user_Data)
-        );
+        sessionStorage.setItem("userData", JSON.stringify(loginsuccess.user_Data));
         setTimeout(() => navigate("/dashboard"), 500);
-      } else if (loginsuccess.success === "user") {
+      } else {
+        setAdminLoginError("아이디, 비밀번호 또는 인증코드가 틀렸습니다.");
+      }
+
+    } else {
+      // 👉 사원 로그인 API 호출
+      loginsuccess = await Handle_User_Login(currentId, currentPassword);
+
+      if (loginsuccess.success === "user") {
         setFadeOut(true);
         setUser(loginsuccess.name);
         setEmployeeNumber(loginsuccess.employee_number);
         sessionStorage.setItem("userRole", "user");
         sessionStorage.setItem("userName", loginsuccess.name);
-        sessionStorage.setItem(
-          "employeeNumber",
-          loginsuccess.employee_number
-        );
+        sessionStorage.setItem("employeeNumber", loginsuccess.employee_number);
         setTimeout(() => navigate("/data"), 500);
       } else {
-        if (role === "admin") {
-          setAdminLoginError("아이디, 비밀번호 또는 인증코드가 틀렸습니다.");
-        } else {
-          setUserLoginError("아이디 또는 비밀번호가 틀렸습니다.");
-        }
+        setUserLoginError("아이디 또는 비밀번호가 틀렸습니다.");
       }
     }
   };
@@ -122,6 +123,7 @@ const Login = () => {
         px={4}
         className={fadeOut ? "fade-out" : ""}
       >
+        {/* 탭 버튼 (관리자 / 사원 선택) */}
         <Flex
           mb={6}
           bg="gray.200"
@@ -164,6 +166,7 @@ const Login = () => {
           </Button>
         </Flex>
 
+        {/* 로그인 폼 */}
         <VStack
           as={MotionBox}
           spacing={4}
@@ -188,9 +191,7 @@ const Login = () => {
             <Input
               value={role === "admin" ? adminId : userId}
               onChange={(e) =>
-                role === "admin"
-                  ? setAdminId(e.target.value)
-                  : setUserId(e.target.value)
+                role === "admin" ? setAdminId(e.target.value) : setUserId(e.target.value)
               }
               onKeyDown={preventSpace}
             />

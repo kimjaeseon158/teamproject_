@@ -395,7 +395,7 @@ class UserInfoAddAPIView(APIView):
             return Response({'success': False, 'message': str(e)}, status=500)
 
 
-class UserTableFilteringAPIView(APIView):
+class UserInfoFilteringAPIView(APIView):
     def post(self, request):
         try:
             try:

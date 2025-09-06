@@ -9,7 +9,8 @@ from .views import (
     UserInfoFilteringAPIView,
     UserInfoListAPIView,
     UserInfoAddAPIView,
-    TokenRefreshAPIView
+    TokenRefreshAPIView,
+    FinanceTableDateFilteredAPIView
 )
 
 urlpatterns = [
@@ -23,6 +24,10 @@ urlpatterns = [
     path('user_info_update/',     UserInfoUpdateAPIView.as_view(),     name='user-info-update'),
     path('user_info_add/',        UserInfoAddAPIView.as_view(),        name='user-info-add'),    
     path('user_info_filtering/',  UserInfoFilteringAPIView.as_view(),  name='user-info-filtering'),
+
+    # Dashboard-admin-sales
+    path('finance_total/',  FinanceTableDateFilteredAPIView.as_view(),  name='finance_total'),
+
 
     # User-page
     path('user_work_info/',   UserWorkInfoAPIView.as_view(), name='user-work-info'),

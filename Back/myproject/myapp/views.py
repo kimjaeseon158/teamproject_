@@ -10,7 +10,9 @@ from rest_framework                      import status
 from .serializers import User_Login_InfoSerializer, User_InfoSerializer, User_Work_InfoSerializer
 from .auth_utils  import check_user_credentials, check_admin_credentials
 from .jwt_utils   import get_user_from_cookie, get_user_from_token, CustomRefreshToken
-from .models      import User_Login_Info, Admin_Login_Info
+from .models      import User_Login_Info, Admin_Login_Info,Expense, Income
+from django.db.models import Sum
+from datetime import datetime
 
 
 # ------------------- Refresh API -------------------
@@ -418,6 +420,49 @@ class UserInfoFilteringAPIView(APIView):
                     queryset = queryset.order_by(sorting)
 
                 result = list(queryset.values())
+                return Response({'success': True, 'data': result})
+
+            except AuthenticationFailed:
+                return Response({'success': False, 'message': 'Authentication failed'}, status=401)
+
+        except Exception as e:
+            return Response({'success': False, 'message': str(e)}, status=500)
+        
+
+class FinanceTableDateFilteredAPIView(APIView):
+    def post(self, request):
+        try:
+            try:
+                # 사용자 인증
+                user = get_user_from_cookie(request)
+
+                # 프론트에서 날짜 범위 받기
+                start_date_str = request.data.get('start_date')
+                end_date_str = request.data.get('end_date')
+
+                if not start_date_str or not end_date_str:
+                    return Response({'success': False, 'message': 'start_date and end_date are required'}, status=400)
+
+                start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+                end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+
+                # 1️⃣ Expense 합계 (날짜 필터링)
+                expense_qs = Expense.objects.filter(date__gte=start_date, date__lte=end_date) \
+                                            .values('expense_name') \
+                                            .annotate(total_amount=Sum('amount'))
+                expense_totals = {item['expense_name']: item['total_amount'] for item in expense_qs}
+
+                # 2️⃣ Income 합계 (날짜 필터링)
+                income_qs = Income.objects.filter(date__gte=start_date, date__lte=end_date) \
+                                          .values('company_name') \
+                                          .annotate(total_amount=Sum('amount'))
+                income_totals = {item['company_name']: item['total_amount'] for item in income_qs}
+
+                result = {
+                    'expense_totals': expense_totals,
+                    'income_totals': income_totals
+                }
+
                 return Response({'success': True, 'data': result})
 
             except AuthenticationFailed:

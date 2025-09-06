@@ -47,10 +47,10 @@ class User_Work_Pay(models.Model):
 # Admin 관련 테이블 
 
 class Admin_Login_Info(models.Model):
-    admin_name = models.CharField(max_length=50)       # 관리자 이름
-    admin_id   = models.CharField(max_length=50)       # 관리자 ID
-    password   = models.CharField(max_length=100)      # 관리자 비밀번호
-    admin_code = models.CharField(max_length=20)       # 설정한 인증번호
+    admin_name = models.CharField(max_length=50)                         # 관리자 이름
+    admin_id   = models.CharField(max_length=50, primary_key=True)       # 관리자 ID
+    password   = models.CharField(max_length=100)                        # 관리자 비밀번호
+    admin_code = models.CharField(max_length=20)                         # 설정한 인증번호
 
     def save(self, *args, **kwargs):
         # 비밀번호가 해시되지 않은 상태일 때만 해시
@@ -58,17 +58,16 @@ class Admin_Login_Info(models.Model):
             self.password = make_password(self.password)
         super().save(*args, **kwargs)
 
-# 매출 테이블(임시 사용)
-class RevenueInfo(models.Model):
-    company_name    = models.CharField(max_length=100)                              # 회사명
-    revenue_date    = models.DateField()                                            # 날짜 (YYYY-MM-DD)
-    income          = models.DecimalField(max_digits=12, decimal_places=2)          # 수입금
+# 매출 테이블
+class Income(models.Model):
+    date           = models.DateField()                                        # 매출 날짜
+    company_name   = models.CharField(max_length=100)                          # 업체명 (자유 입력)
+    company_detail = models.CharField(max_length=100,blank=True,null=True)     # 업체명 상세 (자유 입력)
+    amount         = models.IntegerField()                                     # 매출 금액 (정수)
 
-# 지출 테이블(임시 사용)
-class ExpenseInfo(models.Model):
-    expense_date      = models.DateField()                                           # 날짜 (YYYY-MM-DD)
-    total_amount      = models.DecimalField(max_digits=12, decimal_places=2)         # 총일금
-    food_expense      = models.DecimalField(max_digits=12, decimal_places=2)         # 식비
-    material_expense  = models.DecimalField(max_digits=12, decimal_places=2)         # 자재비
-    transport_expense = models.DecimalField(max_digits=12, decimal_places=2)         # 교통비
-    etc_expense       = models.DecimalField(max_digits=12, decimal_places=2)         # 기타
+# 지출 테이블
+class Expense(models.Model):
+    date           = models.DateField()                                        # 지출 날짜
+    expense_name   = models.CharField(max_length=100)                          # 지출명 (대분류, 자유 입력)
+    expense_detail = models.CharField(max_length=100, blank=True, null=True)   # 지출 상세 (자유 입력)
+    amount         = models.IntegerField()                                     # 지출 금액 (정수)

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
+import { useNavigate } from "react-router-dom";
 import moment from "moment";
 import {
   Box,
@@ -47,6 +48,7 @@ export default function Overview() {
   });
   const [isEditing, setIsEditing] = useState(false);
   const toast = useToast();
+  const navigate = useNavigate();
 
   const formatDateForInput = (date) => {
     const d = new Date(date);
@@ -205,7 +207,7 @@ export default function Overview() {
             position="absolute"
             top="10px"
             right="10px"
-            onClick={() => window.location.href = "/dashboard/total-sales"}
+              onClick={() => navigate("/dashboard/total-sales")}
           >
             상세보기
           </Button>
@@ -219,7 +221,7 @@ export default function Overview() {
             position="absolute"
             top="10px"
             right="10px"
-            onClick={() => window.location.href = "/dashboard/approval"}
+            onClick={() => navigate("/dashboard/approval")}
           >
             상세보기
           </Button>

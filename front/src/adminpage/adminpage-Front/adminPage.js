@@ -9,7 +9,7 @@ import { Panel_PostData } from "../js/admnsdbPost"; // 서버 통신
 import "../css/adminPage.css";
 import { useResizableTable } from "./adminResizableTable";
 import { formatResidentNumber, formatPhoneNumber } from "../js/utils";
-import { Table, Thead, Tbody, Tr, Th, Td, Checkbox, Box } from "@chakra-ui/react";
+import { Table, Thead, Tbody, Tr, Th, Td, Checkbox, Box, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton, FormControl, FormLabel, Input, Select, Button, VStack, HStack } from "@chakra-ui/react";
 
 const initialsearch_Form = {
   employee_number: "",
@@ -258,18 +258,113 @@ const AdminPage = () => {
         <AdminInformation person={selectedPerson} onClose={handleCloseModal} onSave={handleSave} />
       )}
 
-      {showAddModal && (
-        <AddPersonModal onSave={handleSaveNewPerson} onClose={handleCloseAddModal} existingEmployees={people_Data} />
+     {showAddModal && (
+        <AddPersonModal
+          isOpen={showAddModal}   // ✅ 추가
+          onSave={handleSaveNewPerson}
+          onClose={handleCloseAddModal}
+          existingEmployees={people_Data}
+        />
       )}
 
       {showSearchModal && (
-        <div className="searchModal" onClick={closeSearchModal}>
-          <div className="searchModal_content" onClick={(e) => e.stopPropagation()}>
-            <h3>검색 / 정렬 조건 입력</h3>
-            {/* 입력 폼 및 정렬 선택 UI 동일 */}
-            {/* ... 생략 ... */}
-          </div>
-        </div>
+        <Modal isOpen={showSearchModal} onClose={closeSearchModal} isCentered size="lg">
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>검색 / 정렬 조건 입력</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <HStack spacing={3}>
+                <FormControl>
+                  <FormLabel>정렬 기준</FormLabel>
+                  <Select
+                    name="sort_Key"
+                    value={search_Form.sort_Key}
+                    onChange={handlesearch_FormChange}
+                  >
+                    <option value="employee_number">사원 번호</option>
+                    <option value="user_name">이름</option>
+                    <option value="resident_number">주민등록번호</option>
+                    <option value="address">주소</option>
+                    <option value="phone_number">전화번호</option>
+                  </Select>
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel>정렬 방식</FormLabel>
+                  <Select
+                    name="sort_Direction"
+                    value={search_Form.sort_Direction}
+                    onChange={handlesearch_FormChange}
+                  >
+                    <option value="asc">오름차순</option>
+                    <option value="desc">내림차순</option>
+                  </Select>
+                </FormControl>
+              </HStack>
+              <VStack spacing={3} align="stretch">
+                <FormControl>
+                  <FormLabel>사원 번호</FormLabel>
+                  <Input
+                    name="employee_number"
+                    value={search_Form.employee_number}
+                    onChange={handlesearch_FormChange}
+                    placeholder="사원번호 입력"
+                  />
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel>이름</FormLabel>
+                  <Input
+                    name="user_name"
+                    value={search_Form.user_name}
+                    onChange={handlesearch_FormChange}
+                    placeholder="이름 입력"
+                  />
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel>전화번호</FormLabel>
+                  <Input
+                    name="phone_number"
+                    value={search_Form.phone_number}
+                    onChange={handlesearch_FormChange}
+                    placeholder="전화번호 입력"
+                  />
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel>주민등록번호</FormLabel>
+                  <Input
+                    name="resident_number"
+                    value={search_Form.resident_number}
+                    onChange={handlesearch_FormChange}
+                    placeholder="주민등록번호 입력"
+                  />
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel>주소</FormLabel>
+                  <Input
+                    name="address"
+                    value={search_Form.address}
+                    onChange={handlesearch_FormChange}
+                    placeholder="주소 입력"
+                  />
+                </FormControl>
+              </VStack>
+            </ModalBody>
+
+            <ModalFooter>
+              <Button colorScheme="teal" mr={3} onClick={applySearch}>
+                적용
+              </Button>
+              <Button variant="ghost" onClick={closeSearchModal}>
+                취소
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       )}
     </div>
   );

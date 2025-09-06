@@ -12,7 +12,7 @@ export async function fetchFilteredPeople(queryParams) {
           : {}),
     };
 
-    const res = await fetch("/api/user_table_filtering/", {
+    const res = await fetch("/api/user_info_filtering/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

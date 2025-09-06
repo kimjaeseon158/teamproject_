@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Heading,
@@ -8,6 +8,7 @@ import {
   Flex,
   Card,
   CardBody,
+  Select,
 } from "@chakra-ui/react";
 import {
   PieChart,
@@ -61,9 +62,47 @@ const EXPENSE_COLORS = [
 ];
 
 export default function TotalSalesPage() {
+  // 🔹 년/월 선택 상태
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+
   return (
     <Box p={6} bg="gray.50" minH="100vh">
-      <Heading mb={6}>매출 및 지출 현황</Heading>
+      {/* 상단 타이틀 + 년월 선택 */}
+      <Flex justify="space-between" align="center" mb={6}>
+        <Heading>매출 및 지출 현황</Heading>
+
+        <Flex gap={2}>
+          {/* 연도 선택 */}
+          <Select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(Number(e.target.value))}
+            w="100px"
+          >
+            {Array.from({ length: 5 }, (_, i) => {
+              const year = new Date().getFullYear() - i;
+              return (
+                <option key={year} value={year}>
+                  {year}년
+                </option>
+              );
+            })}
+          </Select>
+
+          {/* 월 선택 */}
+          <Select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(Number(e.target.value))}
+            w="80px"
+          >
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+              <option key={month} value={month}>
+                {month}월
+              </option>
+            ))}
+          </Select>
+        </Flex>
+      </Flex>
 
       {/* 그래프와 영수증 좌우 배치 */}
       <Flex justify="center" gap={8} flexWrap="wrap" align="flex-start">
@@ -139,7 +178,13 @@ export default function TotalSalesPage() {
         </Flex>
 
         {/* 영수증 카드 영역 */}
-        <Card flex="0 0 500px" maxH="800px" overflowY="auto" border="1px dashed gray" borderRadius="lg">
+        <Card
+          flex="0 0 500px"
+          maxH="800px"
+          overflowY="auto"
+          border="1px dashed gray"
+          borderRadius="lg"
+        >
           <CardBody>
             <VStack spacing={3} align="stretch">
               <Heading size="md" textAlign="center">
@@ -151,7 +196,9 @@ export default function TotalSalesPage() {
               <Text fontWeight="bold">수익금</Text>
               <Text textAlign="right">{netProfit.toLocaleString()}원</Text>
 
-              <Text fontWeight="bold" mt={2}>업체별 매출</Text>
+              <Text fontWeight="bold" mt={2}>
+                업체별 매출
+              </Text>
               {revenueByCompany.map((item, i) => (
                 <Flex key={i} justify="space-between" pl={4}>
                   <Text>{item.name}</Text>
@@ -165,7 +212,9 @@ export default function TotalSalesPage() {
               </Flex>
 
               {/* 지출금 */}
-              <Text fontWeight="bold" mt={4}>지출금</Text>
+              <Text fontWeight="bold" mt={4}>
+                지출금
+              </Text>
               {expenseData.map((item, i) => (
                 <Flex key={i} justify="space-between" pl={4}>
                   <Text>{item.name}</Text>
@@ -178,10 +227,6 @@ export default function TotalSalesPage() {
                 <Text>순이익</Text>
                 <Text>{netProfit.toLocaleString()}원</Text>
               </Flex>
-
-              <Text textAlign="center" fontSize="sm" color="gray.500">
-                감사합니다 :)
-              </Text>
             </VStack>
           </CardBody>
         </Card>

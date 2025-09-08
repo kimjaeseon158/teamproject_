@@ -25,7 +25,7 @@ urlpatterns = [
     path('user_info_add/',        UserInfoAddAPIView.as_view(),        name='user-info-add'),    
     path('user_info_filtering/',  UserInfoFilteringAPIView.as_view(),  name='user-info-filtering'),
 
-    # Dashboard-admin-sales
+    # Dashboard-Total-sales
     path('finance_total/',  FinanceTableDateFilteredAPIView.as_view(),  name='finance_total'),
 
 

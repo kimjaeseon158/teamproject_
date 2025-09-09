@@ -56,10 +56,12 @@ TRAMPROJECT_
 │          ├── myapp/
 │                └── apps.py                     # Django 앱 설정 등록 
 │                └── auth_utils.py               # 용자 및 관리자 로그인 인증 함수 구현
-│                └── models.py                   # user(사용자), admin(관리자), 근무정보, 급여 데이터 모델 정의
+│                └── models.py                   # user(사용자), admin(관리자), 근무정보, 급여, 수입지출 데이터 모델 정의
 │                └── serializers.py              # 모델 데이터를 JSON으로 직렬화/역직렬화 처리
-│                └── urls.py                     # API 엔드포인트 라우팅 (현재 `/items/` 단일 경로)
-│                └── views.py                    # API 요청 분기 처리, `data_type`에 따라 기능 실행
+│                └── jwt_utils.py                # 쿠키에서 토큰 추출 후 검증, Access Token 문자열로 부터 토큰 검증, 고유 식별자 employee_number, admin_id 등 원하는 값으로 지정
+│                └── urls.py                     # 각 기능 마다 API 분리, admin page 등 page 분류하여 API 관리 
+│                                                  (/api/check_admin_login/ 등 각각의 경로 지정)
+│                └── views.py                    # API 요청 분기 처리, 각 class 따라 기능 실행, 각각의 class 마다 JWT 검증 로직 구성
 │     ├── dbsqlite3                              # Django 내장 데이터베이스, 데이터베이스 스키마와 데이터를 파일 기반 저장
 │     ├── manage.py                              # Django 프로젝트 관리 커맨드 실행
 │

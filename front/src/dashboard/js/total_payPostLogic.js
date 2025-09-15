@@ -1,40 +1,20 @@
+// src/js/total_payPost.js
+import { fetchWithAuth } from "../../api/fetchWithAuth";
+
 export async function total_payPost(payload, toast) {
   try {
-    let res = await fetch("/api/finance_total/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(payload),
-    });
-
-    // Access Token 만료 → 401 Unauthorized
-    if (res.status === 401) {
-      const refreshRes = await fetch("/api/refresh_token/", {
+    // fetchWithAuth 호출
+    const res = await fetchWithAuth(
+      "/api/finance_total/",
+      {
         method: "POST",
-        credentials: "include", // Refresh Token 자동 전송
-      });
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      },
+      { toast } // 옵션으로 toast 넘김
+    );
 
-      if (refreshRes.ok) {
-        // 새 Access Token 발급 성공 → 원래 요청 재시도
-        res = await fetch("/api/finance_total/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(payload),
-        });
-      } else {
-        if (toast) {
-          toast({
-            title: "세션 만료",
-            description: "다시 로그인 해주세요.",
-            status: "warning",
-            duration: 3000,
-            isClosable: true,
-          });
-        }
-        return null;
-      }
-    }
+    if (!res) return null; // refresh 실패 시 null 반환
 
     const data = await res.json();
     return data;

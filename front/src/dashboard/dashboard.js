@@ -8,6 +8,7 @@ import EmployeeList from "./pages/EmployeeList";        // adminpage 연결
 import ApprovalPage from "./pages/ApprovalPage";       // 승은 관련
 import DailyPayPage from "./pages/DailyPayPage";       // 일급 관리
 import TotalSalesPage from "./pages/TotalSalesPage";   // 총 매출액
+import ContractLayout from "./pages/TotalEdit";
 
 export default function Dashboard() {
   return (
@@ -22,6 +23,7 @@ export default function Dashboard() {
             <Route path="approval" element={<ApprovalPage />} />
             <Route path="daily-pay" element={<DailyPayPage />} />
             <Route path="total-sales" element={<TotalSalesPage />} />
+            <Route path="total-sales/edit" element={<ContractLayout/>}/>
           </Routes>
         </Box>
       </Flex>

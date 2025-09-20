@@ -10,7 +10,9 @@ from .views import (
     UserInfoListAPIView,
     UserInfoAddAPIView,
     TokenRefreshAPIView,
-    FinanceTableDateFilteredAPIView
+    FinanceTableDateFilteredAPIView,
+    IncomeAddAPIView,
+    ExpenseAddAPIView
 )
 
 urlpatterns = [
@@ -26,12 +28,14 @@ urlpatterns = [
     path('user_info_filtering/',  UserInfoFilteringAPIView.as_view(),  name='user-info-filtering'),
 
     # Dashboard-Total-sales
-    path('finance_total/',  FinanceTableDateFilteredAPIView.as_view(),  name='finance_total'),
+    path('finance_total/',  FinanceTableDateFilteredAPIView.as_view(),  name='finance-total'),
+    path('income_add/',     IncomeAddAPIView.as_view(),  name='income-add'),
+    path('expense_add/',    ExpenseAddAPIView.as_view(),  name='expense-add'),
 
 
     # User-page
     path('user_work_info/',   UserWorkInfoAPIView.as_view(), name='user-work-info'),
 
     # Refersh-Token
-    path('refresh_token/',   TokenRefreshAPIView.as_view(), name='refresh-token'),
+    path('refresh_token/',   TokenRefreshAPIView.as_view(), name='refresh-token')
 ]

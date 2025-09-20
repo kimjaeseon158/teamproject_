@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User_Login_Info, User_Work_Info
+from .models import User_Login_Info, User_Work_Info, Expense, Income
 
 class User_Login_InfoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,3 +15,13 @@ class User_InfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = User_Login_Info
         exclude = ('user_id', 'password')
+
+class ExpenseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Expense
+        fields = '__all__'  
+
+class IncomeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Income
+        fields = '__all__'

@@ -7,7 +7,7 @@ from rest_framework.permissions          import AllowAny
 from rest_framework.exceptions           import AuthenticationFailed
 from rest_framework                      import status
 
-from .serializers     import User_Login_InfoSerializer, User_InfoSerializer, User_Work_InfoSerializer
+from .serializers     import User_Login_InfoSerializer, User_InfoSerializer, User_Work_InfoSerializer, IncomeSerializer, ExpenseSerializer
 from .auth_utils      import check_user_credentials, check_admin_credentials
 from .jwt_utils       import get_user_from_cookie, get_user_from_token, CustomRefreshToken
 from .models          import User_Login_Info, Admin_Login_Info,Expense, Income
@@ -324,3 +324,57 @@ class FinanceTableDateFilteredAPIView(APIView):
 
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=500)
+        
+
+class ExpenseAddAPIView(APIView):
+    def post(self, request):
+        try:
+            # 1️⃣ Access Token 확인
+            try:
+                user = get_user_from_cookie(request)
+            except AuthenticationFailed:
+                return Response({'success': False, 'message': 'Authentication failed'}, status=401)
+
+            # 2️⃣ 새로운 지출 추가
+            serializer = ExpenseSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                result = serializer.data
+                success = True
+            else:
+                result = serializer.errors
+                success = False
+
+            # 3️⃣ 최종 반환
+            return Response({'success': success, 'expense_data': result}, status=201 if success else 400)
+
+        except Exception as e:
+            return Response({'success': False, 'message': str(e)}, status=500)
+        
+
+class IncomeAddAPIView(APIView):
+    def post(self, request):
+        try:
+            # 1️⃣ Access Token 확인
+            try:
+                user = get_user_from_cookie(request)
+            except AuthenticationFailed:
+                return Response({'success': False, 'message': 'Authentication failed'}, status=401)
+
+            # 2️⃣ 새로운 매출 추가
+            serializer = IncomeSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                result = serializer.data
+                success = True
+            else:
+                result = serializer.errors
+                success = False
+
+            # 3️⃣ 최종 반환
+            return Response({'success': success, 'income_data': result}, status=201 if success else 400)
+
+        except Exception as e:
+            return Response({'success': False, 'message': str(e)}, status=500)
+        
+

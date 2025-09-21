@@ -257,8 +257,8 @@ class UserInfoFilteringAPIView(APIView):
             except AuthenticationFailed:
                 return Response({'success': False, 'message': 'Authentication failed'}, status=401)
                 
-            filtering = request.query_params.get('filtering', {})
-            sorting = request.query_params.get('sorting')
+            filtering = request.query_params.dict()
+            sorting = request.query_params.get("sorting")
 
             filters = {}
             for key, value in filtering.items():
@@ -278,7 +278,7 @@ class UserInfoFilteringAPIView(APIView):
             return Response({'success': True, 'data': result})
 
         except Exception as e:
-            return Response({'success': False, 'message': str(e)}, status=500)
+            return Response({'success': False, 'message': str(e)})
         
 
 class FinanceTableDateFilteredAPIView(APIView):
@@ -295,7 +295,7 @@ class FinanceTableDateFilteredAPIView(APIView):
             end_date_str = request.query_params.get('end_date')
 
             if not start_date_str or not end_date_str:
-                return Response({'success': False, 'message': 'start_date and end_date are required'}, status=400)
+                return Response({'success': False, 'message': 'start_date and end_date are required'})
 
             start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
             end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
@@ -321,7 +321,7 @@ class FinanceTableDateFilteredAPIView(APIView):
 
 
         except Exception as e:
-            return Response({'success': False, 'message': str(e)}, status=500)
+            return Response({'success': False, 'message': str(e)})
         
 
 class ExpenseAddAPIView(APIView):

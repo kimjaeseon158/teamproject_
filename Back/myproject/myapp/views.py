@@ -132,11 +132,11 @@ class UserInfoListAPIView(APIView):
                 return Response({'success': False, 'message': 'Authentication failed'}, status=401)
 
         except Exception as e:
-            return Response({'success': False, 'message': str(e)}, status=500)
+            return Response({'success': False, 'message': str(e)})
 
 
 class UserWorkInfoAPIView(APIView):
-    def post(self, request):
+    def put(self, request):
         try:
             try:
                 # 1️⃣ Access Token 확인
@@ -156,11 +156,11 @@ class UserWorkInfoAPIView(APIView):
                 return Response({'success': False, 'message': 'Authentication failed'}, status=401)
 
         except Exception as e:
-            return Response({'success': False, 'message': str(e)}, status=500)  
+            return Response({'success': False, 'message': str(e)})  
 
 
 class UserInfoDeleteAPIView(APIView):
-    def post(self, request):
+    def delete(self, request):
         try:
             # 1️⃣ Access Token 확인
             try:
@@ -182,14 +182,14 @@ class UserInfoDeleteAPIView(APIView):
                 result = {}
                 success = False
 
-            return Response({'success': success, 'user_data': result})
+            return Response({'success': success, 'user_data': result} if success else {'success': success})
 
         except Exception as e:
-            return Response({'success': False, 'message': str(e)}, status=500)
+            return Response({'success': False, 'message': str(e)})
         
 
 class UserInfoUpdateAPIView(APIView):
-    def post(self, request):
+    def put(self, request):
         try:
             # 1️⃣ Access Token 확인
             try:
@@ -217,14 +217,14 @@ class UserInfoUpdateAPIView(APIView):
                 success = False
 
             # 3️⃣ 최종 반환
-            return Response({'success': success, 'user_data': result})
+            return Response({'success': success, 'user_data': result} if success else {'success': success})
 
         except Exception as e:
-            return Response({'success': False, 'message': str(e)}, status=500)
+            return Response({'success': False, 'message': str(e)})
 
 
 class UserInfoAddAPIView(APIView):
-    def post(self, request):
+    def patch(self, request):
         try:
             # 1️⃣ Access Token 확인
             try:
@@ -245,14 +245,14 @@ class UserInfoAddAPIView(APIView):
                 success = False
 
             # 3️⃣ 최종 반환
-            return Response({'success': success, 'user_data': result}, status=201 if success else 400)
+            return Response({'success': success, 'user_data': result} if success else {'success': success})
 
         except Exception as e:
-            return Response({'success': False, 'message': str(e)}, status=500)
+            return Response({'success': False, 'message': str(e)})
 
 
 class UserInfoFilteringAPIView(APIView):
-    def post(self, request):
+    def get(self, request):
         try:
             try:
                 user = get_user_from_cookie(request)
@@ -284,7 +284,7 @@ class UserInfoFilteringAPIView(APIView):
         
 
 class FinanceTableDateFilteredAPIView(APIView):
-    def post(self, request):
+    def get(self, request):
         try:
             try:
                 # 사용자 인증
@@ -346,10 +346,10 @@ class ExpenseAddAPIView(APIView):
                 success = False
 
             # 3️⃣ 최종 반환
-            return Response({'success': success, 'expense_data': result}, status=201 if success else 400)
+            return Response({'success': success, 'expense_data': result} if success else {'success': success})
 
         except Exception as e:
-            return Response({'success': False, 'message': str(e)}, status=500)
+            return Response({'success': False, 'message': str(e)})
         
 
 class IncomeAddAPIView(APIView):
@@ -372,9 +372,9 @@ class IncomeAddAPIView(APIView):
                 success = False
 
             # 3️⃣ 최종 반환
-            return Response({'success': success, 'income_data': result}, status=201 if success else 400)
+            return Response({'success': success, 'income_data': result} if success else {'success': success})
 
         except Exception as e:
-            return Response({'success': False, 'message': str(e)}, status=500)
+            return Response({'success': False, 'message': str(e)})
         
 

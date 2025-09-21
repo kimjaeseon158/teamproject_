@@ -36,7 +36,7 @@ class TokenRefreshAPIView(APIView):
 
         
 # ----------------------
-# 1️⃣ 관리자 로그인
+# 관리자 로그인
 # ----------------------
 class CheckAdminLoginAPIView(APIView):
     permission_classes = [AllowAny]
@@ -51,7 +51,7 @@ class CheckAdminLoginAPIView(APIView):
         if success:
             admin_instance = Admin_Login_Info.objects.get(admin_id=admin_id)
 
-            # ✅ 원하는 값으로 토큰 생성 (id 대신 admin_id 사용)
+            # 원하는 값으로 토큰 생성 (id 대신 admin_id 사용)
             refresh = CustomRefreshToken.for_subject(
                 subject_value=admin_instance.admin_id,
                 admin_name=admin_instance.admin_name,
@@ -75,7 +75,7 @@ class CheckAdminLoginAPIView(APIView):
 
 
 # ----------------------
-# 2️⃣ 일반 유저 로그인
+# 일반 유저 로그인
 # ----------------------
 class CheckUserLoginAPIView(APIView):
     permission_classes = [AllowAny]
@@ -89,7 +89,7 @@ class CheckUserLoginAPIView(APIView):
         if success:
             user_instance = User_Login_Info.objects.get(employee_number=employee_number)
 
-            # ✅ id 대신 employee_number를 sub에 넣고, user_name, role도 추가
+            # id 대신 employee_number를 sub에 넣고, user_name, role도 추가
             refresh = CustomRefreshToken.for_subject(
                 subject_value=employee_number,   # PK 대신 employee_number를 사용
                 user_name=user_name,
@@ -118,18 +118,16 @@ class UserInfoListAPIView(APIView):
     def get(self, request):
         try:
             try:
-                # 1️⃣ Access Token 확인
+                # Access Token 확인
                 user = get_user_from_cookie(request)
-
-                # 2️⃣ 유저 정보 가져오기
-                users = User_Login_Info.objects.all()
-                user_data = User_InfoSerializer(users, many=True)
-
-                return Response({'success': True, 'users': user_data.data})
-
             except AuthenticationFailed:
-                
                 return Response({'success': False, 'message': 'Authentication failed'}, status=401)
+
+            # 유저 정보 가져오기
+            users = User_Login_Info.objects.all()
+            user_data = User_InfoSerializer(users, many=True)
+
+            return Response({'success': True, 'users': user_data.data})
 
         except Exception as e:
             return Response({'success': False, 'message': str(e)})
@@ -139,10 +137,10 @@ class UserWorkInfoAPIView(APIView):
     def put(self, request):
         try:
             try:
-                # 1️⃣ Access Token 확인
+                # Access Token 확인
                 user = get_user_from_cookie(request)
 
-                # 2️⃣ 작업 정보 등록
+                # 작업 정보 등록
                 data = request.data
                 serializer = User_Work_InfoSerializer(data=data)
                 if serializer.is_valid():
@@ -162,13 +160,13 @@ class UserWorkInfoAPIView(APIView):
 class UserInfoDeleteAPIView(APIView):
     def delete(self, request):
         try:
-            # 1️⃣ Access Token 확인
+            # Access Token 확인
             try:
                 user = get_user_from_cookie(request)
             except AuthenticationFailed:
                 return Response({'success': False, 'message': 'Authentication failed'}, status=401)
 
-            # 2️⃣ 사용자 삭제
+            # 사용자 삭제
             employee_number = request.data.get('employee_number')
             try:
                 user_instance = User_Login_Info.objects.get(employee_number=employee_number)
@@ -191,13 +189,13 @@ class UserInfoDeleteAPIView(APIView):
 class UserInfoUpdateAPIView(APIView):
     def put(self, request):
         try:
-            # 1️⃣ Access Token 확인
+            # Access Token 확인
             try:
                 user = get_user_from_cookie(request)
             except AuthenticationFailed:
                 return Response({'success': False, 'message': 'Authentication failed'}, status=401)
 
-            # 2️⃣ 사용자 정보 업데이트
+            # 사용자 정보 업데이트
             employee_number = request.data.get('employee_number')
             try:
                 user_instance = User_Login_Info.objects.get(employee_number=employee_number)
@@ -216,7 +214,7 @@ class UserInfoUpdateAPIView(APIView):
                 result = {}
                 success = False
 
-            # 3️⃣ 최종 반환
+            # 최종 반환
             return Response({'success': success, 'user_data': result} if success else {'success': success})
 
         except Exception as e:
@@ -226,13 +224,13 @@ class UserInfoUpdateAPIView(APIView):
 class UserInfoAddAPIView(APIView):
     def patch(self, request):
         try:
-            # 1️⃣ Access Token 확인
+            # 1Access Token 확인
             try:
                 user = get_user_from_cookie(request)
             except AuthenticationFailed:
                 return Response({'success': False, 'message': 'Authentication failed'}, status=401)
 
-            # 2️⃣ 새로운 사용자 생성
+            # 새로운 사용자 생성
             serializer = User_Login_InfoSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save()
@@ -244,7 +242,7 @@ class UserInfoAddAPIView(APIView):
                 result = serializer.errors
                 success = False
 
-            # 3️⃣ 최종 반환
+            # 최종 반환
             return Response({'success': success, 'user_data': result} if success else {'success': success})
 
         except Exception as e:
@@ -255,29 +253,29 @@ class UserInfoFilteringAPIView(APIView):
     def get(self, request):
         try:
             try:
-                user = get_user_from_cookie(request)
-                
-                filtering = request.data.get('filtering', {})
-                sorting = request.data.get('sorting')
-
-                filters = {}
-                for key, value in filtering.items():
-                    if isinstance(value, str):
-                        filters[f'{key}__icontains'] = value
-                    elif isinstance(value, (int, float)):
-                        filters[f'{key}__icontains'] = str(value)
-                    else:
-                        filters[key] = value
-
-                queryset = User_Login_Info.objects.filter(**filters)
-                if sorting:
-                    queryset = queryset.order_by(sorting)
-
-                result = list(queryset.values())
-                return Response({'success': True, 'data': result})
-
+                user = get_user_from_cookie(request)            
             except AuthenticationFailed:
                 return Response({'success': False, 'message': 'Authentication failed'}, status=401)
+                
+            filtering = request.query_params.get('filtering', {})
+            sorting = request.query_params.get('sorting')
+
+            filters = {}
+            for key, value in filtering.items():
+                if isinstance(value, str):
+                    filters[f'{key}__icontains'] = value
+                elif isinstance(value, (int, float)):
+                    filters[f'{key}__icontains'] = str(value)
+                else:
+                    filters[key] = value
+
+            queryset = User_Login_Info.objects.filter(**filters)
+            if sorting:
+                queryset = queryset.order_by(sorting)
+
+            result = list(queryset.values())
+            
+            return Response({'success': True, 'data': result})
 
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=500)
@@ -289,38 +287,38 @@ class FinanceTableDateFilteredAPIView(APIView):
             try:
                 # 사용자 인증
                 user = get_user_from_cookie(request)
-
-                # 프론트에서 날짜 범위 받기
-                start_date_str = request.data.get('start_date')
-                end_date_str = request.data.get('end_date')
-
-                if not start_date_str or not end_date_str:
-                    return Response({'success': False, 'message': 'start_date and end_date are required'}, status=400)
-
-                start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-                end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-
-                # 1️⃣ Expense 합계 (날짜 필터링)
-                expense_qs = Expense.objects.filter(date__gte=start_date, date__lte=end_date) \
-                                            .values('expense_name') \
-                                            .annotate(total_amount=Sum('amount'))
-                expense_totals = {item['expense_name']: item['total_amount'] for item in expense_qs}
-
-                # 2️⃣ Income 합계 (날짜 필터링)
-                income_qs = Income.objects.filter(date__gte=start_date, date__lte=end_date) \
-                                          .values('company_name') \
-                                          .annotate(total_amount=Sum('amount'))
-                income_totals = {item['company_name']: item['total_amount'] for item in income_qs}
-
-                result = {
-                    'expense_totals': expense_totals,
-                    'income_totals': income_totals
-                }
-
-                return Response({'success': True, 'data': result})
-
             except AuthenticationFailed:
                 return Response({'success': False, 'message': 'Authentication failed'}, status=401)
+            
+            # 프론트에서 날짜 범위 받기
+            start_date_str = request.query_params.get('start_date')
+            end_date_str = request.query_params.get('end_date')
+
+            if not start_date_str or not end_date_str:
+                return Response({'success': False, 'message': 'start_date and end_date are required'}, status=400)
+
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+
+            # Expense 합계 (날짜 필터링)
+            expense_qs = Expense.objects.filter(date__gte=start_date, date__lte=end_date) \
+                                        .values('expense_name') \
+                                        .annotate(total_amount=Sum('amount'))
+            expense_totals = {item['expense_name']: item['total_amount'] for item in expense_qs}
+
+            # Income 합계 (날짜 필터링)
+            income_qs = Income.objects.filter(date__gte=start_date, date__lte=end_date) \
+                                      .values('company_name') \
+                                      .annotate(total_amount=Sum('amount'))
+            income_totals = {item['company_name']: item['total_amount'] for item in income_qs}
+
+            result = {
+                'expense_totals': expense_totals,
+                'income_totals': income_totals
+            }
+
+            return Response({'success': True, 'data': result})
+
 
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=500)
@@ -329,13 +327,13 @@ class FinanceTableDateFilteredAPIView(APIView):
 class ExpenseAddAPIView(APIView):
     def post(self, request):
         try:
-            # 1️⃣ Access Token 확인
+            # Access Token 확인
             try:
                 user = get_user_from_cookie(request)
             except AuthenticationFailed:
                 return Response({'success': False, 'message': 'Authentication failed'}, status=401)
 
-            # 2️⃣ 새로운 지출 추가
+            # 새로운 지출 추가
             serializer = ExpenseSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save()
@@ -345,7 +343,7 @@ class ExpenseAddAPIView(APIView):
                 result = serializer.errors
                 success = False
 
-            # 3️⃣ 최종 반환
+            # 최종 반환
             return Response({'success': success, 'expense_data': result} if success else {'success': success})
 
         except Exception as e:
@@ -371,7 +369,7 @@ class IncomeAddAPIView(APIView):
                 result = serializer.errors
                 success = False
 
-            # 3️⃣ 최종 반환
+            # 최종 반환
             return Response({'success': success, 'income_data': result} if success else {'success': success})
 
         except Exception as e:

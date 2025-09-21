@@ -170,14 +170,17 @@ const AdminPage = () => {
 
     const sort = sort_Key && sort_Direction ? { key: sort_Key, direction: sort_Direction } : null;
 
+    // 서버로 GET 요청
     let result = await fetchFilteredPeople({ filters, sort });
 
+    // 사원번호 기준 정렬
     if (sort && sort.key === "employee_number") {
       result = sortByEmployeeNumber(result);
       if (sort.direction === "desc") result = result.reverse();
     } else if (!sort) {
       result = sortByEmployeeNumber(result);
     }
+
     setpeople_Data(result);
     closeSearchModal();
   };

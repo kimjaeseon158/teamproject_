@@ -3,13 +3,14 @@ import { fetchWithAuth } from "../../api/fetchWithAuth";
 
 export async function total_payPost(payload, toast) {
   try {
-    // fetchWithAuth 호출
+    // payload를 쿼리스트링으로 변환
+    const query = payload ? `?${new URLSearchParams(payload).toString()}` : "";
+
     const res = await fetchWithAuth(
-      "/api/finance_total/",
+      `/api/finance_total/${query}`,
       {
-        method: "POST",
+        method: "GET",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
       },
       { toast } // 옵션으로 toast 넘김
     );

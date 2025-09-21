@@ -12,10 +12,11 @@ export async function fetchFilteredPeople(queryParams) {
           : {}),
     };
 
-    const res = await fetch("/api/user_info_filtering/", {
-      method: "POST",
+    const query = new URLSearchParams(payload).toString();
+
+    const res = await fetch(`/api/user_info_filtering/?${query}`, {
+      method: "GET",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
       credentials: "include"
     });
 

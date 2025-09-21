@@ -68,7 +68,14 @@ export default function Sidebar() {
                 to="/dashboard/total-sales/edit"
                 style={({ isActive }) => activeStyle(isActive)}
               >
-                Edit
+                total_expense
+              </Link>
+              <Link
+                as={NavLink}
+                to="/dashboard/total-sales/company"
+                style={({ isActive }) => activeStyle(isActive)}
+              >
+                total_company
               </Link>
             </VStack>
           )}

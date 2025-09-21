@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.hashers import make_password
+from .unique_serial import generate_unique_serial
 
 # User 관련 테이블
 
@@ -58,16 +59,19 @@ class Admin_Login_Info(models.Model):
             self.password = make_password(self.password)
         super().save(*args, **kwargs)
 
-# 매출 테이블
-class Income(models.Model):
-    date           = models.DateField()                                        # 매출 날짜
-    company_name   = models.CharField(max_length=100)                          # 업체명 (자유 입력)
-    company_detail = models.CharField(max_length=100,blank=True,null=True)     # 업체명 상세 (자유 입력)
-    amount         = models.IntegerField()                                     # 매출 금액 (정수)
+# 수입 매출 관련 테이블
 
-# 지출 테이블
+class Income(models.Model):
+    date           = models.DateField()                                                      # 매출 날짜
+    company_name   = models.CharField(max_length=100)                                        # 업체명 (자유 입력)
+    company_detail = models.CharField(max_length=100,blank=True,null=True)                   # 업체명 상세 (자유 입력)
+    amount         = models.IntegerField()                                                   # 매출 금액 (정수)
+    serial_number  = models.IntegerField(primary_key=True, default=generate_unique_serial)   # 중복되지 않음 고유번호 저장
+
+
 class Expense(models.Model):
-    date           = models.DateField()                                        # 지출 날짜
-    expense_name   = models.CharField(max_length=100)                          # 지출명 (대분류, 자유 입력)
-    expense_detail = models.CharField(max_length=100, blank=True, null=True)   # 지출 상세 (자유 입력)
-    amount         = models.IntegerField()                                     # 지출 금액 (정수)
+    date           = models.DateField()                                                      # 지출 날짜
+    expense_name   = models.CharField(max_length=100)                                        # 지출명 (대분류, 자유 입력)
+    expense_detail = models.CharField(max_length=100, blank=True, null=True)                 # 지출 상세 (자유 입력)
+    amount         = models.IntegerField()                                                   # 지출 금액 (정수)
+    serial_number  = models.IntegerField(primary_key=True, default=generate_unique_serial)   # 중복되지 않음 고유번호 저장

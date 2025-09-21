@@ -66,7 +66,12 @@ class Income(models.Model):
     company_name   = models.CharField(max_length=100)                                        # 업체명 (자유 입력)
     company_detail = models.CharField(max_length=100,blank=True,null=True)                   # 업체명 상세 (자유 입력)
     amount         = models.IntegerField()                                                   # 매출 금액 (정수)
-    serial_number  = models.IntegerField(primary_key=True, default=generate_unique_serial)   # 중복되지 않음 고유번호 저장
+    serial_number  = models.IntegerField(primary_key=True)    # 새 레코드 생성 시 자동 값 중복되지 않음 고유번호 저장 
+
+    def save(self, *args, **kwargs):
+        if not self.serial_number:
+            self.serial_number = generate_unique_serial(Income)
+        super().save(*args, **kwargs)
 
 
 class Expense(models.Model):
@@ -74,4 +79,9 @@ class Expense(models.Model):
     expense_name   = models.CharField(max_length=100)                                        # 지출명 (대분류, 자유 입력)
     expense_detail = models.CharField(max_length=100, blank=True, null=True)                 # 지출 상세 (자유 입력)
     amount         = models.IntegerField()                                                   # 지출 금액 (정수)
-    serial_number  = models.IntegerField(primary_key=True, default=generate_unique_serial)   # 중복되지 않음 고유번호 저장
+    serial_number  = models.IntegerField(primary_key=True)    # 새 레코드 생성 시 자동 값 중복되지 않음 고유번호 저장 
+
+    def save(self, *args, **kwargs):
+        if not self.serial_number:
+            self.serial_number = generate_unique_serial(Expense)
+        super().save(*args, **kwargs)

@@ -7,7 +7,7 @@ export async function total_payPost(payload, toast) {
     const res = await fetchWithAuth(
       "/api/finance_total/",
       {
-        method: "POST",
+        method: "GET",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       },

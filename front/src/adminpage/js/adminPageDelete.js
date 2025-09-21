@@ -12,7 +12,7 @@ export const deleteEmployees = async (employee_Numbers) => {
       console.log("DELETE 요청 바디:", body);
 
       const response = await fetch("/api/user_info_delete/", {
-        method: "POST",
+        method: "DELETE",
         headers: {
           "Content-Type": "application/json",
         },

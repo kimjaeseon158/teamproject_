@@ -30,12 +30,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='expense',
             name='serial_number',
-            field=models.IntegerField(primary_key=True, editable=False),
+            field=models.IntegerField(unique=True, editable=False),
         ),
         migrations.AddField(
             model_name='income',
             name='serial_number',
-            field=models.IntegerField(primary_key=True, editable=False),
+            field=models.IntegerField(unique=True, editable=False),
         ),
         migrations.RunPython(populate_serial_numbers),
     ]

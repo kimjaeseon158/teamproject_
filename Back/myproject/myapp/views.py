@@ -376,3 +376,129 @@ class IncomeAddAPIView(APIView):
             return Response({'success': False, 'message': str(e)})
         
 
+class IncomeUpdateAPIView(APIView):
+    def put(self, request):
+        try:
+            # Access Token 확인
+            try:
+                user = get_user_from_cookie(request)
+            except AuthenticationFailed:
+                return Response({'success': False, 'message': 'Authentication failed'}, status=401)
+
+            # 필수: serial_number 및 날짜 범위
+            serial_number = request.data['serial_number']
+            start_date = datetime.strptime(request.data['start_date'], "%Y-%m-%d").date()
+            end_date = datetime.strptime(request.data['end_date'], "%Y-%m-%d").date()
+
+            # 레코드 업데이트
+            income_instance = Income.objects.get(serial_number=serial_number)
+            serializer = IncomeSerializer(income_instance, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+
+                # 날짜 범위 필터링된 데이터 반환
+                income_qs = Income.objects.filter(date__gte=start_date, date__lte=end_date)
+                income_data = IncomeSerializer(income_qs, many=True)
+
+                return Response({'success': True, 'income_data': income_data.data})
+            else:
+                return Response({'success': False})
+
+        except Exception:
+            return Response({'success': False})
+        
+
+class ExpenseUpdateAPIView(APIView):
+    def put(self, request):
+        try:
+            # Access Token 확인
+            try:
+                user = get_user_from_cookie(request)
+            except AuthenticationFailed:
+                return Response({'success': False, 'message': 'Authentication failed'}, status=401)
+
+            # 필수: serial_number 및 날짜 범위
+            serial_number = request.data['serial_number']
+            start_date = datetime.strptime(request.data['start_date'], "%Y-%m-%d").date()
+            end_date = datetime.strptime(request.data['end_date'], "%Y-%m-%d").date()
+
+            # 레코드 업데이트
+            expense_instance = Expense.objects.get(serial_number=serial_number)
+            serializer = ExpenseSerializer(expense_instance, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+
+                # 날짜 범위 필터링된 데이터 반환
+                expense_qs = Expense.objects.filter(date__gte=start_date, date__lte=end_date)
+                expense_data = ExpenseSerializer(expense_qs, many=True)
+
+                return Response({'success': True, 'expense_data': expense_data.data})
+            else:
+                return Response({'success': False})
+
+        except Exception:
+            return Response({'success': False})
+        
+
+class IncomeDeleteAPIView(APIView):
+    def delete(self, request):
+        try:
+            # Access Token 확인
+            try:
+                user = get_user_from_cookie(request)
+            except AuthenticationFailed:
+                return Response({'success': False})
+
+            # 필수: serial_number 및 날짜 범위
+            serial_number = request.data['serial_number']
+            start_date = datetime.strptime(request.data['start_date'], "%Y-%m-%d").date()
+            end_date = datetime.strptime(request.data['end_date'], "%Y-%m-%d").date()
+
+            try:
+                # 레코드 삭제
+                income_instance = Income.objects.get(serial_number=serial_number)
+                income_instance.delete()
+
+                # 삭제 후 날짜 범위 필터링된 데이터 반환
+                income_qs = Income.objects.filter(date__gte=start_date, date__lte=end_date)
+                income_data = IncomeSerializer(income_qs, many=True)
+
+                return Response({'success': True, 'income_data': income_data.data})
+
+            except Income.DoesNotExist:
+                return Response({'success': False})
+
+        except Exception:
+            return Response({'success': False})
+        
+
+class ExpenseDeleteAPIView(APIView):
+    def delete(self, request):
+        try:
+            # Access Token 확인
+            try:
+                user = get_user_from_cookie(request)
+            except AuthenticationFailed:
+                return Response({'success': False})
+
+            # 필수: serial_number 및 날짜 범위
+            serial_number = request.data['serial_number']
+            start_date = datetime.strptime(request.data['start_date'], "%Y-%m-%d").date()
+            end_date = datetime.strptime(request.data['end_date'], "%Y-%m-%d").date()
+
+            try:
+                # 레코드 삭제
+                expense_instance = Expense.objects.get(serial_number=serial_number)
+                expense_instance.delete()
+
+                # 삭제 후 날짜 범위 필터링된 데이터 반환
+                expense_qs = Expense.objects.filter(date__gte=start_date, date__lte=end_date)
+                expense_data = ExpenseSerializer(expense_qs, many=True)
+
+                return Response({'success': True, 'expense_data': expense_data.data})
+
+            except Expense.DoesNotExist:
+                return Response({'success': False})
+
+        except Exception:
+            return Response({'success': False})

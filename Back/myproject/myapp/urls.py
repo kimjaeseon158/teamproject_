@@ -12,7 +12,11 @@ from .views import (
     TokenRefreshAPIView,
     FinanceTableDateFilteredAPIView,
     IncomeAddAPIView,
-    ExpenseAddAPIView
+    ExpenseAddAPIView,
+    IncomeUpdateAPIView,
+    ExpenseUpdateAPIView,
+    IncomeDeleteAPIView,
+    ExpenseDeleteAPIView
 )
 
 urlpatterns = [
@@ -28,10 +32,13 @@ urlpatterns = [
     path('user_info_filtering/',  UserInfoFilteringAPIView.as_view(),  name='user-info-filtering'),
 
     # Dashboard-Total-sales
-    path('finance_total/',  FinanceTableDateFilteredAPIView.as_view(),  name='finance-total'),
-    path('income_add/',     IncomeAddAPIView.as_view(),  name='income-add'),
-    path('expense_add/',    ExpenseAddAPIView.as_view(),  name='expense-add'),
-
+    path('finance_total/',     FinanceTableDateFilteredAPIView.as_view(),  name='finance-total'),
+    path('income_add/',        IncomeAddAPIView.as_view(),                 name='income-add'),
+    path('expense_add/',       ExpenseAddAPIView.as_view(),                name='expense-add'),
+    path('income_update/',     IncomeUpdateAPIView.as_view(),              name='income-update'),
+    path('expense_update/',    ExpenseUpdateAPIView.as_view(),             name='expense_update'),
+    path('income_delete/',     IncomeDeleteAPIView.as_view(),              name='income-delete'),
+    path('expense_delete/',    ExpenseDeleteAPIView.as_view(),             name='expense-delete'),
 
     # User-page
     path('user_work_info/',   UserWorkInfoAPIView.as_view(), name='user-work-info'),

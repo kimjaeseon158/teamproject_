@@ -323,6 +323,64 @@ class FinanceTableDateFilteredAPIView(APIView):
         except Exception as e:
             return Response({'success': False, 'message': str(e)})
         
+class IncomeDateFilteredAPIView(APIView):
+    def get(self, request):
+        try:
+            # 사용자 인증
+            try:
+                user = get_user_from_cookie(request)
+            except AuthenticationFailed:
+                return Response({'success': False, 'message': 'Authentication failed'}, status=401)
+
+            # 프론트에서 날짜 범위 받기
+            start_date_str = request.query_params.get('start_date')
+            end_date_str = request.query_params.get('end_date')
+
+            if not start_date_str or not end_date_str:
+                return Response({'success': False})
+
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+
+            # 지정 날짜 범위의 모든 수입 가져오기
+            incomes = Income.objects.filter(date__gte=start_date, date__lte=end_date) \
+                                    .values('serial_number', 'date', 'company_name', 'company_detail', 'amount')
+            result = list(incomes)
+
+            return Response({'success': True, 'data': result})
+
+        except Exception as e:
+            return Response({'success': False, 'message': str(e)})        
+        
+class ExpenseDateFilteredAPIView(APIView):
+    def get(self, request):
+        try:
+            # 사용자 인증
+            try:
+                user = get_user_from_cookie(request)
+            except AuthenticationFailed:
+                return Response({'success': False, 'message': 'Authentication failed'}, status=401)
+
+            # 프론트에서 날짜 범위 받기
+            start_date_str = request.query_params.get('start_date')
+            end_date_str = request.query_params.get('end_date')
+
+            if not start_date_str or not end_date_str:
+                return Response({'success': False})
+
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+
+            # 지정 날짜 범위의 모든 지출 가져오기
+            expenses = Expense.objects.filter(date__gte=start_date, date__lte=end_date) \
+                                      .values('serial_number', 'date', 'expense_name', 'expense_detail', 'amount')
+            result = list(expenses)
+            
+            return Response({'success': True, 'data': result})
+
+        except Exception as e:
+            return Response({'success': False, 'message': str(e)})
+        
 
 class ExpenseAddAPIView(APIView):
     def post(self, request):
@@ -447,7 +505,7 @@ class IncomeDeleteAPIView(APIView):
             try:
                 user = get_user_from_cookie(request)
             except AuthenticationFailed:
-                return Response({'success': False})
+                return Response({'success': False, 'message': 'Authentication failed'}, status=401)
 
             # 필수: serial_number 및 날짜 범위
             serial_number = request.data['serial_number']
@@ -479,7 +537,7 @@ class ExpenseDeleteAPIView(APIView):
             try:
                 user = get_user_from_cookie(request)
             except AuthenticationFailed:
-                return Response({'success': False})
+                return Response({'success': False, 'message': 'Authentication failed'}, status=401)
 
             # 필수: serial_number 및 날짜 범위
             serial_number = request.data['serial_number']
@@ -502,3 +560,4 @@ class ExpenseDeleteAPIView(APIView):
 
         except Exception:
             return Response({'success': False})
+        

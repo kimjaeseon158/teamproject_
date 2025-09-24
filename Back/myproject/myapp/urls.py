@@ -11,6 +11,8 @@ from .views import (
     UserInfoAddAPIView,
     TokenRefreshAPIView,
     FinanceTableDateFilteredAPIView,
+    IncomeDateFilteredAPIView,
+    ExpenseDateFilteredAPIView,
     IncomeAddAPIView,
     ExpenseAddAPIView,
     IncomeUpdateAPIView,
@@ -33,6 +35,8 @@ urlpatterns = [
 
     # Dashboard-Total-sales
     path('finance_total/',     FinanceTableDateFilteredAPIView.as_view(),  name='finance-total'),
+    path('income_filtered/',   IncomeDateFilteredAPIView.as_view(),        name='income-filtered'),
+    path('expense_filtered/',  ExpenseDateFilteredAPIView.as_view(),       name='expense-filtered'),  
     path('income_add/',        IncomeAddAPIView.as_view(),                 name='income-add'),
     path('expense_add/',       ExpenseAddAPIView.as_view(),                name='expense-add'),
     path('income_update/',     IncomeUpdateAPIView.as_view(),              name='income-update'),

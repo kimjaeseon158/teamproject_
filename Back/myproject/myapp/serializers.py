@@ -19,9 +19,11 @@ class User_InfoSerializer(serializers.ModelSerializer):
 class ExpenseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Expense
-        fields = '__all__'  
+        fields = '__all__'
+        read_only_fields = ('serial_number',)  
 
 class IncomeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Income
         fields = '__all__'
+        read_only_fields = ('serial_number',)

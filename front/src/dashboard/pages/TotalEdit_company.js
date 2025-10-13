@@ -1,80 +1,123 @@
 // src/pages/CompanyPage.js
 import React, { useState, useEffect } from "react";
 import {
-  Box, Flex, Heading, Button, VStack, HStack,
-  Input, NumberInput, NumberInputField, useColorModeValue,
-  useDisclosure, useToast, Modal, ModalOverlay,
-  ModalContent, ModalHeader, ModalBody, ModalFooter,
-  Table, Thead, Tbody, Tr, Th, Td, TableContainer, Stat, StatLabel, StatNumber,
-  IconButton
+  Box, Flex, Heading, Button, VStack, Input,
+  NumberInput, NumberInputField, useColorModeValue,
+  useToast, Checkbox, CheckboxGroup, Stack,
+  Modal, ModalOverlay, ModalContent, ModalHeader,
+  ModalBody, ModalFooter, useDisclosure
 } from "@chakra-ui/react";
-import { DayPicker } from "react-day-picker";
-import "react-day-picker/dist/style.css";
+import { ArrowForwardIcon, EditIcon } from "@chakra-ui/icons";
 import { income_Data } from "../js/company_api";
 import { income_filter_Data } from "../js/company_filter";
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
-import { CloseIcon } from "@chakra-ui/icons";
-
-const COLORS = ["#3182CE", "#2ECC71", "#E74C3C", "#F39C12", "#9B59B6"];
 
 export default function CompanyPage() {
   const cardBg = useColorModeValue("white", "gray.800");
   const cardBorder = useColorModeValue("gray.200", "gray.700");
   const toast = useToast();
 
-  const { isOpen: isRangeOpen, onOpen: onRangeOpen, onClose: onRangeClose } = useDisclosure();
-  const { isOpen: isCompanyOpen, onOpen: onCompanyOpen, onClose: onCompanyClose } = useDisclosure();
-
   const [range, setRange] = useState({ from: new Date(), to: new Date() });
-  const [tempRange, setTempRange] = useState(range);
+  const [tempCompanies, setTempCompanies] = useState([]);
+  const [selectedTemp, setSelectedTemp] = useState([]);
+  const [finalCompanies, setFinalCompanies] = useState([]);
+  const [selectedFinal, setSelectedFinal] = useState([]);
 
-  const [incomeData, setIncomeData] = useState([]);
-  const [totalIncome, setTotalIncome] = useState(0);
+  // 추가 모달
+  const {
+    isOpen: isAddOpen,
+    onOpen: onAddOpen,
+    onClose: onAddClose,
+  } = useDisclosure();
 
-  // 업체 여러 개 추가용 리스트
-  const [companyList, setCompanyList] = useState([
-    { name: "", detail: "", amount: "", date: new Date() }
-  ]);
+  const [newCompany, setNewCompany] = useState({
+    name: "",
+    detail: "",
+    amount: "",
+    date: new Date(),
+  });
 
-  // 기간 필터 GET
+  // 수정 모달
+  const {
+    isOpen: isEditOpen,
+    onOpen: onEditOpen,
+    onClose: onEditClose,
+  } = useDisclosure();
+  const [editIndex, setEditIndex] = useState(null);
+  const [editData, setEditData] = useState({
+    name: "",
+    detail: "",
+    amount: "",
+    date: new Date(),
+  });
+
   const handleFetch = async (start, end) => {
     const result = await income_filter_Data({ start, end }, toast);
-    if (!result || !result.success || !Array.isArray(result.data)) {
-      setIncomeData([]);
-      setTotalIncome(0);
-      return;
-    }
-    const incData = result.data.map(r => ({
+    if (!result?.success || !Array.isArray(result.data)) return;
+    const incData = result.data.map((r) => ({
       name: r.company_name,
       detail: r.company_detail || "-",
-      amount: r.amount
+      amount: r.amount,
+      date: new Date(),
     }));
-    setIncomeData(incData);
-    setTotalIncome(incData.reduce((acc, cur) => acc + cur.amount, 0));
+    setTempCompanies(incData);
   };
 
-  useEffect(() => { handleFetch(range.from, range.to); }, []);
+  useEffect(() => {
+    handleFetch(range.from, range.to);
+  }, []);
 
-  // 업체 리스트 행 추가/삭제
-  const addCompanyRow = () =>
-    setCompanyList([...companyList, { name: "", detail: "", amount: "", date: new Date() }]);
-
-  const removeCompanyRow = (index) =>
-    setCompanyList(companyList.filter((_, i) => i !== index));
-
-  // 업체 추가 POST
-  const handleAddCompany = async () => {
-    if (companyList.some(c => !c.name || !c.amount)) {
+  // ✅ 추가 모달 저장
+  const handleAddCompany = () => {
+    if (!newCompany.name || !newCompany.amount) {
       toast({
         title: "입력 오류",
-        description: "모든 항목에 회사명과 금액을 입력하세요",
-        status: "warning"
+        description: "회사명과 금액은 필수입니다",
+        status: "warning",
       });
       return;
     }
+    setTempCompanies([...tempCompanies, newCompany]);
+    setNewCompany({ name: "", detail: "", amount: "", date: new Date() });
+    onAddClose();
+  };
 
+  // 임시 → 최종
+  const handleMoveSelected = () => {
+    const toMove = tempCompanies.filter((_, i) =>
+      selectedTemp.includes(i.toString())
+    );
+    const remain = tempCompanies.filter(
+      (_, i) => !selectedTemp.includes(i.toString())
+    );
+    setFinalCompanies([...finalCompanies, ...toMove]);
+    setTempCompanies(remain);
+    setSelectedTemp([]);
+  };
+
+  // 최종 → 임시
+  const handleMoveBack = () => {
+    const toMove = finalCompanies.filter((_, i) =>
+      selectedFinal.includes(i.toString())
+    );
+    const remain = finalCompanies.filter(
+      (_, i) => !selectedFinal.includes(i.toString())
+    );
+    setTempCompanies([...tempCompanies, ...toMove]);
+    setFinalCompanies(remain);
+    setSelectedFinal([]);
+  };
+
+  // ✅ 최종 저장
+  const handleRegisterCompanies = async () => {
+    if (selectedFinal.length === 0) {
+      toast({ title: "저장할 항목을 선택하세요", status: "warning" });
+      return;
+    }
     try {
-      for (const item of companyList) {
+      const toSave = finalCompanies.filter((_, i) =>
+        selectedFinal.includes(i.toString())
+      );
+      for (const item of toSave) {
         const payload = {
           date: item.date.toISOString().split("T")[0],
           company_name: item.name,
@@ -83,187 +126,225 @@ export default function CompanyPage() {
         };
         await income_Data(payload, toast);
       }
-
-      await handleFetch(range.from, range.to);
-      setCompanyList([{ name: "", detail: "", amount: "", date: new Date() }]);
-      onCompanyClose();
-      toast({ title: "추가 완료", status: "success" });
-    } catch (err) {
-      console.error(err);
-      toast({
-        title: "오류",
-        description: "서버와 통신 중 문제가 발생했습니다.",
-        status: "error"
-      });
+      const remain = finalCompanies.filter(
+        (_, i) => !selectedFinal.includes(i.toString())
+      );
+      setFinalCompanies(remain);
+      setSelectedFinal([]);
+      toast({ title: "저장 완료", status: "success" });
+    } catch {
+      toast({ title: "서버 오류", status: "error" });
     }
+  };
+
+  // 수정 버튼
+  const handleEditClick = (idx) => {
+    setEditIndex(idx);
+    setEditData(tempCompanies[idx]);
+    onEditOpen();
+  };
+
+  const handleEditSave = () => {
+    const updated = [...tempCompanies];
+    updated[editIndex] = editData;
+    setTempCompanies(updated);
+    onEditClose();
   };
 
   return (
     <Box p={6} bg="gray.50" minH="100vh">
-      <Flex gap={6}>
-        {/* 왼쪽 - 업체 관리 */}
-        <Box flex="2" bg={cardBg} border="1px solid" borderColor={cardBorder} p={6} rounded="2xl" shadow="sm">
+      <Flex gap={6} align="flex-start">
+        {/* 왼쪽 - 임시 리스트 */}
+        <Box
+          flex="1"
+          bg={cardBg}
+          border="1px solid"
+          borderColor={cardBorder}
+          p={6}
+          rounded="2xl"
+          shadow="sm"
+        >
           <Flex justify="space-between" align="center" mb={4}>
-            <Heading size="md">업체 계약 금액</Heading>
-            <Button size="sm" onClick={onRangeOpen}>
-              {range.from.toLocaleDateString()} - {range.to.toLocaleDateString()}
+            <Heading size="md">임시 리스트</Heading>
+            <Button colorScheme="blue" onClick={onAddOpen}>
+              + 업체 추가
             </Button>
           </Flex>
 
-          <Button colorScheme="green" mb={4} onClick={onCompanyOpen}>업체 추가</Button>
-
-          <TableContainer borderRadius="lg" overflow="hidden" border="1px solid" borderColor="gray.200">
-            <Table variant="simple" size="md">
-              <Thead bg="gray.100">
-                <Tr>
-                  <Th>업체명</Th>
-                  <Th>상세</Th>
-                  <Th isNumeric>금액</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {incomeData.map((item, idx) => (
-                  <Tr key={idx} _hover={{ bg: "gray.50", cursor: "pointer" }}>
-                    <Td>{item.name}</Td>
-                    <Td>{item.detail}</Td>
-                    <Td isNumeric>{item.amount.toLocaleString()} 원</Td>
-                  </Tr>
+          <VStack spacing={3} align="stretch">
+            {tempCompanies.length === 0 && (
+              <Box color="gray.500">추가된 항목이 없습니다.</Box>
+            )}
+            <CheckboxGroup value={selectedTemp} onChange={setSelectedTemp}>
+              <Stack spacing={2}>
+                {tempCompanies.map((item, idx) => (
+                  <Flex key={idx} justify="space-between" align="center">
+                    <Checkbox value={idx.toString()}>
+                      <strong>{item.name}</strong> ({item.amount}원)
+                    </Checkbox>
+                    <Button
+                      size="xs"
+                      leftIcon={<EditIcon />}
+                      onClick={() => handleEditClick(idx)}
+                    >
+                      수정
+                    </Button>
+                  </Flex>
                 ))}
-              </Tbody>
-            </Table>
-          </TableContainer>
+              </Stack>
+            </CheckboxGroup>
+          </VStack>
         </Box>
 
-        {/* 오른쪽 - 도넛 차트 + 총금액 */}
-        <Box flex="1" display="flex" flexDirection="column" gap={6}>
-          {/* 도넛 차트 */}
-          <Box bg={cardBg} p={4} rounded="lg" shadow="sm" flex="1">
-            <Heading size="sm" mb={2}>업체 비율 (도넛)</Heading>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={incomeData}
-                  dataKey="amount"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  paddingAngle={3}
-                  label
-                >
-                  {incomeData.map((_, idx) => (
-                    <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </Box>
+        {/* 가운데 이동 */}
+        <Flex direction="column" align="center" justify="center" gap={4}>
+          <Button
+            rightIcon={<ArrowForwardIcon />}
+            colorScheme="blue"
+            onClick={handleMoveSelected}
+            isDisabled={selectedTemp.length === 0}
+          >
+            선택 이동
+          </Button>
+          <Button
+            leftIcon={<ArrowForwardIcon style={{ transform: "rotate(180deg)" }} />}
+            colorScheme="orange"
+            onClick={handleMoveBack}
+            isDisabled={selectedFinal.length === 0}
+          >
+            선택 이동
+          </Button>
+        </Flex>
 
-          {/* 총금액 박스 */}
-          <Box bg="gray.100" p={6} rounded="lg" shadow="sm">
-            <Stat>
-              <StatLabel>총 계약 금액</StatLabel>
-              <StatNumber color="blue.600">{totalIncome.toLocaleString()} 원</StatNumber>
-            </Stat>
-          </Box>
+        {/* 오른쪽 - 최종 리스트 */}
+        <Box
+          flex="1"
+          bg={cardBg}
+          border="1px solid"
+          borderColor={cardBorder}
+          p={6}
+          rounded="2xl"
+          shadow="sm"
+        >
+          <Heading size="md" mb={4}>
+            최종 등록 리스트
+          </Heading>
+          <VStack spacing={3} align="stretch">
+            {finalCompanies.length === 0 && (
+              <Box color="gray.500">이동된 항목이 없습니다.</Box>
+            )}
+            <CheckboxGroup value={selectedFinal} onChange={setSelectedFinal}>
+              <Stack spacing={2}>
+                {finalCompanies.map((item, idx) => (
+                  <Checkbox key={idx} value={idx.toString()}>
+                    <strong>{item.name}</strong> ({item.amount}원)
+                  </Checkbox>
+                ))}
+              </Stack>
+            </CheckboxGroup>
+          </VStack>
+
+          <Button
+            mt={6}
+            colorScheme="green"
+            onClick={handleRegisterCompanies}
+            isDisabled={selectedFinal.length === 0}
+          >
+            선택 저장
+          </Button>
         </Box>
       </Flex>
 
-      {/* 기간 선택 모달 */}
-      <Modal isOpen={isRangeOpen} onClose={onRangeClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>기간 선택</ModalHeader>
-          <ModalBody>
-            <DayPicker
-              mode="range"
-              selected={tempRange}
-              onSelect={(r) => setTempRange(r || { from: null, to: null })}
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button colorScheme="blue" onClick={() => {
-              if (tempRange.from && tempRange.to) {
-                setRange(tempRange);
-                handleFetch(tempRange.from, tempRange.to);
-                onRangeClose();
-              }
-            }}>적용</Button>
-            <Button onClick={onRangeClose}>취소</Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      {/* 업체 추가 모달 */}
-      <Modal isOpen={isCompanyOpen} onClose={onCompanyClose} size="xl">
+      {/* ✅ 추가 모달 */}
+      <Modal isOpen={isAddOpen} onClose={onAddClose}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>업체 추가</ModalHeader>
           <ModalBody>
-            <VStack spacing={4} align="stretch">
-              {companyList.map((item, idx) => (
-                <Box key={idx} p={3} bg={cardBg} border="1px solid" borderColor={cardBorder} rounded="lg">
-                  <HStack spacing={2} mb={2}>
-                    <Input
-                      type="date"
-                      value={item.date.toISOString().split("T")[0]}
-                      onChange={(e) => {
-                        const newList = [...companyList];
-                        newList[idx].date = new Date(e.target.value);
-                        setCompanyList(newList);
-                      }}
-                    />
-                    <IconButton
-                      aria-label="삭제"
-                      icon={<CloseIcon />}
-                      size="sm"
-                      colorScheme="red"
-                      onClick={() => removeCompanyRow(idx)}
-                    />
-                  </HStack>
-                  <Input
-                    placeholder="회사명"
-                    value={item.name}
-                    mb={2}
-                    onChange={(e) => {
-                      const newList = [...companyList];
-                      newList[idx].name = e.target.value;
-                      setCompanyList(newList);
-                    }}
-                  />
-                  <Input
-                    placeholder="회사 상세"
-                    value={item.detail}
-                    mb={2}
-                    onChange={(e) => {
-                      const newList = [...companyList];
-                      newList[idx].detail = e.target.value;
-                      setCompanyList(newList);
-                    }}
-                  />
-                  <NumberInput
-                    value={item.amount}
-                    onChange={(val) => {
-                      const newList = [...companyList];
-                      newList[idx].amount = val;
-                      setCompanyList(newList);
-                    }}
-                  >
-                    <NumberInputField placeholder="금액 (원)" />
-                  </NumberInput>
-                </Box>
-              ))}
-              <Button colorScheme="blue" variant="outline" onClick={addCompanyRow}>
-                + 업체 항목 추가
-              </Button>
+            <VStack spacing={3} align="stretch">
+              <Input
+                type="date"
+                value={newCompany.date.toISOString().split("T")[0]}
+                onChange={(e) =>
+                  setNewCompany({ ...newCompany, date: new Date(e.target.value) })
+                }
+              />
+              <Input
+                placeholder="회사명"
+                value={newCompany.name}
+                onChange={(e) =>
+                  setNewCompany({ ...newCompany, name: e.target.value })
+                }
+              />
+              <Input
+                placeholder="회사 상세"
+                value={newCompany.detail}
+                onChange={(e) =>
+                  setNewCompany({ ...newCompany, detail: e.target.value })
+                }
+              />
+              <NumberInput
+                value={newCompany.amount}
+                onChange={(val) =>
+                  setNewCompany({ ...newCompany, amount: val })
+                }
+              >
+                <NumberInputField placeholder="금액 (원)" />
+              </NumberInput>
             </VStack>
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="green" mr={3} onClick={handleAddCompany}>추가</Button>
-            <Button onClick={onCompanyClose}>취소</Button>
+            <Button colorScheme="blue" mr={3} onClick={handleAddCompany}>
+              추가
+            </Button>
+            <Button onClick={onAddClose}>취소</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* 수정 모달 */}
+      <Modal isOpen={isEditOpen} onClose={onEditClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>항목 수정</ModalHeader>
+          <ModalBody>
+            <VStack spacing={3} align="stretch">
+              <Input
+                placeholder="회사명"
+                value={editData.name}
+                onChange={(e) =>
+                  setEditData({ ...editData, name: e.target.value })
+                }
+              />
+              <Input
+                placeholder="회사 상세"
+                value={editData.detail}
+                onChange={(e) =>
+                  setEditData({ ...editData, detail: e.target.value })
+                }
+              />
+              <NumberInput
+                value={editData.amount}
+                onChange={(val) =>
+                  setEditData({ ...editData, amount: val })
+                }
+              >
+                <NumberInputField placeholder="금액 (원)" />
+              </NumberInput>
+              <Input
+                type="date"
+                value={editData.date.toISOString().split("T")[0]}
+                onChange={(e) =>
+                  setEditData({ ...editData, date: new Date(e.target.value) })
+                }
+              />
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={handleEditSave}>
+              저장
+            </Button>
+            <Button onClick={onEditClose}>취소</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

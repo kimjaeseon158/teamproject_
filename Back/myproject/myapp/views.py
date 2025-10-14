@@ -13,7 +13,9 @@ from .jwt_utils       import get_user_from_cookie, get_user_from_token, CustomRe
 from .models          import User_Login_Info, Admin_Login_Info,Expense, Income
 from django.db.models import Sum
 from datetime         import datetime
-
+from django.http import HttpResponseRedirect
+from django.conf import settings
+from google_auth_oauthlib.flow import Flow
 
 # ------------------- Refresh API -------------------
 class TokenRefreshAPIView(APIView):
@@ -35,6 +37,51 @@ class TokenRefreshAPIView(APIView):
             return Response({'success': False, 'message': 'Invalid refresh token'}, status=401) 
 
         
+class GoogleLoginAPIView(APIView):
+    def get(self, request):
+        flow = Flow.from_client_config(
+            settings.GOOGLE_OAUTH2_CLIENT_CONFIG,
+            scopes=["https://www.googleapis.com/auth/userinfo.profile",
+                    "https://www.googleapis.com/auth/userinfo.email",
+                    "openid"]
+        )
+        flow.redirect_uri = settings.GOOGLE_REDIRECT_URI
+
+        auth_url, _ = flow.authorization_url(prompt='consent', access_type='offline')
+        return HttpResponseRedirect(auth_url)
+
+
+class GoogleCallbackAPIView(APIView):
+    def get(self, request):
+        # Google이 code를 포함한 redirect 요청을 보냄
+        code = request.GET.get("code")
+
+        flow = Flow.from_client_config(
+            settings.GOOGLE_OAUTH2_CLIENT_CONFIG,
+            scopes=["https://www.googleapis.com/auth/userinfo.profile",
+                    "https://www.googleapis.com/auth/userinfo.email",
+                    "openid"]
+        )
+        flow.redirect_uri = settings.GOOGLE_REDIRECT_URI
+        flow.fetch_token(code=code)
+
+        credentials = flow.credentials
+        # credentials.access_token, credentials.refresh_token 사용 가능
+
+        # Google 사용자 정보 가져오기
+        import requests
+        userinfo_response = requests.get(
+            "https://www.googleapis.com/oauth2/v2/userinfo",
+            headers={"Authorization": f"Bearer {credentials.token}"}
+        )
+        user_info = userinfo_response.json()
+
+        # Django JWT 발급 및 쿠키 저장
+        response = HttpResponseRedirect("/")  # 로그인 완료 후 이동할 경로
+        response.set_cookie("access_token", credentials.token, httponly=True)
+
+        return response
+    
 # ----------------------
 # 관리자 로그인
 # ----------------------

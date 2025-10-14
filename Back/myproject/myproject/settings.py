@@ -34,6 +34,10 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": False,
 }
 
+GOOGLE_CLIENT_ID     = "150097873816-sjo6bj7v2u1n7usqkn5us3eq878665f8.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "test_secret"
+GOOGLE_REDIRECT_URI  = "http://localhost:8000/api/google_calendar/callback"
+
 # --------------------------
 # Middleware
 # --------------------------

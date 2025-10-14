@@ -44,7 +44,7 @@ export function login(setAccessToken, toast) {
 export async function sendTokenToBackend(token, toast) {
   try {
     const res = await fetchWithAuth(
-      "/api/", // ✅ 새 API 엔드포인트로 변경
+      "/api/google_calendar_auth/", // ✅ 새 API 엔드포인트로 변경
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

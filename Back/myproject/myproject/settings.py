@@ -36,7 +36,7 @@ SIMPLE_JWT = {
 
 GOOGLE_CLIENT_ID     = "150097873816-sjo6bj7v2u1n7usqkn5us3eq878665f8.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET = "test_secret"
-GOOGLE_REDIRECT_URI  = "http://localhost:8000/api/google_calendar/callback/"
+GOOGLE_REDIRECT_URI  = "http://localhost:8000/api/google_calendar_auth/callback/"
 
 GOOGLE_OAUTH2_CLIENT_CONFIG = {
     "web": {

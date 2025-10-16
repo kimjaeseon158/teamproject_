@@ -15,7 +15,11 @@ from django.db.models import Sum
 from datetime         import datetime
 from django.http import HttpResponseRedirect
 from django.conf import settings
+from django.shortcuts import redirect
+from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import Flow
+from google.oauth2 import credentials
+import requests
 
 # ------------------- Refresh API -------------------
 class TokenRefreshAPIView(APIView):
@@ -37,50 +41,75 @@ class TokenRefreshAPIView(APIView):
             return Response({'success': False, 'message': 'Invalid refresh token'}, status=401) 
 
         
+# ---------------------- Google OAuth ----------------------
 class GoogleLoginAPIView(APIView):
     def get(self, request):
         flow = Flow.from_client_config(
             settings.GOOGLE_OAUTH2_CLIENT_CONFIG,
-            scopes=["https://www.googleapis.com/auth/userinfo.profile",
-                    "https://www.googleapis.com/auth/userinfo.email",
-                    "openid"]
+            scopes=["https://www.googleapis.com/auth/calendar"]
         )
-        flow.redirect_uri = settings.GOOGLE_REDIRECT_URI
+        flow.redirect_uri = settings.GOOGLE_REDIRECT_URI  # ✅ 꼭 이 줄 있어야 함
 
-        auth_url, _ = flow.authorization_url(prompt='consent', access_type='offline')
-        return HttpResponseRedirect(auth_url)
+        authorization_url, state = flow.authorization_url(
+            access_type='offline',
+            include_granted_scopes='true',
+            prompt='consent'
+        )
+
+        request.session['state'] = state
+        return redirect(authorization_url)
 
 
 class GoogleCallbackAPIView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request):
-        # Google이 code를 포함한 redirect 요청을 보냄
+        print("Google OAuth callback 도착")
+        print("GET params:", request.GET)
+
+        # 구글에서 받은 인증 코드
         code = request.GET.get("code")
+        state = request.GET.get("state")
 
-        flow = Flow.from_client_config(
-            settings.GOOGLE_OAUTH2_CLIENT_CONFIG,
-            scopes=["https://www.googleapis.com/auth/userinfo.profile",
-                    "https://www.googleapis.com/auth/userinfo.email",
-                    "openid"]
-        )
-        flow.redirect_uri = settings.GOOGLE_REDIRECT_URI
-        flow.fetch_token(code=code)
+        if not code:
+            return redirect("http://localhost:3000/dashboard?google_auth=failed")
 
-        credentials = flow.credentials
-        # credentials.access_token, credentials.refresh_token 사용 가능
+        # 쿠키에서 state 검증
+        saved_state = request.COOKIES.get("oauth_state")
+        if not saved_state or saved_state != state:
+            print("OAuth state 불일치 - 중간 변조 가능성 있음")
+            return redirect("http://localhost:3000/dashboard?google_auth=invalid_state")
 
-        # Google 사용자 정보 가져오기
-        import requests
-        userinfo_response = requests.get(
-            "https://www.googleapis.com/oauth2/v2/userinfo",
-            headers={"Authorization": f"Bearer {credentials.token}"}
-        )
-        user_info = userinfo_response.json()
+        # 토큰 교환 요청
+        token_url = "https://oauth2.googleapis.com/token"
+        data = {
+            "code": code,
+            "client_id": settings.GOOGLE_CLIENT_ID,
+            "client_secret": settings.GOOGLE_CLIENT_SECRET,
+            "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+            "grant_type": "authorization_code",
+        }
 
-        # Django JWT 발급 및 쿠키 저장
-        response = HttpResponseRedirect("/")  # 로그인 완료 후 이동할 경로
-        response.set_cookie("access_token", credentials.token, httponly=True)
+        token_res = requests.post(token_url, data=data)
+        token_json = token_res.json()
+
+        print("Google Token Response:", token_json)
+
+        access_token = token_json.get("access_token")
+        refresh_token = token_json.get("refresh_token")
+
+        if not access_token:
+            return redirect("http://localhost:3000/dashboard?google_auth=failed")
+
+        # ✅ 보안상 프론트엔드로 직접 토큰을 보내지 않음
+        # 대신 Django HttpOnly 쿠키에 저장
+        response = redirect("http://localhost:3000/dashboard?google_auth=success")
+        response.set_cookie("google_access_token", access_token, httponly=True, secure=False, samesite='Lax')
+        if refresh_token:
+            response.set_cookie("google_refresh_token", refresh_token, httponly=True, secure=False, samesite='Lax')
 
         return response
+
     
 # ----------------------
 # 관리자 로그인

@@ -49,6 +49,39 @@ export default function Overview() {
   const [isEditing, setIsEditing] = useState(false);
   const toast = useToast();
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("google_auth") === "success") {
+      toast({
+        title: "✅ Google 캘린더 연동 완료!",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+
+      // ✅ 로그인 성공 후, Django가 HttpOnly 쿠키로 저장한 토큰을 이용해
+      // Django에 /api/google_calendar/events/ 요청 보내기
+      fetch("/api/google_calendar/events/", {
+        method: "GET",
+        credentials: "include", // 쿠키 전송 허용
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          console.log("캘린더 이벤트:", data);
+          // setEvents(data.events); 이런 식으로 실제 이벤트를 React 상태에 넣을 수 있음
+        })
+        .catch((err) => console.error("이벤트 불러오기 실패:", err));
+    } else if (params.get("google_auth") === "failed") {
+      toast({
+        title: "❌ Google 로그인 실패",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  }, []);
+
 
   const formatDateForInput = (date) => {
     const d = new Date(date);
@@ -126,7 +159,7 @@ export default function Overview() {
       <Box mb={4} border="1px solid #ddd" borderRadius="8px" p={4}>
         <Flex justify="space-between" align="center" mb={4}>
           {!accessToken && (
-            <Button colorScheme="blue" onClick={() => login(setAccessToken, toast)}>
+            <Button colorScheme="blue" onClick={() => login()}>
               구글 로그인하기
             </Button>
           )}

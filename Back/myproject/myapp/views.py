@@ -75,7 +75,8 @@ class GoogleCallbackAPIView(APIView):
             return redirect("http://localhost:3000/dashboard?google_auth=failed")
 
         # 쿠키에서 state 검증
-        saved_state = request.COOKIES.get("oauth_state")
+        saved_state = request.session.get("state")
+        
         if not saved_state or saved_state != state:
             print("OAuth state 불일치 - 중간 변조 가능성 있음")
             return redirect("http://localhost:3000/dashboard?google_auth=invalid_state")
@@ -104,12 +105,44 @@ class GoogleCallbackAPIView(APIView):
         # ✅ 보안상 프론트엔드로 직접 토큰을 보내지 않음
         # 대신 Django HttpOnly 쿠키에 저장
         response = redirect("http://localhost:3000/dashboard?google_auth=success")
+        response.delete_cookie("oauth_state")
+        
         response.set_cookie("google_access_token", access_token, httponly=True, secure=False, samesite='Lax')
         if refresh_token:
             response.set_cookie("google_refresh_token", refresh_token, httponly=True, secure=False, samesite='Lax')
 
         return response
 
+class GoogleCalendarEventsAPIView(APIView):
+    """
+    ✅ Google Calendar API에서 일정 목록 가져오기
+    """
+    def get(self, request):
+        access_token = request.COOKIES.get("google_access_token")
+
+        if not access_token:
+            return Response({"error": "No access token found. Please re-authenticate with Google."}, status=401)
+
+        events_url = "https://www.googleapis.com/calendar/v3/calendars/primary/events"
+
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+        }
+
+        params = {
+            "maxResults": 10,
+            "orderBy": "startTime",
+            "singleEvents": True,
+            "timeMin": "2025-01-01T00:00:00Z",  # 임시로 전체 조회 범위
+        }
+
+        res = requests.get(events_url, headers=headers, params=params)
+
+        if res.status_code != 200:
+            return Response({"error": "Failed to fetch events", "details": res.json()}, status=res.status_code)
+
+        events = res.json().get("items", [])
+        return Response({"events": events})
     
 # ----------------------
 # 관리자 로그인

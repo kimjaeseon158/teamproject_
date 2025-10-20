@@ -21,6 +21,7 @@ from .views import (
     ExpenseDeleteAPIView,
     GoogleLoginAPIView,
     GoogleCallbackAPIView,
+    GoogleCalendarEventsAPIView,
 )
 
 urlpatterns = [
@@ -36,8 +37,9 @@ urlpatterns = [
     path('user_info_filtering/',  UserInfoFilteringAPIView.as_view(),  name='user-info-filtering'),
 
     # Dashboard-google-calendar
-    path('google_calendar_auth/',          GoogleLoginAPIView.as_view(),    name='google-calendar-auth'),
-    path('google_calendar_auth/callback/', GoogleCallbackAPIView.as_view(), name='google-calendar-auth-back'),
+    path('google_calendar_auth/',          GoogleLoginAPIView.as_view(),          name='google-calendar-auth'),
+    path('google_calendar_auth/callback/', GoogleCallbackAPIView.as_view(),       name='google-calendar-auth-back'),
+    path('google_calendar_auth/events/',   GoogleCalendarEventsAPIView.as_view(), name='google-calendar-auth-events'),
 
     
     # Dashboard-Total-sales

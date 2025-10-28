@@ -79,9 +79,47 @@ class Expense(models.Model):
     expense_name   = models.CharField(max_length=100)                                        # 지출명 (대분류, 자유 입력)
     expense_detail = models.CharField(max_length=100, blank=True, null=True)                 # 지출 상세 (자유 입력)
     amount         = models.IntegerField()                                                   # 지출 금액 (정수)
-    serial_number = models.IntegerField(primary_key=True)    # 새 레코드 생성 시 자동 값 중복되지 않음 고유번호 저장 
+    serial_number  = models.IntegerField(primary_key=True)    # 새 레코드 생성 시 자동 값 중복되지 않음 고유번호 저장 
 
     def save(self, *args, **kwargs):
         if not self.serial_number:
             self.serial_number = generate_unique_serial(Expense)
         super().save(*args, **kwargs)
+
+
+# Token 저장 테이블
+
+class AdminRefreshToken(models.Model):
+    """관리자 전용 리프레시 토큰"""
+    admin = models.ForeignKey(
+        Admin_Login_Info, 
+        on_delete=models.CASCADE,
+        # Admin의 PK가 'admin_id'(CharField)이므로 to_field 명시
+        to_field='admin_id', 
+        related_name="refresh_tokens"
+    )
+    
+    hashed_token = models.CharField(max_length=255, unique=True, editable=False)
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):    # 디버깅용 코드 차후 삭제 고려
+        return f"Admin Token for {self.admin.admin_name}"
+
+
+class UserRefreshToken(models.Model):
+    """일반 유저(Employee) 전용 리프레시 토큰"""
+    user = models.ForeignKey(
+        User_Login_Info, 
+        on_delete=models.CASCADE,
+        # User의 PK가 'employee_number'(CharField)이므로 to_field 명시
+        to_field='employee_number', 
+        related_name="refresh_tokens"
+    )
+    
+    hashed_token = models.CharField(max_length=255, unique=True, editable=False)
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):    # 디버깅용 코드 차후 삭제 고려
+        return f"User Token for {self.user.user_name}"

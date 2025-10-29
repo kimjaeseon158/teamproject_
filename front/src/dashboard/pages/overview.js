@@ -21,17 +21,19 @@ import {
   Tag,
   useDisclosure,
   useToast,
+  Text,
 } from "@chakra-ui/react";
 
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { login } from "../js/googleAuth"; // 백엔드로 리디렉트하는 함수(같은 창 리다이렉트)
+import { login } from "../js/googleAuth"; // 백엔드로 리디렉트(같은 창)
 import FinanceChart from "../components/FinalCahart";
 import { employees } from "../js/employeeData";
+import useGoogleLinkStatus from "../js/useGoogleLinkStatus";
 
 const localizer = momentLocalizer(moment);
 
 export default function Overview() {
-  const { user, setUser } = useUser();
+  const { user } = useUser(); // 로그인 사용자 상태(선택). 버튼 노출엔 직접 사용하지 않음.
   const [events, setEvents] = useState([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [modalEvent, setModalEvent] = useState({
@@ -46,7 +48,10 @@ export default function Overview() {
   const toast = useToast();
   const navigate = useNavigate();
 
-  // ✅ 구글 성공 복귀 시: 서버에서 이벤트 받아오고, user 세팅 후 URL 파라미터 정리
+  // ✅ 구글 연동 여부만 판단 (버튼 표시 결정은 여기에 전적으로 의존)
+  const google = useGoogleLinkStatus();
+
+  // ✅ 구글 성공 복귀 시 URL 파라미터 정리 + 이벤트 로드
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const cameFromGoogle = params.get("google_auth") === "success";
@@ -60,11 +65,6 @@ export default function Overview() {
         });
         if (!res.ok) throw new Error("이벤트 API 실패");
         const data = await res.json();
-
-        // 프로필 정보가 응답에 있다면 사용자 세팅
-        setUser({ name: data?.profile?.email ?? "googleUser", role: "user" });
-
-        // 서버 이벤트를 캘린더 형식으로 변환
         const asEvents = (data?.events ?? []).map((e) => ({
           id: e.id,
           title: e.summary || "(제목 없음)",
@@ -78,34 +78,37 @@ export default function Overview() {
         toast({
           title: "✅ Google 캘린더 연동 완료!",
           status: "success",
-          duration: 2500,
+          duration: 2200,
           isClosable: true,
         });
       } catch (err) {
         console.error("구글 연동 후 이벤트 로드 실패:", err);
         toast({
-          title: "세션 확인 또는 이벤트 로드 실패",
+          title: "이벤트 로드 실패",
           status: "error",
-          duration: 2500,
+          duration: 2200,
           isClosable: true,
         });
-        setUser(null);
       } finally {
-        // URL 파라미터 제거
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     })();
-  }, [setUser, toast]);
+  }, [toast]);
 
-  // ✅ 초기 진입/새로고침 시에도 서버에서 이벤트 로드(로그인되어 있으면 성공)
+  // ✅ 초기 진입/새로고침 시에도 서버에서 이벤트 로드(연동된 경우에만 성공)
   useEffect(() => {
-    const load = async () => {
+    if (google.loading) return;
+    if (!google.linked) {
+      setEvents([]);
+      return;
+    }
+    (async () => {
       try {
         const res = await fetch("/api/google_calendar_auth/events/", {
           method: "GET",
           credentials: "include",
         });
-        if (!res.ok) return; // 미로그인 등
+        if (!res.ok) return;
         const data = await res.json();
         const asEvents = (data?.events ?? []).map((e) => ({
           id: e.id,
@@ -116,14 +119,11 @@ export default function Overview() {
           location: e.location || "",
         }));
         setEvents(asEvents);
-        // (선택) user도 동기화하려면 아래처럼 세팅 가능
-        // setUser(prev => prev ?? { name: data?.profile?.email ?? "googleUser", role: "user" });
       } catch (e) {
         console.error("이벤트 불러오기 실패:", e);
       }
-    };
-    load();
-  }, [setUser]);
+    })();
+  }, [google.loading, google.linked]);
 
   const formatDateForInput = (date) => {
     const d = new Date(date);
@@ -133,39 +133,37 @@ export default function Overview() {
     )}:${pad(d.getMinutes())}`;
   };
 
-  // 🔹 Overview에 표시할 대기중 사원
   const pendingEmployees = employees.filter((emp) => emp.status === "대기중");
 
   return (
     <Box p={6} display="flex" flexDirection="column" height="100vh">
       {/* 상단 캘린더 영역 */}
       <Box mb={4} border="1px solid #ddd" borderRadius="8px" p={4}>
-        <Flex justify="space-between" align="center" mb={4} gap={4}>
-          {/* 로그인 버튼: user 없으면 노출 */}
-          {!user && (
-            <Button colorScheme="blue" onClick={() => login()}>
-              구글 로그인하기
-            </Button>
+        <Flex justify="space-between" align="center" mb={3} gap={4}>
+          {/* ✅ 버튼은 “연동됨(200)”일 때만 숨기고, 그 외(401/403/네트워크/서버)엔 항상 표시 */}
+          {!google.loading && !google.linked && (
+            <Box>
+              <Button colorScheme="blue" onClick={() => login()}>
+                구글 로그인하기
+              </Button>
+              {/* 선택: 이유별 안내 */}
+              {google.reason === "network" && (
+                <Text fontSize="sm" color="gray.600" mt={1}>
+                  네트워크/쿠키/팝업 설정으로 연동 상태를 확인할 수 없습니다. 버튼을 눌러 다시 시도하세요.
+                </Text>
+              )}
+              {google.reason === "unauthenticated" && (
+                <Text fontSize="sm" color="gray.600" mt={1}>
+                  로그인되지 않았거나 구글 연동되지 않았습니다. 로그인 후 다시 시도하세요.
+                </Text>
+              )}
+              {google.reason === "server" && (
+                <Text fontSize="sm" color="gray.600" mt={1}>
+                  서버 응답이 불안정합니다. 잠시 후 다시 시도하세요.
+                </Text>
+              )}
+            </Box>
           )}
-
-          <Button
-            colorScheme="blue"
-            onClick={() => {
-              setModalEvent({
-                id: "",
-                title: "",
-                description: "",
-                location: "",
-                start: "",
-                end: "",
-              });
-              setIsEditing(false);
-              onOpen();
-            }}
-            disabled={!user} // 로그인 사용자만 등록 가능(필요 시 정책 변경)
-          >
-            일정 등록하기
-          </Button>
         </Flex>
 
         <Flex>
@@ -275,19 +273,21 @@ export default function Overview() {
             상세보기
           </Button>
           <ul style={{ marginTop: 10, paddingLeft: 10 }}>
-            {pendingEmployees.map((emp) => (
-              <li key={emp.id} style={{ marginBottom: "12px" }}>
-                <strong>{emp.name}</strong>
-                <br />
-                <span>
-                  사번: {emp.employeeNumber} / 신청일: {emp.date}
-                </span>
-                <br />
-                <Tag size="sm" colorScheme="yellow">
-                  {emp.status}
-                </Tag>
-              </li>
-            ))}
+            {employees
+              .filter((emp) => emp.status === "대기중")
+              .map((emp) => (
+                <li key={emp.id} style={{ marginBottom: "12px" }}>
+                  <strong>{emp.name}</strong>
+                  <br />
+                  <span>
+                    사번: {emp.employeeNumber} / 신청일: {emp.date}
+                  </span>
+                  <br />
+                  <Tag size="sm" colorScheme="yellow">
+                    {emp.status}
+                  </Tag>
+                </li>
+              ))}
           </ul>
         </Box>
       </Flex>

@@ -1,4 +1,5 @@
-import React, { createContext, useState, useEffect } from "react";
+// src/login/js/userContext.js
+import React, { createContext, useState, useEffect, useContext } from "react";
 
 const UserContext = createContext({
   user: null,
@@ -8,6 +9,7 @@ const UserContext = createContext({
   userData: [],
   setUserData: () => {},
   loading: true,
+  loginUser: async () => false, // 로그인 함수(유저)
 });
 
 export const UserProvider = ({ children }) => {
@@ -16,36 +18,68 @@ export const UserProvider = ({ children }) => {
   const [userData, setUserData] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // ✅ 1) 앱 첫 진입/새로고침: 세션 확인(쿠키 기반)
   useEffect(() => {
-    const savedUser = sessionStorage.getItem("userRole");
-    const savedName = sessionStorage.getItem("userName");
-    const savedEmpNum = sessionStorage.getItem("employeeNumber");
-    //?? 새로고침 재통신을 위한 저장
-    const savedUserData = sessionStorage.getItem("userData");
-
-    if (savedUserData) {
+    const checkAuth = async () => {
       try {
-        const parsed = JSON.parse(savedUserData);
-        if (Array.isArray(parsed)) {
-          setUserData(parsed);
-        } else {
-          setUserData([]); // 안전하게 기본값 유지
-        }
-      } catch (e) {
-        console.error("userData parsing error:", e);
-        setUserData([]);
-      }
-    }
+        const res = await fetch("/api/check_auth/", {
+          method: "GET",
+          credentials: "include", // 쿠키 동봉
+        });
+        const data = await res.json();
 
-    setLoading(false);
+        if (data?.is_authenticated) {
+          // 서버가 준 형태에 맞춰 상태 세팅
+          setUser({ name: data.user.username, role: "user" });
+          setEmployeeNumber(data.user.employeeNumber || null);
+          setUserData(data.user.userData || []);
+        } else {
+          setUser(null);
+          setEmployeeNumber(null);
+          setUserData([]);
+        }
+      } catch (err) {
+        console.error("세션 확인 실패:", err);
+        setUser(null);
+        setEmployeeNumber(null);
+        setUserData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
   }, []);
 
-  // userData가 변경될 때마다 sessionStorage에도 저장해줍니다.
-  useEffect(() => {
-    if (user === "admin" && Array.isArray(userData) && userData.length > 0) {
-      sessionStorage.setItem("userData", JSON.stringify(userData));
+  // ✅ 2) 로그인 시도: POST /api/check_user_login/ (body 필수!)
+  const loginUser = async (user_id, password) => {
+    try {
+      const response = await fetch("/api/check_user_login/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id, password }), // ← 반드시 body 포함
+        credentials: "include",
+      });
+
+      const data = await response.json();
+      console.log("로그인 응답:", data);
+
+      if (data.success) {
+        // 로그인 성공: 전역 상태 반영
+        setUser({ name: data.user_name, role: "user" });
+        setEmployeeNumber(data.employee_number || null);
+        // (선택) 로그인 직후 /api/check_auth/를 한 번 더 호출해 최신 정보 동기화해도 됨
+        return true;
+      } else {
+        setUser(null);
+        setEmployeeNumber(null);
+        return false;
+      }
+    } catch (err) {
+      console.error("로그인 처리 실패:", err);
+      return false;
     }
-  }, [userData, user]);
+  };
 
   return (
     <UserContext.Provider
@@ -57,6 +91,7 @@ export const UserProvider = ({ children }) => {
         userData,
         setUserData,
         loading,
+        loginUser,
       }}
     >
       {children}
@@ -64,4 +99,5 @@ export const UserProvider = ({ children }) => {
   );
 };
 
+export const useUser = () => useContext(UserContext);
 export default UserContext;

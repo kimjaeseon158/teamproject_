@@ -1,6 +1,7 @@
 from django.contrib.auth.hashers import check_password
 from .models import User_Login_Info, Admin_Login_Info
-from .serializers import User_InfoSerializer
+import hashlib, hmac
+from django.conf import settings
 
 def check_user_credentials(user_id, password):
     try:
@@ -20,3 +21,7 @@ def check_admin_credentials(admin_id, password, admin_code):
     except (Admin_Login_Info.DoesNotExist):
         pass
     return False, None
+
+def hash_refresh(raw: str) -> str:
+    secret = settings.REFRESH_TOKEN_HASH_SECRET.encode()
+    return hmac.new(secret, raw.encode(), hashlib.sha256).hexdigest()

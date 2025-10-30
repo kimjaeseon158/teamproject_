@@ -94,8 +94,6 @@ class AdminRefreshToken(models.Model):
     admin = models.ForeignKey(
         Admin_Login_Info, 
         on_delete=models.CASCADE,
-        # Admin의 PK가 'admin_id'(CharField)이므로 to_field 명시
-        to_field='admin_id', 
         related_name="refresh_tokens"
     )
     
@@ -110,11 +108,10 @@ class AdminRefreshToken(models.Model):
 class UserRefreshToken(models.Model):
     """일반 유저(Employee) 전용 리프레시 토큰"""
     user = models.ForeignKey(
-        User_Login_Info, 
+        User_Login_Info,
+        to_field='employee_number',   #  employee_number 참조
         on_delete=models.CASCADE,
-        # User의 PK가 'employee_number'(CharField)이므로 to_field 명시
-        to_field='employee_number', 
-        related_name="refresh_tokens"
+        related_name='refresh_tokens'
     )
     
     hashed_token = models.CharField(max_length=255, unique=True, editable=False)

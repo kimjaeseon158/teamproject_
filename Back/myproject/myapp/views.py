@@ -1,4 +1,4 @@
-# views.py
+
 from rest_framework.views                import APIView
 from rest_framework.response             import Response
 from rest_framework_simplejwt.exceptions import TokenError    
@@ -10,15 +10,19 @@ from rest_framework                      import status
 from .serializers     import User_Login_InfoSerializer, User_InfoSerializer, User_Work_InfoSerializer, IncomeSerializer, ExpenseSerializer
 from .auth_utils      import check_user_credentials, check_admin_credentials
 from .jwt_utils       import get_user_from_cookie, get_user_from_token, CustomRefreshToken
-from .models          import User_Login_Info, Admin_Login_Info,Expense, Income
+from .models          import User_Login_Info, Admin_Login_Info,Expense, Income, AdminRefreshToken, UserRefreshToken
 from django.db.models import Sum
 from datetime         import datetime
+from datetime         import timedelta
+from django.utils     import timezone
 from django.http import HttpResponseRedirect
 from django.conf import settings
 from django.shortcuts import redirect
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import Flow
 from google.oauth2 import credentials
+from rest_framework_simplejwt.tokens import RefreshToken
+from .auth_utils import hash_refresh
 import requests
 
 # ------------------- Refresh API -------------------
@@ -147,6 +151,7 @@ class GoogleCalendarEventsAPIView(APIView):
 # ----------------------
 # 관리자 로그인
 # ----------------------
+
 class CheckAdminLoginAPIView(APIView):
     permission_classes = [AllowAny]
 
@@ -157,31 +162,50 @@ class CheckAdminLoginAPIView(APIView):
 
         success = check_admin_credentials(admin_id, password, admin_code)
 
-        if success:
-            admin_instance = Admin_Login_Info.objects.get(admin_id=admin_id)
+        if not success:
+            return Response({'success': False}, status=status.HTTP_400_BAD_REQUEST)
 
-            # 원하는 값으로 토큰 생성 (id 대신 admin_id 사용)
-            refresh = CustomRefreshToken.for_subject(
-                subject_value=admin_instance.admin_id,
-                admin_name=admin_instance.admin_name,
-                role="admin"
-            )
-            access = refresh.access_token
+        admin_instance = Admin_Login_Info.objects.get(admin_id=admin_id)
 
-            response = Response({
-                'success': True,
-                'access' : str(access),
-                'refresh': str(refresh)
-            })
+        # 1) Refresh/JWT 생성
+        # 원하는 값으로 토큰 생성 (id 대신 admin_id 사용)
+        refresh = CustomRefreshToken.for_subject(
+            subject_value=admin_instance.admin_id,
+            admin_name=admin_instance.admin_name,
+            role="admin"
+        )
+        access = refresh.access_token
 
-            response.set_cookie("access_token", str(access),
-                                httponly=True, secure=False, samesite='Lax', path='/')
-            response.set_cookie("refresh_token", str(refresh),
-                                httponly=True, secure=False, samesite='Lax', path='/')
-            return response
+        raw_refresh_token = str(refresh)  #  raw token (쿠키로 보내줄 값)
 
-        return Response({'success': False}, status=status.HTTP_400_BAD_REQUEST)
+        # 2) Refresh 토큰 해싱
+        hashed_refresh = hash_refresh(raw_refresh_token)
 
+        # 3) DB 저장
+        AdminRefreshToken.objects.create(
+            admin=admin_instance,
+            hashed_token=hashed_refresh,
+            expires_at=timezone.now() + timedelta(days=7)  # 7일 유효 예시
+        )
+
+        # 4) Response 준비: access는 body, refresh는 cookie ONLY
+        response = Response({
+            'success': True,
+            'access': str(access)  # access는 응답으로만 보냄
+        })
+
+        # 5) refresh token 쿠키 저장 (httpOnly)
+        response.set_cookie(
+            "refresh_token",
+            raw_refresh_token,
+            httponly=True,
+            secure=False,  #  local 개발시 False, 배포시 True
+            samesite='Lax',
+            path='/',
+            max_age=60 * 60 * 24 * 7  # 7일
+        )
+
+        return response
 
 # ----------------------
 # 일반 유저 로그인
@@ -193,32 +217,51 @@ class CheckUserLoginAPIView(APIView):
         user_id  = request.data.get('user_id')
         password = request.data.get('password')
 
+        # (1) 크리덴셜 검증
         success, user_name, employee_number = check_user_credentials(user_id, password)
+        if not success:
+            return Response({'success': False}, status=status.HTTP_400_BAD_REQUEST)
 
-        if success:
-            user_instance = User_Login_Info.objects.get(employee_number=employee_number)
+        user_instance = User_Login_Info.objects.get(employee_number=employee_number)
 
-            # id 대신 employee_number를 sub에 넣고, user_name, role도 추가
-            refresh = CustomRefreshToken.for_subject(
-                subject_value=employee_number,   # PK 대신 employee_number를 사용
-                user_name=user_name,
-                role="user"
-            )
-            access = refresh.access_token
+        # (2) JWT 생성 (sub=employee_number, 부가클레임 포함)
+        refresh = CustomRefreshToken.for_subject(
+            subject_value=employee_number,
+            user_name=user_name,
+            role="user",
+        )
+        access = refresh.access_token
+        raw_refresh_token = str(refresh)  # 쿠키로 내려보낼 원문 토큰
 
-            response = Response({
-                'success'        : True,
-                'user_name'      : user_name,
-                'employee_number': employee_number,
-                'access'         : str(access),                
-                'refresh'        : str(refresh)
-            })
+        # (3) Refresh 해시화 후 DB 저장
+        hashed_refresh = hash_refresh(raw_refresh_token)
+        UserRefreshToken.objects.create(
+            user=user_instance,
+            hashed_token=hashed_refresh,
+            expires_at=timezone.now() + timedelta(days=7),  # 7일 유효
+        )
 
-            response.set_cookie("access_token",  str(access),  httponly=True, secure=False, samesite='Lax')
-            response.set_cookie("refresh_token", str(refresh), httponly=True, secure=False, samesite='Lax')
-            return response
+        # (4) 응답: access는 body ONLY, refresh는 httpOnly 쿠키 ONLY
+        response = Response({
+            'success'         : True,
+            'user_name'       : user_name,
+            'employee_number' : employee_number,
+            'access'          : str(access),
+        })
 
-        return Response({'success': False}, status=status.HTTP_400_BAD_REQUEST)
+        # 로컬 개발: secure=False / 배포는 True 권장
+        response.set_cookie(
+            "refresh_token",
+            raw_refresh_token,
+            httponly=True,
+            secure=False,   # 로컬 개발 False, 배포 True 권장
+            samesite='Lax',
+            path='/',
+            max_age=60 * 60 * 24 * 7
+        )
+
+        # ✅ 관리자 로직과 다르게 'access_token' 쿠키는 설정하지 않습니다.
+        return response
 
 # ----------------------
 # 2 데이터 처리 뷰

@@ -1,5 +1,31 @@
 // src/login/js/userContext.js
-import React, { createContext, useState, useEffect, useContext } from "react";
+import React, { createContext, useState, useEffect, useContext, useCallback } from "react";
+
+/** 401이면 자동으로 /api/refresh_token/ 호출 후 원요청 재시도 */
+async function fetchWithAuth(url, options = {}) {
+  const opts = {
+    credentials: "include",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  };
+
+  let res = await fetch(url, opts);
+  if (res.status === 401) {
+    // access 만료로 가정 → refresh 시도
+    const refresh = await fetch("/api/refresh_token/", {
+      method: "POST",
+      credentials: "include",
+    });
+    if (refresh.ok) {
+      // 재발급 성공 → 원 요청 재시도
+      res = await fetch(url, opts);
+    }
+  }
+  return res;
+}
 
 const UserContext = createContext({
   user: null,
@@ -9,7 +35,8 @@ const UserContext = createContext({
   userData: [],
   setUserData: () => {},
   loading: true,
-  loginUser: async () => false, // 로그인 함수(유저)
+  loginUser: async () => false,
+  refetchMe: async () => {},
 });
 
 export const UserProvider = ({ children }) => {
@@ -18,61 +45,59 @@ export const UserProvider = ({ children }) => {
   const [userData, setUserData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ 1) 앱 첫 진입/새로고침: 세션 확인(쿠키 기반)
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch("/api/check_auth/", {
-          method: "GET",
-          credentials: "include", // 쿠키 동봉
-        });
-        const data = await res.json();
+  /** 서버 상태 동기화 */
+  const refetchMe = useCallback(async () => {
+    try {
+      const res = await fetchWithAuth("/api/check_auth/", { method: "GET" });
+      const data = await res.json();
 
-        if (data?.is_authenticated) {
-          // 서버가 준 형태에 맞춰 상태 세팅
-          setUser({ name: data.user.username, role: "user" });
-          setEmployeeNumber(data.user.employeeNumber || null);
-          setUserData(data.user.userData || []);
-        } else {
-          setUser(null);
-          setEmployeeNumber(null);
-          setUserData([]);
-        }
-      } catch (err) {
-        console.error("세션 확인 실패:", err);
+      if (data?.is_authenticated) {
+        setUser({ name: data.user?.username ?? data.user_name ?? "user", role: data.user?.role ?? "user" });
+        setEmployeeNumber(data.user?.employeeNumber ?? data.employee_number ?? null);
+        setUserData(data.user?.userData ?? []);
+      } else {
         setUser(null);
         setEmployeeNumber(null);
         setUserData([]);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    checkAuth();
+    } catch (err) {
+      console.error("세션 확인 실패:", err);
+      setUser(null);
+      setEmployeeNumber(null);
+      setUserData([]);
+    }
   }, []);
 
-  // ✅ 2) 로그인 시도: POST /api/check_user_login/ (body 필수!)
+  // ✅ 첫 진입/새로고침: 조용히 refresh 한 번 → check_auth
+  useEffect(() => {
+    (async () => {
+      try {
+        await fetch("/api/refresh_token/", { method: "POST", credentials: "include" });
+      } catch (_) {}
+      await refetchMe();
+      setLoading(false);
+    })();
+  }, [refetchMe]);
+
+  // ✅ 로그인: 기존 /api/check_user_login/ 만 사용
   const loginUser = async (user_id, password) => {
     try {
       const response = await fetch("/api/check_user_login/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id, password }), // ← 반드시 body 포함
-        credentials: "include",
+        body: JSON.stringify({ user_id, password }),
+        credentials: "include", // 쿠키 세팅 수신
       });
 
       const data = await response.json();
-      console.log("로그인 응답:", data);
-
-      if (data.success) {
-        // 로그인 성공: 전역 상태 반영
-        setUser({ name: data.user_name, role: "user" });
-        setEmployeeNumber(data.employee_number || null);
-        // (선택) 로그인 직후 /api/check_auth/를 한 번 더 호출해 최신 정보 동기화해도 됨
+      if (data?.success) {
+        // 서버가 HttpOnly 쿠키 세팅했다는 가정
+        await refetchMe(); // 최신 상태 동기화
         return true;
       } else {
         setUser(null);
         setEmployeeNumber(null);
+        setUserData([]);
         return false;
       }
     } catch (err) {
@@ -92,6 +117,7 @@ export const UserProvider = ({ children }) => {
         setUserData,
         loading,
         loginUser,
+        refetchMe,
       }}
     >
       {children}

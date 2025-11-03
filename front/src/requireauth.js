@@ -9,9 +9,9 @@ const RequireAuth = ({ children }) => {
     return <div>Loading...</div>; // 로딩중 표시
   }
 
-  if (!user) {
-    return <Navigate to="/" replace />;
-  }
+  // if (!user) {
+  //   return <Navigate to="/" replace />;
+  // }
 
   return children;
 };

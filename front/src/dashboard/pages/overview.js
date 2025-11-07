@@ -2,13 +2,14 @@
 import React, { useEffect, useState } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "../../login/js/userContext";
 import {
   Box,
   Button,
   Flex,
   Modal,
+  Heading,
   ModalOverlay,
   ModalContent,
   ModalHeader,
@@ -25,7 +26,7 @@ import {
 } from "@chakra-ui/react";
 
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { login } from "../js/googleAuth"; // 백엔드로 리디렉트(같은 창)
+import { login } from "../js/googleAuth";           // ✅ 백엔드로 리디렉트(같은 창)
 import FinanceChart from "../components/FinalCahart";
 import { employees } from "../js/employeeData";
 import useGoogleLinkStatus from "../js/useGoogleLinkStatus";
@@ -33,7 +34,8 @@ import useGoogleLinkStatus from "../js/useGoogleLinkStatus";
 const localizer = momentLocalizer(moment);
 
 export default function Overview() {
-  const { user } = useUser(); // 로그인 사용자 상태(선택). 버튼 노출엔 직접 사용하지 않음.
+  const { refetchMe, user } = useUser();            // ✅ 복귀 후 세션 동기화에 사용
+  const location = useLocation();
   const [events, setEvents] = useState([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [modalEvent, setModalEvent] = useState({
@@ -48,17 +50,28 @@ export default function Overview() {
   const toast = useToast();
   const navigate = useNavigate();
 
-  // ✅ 구글 연동 여부만 판단 (버튼 표시 결정은 여기에 전적으로 의존)
+  // ✅ 구글 연동 여부만 판단 (버튼 표시 결정)
   const google = useGoogleLinkStatus();
 
-  // ✅ 구글 성공 복귀 시 URL 파라미터 정리 + 이벤트 로드
+  // ✅ 구글 성공 복귀 시: 플래그 해제 + 세션 동기화 + 이벤트 로드 + 쿼리스트링 정리
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const cameFromGoogle = params.get("google_auth") === "success";
+    const cameFromGoogle =
+      params.get("google_auth") === "success" || params.get("google") === "success";
+
     if (!cameFromGoogle) return;
 
     (async () => {
       try {
+        // 🔥 1) OAuth 진행 플래그 해제
+        sessionStorage.removeItem("oauthInFlight");
+
+        // 🔥 2) 백엔드가 세팅한 HttpOnly 쿠키 기반으로 사용자 세션 동기화
+        if (typeof refetchMe === "function") {
+          await refetchMe();
+        }
+
+        // 🔥 3) 구글 캘린더 이벤트 로드
         const res = await fetch("/api/google_calendar_auth/events/", {
           method: "GET",
           credentials: "include",
@@ -90,10 +103,11 @@ export default function Overview() {
           isClosable: true,
         });
       } finally {
+        // 🔥 4) URL 정리 (?google=success 제거)
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     })();
-  }, [toast]);
+  }, [toast, refetchMe]);
 
   // ✅ 초기 진입/새로고침 시에도 서버에서 이벤트 로드(연동된 경우에만 성공)
   useEffect(() => {
@@ -140,12 +154,20 @@ export default function Overview() {
       {/* 상단 캘린더 영역 */}
       <Box mb={4} border="1px solid #ddd" borderRadius="8px" p={4}>
         <Flex justify="space-between" align="center" mb={3} gap={4}>
-          {/* ✅ 버튼은 “연동됨(200)”일 때만 숨기고, 그 외(401/403/네트워크/서버)엔 항상 표시 */}
+          {/* ✅ 연동되지 않은 경우에만 버튼 노출 */}
           {!google.loading && !google.linked && (
             <Box>
-              <Button colorScheme="blue" onClick={() => login()}>
+              <Button
+                colorScheme="blue"
+                onClick={() => {
+                  // 🔥 OAuth 진행 플래그 ON → 왕복 중 RequireAuth가 튕기지 않도록
+                  sessionStorage.setItem("oauthInFlight", "1");
+                  login(); // 백엔드로 리디렉트(같은 창)
+                }}
+              >
                 구글 로그인하기
               </Button>
+
               {/* 선택: 이유별 안내 */}
               {google.reason === "network" && (
                 <Text fontSize="sm" color="gray.600" mt={1}>

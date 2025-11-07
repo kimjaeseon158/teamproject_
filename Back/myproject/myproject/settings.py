@@ -5,7 +5,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = "django-insecure-t2&g*_n7m&i2%#00@-s8v@x*36c3oy@b)lc$g-+j=k@w9_jcyo"
 DEBUG = True
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
 INSTALLED_APPS = [
     "django.contrib.auth",
@@ -34,8 +34,10 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": False,
 }
 
+REFRESH_TOKEN_HASH_SECRET = "dev-only-refresh-hash-secret-change-me"
+
 GOOGLE_CLIENT_ID     = "150097873816-sjo6bj7v2u1n7usqkn5us3eq878665f8.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = "test_secret"
+
 GOOGLE_REDIRECT_URI  = "http://localhost:8000/api/google_calendar_auth/callback/"
 
 GOOGLE_OAUTH2_CLIENT_CONFIG = {
@@ -54,11 +56,11 @@ GOOGLE_OAUTH2_CLIENT_CONFIG = {
 # Middleware
 # --------------------------
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",  # 반드시 맨 위
+    "corsheaders.middleware.CorsMiddleware",  # ✅ 맨 위 유지
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    # "django.middleware.csrf.CsrfViewMiddleware",  # 필요 시 활성화
+    # "django.middleware.csrf.CsrfViewMiddleware",  # 쿠키 기반 CSRF를 쓰려면 추후 활성화 고려
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -70,7 +72,20 @@ MIDDLEWARE = [
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
 ]
+
+# 프런트 도메인을 CSRF 신뢰 도메인으로 등록 (쿠키 기반 요청 허용)
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+# (선택) 개발 편의용 쿠키 옵션 — 운영 배포 시 True/더 엄격하게 바꾸기
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SECURE = False
 
 # --------------------------
 # Database

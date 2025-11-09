@@ -1,129 +1,96 @@
-// src/login/js/userContext.js
-import React, { createContext, useState, useEffect, useContext, useCallback } from "react";
-
-/** 401이면 자동으로 /api/refresh_token/ 호출 후 원요청 재시도 */
-async function fetchWithAuth(url, options = {}) {
-  const opts = {
-    credentials: "include",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-  };
-
-  let res = await fetch(url, opts);
-  if (res.status === 401) {
-    // access 만료로 가정 → refresh 시도
-    const refresh = await fetch("/api/refresh_token/", {
-      method: "POST",
-      credentials: "include",
-    });
-    if (refresh.ok) {
-      // 재발급 성공 → 원 요청 재시도
-      res = await fetch(url, opts);
-    }
-  }
-  return res;
-}
+import React, {
+  createContext,
+  useEffect,
+  useState,
+  useCallback,
+  useContext,
+} from "react";
+import { fetchWithAuth } from "../../api/fetchWithAuth";
 
 const UserContext = createContext({
   user: null,
   setUser: () => {},
-  employeeNumber: null,
-  setEmployeeNumber: () => {},
+  loading: true,
+  revalidate: async () => {},
   userData: [],
   setUserData: () => {},
-  loading: true,
-  loginUser: async () => false,
-  refetchMe: async () => {},
+  employeeNumber: null,
+  setEmployeeNumber: () => {},
 });
 
-export const UserProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [employeeNumber, setEmployeeNumber] = useState(null);
-  const [userData, setUserData] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  /** 서버 상태 동기화 */
-  const refetchMe = useCallback(async () => {
+export function UserProvider({ children }) {
+  // 스냅샷 로드
+  const loadSnapshot = () => {
     try {
-      const res = await fetchWithAuth("/api/check_auth/", { method: "GET" });
-      const data = await res.json();
-
-      if (data?.is_authenticated) {
-        setUser({ name: data.user?.username ?? data.user_name ?? "user", role: data.user?.role ?? "user" });
-        setEmployeeNumber(data.user?.employeeNumber ?? data.employee_number ?? null);
-        setUserData(data.user?.userData ?? []);
-      } else {
-        setUser(null);
-        setEmployeeNumber(null);
-        setUserData([]);
-      }
-    } catch (err) {
-      console.error("세션 확인 실패:", err);
-      setUser(null);
-      setEmployeeNumber(null);
-      setUserData([]);
-    }
-  }, []);
-
-  // ✅ 첫 진입/새로고침: 조용히 refresh 한 번 → check_auth
-  useEffect(() => {
-    (async () => {
-      try {
-        await fetch("/api/refresh_token/", { method: "POST", credentials: "include" });
-      } catch (_) {}
-      await refetchMe();
-      setLoading(false);
-    })();
-  }, [refetchMe]);
-
-  // ✅ 로그인: 기존 /api/check_user_login/ 만 사용
-  const loginUser = async (user_id, password) => {
-    try {
-      const response = await fetch("/api/check_user_login/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id, password }),
-        credentials: "include", // 쿠키 세팅 수신
-      });
-
-      const data = await response.json();
-      if (data?.success) {
-        // 서버가 HttpOnly 쿠키 세팅했다는 가정
-        await refetchMe(); // 최신 상태 동기화
-        return true;
-      } else {
-        setUser(null);
-        setEmployeeNumber(null);
-        setUserData([]);
-        return false;
-      }
-    } catch (err) {
-      console.error("로그인 처리 실패:", err);
-      return false;
+      const raw = localStorage.getItem("user_snapshot");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
     }
   };
 
-  return (
-    <UserContext.Provider
-      value={{
-        user,
-        setUser,
-        employeeNumber,
-        setEmployeeNumber,
-        userData,
-        setUserData,
-        loading,
-        loginUser,
-        refetchMe,
-      }}
-    >
-      {children}
-    </UserContext.Provider>
-  );
-};
+  const [user, setUser] = useState(loadSnapshot);
+  const [loading, setLoading] = useState(true);
+  const [userData, setUserData] = useState([]);
+  const [employeeNumber, setEmployeeNumber] = useState(null);
 
-export const useUser = () => useContext(UserContext);
+  // 스냅샷 저장
+  useEffect(() => {
+    try {
+      if (user) localStorage.setItem("user_snapshot", JSON.stringify(user));
+      else localStorage.removeItem("user_snapshot");
+    } catch {}
+  }, [user]);
+
+  // ✅ 재검증: 실패해도 기존 user 유지 (스냅샷 있으면 그대로)
+  const revalidate = useCallback(async () => {
+    setLoading(true);
+    const prev = user ?? loadSnapshot(); // 이전 상태 백업
+    try {
+      // 필요 시 엔드포인트 조정
+      let res = await fetchWithAuth("/api/check_user_login/", { method: "GET" });
+      if (!res || !res.ok) {
+        // 관리자일 수 있으니 보조 엔드포인트도 시도 (없으면 제거)
+        res = await fetchWithAuth("/api/check_admin_login/", { method: "GET" });
+      }
+
+      if (res && res.ok) {
+        const data = await res.json();
+        const nextUser = data?.user ?? data ?? null;
+        if (nextUser) setUser(nextUser);
+        // nextUser 없으면 prev 유지
+      } else {
+        // 실패해도 prev 있으면 유지, 전혀 없을 때만 null
+        if (!prev) setUser(null);
+      }
+    } catch {
+      if (!prev) setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  // 앱 시작 시 1회 재검증
+  useEffect(() => {
+    revalidate();
+  }, [revalidate]);
+
+  const value = {
+    user,
+    setUser,
+    loading,
+    revalidate,
+    userData,
+    setUserData,
+    employeeNumber,
+    setEmployeeNumber,
+  };
+
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
+}
+
+export function useUser() {
+  return useContext(UserContext);
+}
+
 export default UserContext;

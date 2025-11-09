@@ -1,27 +1,32 @@
-// src/RequireAuth.jsx
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import UserContext from "./login/js/userContext"; // 프로젝트 구조에 맞게 경로 조정
+import UserContext from "./login/js/userContext";
 
-const RequireAuth = ({ children }) => {
+export default function RequireAuth({ children }) {
   const { user, loading } = useContext(UserContext);
   const location = useLocation();
+  const [prevUser, setPrevUser] = useState(null);
 
+  // ✅ 한 번이라도 로그인했다면 백업 보관
+  useEffect(() => {
+    if (user) setPrevUser(user);
+  }, [user]);
+
+  // ✅ 재검증/로딩 중에는 절대 리다이렉트하지 않기
   if (loading) return <div>세션 확인 중...</div>;
 
-  // ✅ OAuth 진행 중 예외 허용 (왕복 중에는 튕기지 않도록)
+  // ✅ OAuth 왕복 중 1회 예외
   const params = new URLSearchParams(location.search);
   const oauthInFlight =
     sessionStorage.getItem("oauthInFlight") === "1" ||
-    params.has("google") ||        // 예: ?google=success
-    params.has("google_auth") ||   // 예: ?google_auth=success
-    params.has("oauth");           // 예: ?oauth=1 (백업용)
+    params.has("google") ||
+    params.has("google_auth") ||
+    params.has("oauth");
 
-  if (!user && !oauthInFlight) {
+  // ✅ 이전 사용자 기록이 있거나(OAuth 성공 후) 왕복 중이면 통과
+  if (!user && !prevUser && !oauthInFlight) {
     return <Navigate to="/" replace />;
   }
 
   return children;
-};
-
-export default RequireAuth;
+}

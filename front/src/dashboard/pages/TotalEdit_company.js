@@ -6,7 +6,7 @@ import {
   useToast, Checkbox, CheckboxGroup, Stack,
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter,
   Table, Thead, Tbody, Tr, Th, Td, TableContainer,
-  Card, CardBody, Stat, StatLabel, StatNumber,
+  Card, CardBody, Stat, StatLabel, StatNumber, Image,
   useDisclosure
 } from "@chakra-ui/react";
 import { DayPicker } from "react-day-picker";
@@ -15,7 +15,7 @@ import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recha
 import { ArrowForwardIcon } from "@chakra-ui/icons";
 import { IconButton } from "@chakra-ui/react";
 import { AiOutlineFileExcel } from "react-icons/ai";
-
+import excelLogo from "../img/excel.png"; 
 import { income_Data } from "../js/company_api";
 import { income_filter_Data } from "../js/company_filter";
 
@@ -165,21 +165,29 @@ export default function CompanyPage() {
             <Button colorScheme="green" onClick={onAddOpen}>
               업체 추가
             </Button>
+
             <IconButton
               aria-label="엑셀 시트 연결"
-              icon={<AiOutlineFileExcel size={20} />}  // 아이콘 크기
+              icon={
+                <Image
+                  src= {excelLogo}    // ✅ public/img/excel.png 기준 경로
+                  alt="엑셀 아이콘"
+                  boxSize="40px"           // 이미지 크기
+                  objectFit="contain"
+                />
+              }
               colorScheme="green"
               variant="outline"
-              size="sm"        // 'xs' | 'sm' | 'md' | 'lg'
-              h="40px"         // 높이 직접 지정
-              w="40px"         // 너비 직접 지정 (정사각형 버튼으로)
+              size="sm"
+              h="40px"
+              w="40px"
               borderRadius="md"
-              onClick={() => toast({ title: "엑셀 기능 준비 중", status: "info" })}
+              onClick={() =>
+                toast({ title: "엑셀 기능 준비 중", status: "info" })
+              }
             />
-
           </Flex>
-
-          <TableContainer borderRadius="lg" overflow="hidden" border="1px solid" borderColor="gray.200">
+                    <TableContainer borderRadius="lg" overflow="hidden" border="1px solid" borderColor="gray.200">
             <Table variant="simple" size="md">
               <Thead bg="gray.100">
                 <Tr>

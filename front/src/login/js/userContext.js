@@ -19,7 +19,7 @@ const UserContext = createContext({
 });
 
 export function UserProvider({ children }) {
-  // 스냅샷 로드
+  // 스냅샷 로드 함수
   const loadSnapshot = () => {
     try {
       const raw = localStorage.getItem("user_snapshot");
@@ -30,11 +30,11 @@ export function UserProvider({ children }) {
   };
 
   const [user, setUser] = useState(loadSnapshot);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);   // ← 처음부터 false
   const [userData, setUserData] = useState([]);
   const [employeeNumber, setEmployeeNumber] = useState(null);
 
-  // 스냅샷 저장
+  // user 바뀔 때 스냅샷 저장
   useEffect(() => {
     try {
       if (user) localStorage.setItem("user_snapshot", JSON.stringify(user));
@@ -42,15 +42,14 @@ export function UserProvider({ children }) {
     } catch {}
   }, [user]);
 
-  // ✅ 재검증: 실패해도 기존 user 유지 (스냅샷 있으면 그대로)
+  // 재검증 함수 (로그인 성공 시에만 실행)
   const revalidate = useCallback(async () => {
     setLoading(true);
-    const prev = user ?? loadSnapshot(); // 이전 상태 백업
+    const prev = user ?? loadSnapshot();
+
     try {
-      // 필요 시 엔드포인트 조정
       let res = await fetchWithAuth("/api/check_user_login/", { method: "GET" });
       if (!res || !res.ok) {
-        // 관리자일 수 있으니 보조 엔드포인트도 시도 (없으면 제거)
         res = await fetchWithAuth("/api/check_admin_login/", { method: "GET" });
       }
 
@@ -58,9 +57,7 @@ export function UserProvider({ children }) {
         const data = await res.json();
         const nextUser = data?.user ?? data ?? null;
         if (nextUser) setUser(nextUser);
-        // nextUser 없으면 prev 유지
       } else {
-        // 실패해도 prev 있으면 유지, 전혀 없을 때만 null
         if (!prev) setUser(null);
       }
     } catch {
@@ -68,12 +65,7 @@ export function UserProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, [user]);
-
-  // 앱 시작 시 1회 재검증
-  useEffect(() => {
-    revalidate();
-  }, [revalidate]);
+  }, []);
 
   const value = {
     user,

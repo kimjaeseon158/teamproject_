@@ -1,9 +1,21 @@
 from pathlib import Path
 from datetime import timedelta
+import environ
+import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "django-insecure-t2&g*_n7m&i2%#00@-s8v@x*36c3oy@b)lc$g-+j=k@w9_jcyo"
+env = environ.Env(
+    # env 디버깅 값 활성화 여부 선택
+    DEBUG=(bool, False)
+)
+
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
+SECRET_KEY = env('SECRET_KEY')
+REFRESH_TOKEN_HASH_SECRET = env('REFRESH_TOKEN_HASH_SECRET')
+DEBUG = env('DEBUG')
+
 DEBUG = True
 ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
@@ -34,10 +46,8 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": False,
 }
 
-REFRESH_TOKEN_HASH_SECRET = "dev-only-refresh-hash-secret-change-me"
-
-GOOGLE_CLIENT_ID     = "150097873816-sjo6bj7v2u1n7usqkn5us3eq878665f8.apps.googleusercontent.com"
-
+GOOGLE_CLIENT_ID     = env('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET')
 GOOGLE_REDIRECT_URI  = "http://localhost:8000/api/google_calendar_auth/callback/"
 
 GOOGLE_OAUTH2_CLIENT_CONFIG = {
@@ -92,12 +102,14 @@ CSRF_COOKIE_SECURE = False
 # --------------------------
 DATABASES = {
     'default': {
-        'ENGINE'   : 'django.db.backends.postgresql',
-        'NAME'     : 'postgres',
-        'USER'     : 'postgres',
-        'PASSWORD' : 'test',
-        'HOST'     : 'localhost',
-        'PORT'     : '5432',
+        'ENGINE': 'django.db.backends.postgresql',
+        
+        # .env에서 값 읽어오기
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': env('DB_HOST'),
+        'PORT': env('DB_PORT'),
     }
 }
 

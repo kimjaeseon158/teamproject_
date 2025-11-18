@@ -150,7 +150,7 @@ class GoogleCalendarEventsAPIView(APIView):
         return Response({"events": events})
     
 # ----------------------
-# 관리자 로그인
+# 관리자 로그인, 로그아웃
 # ----------------------
 
 class CheckAdminLoginAPIView(APIView):
@@ -204,9 +204,30 @@ class CheckAdminLoginAPIView(APIView):
         )
 
         return response
+    
+
+class AdminLogoutAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def delete(self, request):
+        admin_id = request.data.get("admin_id")
+        if not admin_id:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            admin = Admin_Login_Info.objects.get(admin_id=admin_id)
+        except Admin_Login_Info.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        deleted_count, _ = AdminRefreshToken.objects.filter(admin=admin).delete()
+
+        return Response(
+            {"success": True, "deleted_tokens": deleted_count},
+            status=status.HTTP_200_OK
+        )
 
 # ----------------------
-# 일반 유저 로그인
+# 일반 유저 로그인, 로그아웃
 # ----------------------
 class CheckUserLoginAPIView(APIView):
     permission_classes = [AllowAny]
@@ -257,6 +278,28 @@ class CheckUserLoginAPIView(APIView):
         )
 
         return response
+    
+
+class UserLogoutAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def delete(self, request):
+        employee_number = request.data.get("employee_number")
+        if not employee_number:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User_Login_Info.objects.get(employee_number=employee_number)
+        except User_Login_Info.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        deleted_count = UserRefreshToken.objects.filter(user=user).delete()
+
+        return Response(
+            {"success": True, "deleted_tokens": deleted_count},
+            status=status.HTTP_200_OK
+        )
+
 
 # ----------------------
 # 2 데이터 처리 뷰

@@ -22,12 +22,16 @@ from .views import (
     GoogleLoginAPIView,
     GoogleCallbackAPIView,
     GoogleCalendarEventsAPIView,
+    AdminLogoutAPIView,
+    UserLogoutAPIView
 )
 
 urlpatterns = [
     # Login-Home
     path('check_admin_login/', CheckAdminLoginAPIView.as_view(),  name='check-admin-login'),
+    path('admin_logout/',      AdminLogoutAPIView.as_view(),  name='admin-logout'),
     path('check_user_login/',  CheckUserLoginAPIView.as_view(),   name='check-user-login'),
+    path('user_logout/',       UserLogoutAPIView.as_view(),  name='user-logout'),
     
     # Dashboard-admin-page
     path('user_info_list/',       UserInfoListAPIView.as_view(),       name='user-info-list'),

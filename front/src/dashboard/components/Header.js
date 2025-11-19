@@ -1,24 +1,38 @@
 import { Flex, Box, Button } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "../../login/js/userContext";
 
 export default function Header() {
   const navigate = useNavigate();
+  const { user } = useUser();   // 여기서 user.admin_id 가 "admin" 이런 값이라고 가정
 
   const handleLogout = async () => {
+    const body = {
+      admin_id: user,  // 🔥 로그인한 관리자 아이디만 담기
+    };
+
+    console.log("admin_logout DELETE 바디:", body);
+    console.log("admin_logout DELETE 바디(JSON):", JSON.stringify(body));
+
     try {
-      const response = await fetch('/api/admin_logout/', {
+      const response = await fetch("/api/admin_logout/", {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ logout: true }), // 👉 JSON 형태로 요청
+        credentials: "include",
+        body: JSON.stringify(body),
       });
+
+      console.log(body)
+      const text = await response.text();
+      console.log("admin_logout 응답:", text);
 
       if (!response.ok) {
         throw new Error("Logout failed");
       }
 
-      navigate("/"); // 👉 로그아웃 후 로그인 페이지로 이동
+      navigate("/");
     } catch (error) {
       console.error(error);
       alert("Logout error");
@@ -36,8 +50,9 @@ export default function Header() {
       align="center"
     >
       <Box fontWeight="bold" fontSize="lg">
-        Welcome, Admin
+        Welcome, {user?.admin_id || "Admin"}
       </Box>
+
       <Button colorScheme="teal" size="sm" onClick={handleLogout}>
         Logout
       </Button>

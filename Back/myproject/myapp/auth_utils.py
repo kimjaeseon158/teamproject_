@@ -19,10 +19,10 @@ def check_admin_credentials(admin_id, password, admin_code):
         admin = Admin_Login_Info.objects.get(admin_id=admin_id)
         if check_password(password, admin.password) and admin.admin_code == admin_code:
 
-            return True, None
+            return True
     except (Admin_Login_Info.DoesNotExist):
         pass
-    return False, None
+    return False
 
 
 # REFRESH_TOKEN 해시

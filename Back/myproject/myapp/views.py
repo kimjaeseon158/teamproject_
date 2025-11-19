@@ -53,7 +53,7 @@ class GoogleLoginAPIView(APIView):
             settings.GOOGLE_OAUTH2_CLIENT_CONFIG,
             scopes=["https://www.googleapis.com/auth/calendar"]
         )
-        flow.redirect_uri = settings.GOOGLE_REDIRECT_URI  # ✅ 꼭 이 줄 있어야 함
+        flow.redirect_uri = settings.GOOGLE_REDIRECT_URI
 
         authorization_url, state = flow.authorization_url(
             access_type='offline',
@@ -69,10 +69,6 @@ class GoogleCallbackAPIView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        print("Google OAuth callback 도착")
-        print("GET params:", request.GET)
-
-        # 구글에서 받은 인증 코드
         code = request.GET.get("code")
         state = request.GET.get("state")
 
@@ -83,7 +79,6 @@ class GoogleCallbackAPIView(APIView):
         saved_state = request.session.get("state")
         
         if not saved_state or saved_state != state:
-            print("OAuth state 불일치 - 중간 변조 가능성 있음")
             return redirect("http://localhost:3000/dashboard?google_auth=invalid_state")
 
         # 토큰 교환 요청
@@ -98,8 +93,6 @@ class GoogleCallbackAPIView(APIView):
 
         token_res = requests.post(token_url, data=data)
         token_json = token_res.json()
-
-        print("Google Token Response:", token_json)
 
         access_token = token_json.get("access_token")
         refresh_token = token_json.get("refresh_token")
@@ -134,11 +127,19 @@ class GoogleCalendarEventsAPIView(APIView):
             "Authorization": f"Bearer {access_token}",
         }
 
+        now = datetime.now()
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        if now.month == 12:
+            next_month = now.replace(year=now.year + 1, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        else:
+            next_month = now.replace(month=now.month + 1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
         params = {
             "maxResults": 10,
             "orderBy": "startTime",
-            "singleEvents": True,
-            "timeMin": "2025-01-01T00:00:00Z",  # 임시로 전체 조회 범위
+            "singleEvents": True,"timeMin": start_of_month.isoformat() + 'Z', 
+            "timeMax": next_month.isoformat() + 'Z',
         }
 
         res = requests.get(events_url, headers=headers, params=params)

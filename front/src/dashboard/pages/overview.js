@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "../../login/js/userContext";
 import {
   Box,
@@ -35,8 +35,6 @@ const localizer = momentLocalizer(moment);
 
 export default function Overview() {
   const { refetchMe, user } = useUser();            // ✅ 복귀 후 세션 동기화에 사용
-  const location = useLocation();
-  const [events, setEvents] = useState([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [modalEvent, setModalEvent] = useState({
     id: "",
@@ -52,92 +50,7 @@ export default function Overview() {
 
   // ✅ 구글 연동 여부만 판단 (버튼 표시 결정)
   const google = useGoogleLinkStatus();
-
-  // ✅ 구글 성공 복귀 시: 플래그 해제 + 세션 동기화 + 이벤트 로드 + 쿼리스트링 정리
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const cameFromGoogle =
-      params.get("google_auth") === "success" || params.get("google") === "success";
-
-    if (!cameFromGoogle) return;
-
-    (async () => {
-      try {
-        // 🔥 1) OAuth 진행 플래그 해제
-        sessionStorage.removeItem("oauthInFlight");
-
-        // 🔥 2) 백엔드가 세팅한 HttpOnly 쿠키 기반으로 사용자 세션 동기화
-        if (typeof refetchMe === "function") {
-          await refetchMe();
-        }
-
-        // 🔥 3) 구글 캘린더 이벤트 로드
-        const res = await fetch("/api/google_calendar_auth/events/", {
-          method: "GET",
-          credentials: "include",
-        });
-        if (!res.ok) throw new Error("이벤트 API 실패");
-        const data = await res.json();
-        const asEvents = (data?.events ?? []).map((e) => ({
-          id: e.id,
-          title: e.summary || "(제목 없음)",
-          start: new Date(e.start?.dateTime || e.start?.date),
-          end: new Date(e.end?.dateTime || e.end?.date),
-          description: e.description || "",
-          location: e.location || "",
-        }));
-        setEvents(asEvents);
-
-        toast({
-          title: "✅ Google 캘린더 연동 완료!",
-          status: "success",
-          duration: 2200,
-          isClosable: true,
-        });
-      } catch (err) {
-        console.error("구글 연동 후 이벤트 로드 실패:", err);
-        toast({
-          title: "이벤트 로드 실패",
-          status: "error",
-          duration: 2200,
-          isClosable: true,
-        });
-      } finally {
-        // 🔥 4) URL 정리 (?google=success 제거)
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    })();
-  }, [toast, refetchMe]);
-
-  // ✅ 초기 진입/새로고침 시에도 서버에서 이벤트 로드(연동된 경우에만 성공)
-  useEffect(() => {
-    if (google.loading) return;
-    if (!google.linked) {
-      setEvents([]);
-      return;
-    }
-    (async () => {
-      try {
-        const res = await fetch("/api/google_calendar_auth/events/", {
-          method: "GET",
-          credentials: "include",
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        const asEvents = (data?.events ?? []).map((e) => ({
-          id: e.id,
-          title: e.summary || "(제목 없음)",
-          start: new Date(e.start?.dateTime || e.start?.date),
-          end: new Date(e.end?.dateTime || e.end?.date),
-          description: e.description || "",
-          location: e.location || "",
-        }));
-        setEvents(asEvents);
-      } catch (e) {
-        console.error("이벤트 불러오기 실패:", e);
-      }
-    })();
-  }, [google.loading, google.linked]);
+  const events = google.events || [];  // 🔥 여기서 훅의 events 사용
 
   const formatDateForInput = (date) => {
     const d = new Date(date);

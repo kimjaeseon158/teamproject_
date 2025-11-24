@@ -26,7 +26,7 @@ const submitWorkInfo = async ({
   };
 
   const response = await fetch("/api/ user_work_info/", {
-    method: "PUT",
+    method: "Patch",
     headers: {
       "Content-Type": "application/json",
     },

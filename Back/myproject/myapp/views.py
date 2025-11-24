@@ -53,7 +53,7 @@ class GoogleLoginAPIView(APIView):
             settings.GOOGLE_OAUTH2_CLIENT_CONFIG,
             scopes=["https://www.googleapis.com/auth/calendar"]
         )
-        flow.redirect_uri = settings.GOOGLE_REDIRECT_URI
+        flow.redirect_uri = settings.GOOGLE_REDIRECT_URI  # ✅ 꼭 이 줄 있어야 함
 
         authorization_url, state = flow.authorization_url(
             access_type='offline',
@@ -112,9 +112,6 @@ class GoogleCallbackAPIView(APIView):
         return response
 
 class GoogleCalendarEventsAPIView(APIView):
-    """
-    ✅ Google Calendar API에서 일정 목록 가져오기
-    """
     def get(self, request):
         access_token = request.COOKIES.get("google_access_token")
 
@@ -126,7 +123,6 @@ class GoogleCalendarEventsAPIView(APIView):
         headers = {
             "Authorization": f"Bearer {access_token}",
         }
-
         now = datetime.now()
         start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
@@ -325,7 +321,7 @@ class UserInfoListAPIView(APIView):
 
 
 class UserWorkInfoAPIView(APIView):
-    def put(self, request):
+    def patch(self, request):
         try:
             try:
                 # Access Token 확인
@@ -378,7 +374,7 @@ class UserInfoDeleteAPIView(APIView):
         
 
 class UserInfoUpdateAPIView(APIView):
-    def put(self, request):
+    def patch(self, request):
         try:
             # Access Token 확인
             try:
@@ -626,7 +622,7 @@ class IncomeAddAPIView(APIView):
         
 
 class IncomeUpdateAPIView(APIView):
-    def put(self, request):
+    def patch(self, request):
         try:
             # Access Token 확인
             try:
@@ -658,7 +654,7 @@ class IncomeUpdateAPIView(APIView):
         
 
 class ExpenseUpdateAPIView(APIView):
-    def put(self, request):
+    def patch(self, request):
         try:
             # Access Token 확인
             try:

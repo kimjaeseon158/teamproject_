@@ -1,15 +1,14 @@
 
 from rest_framework.views                import APIView
 from rest_framework.response             import Response
-from rest_framework_simplejwt.exceptions import TokenError    
-from rest_framework_simplejwt.tokens     import RefreshToken, AccessToken
-from rest_framework.permissions          import AllowAny
+from rest_framework_simplejwt.tokens     import RefreshToken
+from rest_framework.permissions          import AllowAny, IsAuthenticated
 from rest_framework.exceptions           import AuthenticationFailed
 from rest_framework                      import status
 
 from .serializers     import User_Login_InfoSerializer, User_InfoSerializer, User_Work_InfoSerializer, IncomeSerializer, ExpenseSerializer
 from .auth_utils      import check_user_credentials, check_admin_credentials
-from .jwt_utils       import get_user_from_cookie, get_user_from_token, CustomRefreshToken
+from .jwt_utils       import get_user_from_cookie, get_user_from_token, CustomRefreshToken, CustomJWTAuthentication
 from .models          import User_Login_Info, Admin_Login_Info,Expense, Income, AdminRefreshToken, UserRefreshToken
 from django.db.models import Sum
 from datetime         import datetime
@@ -39,8 +38,7 @@ class TokenRefreshAPIView(APIView):
             refresh_obj = RefreshToken(refresh_token)
             new_access = refresh_obj.access_token
 
-            response = Response({'success': True})
-            response.set_cookie("access_token", str(new_access), httponly=True, secure=False, samesite='Lax')
+            response = Response({'success': True, 'access_token': str(new_access)})
             return response
         except Exception:
             return Response({'success': False, 'message': 'Invalid refresh token'}, status=401) 
@@ -302,23 +300,16 @@ class UserLogoutAPIView(APIView):
 # 2 데이터 처리 뷰
 # ----------------------
 class UserInfoListAPIView(APIView):
+    authentication_classes = [CustomJWTAuthentication]
+    
+    permission_classes = [IsAuthenticated]
+    
     def get(self, request):
-        try:
-            try:
-                # Access Token 확인
-                user = get_user_from_cookie(request)
-            except AuthenticationFailed:
-                return Response({'success': False, 'message': 'Authentication failed'}, status=401)
+        # 유저 정보 가져오기
+        users = User_Login_Info.objects.all()
+        user_data = User_InfoSerializer(users, many=True)
 
-            # 유저 정보 가져오기
-            users = User_Login_Info.objects.all()
-            user_data = User_InfoSerializer(users, many=True)
-
-            return Response({'success': True, 'users': user_data.data})
-
-        except Exception as e:
-            return Response({'success': False, 'message': str(e)})
-
+        return Response({'success': True, 'users': user_data.data})
 
 class UserWorkInfoAPIView(APIView):
     def patch(self, request):
@@ -337,7 +328,6 @@ class UserWorkInfoAPIView(APIView):
                     return Response({'success': False})
 
             except AuthenticationFailed:
-                
                 return Response({'success': False, 'message': 'Authentication failed'}, status=401)
 
         except Exception as e:

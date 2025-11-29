@@ -38,7 +38,7 @@ class TokenRefreshAPIView(APIView):
             refresh_obj = RefreshToken(refresh_token)
             new_access = refresh_obj.access_token
 
-            response = Response({'success': True, 'access_token': str(new_access)})
+            response = Response({'success': True, 'access': str(new_access)})
             return response
         except Exception:
             return Response({'success': False, 'message': 'Invalid refresh token'}, status=401) 

@@ -302,7 +302,7 @@ class UserLogoutAPIView(APIView):
 class UserInfoListAPIView(APIView):
     authentication_classes = [CustomJWTAuthentication]
     
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
     
     def get(self, request):
         # 유저 정보 가져오기

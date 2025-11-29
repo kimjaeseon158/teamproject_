@@ -1,64 +1,92 @@
-/**
- * 401이면 /api/refresh_token/ 호출 후 원요청을 재시도하는 래퍼
- * - 백엔드가 HttpOnly 쿠키(Access/Refresh)를 쓰는 구조를 가정
- */
+// src/api/fetchWithAuth.js
+import { getAccessToken, setAccessToken, clearAccessToken } from "./token";
+
 export async function fetchWithAuth(url, options = {}, { toast } = {}) {
-  const opts = {
-    credentials: "include", // ✅ 쿠키 포함 (Access/Refresh 전부)
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options?.headers || {}),
-    },
+  const token = getAccessToken();
+  console.log("🔐 현재 access token:", token);
+
+  const baseHeaders = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  try {
-    let res = await fetch(url, opts);
+  let opts = {
+    credentials: "include",
+    ...options,
+    headers: baseHeaders,
+  };
 
-    // 🔐 Access 만료 가정 → Refresh 시도
-    if (res.status === 401) {
-      console.log("[fetchWithAuth] 401 감지 → /api/refresh_token/ 호출");
+  console.log("📨 요청 URL:", url);
+  console.log("📨 요청 headers:", opts.headers);
 
-      const refresh = await fetch("/api/refresh_token/", {
+  let res = await fetch(url, opts);
+  console.log("📨 첫 응답 status:", res.status);
+
+  if (res.status === 401 || res.status === 403) {
+    console.warn("⚠️ 토큰 만료/권한 오류, refresh 시도");
+
+    try {
+      const refreshRes = await fetch("/api/refresh_token/", {
         method: "POST",
-        credentials: "include", // ✅ 여기서 Refresh 토큰(HttpOnly 쿠키) 사용
+        credentials: "include",
       });
 
-      if (refresh.ok) {
-        console.log("[fetchWithAuth] refresh 성공 → 원 요청 재시도");
-        // 🔁 재발급 성공 → 원 요청 재시도 (이때 새 Access 쿠키가 이미 세팅된 상태)
-        res = await fetch(url, opts);
-      } else {
-        console.log(
-          "[fetchWithAuth] refresh 실패 → 상태 코드:",
-          refresh.status
-        );
-        if (toast) {
-          toast({
-            title: "세션 만료",
-            description: "다시 로그인 해 주세요.",
-            status: "warning",
-            duration: 3000,
-            isClosable: true,
-          });
+      console.log("🔄 refresh 응답 status:", refreshRes.status);
+
+      if (refreshRes.ok) {
+        const refreshData = await refreshRes.json();
+        console.log("🔄 refresh 응답 JSON:", refreshData);
+
+        // 🔥 응답 키 이름 맞춰서 새 access 꺼내기
+        const newAccess =
+          refreshData.access ||
+          refreshData.access_token ||
+          refreshData.accessToken;
+
+        if (refreshData.success && newAccess) {
+          // ✅ 새 access 저장
+          setAccessToken(newAccess);
+
+          // ✅ 새 access로 Authorization 교체
+          const retryHeaders = {
+            ...baseHeaders,
+            Authorization: `Bearer ${newAccess}`,
+          };
+
+          opts = {
+            ...opts,
+            headers: retryHeaders,
+          };
+
+          console.log("🔁 재요청 headers:", opts.headers);
+
+          // 🔁 원래 요청 재시도
+          res = await fetch(url, opts);
+          console.log("🔁 재요청 응답 status:", res.status);
+        } else {
+          console.error("❌ refresh 응답에 access 토큰 없음");
+          clearAccessToken();
         }
-        // refresh도 실패했으면 그대로 401 응답 돌려보냄
-        return res;
+      } else {
+        console.error("❌ refresh 실패, status:", refreshRes.status);
+        clearAccessToken();
       }
+    } catch (e) {
+      console.error("refresh 요청 오류:", e);
+      clearAccessToken();
     }
-
-    return res;
-  } catch (err) {
-    console.error("[fetchWithAuth] 네트워크 오류:", err);
-    if (toast) {
-      toast({
-        title: "네트워크 오류",
-        description: err.message,
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-    }
-    throw err;
   }
+
+  if (!res.ok) {
+    try {
+      const clone = res.clone();
+      const text = await clone.text();
+      console.warn("❌ 응답 body:", text);
+    } catch (e) {
+      console.warn("❌ 응답 body 읽기 실패:", e);
+    }
+  }
+
+  return res;
 }

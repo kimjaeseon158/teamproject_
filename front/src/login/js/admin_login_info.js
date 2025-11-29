@@ -1,6 +1,8 @@
+// 예: src/login/js/loginAPI.js
+import { setAccessToken } from "../../api/token";
+
 export const HandleLogin = async (id, password, admin_code) => {
   try {
-    // admin_code가 존재하면 관리자 로그인, 없으면 일반 로그인
     const loginData = { id, password, admin_code };
 
     const response = await fetch("/api/check_admin_login/", {
@@ -9,23 +11,26 @@ export const HandleLogin = async (id, password, admin_code) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(loginData),
-      credentials: "include", // ✅ 쿠키 포함 (refresh 토큰 등)
+      credentials: "include", // ✅ refresh 토큰 쿠키
     });
 
     const data = await response.json();
     console.log("로그인 응답 전체 데이터:", data);
 
     if (data.success && admin_code) {
-      // ✅ 관리자 로그인 성공
+      // 🔥 access 토큰이 응답에 있다고 가정 (data.access)
+      if (data.access) {
+        setAccessToken(data.access);   // ✅ 전역 메모리에 저장
+      }
+
       return {
         success: "admin",
         user_Data: data?.user_data ?? null,
       };
     } else {
-      // ✅ 로그인 실패
       return {
         success: false,
-        message: "로그인 실패",
+        message: data?.message || "로그인 실패",
       };
     }
   } catch (error) {

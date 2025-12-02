@@ -8,7 +8,7 @@ from rest_framework                      import status
 
 from .serializers     import User_Login_InfoSerializer, User_InfoSerializer, User_Work_InfoSerializer, IncomeSerializer, ExpenseSerializer
 from .auth_utils      import check_user_credentials, check_admin_credentials
-from .jwt_utils       import get_user_from_cookie, get_user_from_token, CustomRefreshToken, CustomJWTAuthentication
+from .jwt_utils       import get_user_from_cookie, get_user_from_token, CustomRefreshToken, CustomJWTAuthentication, AdminJWTAuthentication
 from .models          import User_Login_Info, Admin_Login_Info,Expense, Income, AdminRefreshToken, UserRefreshToken
 from django.db.models import Sum
 from datetime         import datetime
@@ -300,9 +300,9 @@ class UserLogoutAPIView(APIView):
 # 2 데이터 처리 뷰
 # ----------------------
 class UserInfoListAPIView(APIView):
-    authentication_classes = [CustomJWTAuthentication]
+    authentication_classes = [AdminJWTAuthentication]
     
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     
     def get(self, request):
         # 유저 정보 가져오기

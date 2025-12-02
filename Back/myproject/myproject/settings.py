@@ -44,6 +44,7 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME"  : timedelta(days=7),
     "ROTATE_REFRESH_TOKENS"   : False,
     "BLACKLIST_AFTER_ROTATION": False,
+    'USER_ID_CLAIM': 'sub',
 }
 
 GOOGLE_CLIENT_ID     = env('GOOGLE_CLIENT_ID')
@@ -119,8 +120,8 @@ DATABASES = {
 ROOT_URLCONF = "myproject.urls"
 WSGI_APPLICATION = "myproject.wsgi.application"
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Seoul"
 USE_I18N = True
-USE_TZ = True
+USE_TZ = False
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

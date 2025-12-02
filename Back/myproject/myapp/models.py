@@ -58,6 +58,15 @@ class Admin_Login_Info(models.Model):
         if not self.password.startswith('pbkdf2_'):  # Django 기본 prefix 체크
             self.password = make_password(self.password)
         super().save(*args, **kwargs)
+    @property
+    def is_authenticated(self):
+        # 🌟 인증된 사용자는 True를 반환해야 합니다.
+        return True 
+    
+    @property
+    def is_active(self):
+        # 🌟 계정 활성화 상태를 나타냅니다.
+        return True
 
 # 수입 매출 관련 테이블
 

@@ -27,6 +27,15 @@ class User_Login_Info(models.Model):
         if not self.password.startswith('pbkdf2_'):  # Django 기본 prefix 체크
             self.password = make_password(self.password)
         super().save(*args, **kwargs)
+    @property
+    def is_authenticated(self):
+        # 🌟 인증된 사용자는 True를 반환해야 합니다.
+        return True 
+    
+    @property
+    def is_active(self):
+        # 🌟 계정 활성화 상태를 나타냅니다.
+        return True
 
 class User_Work_Info(models.Model):
     employee_number = models.ForeignKey(User_Login_Info, on_delete=models.CASCADE) # FK 선언
@@ -75,7 +84,7 @@ class Income(models.Model):
     company_name   = models.CharField(max_length=100)                                        # 업체명 (자유 입력)
     company_detail = models.CharField(max_length=100,blank=True,null=True)                   # 업체명 상세 (자유 입력)
     amount         = models.IntegerField()                                                   # 매출 금액 (정수)
-    serial_number = models.IntegerField(primary_key=True)    # 새 레코드 생성 시 자동 값 중복되지 않음 고유번호 저장 
+    serial_number  = models.IntegerField(primary_key=True)    # 새 레코드 생성 시 자동 값 중복되지 않음 고유번호 저장 
 
     def save(self, *args, **kwargs):
         if not self.serial_number:

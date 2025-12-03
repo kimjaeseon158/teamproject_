@@ -2,7 +2,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.exceptions import AuthenticationFailed
 from rest_framework import status
 
 from .serializers import (
@@ -15,7 +14,7 @@ from .serializers import (
 from .auth_utils import check_user_credentials, check_admin_credentials
 from .jwt_utils import (
     CustomRefreshToken,
-    CustomJWTAuthentication,
+    UserJWTAuthentication,
     AdminJWTAuthentication,
 )
 from .models import (
@@ -28,9 +27,6 @@ from .models import (
 )
 from django.db.models import Sum
 from datetime import datetime
-from datetime import timedelta
-from django.utils import timezone
-from django.http import HttpResponseRedirect
 from django.conf import settings
 from django.shortcuts import redirect
 from google.auth.transport.requests import Request
@@ -38,7 +34,6 @@ from google_auth_oauthlib.flow import Flow
 from google.oauth2 import credentials
 from rest_framework_simplejwt.tokens import RefreshToken
 from .auth_utils import (
-    hash_refresh,
     save_or_update_admin_refresh_token,
     save_or_update_user_refresh_token,
 )
@@ -491,268 +486,254 @@ class FinanceTableDateFilteredAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
 
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
-            # 프론트에서 날짜 범위 받기
-            start_date_str = request.query_params.get("start_date")
-            end_date_str = request.query_params.get("end_date")
+        # 프론트에서 날짜 범위 받기
+        start_date_str = request.query_params.get("start_date")
+        end_date_str = request.query_params.get("end_date")
 
-            if not start_date_str or not end_date_str:
-                return Response(
-                    {
-                        "success": False,
-                        "message": "start_date and end_date are required",
-                    }
-                )
-
-            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-
-            # Expense 합계 (날짜 필터링)
-            expense_qs = (
-                Expense.objects.filter(date__gte=start_date, date__lte=end_date)
-                .values("expense_name")
-                .annotate(total_amount=Sum("amount"))
+        if not start_date_str or not end_date_str:
+            return Response(
+                {
+                    "success": False,
+                    "message": "start_date and end_date are required",
+                }
             )
-            expense_totals = {
-                item["expense_name"]: item["total_amount"] for item in expense_qs
-            }
 
-            # Income 합계 (날짜 필터링)
-            income_qs = (
-                Income.objects.filter(date__gte=start_date, date__lte=end_date)
-                .values("company_name")
-                .annotate(total_amount=Sum("amount"))
-            )
-            income_totals = {
-                item["company_name"]: item["total_amount"] for item in income_qs
-            }
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
 
-            result = {"expense_totals": expense_totals, "income_totals": income_totals}
+        # Expense 합계 (날짜 필터링)
+        expense_qs = (
+            Expense.objects.filter(date__gte=start_date, date__lte=end_date)
+            .values("expense_name")
+            .annotate(total_amount=Sum("amount"))
+        )
+        expense_totals = {
+            item["expense_name"]: item["total_amount"] for item in expense_qs
+        }
 
-            return Response({"success": True, "data": result})
+        # Income 합계 (날짜 필터링)
+        income_qs = (
+            Income.objects.filter(date__gte=start_date, date__lte=end_date)
+            .values("company_name")
+            .annotate(total_amount=Sum("amount"))
+        )
+        income_totals = {
+            item["company_name"]: item["total_amount"] for item in income_qs
+        }
+
+        result = {"expense_totals": expense_totals, "income_totals": income_totals}
+
+        return Response({"success": True, "data": result})
+
 
 class IncomeDateFilteredAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
 
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
-            # 프론트에서 날짜 범위 받기
-            start_date_str = request.query_params.get("start_date")
-            end_date_str = request.query_params.get("end_date")
+        # 프론트에서 날짜 범위 받기
+        start_date_str = request.query_params.get("start_date")
+        end_date_str = request.query_params.get("end_date")
 
-            if not start_date_str or not end_date_str:
-                return Response({"success": False})
+        if not start_date_str or not end_date_str:
+            return Response({"success": False})
 
-            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
 
-            # 지정 날짜 범위의 모든 수입 가져오기
-            incomes = Income.objects.filter(
-                date__gte=start_date, date__lte=end_date
-            ).values(
-                "serial_number", "date", "company_name", "company_detail", "amount"
-            )
-            result = list(incomes)
+        # 지정 날짜 범위의 모든 수입 가져오기
+        incomes = Income.objects.filter(
+            date__gte=start_date, date__lte=end_date
+        ).values("serial_number", "date", "company_name", "company_detail", "amount")
+        result = list(incomes)
 
-            return Response({"success": True, "data": result})
+        return Response({"success": True, "data": result})
 
 
 class ExpenseDateFilteredAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
 
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
-            # 프론트에서 날짜 범위 받기
-            start_date_str = request.query_params.get("start_date")
-            end_date_str = request.query_params.get("end_date")
+        # 프론트에서 날짜 범위 받기
+        start_date_str = request.query_params.get("start_date")
+        end_date_str = request.query_params.get("end_date")
 
-            if not start_date_str or not end_date_str:
-                return Response({"success": False})
+        if not start_date_str or not end_date_str:
+            return Response({"success": False})
 
-            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
 
-            # 지정 날짜 범위의 모든 지출 가져오기
-            expenses = Expense.objects.filter(
-                date__gte=start_date, date__lte=end_date
-            ).values(
-                "serial_number", "date", "expense_name", "expense_detail", "amount"
-            )
-            result = list(expenses)
+        # 지정 날짜 범위의 모든 지출 가져오기
+        expenses = Expense.objects.filter(
+            date__gte=start_date, date__lte=end_date
+        ).values("serial_number", "date", "expense_name", "expense_detail", "amount")
+        result = list(expenses)
 
-            return Response({"success": True, "data": result})
+        return Response({"success": True, "data": result})
+
 
 class ExpenseAddAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
 
     permission_classes = [IsAuthenticated]
-    def post(self, request):
-            # 새로운 지출 추가
-            serializer = ExpenseSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                result = serializer.data
-                success = True
-            else:
-                result = serializer.errors
-                success = False
 
-            # 최종 반환
-            return Response(
-                {"success": success, "expense_data": result}
-                if success
-                else {"success": success}
-            )
+    def post(self, request):
+        # 새로운 지출 추가
+        serializer = ExpenseSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            result = serializer.data
+            success = True
+        else:
+            result = serializer.errors
+            success = False
+
+        # 최종 반환
+        return Response(
+            {"success": success, "expense_data": result}
+            if success
+            else {"success": success}
+        )
 
 
 class IncomeAddAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
 
     permission_classes = [IsAuthenticated]
-    def post(self, request):
-            # 새로운 매출 추가
-            serializer = IncomeSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                result = serializer.data
-                success = True
-            else:
-                result = serializer.errors
-                success = False
 
-            # 최종 반환
-            return Response(
-                {"success": success, "income_data": result}
-                if success
-                else {"success": success}
-            )
+    def post(self, request):
+        # 새로운 매출 추가
+        serializer = IncomeSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            result = serializer.data
+            success = True
+        else:
+            result = serializer.errors
+            success = False
+
+        # 최종 반환
+        return Response(
+            {"success": success, "income_data": result}
+            if success
+            else {"success": success}
+        )
+
 
 class IncomeUpdateAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
 
     permission_classes = [IsAuthenticated]
+
     def patch(self, request):
-            # 필수: serial_number 및 날짜 범위
-            serial_number = request.data["serial_number"]
-            start_date = datetime.strptime(
-                request.data["start_date"], "%Y-%m-%d"
-            ).date()
-            end_date = datetime.strptime(request.data["end_date"], "%Y-%m-%d").date()
+        # 필수: serial_number 및 날짜 범위
+        serial_number = request.data["serial_number"]
+        start_date = datetime.strptime(request.data["start_date"], "%Y-%m-%d").date()
+        end_date = datetime.strptime(request.data["end_date"], "%Y-%m-%d").date()
 
-            # 레코드 업데이트
-            income_instance = Income.objects.get(serial_number=serial_number)
-            serializer = IncomeSerializer(
-                income_instance, data=request.data, partial=True
-            )
-            if serializer.is_valid():
-                serializer.save()
+        # 레코드 업데이트
+        income_instance = Income.objects.get(serial_number=serial_number)
+        serializer = IncomeSerializer(income_instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
 
-                # 날짜 범위 필터링된 데이터 반환
-                income_qs = Income.objects.filter(
-                    date__gte=start_date, date__lte=end_date
-                )
-                income_data = IncomeSerializer(income_qs, many=True)
+            # 날짜 범위 필터링된 데이터 반환
+            income_qs = Income.objects.filter(date__gte=start_date, date__lte=end_date)
+            income_data = IncomeSerializer(income_qs, many=True)
 
-                return Response({"success": True, "income_data": income_data.data})
-            else:
-                return Response({"success": False})
+            return Response({"success": True, "income_data": income_data.data})
+        else:
+            return Response({"success": False})
 
 
 class ExpenseUpdateAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
 
     permission_classes = [IsAuthenticated]
+
     def patch(self, request):
-            # 필수: serial_number 및 날짜 범위
-            serial_number = request.data["serial_number"]
-            start_date = datetime.strptime(
-                request.data["start_date"], "%Y-%m-%d"
-            ).date()
-            end_date = datetime.strptime(request.data["end_date"], "%Y-%m-%d").date()
+        # 필수: serial_number 및 날짜 범위
+        serial_number = request.data["serial_number"]
+        start_date = datetime.strptime(request.data["start_date"], "%Y-%m-%d").date()
+        end_date = datetime.strptime(request.data["end_date"], "%Y-%m-%d").date()
 
-            # 레코드 업데이트
-            expense_instance = Expense.objects.get(serial_number=serial_number)
-            serializer = ExpenseSerializer(
-                expense_instance, data=request.data, partial=True
+        # 레코드 업데이트
+        expense_instance = Expense.objects.get(serial_number=serial_number)
+        serializer = ExpenseSerializer(
+            expense_instance, data=request.data, partial=True
+        )
+        if serializer.is_valid():
+            serializer.save()
+
+            # 날짜 범위 필터링된 데이터 반환
+            expense_qs = Expense.objects.filter(
+                date__gte=start_date, date__lte=end_date
             )
-            if serializer.is_valid():
-                serializer.save()
+            expense_data = ExpenseSerializer(expense_qs, many=True)
 
-                # 날짜 범위 필터링된 데이터 반환
-                expense_qs = Expense.objects.filter(
-                    date__gte=start_date, date__lte=end_date
-                )
-                expense_data = ExpenseSerializer(expense_qs, many=True)
-
-                return Response({"success": True, "expense_data": expense_data.data})
-            else:
-                return Response({"success": False})
+            return Response({"success": True, "expense_data": expense_data.data})
+        else:
+            return Response({"success": False})
 
 
 class IncomeDeleteAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
 
     permission_classes = [IsAuthenticated]
+
     def delete(self, request):
-            # 필수: serial_number 및 날짜 범위
-            serial_number = request.data["serial_number"]
-            start_date = datetime.strptime(
-                request.data["start_date"], "%Y-%m-%d"
-            ).date()
-            end_date = datetime.strptime(request.data["end_date"], "%Y-%m-%d").date()
+        # 필수: serial_number 및 날짜 범위
+        serial_number = request.data["serial_number"]
+        start_date = datetime.strptime(request.data["start_date"], "%Y-%m-%d").date()
+        end_date = datetime.strptime(request.data["end_date"], "%Y-%m-%d").date()
 
-            try:
-                # 레코드 삭제
-                income_instance = Income.objects.get(serial_number=serial_number)
-                income_instance.delete()
+        try:
+            # 레코드 삭제
+            income_instance = Income.objects.get(serial_number=serial_number)
+            income_instance.delete()
 
-                # 삭제 후 날짜 범위 필터링된 데이터 반환
-                income_qs = Income.objects.filter(
-                    date__gte=start_date, date__lte=end_date
-                )
-                income_data = IncomeSerializer(income_qs, many=True)
+            # 삭제 후 날짜 범위 필터링된 데이터 반환
+            income_qs = Income.objects.filter(date__gte=start_date, date__lte=end_date)
+            income_data = IncomeSerializer(income_qs, many=True)
 
-                return Response({"success": True, "income_data": income_data.data})
+            return Response({"success": True, "income_data": income_data.data})
 
-            except Income.DoesNotExist:
-                return Response({"success": False})
+        except Income.DoesNotExist:
+            return Response({"success": False})
 
 
 class ExpenseDeleteAPIView(APIView):
+    authentication_classes = [AdminJWTAuthentication]
+
+    permission_classes = [IsAuthenticated]
+
     def delete(self, request):
+
+        # 필수: serial_number 및 날짜 범위
+        serial_number = request.data["serial_number"]
+        start_date = datetime.strptime(request.data["start_date"], "%Y-%m-%d").date()
+        end_date = datetime.strptime(request.data["end_date"], "%Y-%m-%d").date()
+        
         try:
-            # Access Token 확인
-            try:
-                user = get_user_from_cookie(request)
-            except AuthenticationFailed:
-                return Response(
-                    {"success": False, "message": "Authentication failed"}, status=401
-                )
+            # 레코드 삭제
+            expense_instance = Expense.objects.get(serial_number=serial_number)
+            expense_instance.delete()
 
-            # 필수: serial_number 및 날짜 범위
-            serial_number = request.data["serial_number"]
-            start_date = datetime.strptime(
-                request.data["start_date"], "%Y-%m-%d"
-            ).date()
-            end_date = datetime.strptime(request.data["end_date"], "%Y-%m-%d").date()
+            # 삭제 후 날짜 범위 필터링된 데이터 반환
+            expense_qs = Expense.objects.filter(
+                date__gte=start_date, date__lte=end_date
+            )
+            expense_data = ExpenseSerializer(expense_qs, many=True)
 
-            try:
-                # 레코드 삭제
-                expense_instance = Expense.objects.get(serial_number=serial_number)
-                expense_instance.delete()
+            return Response({"success": True, "expense_data": expense_data.data})
 
-                # 삭제 후 날짜 범위 필터링된 데이터 반환
-                expense_qs = Expense.objects.filter(
-                    date__gte=start_date, date__lte=end_date
-                )
-                expense_data = ExpenseSerializer(expense_qs, many=True)
-
-                return Response({"success": True, "expense_data": expense_data.data})
-
-            except Expense.DoesNotExist:
-                return Response({"success": False})
-
-        except Exception:
+        except Expense.DoesNotExist:
             return Response({"success": False})
 
 
@@ -760,25 +741,16 @@ class ExpenseDeleteAPIView(APIView):
 # 2 데이터 처리 뷰 - User
 # ----------------------
 class UserWorkInfoAPIView(APIView):
+    authentication_classes = [UserJWTAuthentication]
+
+    permission_classes = [IsAuthenticated]
+
     def patch(self, request):
-        try:
-            try:
-                # Access Token 확인
-                user = get_user_from_cookie(request)
-
-                # 작업 정보 등록
-                data = request.data
-                serializer = User_Work_InfoSerializer(data=data)
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response({"success": True})
-                else:
-                    return Response({"success": False})
-
-            except AuthenticationFailed:
-                return Response(
-                    {"success": False, "message": "Authentication failed"}, status=401
-                )
-
-        except Exception as e:
-            return Response({"success": False, "message": str(e)})
+        # 작업 정보 등록
+        data = request.data
+        serializer = User_Work_InfoSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"success": True})
+        else:
+            return Response({"success": False})

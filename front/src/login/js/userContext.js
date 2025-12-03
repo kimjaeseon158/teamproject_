@@ -30,12 +30,18 @@ export function UserProvider({ children }) {
     }
   };
 
+  const snapshot = loadSnapshot();
+
   // ✅ 처음엔 localStorage 스냅샷으로 user 세팅 (없으면 null)
-  const [user, setUser] = useState(() => loadSnapshot());
+  const [user, setUser] = useState(snapshot);
+
+  // ✅ snapshot에 employee_number가 있으면 그걸로 employeeNumber 초기값 설정
+  const [employeeNumber, setEmployeeNumber] = useState(
+    snapshot?.employee_number ?? null
+  );
+
   const [loading, setLoading] = useState(false); // 처음부터 false
   const [userData, setUserData] = useState([]);
-  const [employeeNumber, setEmployeeNumber] = useState(null);
-
   // ✅ user 바뀔 때 스냅샷 저장/삭제
   useEffect(() => {
     try {
@@ -51,8 +57,8 @@ export function UserProvider({ children }) {
 
   /**
    * 🔁 세션/로그인 상태 재검증
-   * - "로그인 성공 시에만" 호출한다고 가정
-   * - 자동 실행 없음 (useEffect 안 돌림)
+   * - /api/check_user_login/ → { success, user_name, employee_number, access }
+   * - 필요 시 /api/check_admin_login/ 도 fallback
    */
   const revalidate = useCallback(async () => {
     setLoading(true);
@@ -60,7 +66,7 @@ export function UserProvider({ children }) {
     try {
       // 1) 일반 유저 로그인 확인
       let res = await fetchWithAuth("/api/check_user_login/", {
-        method: "GET", // ⬅️ 너 백엔드에 맞춰서 GET/POST 유지
+        method: "GET",
       });
 
       // 2) 안 되면 관리자 로그인 확인
@@ -72,15 +78,28 @@ export function UserProvider({ children }) {
 
       if (res && res.ok) {
         const data = await res.json();
-        const nextUser = data?.user ?? data ?? null;
+
+
+        let nextUser = null;
+
+        // ✅ 일반 유저: 지금 네가 보여준 형태
+        if (data.employee_number) {
+          // ex) { success, user_name, employee_number, access }
+          nextUser = data;
+          setEmployeeNumber(data.employee_number);
+        }
+        // ✅ (옵션) 관리자 응답 형태가 있다면 여기서 처리
+        else if (data.admin_id) {
+          // ex) { success, admin_id, admin_name, ... }
+          nextUser = data;
+          setEmployeeNumber(null);
+        } else {
+          nextUser = data ?? null;
+          setEmployeeNumber(null);
+        }
 
         if (nextUser) {
           setUser(nextUser);
-
-          // 필요하면 employeeNumber도 여기서 세팅
-          if (nextUser.employee_number) {
-            setEmployeeNumber(nextUser.employee_number);
-          }
         } else {
           setUser(null);
           setEmployeeNumber(null);
@@ -97,6 +116,10 @@ export function UserProvider({ children }) {
       setLoading(false);
     }
   }, []);
+
+  // ✅ user/employeeNumber가 바뀔 때마다 상태 확인용 로그
+  useEffect(() => {
+  }, [user, employeeNumber]);
 
   const value = {
     user,

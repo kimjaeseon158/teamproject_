@@ -1,6 +1,8 @@
-export async function fetchFilteredPeople(queryParams) {
+// 예: 경로는 네 프로젝트 구조에 맞게 수정해줘
+import { fetchWithAuth } from "../../api/fetchWithAuth";
+
+export async function fetchFilteredPeople(queryParams, { toast } = {}) {
   try {
-    // filters 객체에서 값이 있는 항목만 쿼리 파라미터로 변환
     const filters = queryParams.filters || {};
     const params = {};
 
@@ -20,11 +22,21 @@ export async function fetchFilteredPeople(queryParams) {
     // URLSearchParams로 쿼리스트링 생성
     const query = new URLSearchParams(params).toString();
 
-    const res = await fetch(`/api/user_info_filtering/?${query}`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-    });
+    // ✅ 여기서부터는 fetch 대신 fetchWithAuth 사용
+    const res = await fetchWithAuth(
+      `/api/user_info_filtering/?${query}`,
+      {
+        method: "GET",
+        // GET이면 Content-Type 없어도 됨. 필요하면 추가 가능
+        headers: { "Content-Type": "application/json" },
+      },
+      { toast } // 선택: 토스트 쓰고 싶으면 넘기고, 아니면 파라미터 빼도 됨
+    );
+
+    // 🔴 refresh 실패 시 fetchWithAuth가 null 리턴하도록 해놨다면:
+    if (!res) {
+      return []; // 이미 로그인 페이지로 튕겼을 가능성 높음
+    }
 
     if (!res.ok) {
       console.error("서버 응답 오류:", res.status);

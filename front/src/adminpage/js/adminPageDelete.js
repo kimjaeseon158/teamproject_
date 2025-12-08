@@ -1,24 +1,42 @@
-export const deleteEmployees = async (employee_Numbers) => {
+// 경로는 프로젝트 구조에 맞게 수정!
+import { fetchWithAuth } from "../../api/fetchWithAuth";
+
+export const deleteEmployees = async (employee_Numbers, { toast } = {}) => {
   try {
-    const results = []; // 각 사원의 삭제 결과 저장
+    const results = [];      // 각 사원의 삭제 결과 저장
     const deleted_Users = []; // 삭제된 유저 데이터 저장
-    const failed = []; // 실패한 요청들 저장
+    const failed = [];       // 실패한 요청들 저장
 
     for (const empNo of employee_Numbers) {
       const body = {
-          employee_number: empNo, // 서버에서 요구하는 구조
+        employee_number: empNo, // 서버에서 요구하는 구조
       };
 
       console.log("DELETE 요청 바디:", body);
 
-      const response = await fetch("/api/user_info_delete/", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
+      // ✅ fetch → fetchWithAuth 로 변경
+      const response = await fetchWithAuth(
+        "/api/user_info_delete/",
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+          // credentials: "include"  // 보통 fetchWithAuth 안에서 이미 넣어줌
         },
-        body: JSON.stringify(body),
-        credentials: "include"
-      });
+        { toast } // 옵션: 토스트 쓰고 있으면 그대로 넘겨주기
+      );
+
+      // 🔁 refresh 실패해서 fetchWithAuth가 null 리턴했다면
+      if (!response) {
+        failed.push({
+          employee_number: empNo,
+          error: "인증 만료 또는 재로그인 필요",
+        });
+        // 보통 이 경우엔 RequireAuth에서 로그인페이지로 튕겼을 확률이 높음
+        continue;
+      }
 
       const text = await response.text();
       console.log(`사원번호 ${empNo} 삭제 응답 본문:\n`, text);
@@ -35,9 +53,8 @@ export const deleteEmployees = async (employee_Numbers) => {
         continue;
       }
 
-    const success = parsed?.success;
-    const userData = parsed?.user_data || [];
-
+      const success = parsed?.success;
+      const userData = parsed?.user_data || [];
 
       if (success) {
         console.log(` ${empNo} 삭제 성공`);

@@ -39,7 +39,6 @@ export const deleteEmployees = async (employee_Numbers, { toast } = {}) => {
       }
 
       const text = await response.text();
-      console.log(`사원번호 ${empNo} 삭제 응답 본문:\n`, text);
 
       let parsed;
       try {

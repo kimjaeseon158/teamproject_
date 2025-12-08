@@ -3,11 +3,6 @@ import { fetchWithAuth } from "../../api/fetchWithAuth";
 
 export const updateEmployee = async (employee_Data, { toast } = {}) => {
   try {
-    // ✅ 백엔드가 기대하는 형태가 { employee_Data: {...} } 라면 이 구조 유지
-    const body = {
-      employee_Data,
-    };
-
     const response = await fetchWithAuth(
       "/api/user_info_update/",
       {
@@ -15,7 +10,7 @@ export const updateEmployee = async (employee_Data, { toast } = {}) => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(body), // ✅ body 전체를 보내야 함
+        body: JSON.stringify(employee_Data), // ✅ body 전체를 보내야 함
         // credentials: "include" 는 fetchWithAuth 안에 이미 있겠지?
       },
       { toast } // 선택

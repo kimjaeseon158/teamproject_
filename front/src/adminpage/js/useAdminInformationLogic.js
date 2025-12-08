@@ -19,15 +19,34 @@ export function useAdminInformationLogic(person, onClose, onSave) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    // 현재 커서 위치 기록
+    const cursorPosition = e.target.selectionStart;
+
     let formatted_Value = value;
 
     if (name === "phone_number") {
-      formatted_Value = formatPhoneNumber(value); // 자동 하이픈
+      formatted_Value = formatPhoneNumber(value);
     } else if (name === "resident_number") {
       formatted_Value = formatResidentNumber(value);
     }
 
     setFormData((prev) => ({ ...prev, [name]: formatted_Value }));
+
+    // 🔥 다음 렌더링 후 커서 위치 복원
+    requestAnimationFrame(() => {
+      const input = document.querySelector(`input[name="${name}"]`);
+      if (input) {
+        let newCursorPosition = cursorPosition;
+
+        // 하이픈 추가 때문에 길이가 변하는 경우 커서 위치 조정
+        if (formatted_Value.length > value.length) {
+          newCursorPosition++;
+        }
+
+        input.selectionStart = input.selectionEnd = newCursorPosition;
+      }
+    });
   };
 
   const handleSubmit = (e) => {

@@ -1,56 +1,60 @@
-import { useContext, useState, useEffect } from "react";
+// src/attendance/calenderinfo.js
+import React, { useContext, useState, useEffect } from "react";
+import {
+  Box,
+  Stack,
+  Button,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  HStack,
+  Text,
+  Input,
+  Select,
+  Switch,
+} from "@chakra-ui/react";
+import { ChevronDownIcon } from "@chakra-ui/icons";
+
 import UserContext from "../../login/js/userContext";
 import locationsList from "../js/locationsList";
 import workTimeList from "../js/workTimeList";
 import { calculateDurationInHM } from "../js/timeUtils";
 import submitWorkInfo from "../js/submitWorkInfo";
-import '../css/activity.css';
+import "../css/activity.css";
 
 const Option = ({ selectedDate }) => {
   const [records, setRecords] = useState([]);
+
   const [location, setLocation] = useState("");
   const [workTime, setWorkTime] = useState("");
   const [startTime, setStartTime] = useState("");
   const [finishTime, setFinishTime] = useState("");
   const [totalWorkTime, setTotalWorkTime] = useState("");
-  const [showWorkTimes, setShowWorkTimes] = useState(false);
-  const [showLocations, setShowLocations] = useState(false);
 
   const { user, employeeNumber } = useContext(UserContext);
 
-  // 잔업, 중식, 특근 상태 (시작, 종료, 총시간, 체크박스)
-  const [overtimeChecked, setOvertimeChecked] = useState(false);
-  const [overtimeStart, setOvertimeStart] = useState("");
-  const [overtimeFinish, setOvertimeFinish] = useState("");
-  const [overtimeDuration, setOvertimeDuration] = useState("");
+  // 🔹 추가 근무(잔업/중식/특근) 통합 상태
+  const [extraEnabled, setExtraEnabled] = useState(false);
+  const [extraType, setExtraType] = useState(""); // "overtime" | "lunch" | "special"
+  const [extraStart, setExtraStart] = useState("");
+  const [extraFinish, setExtraFinish] = useState("");
+  const [extraDuration, setExtraDuration] = useState("");
 
-  const [lunchChecked, setLunchChecked] = useState(false);
-  const [lunchStart, setLunchStart] = useState("");
-  const [lunchFinish, setLunchFinish] = useState("");
-  const [lunchDuration, setLunchDuration] = useState("");
-
-  const [specialWorkChecked, setSpecialWorkChecked] = useState(false);
-  const [specialWorkStart, setSpecialWorkStart] = useState("");
-  const [specialWorkFinish, setSpecialWorkFinish] = useState("");
-  const [specialWorkDuration, setSpecialWorkDuration] = useState("");
-
-  // 시간 제한 및 HH:mm 자동 포맷 함수
+  // 시간 입력 자동 포맷(HH:mm)
   const formatTimeInput = (value) => {
     let cleaned = value.replace(/[^0-9]/g, "");
-
     if (cleaned.length === 0) return "";
 
     let hour = cleaned.slice(0, 2);
     let minute = cleaned.slice(2, 4);
 
-    // 시간 유효성 검사
     if (hour.length === 1) {
       if (Number(hour) > 2) hour = "2";
     } else if (hour.length === 2) {
       if (Number(hour) > 24) hour = "24";
     }
 
-    // 분 유효성 검사
     if (minute.length === 1) {
       if (Number(minute) > 5) minute = "5";
     } else if (minute.length === 2) {
@@ -61,20 +65,18 @@ const Option = ({ selectedDate }) => {
     return `${hour}:${minute}`;
   };
 
-  // 메인 작업 시간 선택 처리
+  // 메인 작업 시간 선택
   const handleSelectWorkTime = (start, finish) => {
     setStartTime(start);
     setFinishTime(finish);
     setWorkTime(`${start}~${finish}`);
-    setShowWorkTimes(false);
   };
 
   const handleSelectLocation = (loc) => {
     setLocation(loc);
-    setShowLocations(false);
   };
 
-  // 총 작업 시간 계산 (메인 작업)
+  // 총 작업 시간 계산
   useEffect(() => {
     if (startTime && finishTime) {
       const duration = calculateDurationInHM(startTime, finishTime);
@@ -84,30 +86,14 @@ const Option = ({ selectedDate }) => {
     }
   }, [startTime, finishTime]);
 
-  // 잔업, 중식, 특근 총시간 계산
+  // 추가 근무 시간 계산
   useEffect(() => {
-    if (overtimeStart && overtimeFinish) {
-      setOvertimeDuration(calculateDurationInHM(overtimeStart, overtimeFinish));
+    if (extraStart && extraFinish) {
+      setExtraDuration(calculateDurationInHM(extraStart, extraFinish));
     } else {
-      setOvertimeDuration("");
+      setExtraDuration("");
     }
-  }, [overtimeStart, overtimeFinish]);
-
-  useEffect(() => {
-    if (lunchStart && lunchFinish) {
-      setLunchDuration(calculateDurationInHM(lunchStart, lunchFinish));
-    } else {
-      setLunchDuration("");
-    }
-  }, [lunchStart, lunchFinish]);
-
-  useEffect(() => {
-    if (specialWorkStart && specialWorkFinish) {
-      setSpecialWorkDuration(calculateDurationInHM(specialWorkStart, specialWorkFinish));
-    } else {
-      setSpecialWorkDuration("");
-    }
-  }, [specialWorkStart, specialWorkFinish]);
+  }, [extraStart, extraFinish]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -117,6 +103,11 @@ const Option = ({ selectedDate }) => {
       return;
     }
 
+    // 🔹 extraType 을 예전 구조(잔업/중식/특근 개별 필드)로 분해
+    const isOvertime = extraEnabled && extraType === "overtime";
+    const isLunch = extraEnabled && extraType === "lunch";
+    const isSpecial = extraEnabled && extraType === "special";
+
     try {
       const { data, newRecord } = await submitWorkInfo({
         user,
@@ -125,26 +116,25 @@ const Option = ({ selectedDate }) => {
         startTime,
         finishTime,
         totalWorkTime,
-
         location,
 
         // 잔업
-        overtimeChecked,
-        overtimeStart: overtimeChecked ? overtimeStart : "",
-        overtimeFinish: overtimeChecked ? overtimeFinish : "",
-        overtimeDuration: overtimeChecked ? overtimeDuration : "",
+        overtimeChecked: isOvertime,
+        overtimeStart: isOvertime ? extraStart : "",
+        overtimeFinish: isOvertime ? extraFinish : "",
+        overtimeDuration: isOvertime ? extraDuration : "",
 
         // 중식
-        lunchChecked,
-        lunchStart: lunchChecked ? lunchStart : "",
-        lunchFinish: lunchChecked ? lunchFinish : "",
-        lunchDuration: lunchChecked ? lunchDuration : "",
+        lunchChecked: isLunch,
+        lunchStart: isLunch ? extraStart : "",
+        lunchFinish: isLunch ? extraFinish : "",
+        lunchDuration: isLunch ? extraDuration : "",
 
         // 특근
-        specialWorkChecked,
-        specialWorkStart: specialWorkChecked ? specialWorkStart : "",
-        specialWorkFinish: specialWorkChecked ? specialWorkFinish : "",
-        specialWorkDuration: specialWorkChecked ? specialWorkDuration : "",
+        specialWorkChecked: isSpecial,
+        specialWorkStart: isSpecial ? extraStart : "",
+        specialWorkFinish: isSpecial ? extraFinish : "",
+        specialWorkDuration: isSpecial ? extraDuration : "",
       });
 
       console.log("서버 응답:", data);
@@ -157,212 +147,201 @@ const Option = ({ selectedDate }) => {
       setWorkTime("");
       setTotalWorkTime("");
 
-      setOvertimeChecked(false);
-      setOvertimeStart("");
-      setOvertimeFinish("");
-      setOvertimeDuration("");
-
-      setLunchChecked(false);
-      setLunchStart("");
-      setLunchFinish("");
-      setLunchDuration("");
-
-      setSpecialWorkChecked(false);
-      setSpecialWorkStart("");
-      setSpecialWorkFinish("");
-      setSpecialWorkDuration("");
+      setExtraEnabled(false);
+      setExtraType("");
+      setExtraStart("");
+      setExtraFinish("");
+      setExtraDuration("");
     } catch (error) {
       console.error("전송 중 오류 발생:", error);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 relative">
+    <Stack
+      as="form"
+      spacing={4}
+      onSubmit={handleSubmit}
+      color="white" // 다크박스 위라 텍스트 흰색
+    >
+      {/* 🔹 작업 시간 선택 */}
+      <Box>
+        <Text fontSize="sm" mb={1} fontWeight="600">
+          작업 시간
+        </Text>
+        <Menu>
+          <MenuButton
+            as={Button}
+            variant="outline"
+            rightIcon={<ChevronDownIcon />}
+            width="100%"
+            justifyContent="space-between"
+            fontWeight={workTime ? "500" : "400"}
+            color={workTime ? "gray.100" : "gray.400"}
+            bg="gray.800"
+            borderColor="gray.600"
+            _hover={{ bg: "gray.700" }}
+          >
+            {workTime || "작업 시간 선택"}
+          </MenuButton>
+          <MenuList maxH="240px" overflowY="auto" bg="white" color="gray.800">
+            {workTimeList.map(({ startTime, finishTime }, idx) => (
+              <MenuItem
+                key={idx}
+                onClick={() => handleSelectWorkTime(startTime, finishTime)}
+              >
+                {startTime}~{finishTime}
+              </MenuItem>
+            ))}
+          </MenuList>
+        </Menu>
+      </Box>
 
-      {/* 작업 시간 선택 */}
-      <div className="relative">
-        <input type="text" className="white-input" placeholder="작업 시간 선택" value={workTime}  disabled />
-        <button
-          type="button"
-          onClick={() => setShowWorkTimes(!showWorkTimes)}
-          className="absolute right-2 top-2 bg-gray-300 p-1 rounded"
-        >
-          +
-        </button>
-        {showWorkTimes && (
-          <div className="absolute left-0 mt-1 w-full max-h-60 overflow-y-auto border rounded bg-white shadow-lg z-10">
-            <div className="grid grid-cols-2 gap-2 p-2">
-              {workTimeList.map(({ startTime, finishTime }, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => handleSelectWorkTime(startTime, finishTime)}
-                  className="cursor-pointer p-2 border rounded hover:bg-blue-500 hover:text-white"
-                >
-                  {startTime}~{finishTime}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+      {/* 🔹 장소 선택 */}
+      <Box>
+        <Text fontSize="sm" mb={1} fontWeight="600">
+          업체 / 장소
+        </Text>
+        <Menu>
+          <MenuButton
+            as={Button}
+            variant="outline"
+            rightIcon={<ChevronDownIcon />}
+            width="100%"
+            justifyContent="space-between"
+            fontWeight={location ? "500" : "400"}
+            color={location ? "gray.100" : "gray.400"}
+            bg="gray.800"
+            borderColor="gray.600"
+            _hover={{ bg: "gray.700" }}
+          >
+            {location || "업체/장소 선택"}
+          </MenuButton>
+          <MenuList maxH="240px" overflowY="auto" bg="white" color="gray.800">
+            {locationsList.map((loc, idx) => (
+              <MenuItem key={idx} onClick={() => handleSelectLocation(loc)}>
+                {loc}
+              </MenuItem>
+            ))}
+          </MenuList>
+        </Menu>
+      </Box>
 
-      {/* 장소 선택 및 입력 */}
-      <div className="relative">
-        <input
-          type="text"
-          placeholder="업체/장소"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          className="w-full p-2 border rounded white-input"
-          disabled
+      {/* 🔹 총 작업 시간 */}
+      <Box>
+        <Text fontSize="sm" mb={1} fontWeight="600">
+          총 작업 시간
+        </Text>
+        <Input
+          value={totalWorkTime}
+          placeholder="총 작업 시간"
+          isReadOnly
+          bg="gray.800"
+          borderColor="gray.600"
+          color="gray.100"
+          _placeholder={{ color: "gray.500" }}
         />
-        <button
-          type="button"
-          onClick={() => setShowLocations(!showLocations)}
-          className="absolute right-2 top-2 bg-gray-300 p-1 rounded"
-        >
-          +
-        </button>
-        {showLocations && (
-          <div className="absolute left-0 mt-1 w-full max-h-60 overflow-y-auto border rounded bg-white shadow-lg z-10">
-            <div className="grid grid-cols-2 gap-2 p-2">
-              {locationsList.map((loc, idx) => (
-                <div
-                  key={idx}
-                  className={`cursor-pointer p-3 text-center border rounded-lg ${
-                    location === loc ? "bg-blue-500 text-white" : "bg-gray-100"
-                  }`}
-                  onClick={() => handleSelectLocation(loc)}
-                >
-                  {loc}
-                </div>
-              ))}
-            </div>
-          </div>
+      </Box>
+
+      {/* ⭐ 추가 근무 블록 (잔업 / 특근 / 중식) */}
+      <Box mt={2} bg="gray.700" p={3} borderRadius="md">
+        <HStack justify="space-between" mb={2}>
+          <Text fontSize="sm" fontWeight="600">
+            추가 근무 (잔업 / 특근 / 중식)
+          </Text>
+          <HStack>
+            <Text
+              fontSize="xs"
+              color={extraEnabled ? "green.300" : "red.300"}
+              mr={1}
+            >
+              {extraEnabled ? "ON" : "OFF"}
+            </Text>
+            <Switch
+              isChecked={extraEnabled}
+              onChange={(e) => setExtraEnabled(e.target.checked)}
+              colorScheme="green"
+              size="md"
+            />
+          </HStack>
+        </HStack>
+
+        {extraEnabled && (
+          <Stack spacing={3} mt={2}>
+            {/* 유형 선택 */}
+            <Select
+              placeholder="유형 선택 (잔업 / 특근 / 중식)"
+              size="sm"
+              value={extraType}
+              onChange={(e) => setExtraType(e.target.value)}
+              bg="gray.800"
+              borderColor="gray.500"
+              color="gray.100"
+              _placeholder={{ color: "gray.400" }}
+            >
+              <option style={{ color: "black" }} value="overtime">
+                잔업
+              </option>
+              <option style={{ color: "black" }} value="special">
+                특근
+              </option>
+              <option style={{ color: "black" }} value="lunch">
+                중식
+              </option>
+            </Select>
+
+            {/* 시간 입력 */}
+            <HStack spacing={3} align="center">
+              <Input
+                placeholder="시작"
+                value={extraStart}
+                maxLength={5}
+                onChange={(e) =>
+                  setExtraStart(formatTimeInput(e.target.value))
+                }
+                flex="1"
+                size="sm"
+                bg="white"
+                color="gray.800"
+                _placeholder={{ color: "gray.400" }}
+              />
+              <Text color="gray.200">~</Text>
+              <Input
+                placeholder="종료"
+                value={extraFinish}
+                maxLength={5}
+                onChange={(e) =>
+                  setExtraFinish(formatTimeInput(e.target.value))
+                }
+                flex="1"
+                size="sm"
+                bg="white"
+                color="gray.800"
+                _placeholder={{ color: "gray.400" }}
+              />
+
+              {/* 총 시간 표시 */}
+              <Box minW="80px" textAlign="right">
+                <Text fontSize="xs" color="gray.200">
+                  {extraDuration ? `총 ${extraDuration}` : "총 시간 -"}
+                </Text>
+              </Box>
+            </HStack>
+          </Stack>
         )}
-      </div>
+      </Box>
 
-      {/* 총 작업 시간 */}
-      <input type="text" className="white-input" placeholder="총 작업 시간" value={totalWorkTime}  disabled />
-
-      {/* 잔업, 중식, 특근 섹션 */}
-      <div className="space-y-6 mt-4">
-
-        {/* 잔업 */}
-        <div>
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={overtimeChecked}
-              onChange={() => setOvertimeChecked(!overtimeChecked)}
-            />
-            <span>잔업</span>
-          </label>
-          {overtimeChecked && (
-            <div className="flex space-x-2 mt-1 items-center">
-              <input
-                type="text"
-                placeholder="시작시간 (예 : 17:30)"
-                value={overtimeStart}
-                maxLength={5}
-                onChange={(e) => setOvertimeStart(formatTimeInput(e.target.value))}
-                className="p-2 border rounded w-24"
-              />
-              <span>~</span>
-              <input
-                type="text"
-                placeholder="종료시간 (예 : 19:30)"
-                value={overtimeFinish}
-                maxLength={5}
-                onChange={(e) => setOvertimeFinish(formatTimeInput(e.target.value))}
-                className="p-2 border rounded w-24"
-              />
-              <span>{overtimeDuration}</span>
-            </div>
-          )}
-        </div>
-
-        {/* 중식 */}
-        <div>
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={lunchChecked}
-              onChange={() => setLunchChecked(!lunchChecked)}
-            />
-            <span>중식</span>
-          </label>
-          {lunchChecked && (
-            <div className="flex space-x-2 mt-1 items-center">
-              <input
-                type="text"
-                placeholder="시작시간 (예 : 12:30)"
-                value={lunchStart}
-                maxLength={5}
-                onChange={(e) => setLunchStart(formatTimeInput(e.target.value))}
-                className="p-2 border rounded w-24"
-              />
-              <span>~</span>
-              <input
-                type="text"
-                placeholder="종료시간 (예 : 13:30)"
-                value={lunchFinish}
-                maxLength={5}
-                onChange={(e) => setLunchFinish(formatTimeInput(e.target.value))}
-                className="p-2 border rounded w-24"
-              />
-              <span>{lunchDuration}</span>
-            </div>
-          )}
-        </div>
-
-        {/* 특근 */}
-        <div>
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={specialWorkChecked}
-              onChange={() => setSpecialWorkChecked(!specialWorkChecked)}
-            />
-            <span>특근</span>
-          </label>
-          {specialWorkChecked && (
-            <div className="flex space-x-2 mt-1 items-center">
-              <input
-                type="text"
-                placeholder="시작시간 (예 : 17:30)"
-                value={specialWorkStart}
-                maxLength={5}
-                onChange={(e) => setSpecialWorkStart(formatTimeInput(e.target.value))}
-                className="p-2 border rounded w-24"
-              />
-              <span>~</span>
-              <input
-                type="text"
-                placeholder="종료시간 (예 : 17:30)"
-                value={specialWorkFinish}
-                maxLength={5}
-                onChange={(e) => setSpecialWorkFinish(formatTimeInput(e.target.value))}
-                className="p-2 border rounded w-24"
-              />
-              <span>{specialWorkDuration}</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <button
+      <Button
         type="submit"
-        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        colorScheme="blue"
+        alignSelf="flex-end"
+        mt={2}
+        size="sm"
       >
         추가
-      </button>
-    </form>
+      </Button>
+    </Stack>
   );
 };
 
 export default Option;
-
-
-
-

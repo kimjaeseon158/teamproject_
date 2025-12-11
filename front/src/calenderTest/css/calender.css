@@ -1,61 +1,93 @@
+/* ===== 전체 레이아웃 ===== */
 .calenderbk{
     width:100vw;
     height:100vh;
     display:flex;
-    justify-content:center;
-    align-items:center;
-    margin:0px;
-    padding:0px;
+    margin:0;
+    padding:0;
 }
-.calenderbk > .calender_sub{
-    width:800px;
-    height:800px;
+
+/* ===== 좌측 Mini Calendar 패널 ===== */
+.calender_sub{
+    width:30vw;
+    height:100vh;
+    background:#000;
+    color:#fff;
     display:flex;
-    justify-content:center;
-    align-items:center;
     flex-direction:column;
-}
-.calenderbk > .calender_sub > .calender-check{
-    width: 400px;
-    height: 50px;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-}
-.calenderbk > .calender_sub > .calender-check > button {
-    width:70px;
-    height:35px; 
-}
-.calenderbk > .calender_sub > table {
-    width:400px;
-    height:400px;
-    display:flex;
-    justify-content:center;
     align-items:center;
-    flex-direction:column;
+    padding-top:40px;
 }
-.calenderbk > .calender_sub > table > thead > tr > th {
-    width:50px;
-    height:50px;
-    padding:2px;
+
+/* 🔥 MiniCalendar 더 잘 보이게 확대/가독성 강화 */
+.mini_calendar {
+    width:75%;
+    background:#fff;
+    border-radius:12px;
+    padding:18px;
+    font-size:18px;
 }
-.calenderbk > .calender_sub > table > thead {
-    width:400px;
-    display:flex;
-    justify-content:center;
-    align-items:center;
+
+/* ========================= */
+/* ⭐ 추가: MiniCalendar 글자 가독성 개선 */
+/* ========================= */
+
+/* 전체 기본 글자색 */
+.react-calendar {
+    color:#000 !important;
+    background:#fff !important;
 }
-.calenderbk > .calender_sub > table > tbody{
-    width:400px;
-    height:400px;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    flex-direction:column;
+
+/* 날짜 숫자 색 */
+.react-calendar__tile {
+    color:#000 !important;
 }
-.calenderbk > .calender_sub > table > tbody > tr > td {
-    width:50px;
-    height:50px;
-    text-align:center;
-    border:1px solid #333;
+
+/* 요일 색상 (월~일) */
+.react-calendar__month-view__weekdays__weekday {
+    color:#000 !important;
+    font-weight:bold;
 }
+
+/* 오늘 날짜 강조 */
+.react-calendar__tile--now {
+    background:#f0f0f0 !important;
+    color:#000 !important;
+    font-weight:bold;
+}
+
+/* 선택 날짜 강조 */
+.react-calendar__tile--active {
+    background:#ffea00 !important;
+    color:#000 !important;
+    font-weight:bold;
+    border-radius:6px;
+}
+
+/* hover 효과 */
+.react-calendar__tile:hover {
+    background:#2a2a2a !important;
+    color:white !important;
+    transition:0.2s;
+}
+
+/* ===== 오른쪽 FullCalendar ===== */
+.calendar_main{
+    width:70vw;
+    height:100vh;
+    background:#fff;
+    overflow:hidden;
+}
+
+/* ===== 일정 목록 카드 UI ===== */
+.event_list_box{
+    width:80%;
+    padding:12px;
+    border:1px solid #555;
+    border-radius:8px;
+    background:#111;
+    margin-top:5px;
+}
+
+.event_title{ font-size:15px; font-weight:bold; }
+.event_date{ font-size:13px; opacity:0.7; }

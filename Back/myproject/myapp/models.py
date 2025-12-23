@@ -37,21 +37,21 @@ class User_Login_Info(models.Model):
         # 🌟 계정 활성화 상태를 나타냅니다.
         return True
 
-class WorkDay(models.Model):
-    employee_number = models.ForeignKey(User_Login_Info,on_delete=models.CASCADE)  # 사원번호 (FK)
-    user_name       = models.CharField(max_length=50)                              # 유저 이름
-    work_date       = models.DateField()                                           # 근무 날짜
-    work_start      = models.DateTimeField()                                       # 작업 시작 시간 (시간만)
-    work_end        = models.DateTimeField()                                       # 작업 종료 시간 (시간만)
-    work_place      = models.CharField(max_length=100)                             # 근무 장소
-    is_approved     = models.BooleanField(null=True,blank=True)                    # 승인 여부 (None=미처리)
-    reject_reason   = models.TextField(null=True,blank=True)                       # 반려 사유
+class User_WorkDay(models.Model):
+    employee_number = models.ForeignKey(User_Login_Info,on_delete=models.CASCADE)   # 사원번호 (FK)
+    user_name       = models.CharField(max_length=50)                               # 유저 이름
+    work_date       = models.DateField()                                            # 근무 날짜
+    work_start      = models.DateTimeField()                                        # 작업 시작 시간 (시간만)
+    work_end        = models.DateTimeField()                                        # 작업 종료 시간 (시간만)
+    work_place      = models.CharField(max_length=100)                              # 근무 장소
+    is_approved     = models.BooleanField(null=True,blank=True)                     # 승인 여부 (None=미처리)
+    reject_reason   = models.TextField(null=True,blank=True)                        # 반려 사유
 
 
-class WorkDetail(models.Model):
-    work_day        = models.ForeignKey(WorkDay,on_delete=models.CASCADE,related_name="details")
-    work_type       = models.CharField(max_length=20)                              # DAY, NIGHT, OVERTIME, MEAL_OT 등
-    minutes         = models.PositiveIntegerField()                                # 근무 시간 (분)
+class User_WorkDetail(models.Model):
+    work_day        = models.ForeignKey(User_WorkDay,on_delete=models.CASCADE,related_name="details")
+    work_type       = models.CharField(max_length=20)                               # DAY, NIGHT, OVERTIME, MEAL_OT 등
+    minutes         = models.PositiveIntegerField()                                 # 근무 시간 (분)
 
 
 

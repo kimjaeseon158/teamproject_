@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User_Login_Info, Expense, Income, WorkDay, WorkDetail
+from .models import User_Login_Info, Expense, Income, User_WorkDay, User_WorkDetail
 
 class User_Login_InfoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -25,17 +25,17 @@ class IncomeSerializer(serializers.ModelSerializer):
 
 # user_work 저장
 
-class WorkDetailSerializer(serializers.ModelSerializer):
+class UserWorkDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = WorkDetail
+        model = User_WorkDetail
         fields = ["work_type", "minutes"]
 
 
-class WorkDaySerializer(serializers.ModelSerializer):
-    details = WorkDetailSerializer(many=True)
+class UserWorkDaySerializer(serializers.ModelSerializer):
+    details = UserWorkDetailSerializer(many=True)
 
     class Meta:
-        model = WorkDay
+        model = User_WorkDay
         fields = [
             "employee_number",
             "user_name",
@@ -61,11 +61,11 @@ class WorkDaySerializer(serializers.ModelSerializer):
         details_data = validated_data.pop("details")
 
         # WorkDay 생성
-        work_day = WorkDay.objects.create(**validated_data)
+        work_day = User_WorkDay.objects.create(**validated_data)
 
         # WorkDetail 생성
-        WorkDetail.objects.bulk_create([
-            WorkDetail(work_day=work_day, **d) for d in details_data
+        User_WorkDetail.objects.bulk_create([
+            User_WorkDetail(work_day=work_day, **d) for d in details_data
         ])
 
         return work_day
@@ -81,8 +81,8 @@ class WorkDaySerializer(serializers.ModelSerializer):
         # details는 "갈아끼우기" 방식(가장 안정적)
         if details_data is not None:
             instance.details.all().delete()
-            WorkDetail.objects.bulk_create([
-                WorkDetail(work_day=instance, **d) for d in details_data
+            User_WorkDetail.objects.bulk_create([
+                User_WorkDetail(work_day=instance, **d) for d in details_data
             ])
 
         return instance

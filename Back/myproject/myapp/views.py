@@ -9,7 +9,7 @@ from .serializers import (
     User_InfoSerializer,
     IncomeSerializer,
     ExpenseSerializer,
-    WorkDaySerializer
+    UserWorkDaySerializer
     
 )
 from .auth_utils import check_user_credentials, check_admin_credentials
@@ -25,8 +25,8 @@ from .models import (
     Income,
     AdminRefreshToken,
     UserRefreshToken,
-    WorkDay, 
-    WorkDetail
+    User_WorkDay, 
+    User_WorkDetail
 )
 from django.db.models import Sum
 from datetime import datetime
@@ -756,12 +756,12 @@ class UserWorkInfoAPIView(APIView):
         work_date = data.get("work_date")
 
         # 기존 WorkDay가 있으면 update, 없으면 create
-        instance = WorkDay.objects.filter(
+        instance = User_WorkDay.objects.filter(
             employee_number=employee_number,
             work_date=work_date
         ).first()
 
-        serializer = WorkDaySerializer(instance=instance, data=data)
+        serializer = UserWorkDaySerializer(instance=instance, data=data)
         if serializer.is_valid():
             serializer.save()
             return Response({"success": True})

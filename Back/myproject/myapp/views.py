@@ -7,9 +7,10 @@ from rest_framework import status
 from .serializers import (
     User_Login_InfoSerializer,
     User_InfoSerializer,
-    User_Work_InfoSerializer,
     IncomeSerializer,
     ExpenseSerializer,
+    WorkDaySerializer
+    
 )
 from .auth_utils import check_user_credentials, check_admin_credentials
 from .jwt_utils import (
@@ -24,6 +25,8 @@ from .models import (
     Income,
     AdminRefreshToken,
     UserRefreshToken,
+    WorkDay, 
+    WorkDetail
 )
 from django.db.models import Sum
 from datetime import datetime
@@ -740,15 +743,25 @@ class ExpenseDeleteAPIView(APIView):
 # ----------------------
 # 2 데이터 처리 뷰 - User
 # ----------------------
+        
 class UserWorkInfoAPIView(APIView):
     authentication_classes = [UserJWTAuthentication]
-
     permission_classes = [IsAuthenticated]
 
     def patch(self, request):
-        # 작업 정보 등록
         data = request.data
-        serializer = User_Work_InfoSerializer(data=data)
+
+        # 업서트 키: (employee_number, work_date)
+        employee_number = data.get("employee_number")
+        work_date = data.get("work_date")
+
+        # 기존 WorkDay가 있으면 update, 없으면 create
+        instance = WorkDay.objects.filter(
+            employee_number=employee_number,
+            work_date=work_date
+        ).first()
+
+        serializer = WorkDaySerializer(instance=instance, data=data)
         if serializer.is_valid():
             serializer.save()
             return Response({"success": True})

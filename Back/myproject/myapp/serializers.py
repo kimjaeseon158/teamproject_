@@ -46,17 +46,6 @@ class UserWorkDaySerializer(serializers.ModelSerializer):
             "details",
         ]
 
-    def validate(self, attrs):
-        # 최소 검증: 출퇴근 시간 순서 + work_type 중복 방지
-        if attrs["work_end"] <= attrs["work_start"]:
-            raise serializers.ValidationError("work_end must be later than work_start")
-
-        types = [d["work_type"] for d in attrs["details"]]
-        if len(types) != len(set(types)):
-            raise serializers.ValidationError("Duplicate work_type in details")
-
-        return attrs
-
     def create(self, validated_data):
         details_data = validated_data.pop("details")
 

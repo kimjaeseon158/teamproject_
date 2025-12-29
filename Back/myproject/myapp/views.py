@@ -739,6 +739,19 @@ class ExpenseDeleteAPIView(APIView):
         except Expense.DoesNotExist:
             return Response({"success": False})
 
+class AdminPageWorkDayListAPIView(APIView):
+    authentication_classes = [AdminJWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+
+    def get(self, request):
+        user_work_day = (
+            User_WorkDay.objects
+            .prefetch_related("details")
+            .order_by("-work_date")  
+        )
+
+        user_work_day_data = UserWorkDaySerializer(user_work_day, many=True).data
+        return Response({"success": True, "work_days": user_work_day_data})
 
 # ----------------------
 # 2 데이터 처리 뷰 - User
@@ -746,19 +759,22 @@ class ExpenseDeleteAPIView(APIView):
         
 class UserWorkInfoAPIView(APIView):
     authentication_classes = [UserJWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes     = [IsAuthenticated]
 
     def patch(self, request):
         data = request.data
 
-        # 업서트 키: (employee_number, work_date)
         employee_number = data.get("employee_number")
         work_date = data.get("work_date")
+        work_place = data.get("work_place")  
 
-        # 기존 WorkDay가 있으면 update, 없으면 create
+        # 같은 사원/같은 날짜라도 근무지별로 따로 저장
+        # 같은 근무지로 다시 보내면 덮어쓰기
+        
         instance = User_WorkDay.objects.filter(
             employee_number=employee_number,
-            work_date=work_date
+            work_date=work_date,
+            work_place=work_place            
         ).first()
 
         serializer = UserWorkDaySerializer(instance=instance, data=data)

@@ -32,7 +32,7 @@ class UserWorkDetailSerializer(serializers.ModelSerializer):
 
 
 class UserWorkDaySerializer(serializers.ModelSerializer):
-    details = UserWorkDetailSerializer(many=True)
+    details = UserWorkDetailSerializer(many=True, read_only=True)
 
     class Meta:
         model = User_WorkDay
@@ -59,19 +59,3 @@ class UserWorkDaySerializer(serializers.ModelSerializer):
 
         return work_day
 
-    def update(self, instance, validated_data):
-        details_data = validated_data.pop("details", None)
-
-        # WorkDay 필드 업데이트
-        for field, value in validated_data.items():
-            setattr(instance, field, value)
-        instance.save()
-
-        # details는 "갈아끼우기" 방식(가장 안정적)
-        if details_data is not None:
-            instance.details.all().delete()
-            User_WorkDetail.objects.bulk_create([
-                User_WorkDetail(work_day=instance, **d) for d in details_data
-            ])
-
-        return instance

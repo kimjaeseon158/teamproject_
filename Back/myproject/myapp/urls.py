@@ -23,7 +23,8 @@ from .views import (
     GoogleCallbackAPIView,
     GoogleCalendarEventsAPIView,
     AdminLogoutAPIView,
-    UserLogoutAPIView
+    UserLogoutAPIView,
+    AdminPageWorkDayListAPIView
 )
 
 urlpatterns = [
@@ -39,6 +40,8 @@ urlpatterns = [
     path('user_info_update/',     UserInfoUpdateAPIView.as_view(),     name='user-info-update'),
     path('user_info_add/',        UserInfoAddAPIView.as_view(),        name='user-info-add'),    
     path('user_info_filtering/',  UserInfoFilteringAPIView.as_view(),  name='user-info-filtering'),
+    path('admin_page_workday/',  AdminPageWorkDayListAPIView.as_view(),  name='admin-page-workday'),
+
 
     # Dashboard-google-calendar
     path('google_calendar_auth/',          GoogleLoginAPIView.as_view(),          name='google-calendar-auth'),

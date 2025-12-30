@@ -1,75 +1,130 @@
-// src/calenderTest/js/submitWorkInfo.js (예시 경로)
-import { fetchWithAuth } from "../../api/fetchWithAuth"; // ✅ 경로는 프로젝트 구조에 맞게 수정
+// src/calenderTest/js/submitWorkInfo.js
+import { fetchWithAuth } from "../../api/fetchWithAuth";
+
+/**
+ * selectedDate가
+ * 1) Date 객체
+ * 2) { year, month, day }
+ * 3) 문자열
+ * 모두 지원해서 "YYYY-MM-DD"로 변환
+ */
+const toYYYYMMDD = (selectedDate) => {
+  // 1) {year,month,day}
+  if (
+    selectedDate &&
+    typeof selectedDate === "object" &&
+    Number.isFinite(Number(selectedDate.year)) &&
+    Number.isFinite(Number(selectedDate.month)) &&
+    Number.isFinite(Number(selectedDate.day))
+  ) {
+    const y = String(selectedDate.year);
+    const m = String(selectedDate.month).padStart(2, "0");
+    const d = String(selectedDate.day).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
+  // 2) Date 객체
+  if (selectedDate instanceof Date) {
+    const y = selectedDate.getFullYear();
+    const m = String(selectedDate.getMonth() + 1).padStart(2, "0");
+    const d = String(selectedDate.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
+  // 3) fallback: 문자열/기타
+  const d = new Date(selectedDate);
+  if (!Number.isNaN(d.getTime())) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${dd}`;
+  }
+
+  return "";
+};
+
+// ✅ "YYYY-MM-DD HH:MM:SS"
+const toDateTime = (yyyyMMdd, hhmm) => `${yyyyMMdd} ${hhmm}:00`;
+
+// "HH:MM" -> minutes
+const hmToMinutes = (hm) => {
+  if (!hm || typeof hm !== "string" || !hm.includes(":")) return 0;
+  const [h, m] = hm.split(":").map((x) => Number(x));
+  if (Number.isNaN(h) || Number.isNaN(m)) return 0;
+  return h * 60 + m;
+};
+
+// ✅ start/finish로 분 계산 (같은 날 기준)
+const calcMinutesFromStartFinish = (start, finish) => {
+  const s = hmToMinutes(start);
+  const f = hmToMinutes(finish);
+  return Math.max(f - s, 0);
+};
 
 const submitWorkInfo = async (
   {
     user,
     employeeNumber,
     selectedDate,
-    startTime,
-    finishTime,
-    totalWorkTime,
+    startTime,      // "09:30"
+    finishTime,     // "18:30"
     location,
+
+    // ✅ Option에서 만든 잔업/특근/중식 minutes
+    // 예: [{work_type:"OVERTIME", minutes:120}, {work_type:"EXTRA", minutes:60}]
+    details: extraDetails = [],
   },
-  { toast } = {} // 🔥 필요하면 토스트도 받을 수 있게
+  { toast } = {}
 ) => {
-  console.log("🧾 employeeNumber in submitWorkInfo:", employeeNumber);
+  const workDate = toYYYYMMDD(selectedDate);
+  if (!workDate) {
+    throw new Error("날짜 변환 실패: selectedDate 형태 확인 필요");
+  }
 
-  const formattedDate =
-    selectedDate instanceof Date
-      ? selectedDate.toLocaleDateString("ko-KR") // 필요하면 고정 포맷으로
-      : `${selectedDate.formatted}`;
+  // ✅ 형식: YYYY-MM-DD HH:MM:SS
+  const workStart = toDateTime(workDate, startTime);
+  const workEnd = toDateTime(workDate, finishTime);
 
-  const totalTimeString = totalWorkTime;
+  // ✅ DAY minutes: start~finish 분 계산 후
+  let rawMinutes = calcMinutesFromStartFinish(startTime, finishTime);
+
+  // ✅ 규칙: 4시간(240분) 초과면 60분 차감
+  const breakMinutes = rawMinutes > 240 ? 60 : 0;
+  const dayMinutes = Math.max(rawMinutes - breakMinutes, 0);
+
+  // ✅ 최종 details: DAY + (잔업/특근/중식 등)
+  const details = [
+    { work_type: "주간", minutes: dayMinutes },
+    ...extraDetails.filter((d) => d?.work_type && Number(d?.minutes) > 0),
+  ];
 
   const newRecord = {
-    // 🔥 user_name은 보통 문자열이어야 해서 user 객체 전체 말고 이름만 보내는 게 안전
+    employee_number: String(employeeNumber),
     user_name: user?.user_name || user?.admin_id || String(user),
 
-    work_start: `${formattedDate} ${startTime}:00`,
-    work_end: `${formattedDate} ${finishTime}:00`,
-    total_time: totalTimeString,
-    work_date: formattedDate,
+    work_date: workDate,
+    work_start: workStart,
+    work_end: workEnd,
     work_place: location,
-    employee_number: employeeNumber,
-    state: "status",
+
+    details,
   };
 
-  // ✅ 401 → refresh → 재시도까지 자동
+  console.log("📦 payload:", newRecord);
+
+  // ✅ refresh 포함 fetchWithAuth 그대로
   const res = await fetchWithAuth(
     "/api/user_work_info/",
-    {
-      method: "PATCH", // 🔥 대문자 PATCH로 통일
-      headers: {
-        // "Content-Type": "application/json",  // fetchWithAuth에서 기본으로 넣어주면 생략 가능
-      },
-      body: JSON.stringify(newRecord),
-    },
-    { toast } // 🔥 토스트를 전달하면, fetchWithAuth 안에서 에러 토스트 띄우는 것도 가능
+    { method: "PATCH", body: JSON.stringify(newRecord) },
+    { toast }
   );
 
   if (!res.ok) {
-    // 필요하면 에러 메시지 파싱
     let errorMsg = "근무 정보 전송 실패";
     try {
       const errData = await res.json();
       errorMsg = errData.detail || JSON.stringify(errData);
-    } catch (e) {
-      /* ignore */
-    }
-
-    console.error("❌ submitWorkInfo 실패:", errorMsg);
-
-    if (toast) {
-      toast({
-        title: "근무 정보 저장 실패",
-        description: errorMsg,
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-    }
-
+    } catch (e) {}
     throw new Error(errorMsg);
   }
 

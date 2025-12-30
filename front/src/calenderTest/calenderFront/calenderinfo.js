@@ -13,6 +13,7 @@ import {
   Input,
   Select,
   Switch,
+  Checkbox,
   IconButton,
   Divider,
 } from "@chakra-ui/react";
@@ -25,20 +26,33 @@ import { calculateDurationInHM } from "../js/timeUtils";
 import submitWorkInfo from "../js/submitWorkInfo";
 import "../css/activity.css";
 
-// "HH:MM" -> minutes
-const hmToMinutes = (hm) => {
-  if (!hm || typeof hm !== "string" || !hm.includes(":")) return 0;
-  const [h, m] = hm.split(":").map((x) => Number(x));
-  if (Number.isNaN(h) || Number.isNaN(m)) return 0;
-  return h * 60 + m;
-};
+// ✅ 어떤 형식이 와도 "분"으로 바꾸기
+const toMinutesAny = (v) => {
+  if (v == null) return 0;
+  if (typeof v === "number") return v;
 
-// minutes -> "HH:MM"
-const minutesToHM = (mins) => {
-  const m = Math.max(0, mins);
-  const hh = String(Math.floor(m / 60)).padStart(2, "0");
-  const mm = String(m % 60).padStart(2, "0");
-  return `${hh}:${mm}`;
+  const s = String(v).trim();
+
+  // "HH:MM"
+  const hm = s.match(/^(\d{1,2}):(\d{2})$/);
+  if (hm) {
+    const h = Number(hm[1]);
+    const m = Number(hm[2]);
+    if (!Number.isNaN(h) && !Number.isNaN(m)) return h * 60 + m;
+  }
+
+  // "8시간 30분"
+  const korean = s.match(/(\d+)\s*시간\s*(\d+)\s*분/);
+  if (korean) {
+    const h = Number(korean[1]);
+    const m = Number(korean[2]);
+    if (!Number.isNaN(h) && !Number.isNaN(m)) return h * 60 + m;
+  }
+
+  // 숫자만
+  const onlyNum = s.replace(/[^\d]/g, "");
+  const n = Number(onlyNum);
+  return Number.isFinite(n) ? n : 0;
 };
 
 const Option = ({ selectedDate }) => {
@@ -52,11 +66,31 @@ const Option = ({ selectedDate }) => {
 
   const { user, employeeNumber } = useContext(UserContext);
 
+  // ✅ 근무형태:
+  // baseShift: 주간/야간 중 1개(필수)
+  // isSpecial: 특근 ON/OFF (주간/야간과 동시에 가능)
+  const [baseShift, setBaseShift] = useState("day"); // "day" | "night"
+  const [isSpecial, setIsSpecial] = useState(false); // true/false
+
   // ✅ 추가 근무(여러 줄)
   const [extraEnabled, setExtraEnabled] = useState(false);
   const [extraWorks, setExtraWorks] = useState([
     { type: "", start: "", finish: "", duration: "" },
   ]);
+
+  const hmToMinutes = (hm) => {
+    if (!hm || typeof hm !== "string" || !hm.includes(":")) return null;
+    const [h, m] = hm.split(":").map(Number);
+    if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+    return h * 60 + m;
+  };
+
+  const diffMinutes = (start, finish) => {
+    const s = hmToMinutes(start);
+    const f = hmToMinutes(finish);
+    if (s == null || f == null) return 0;
+    return Math.max(f - s, 0);
+  };
 
   // 시간 입력 자동 포맷(HH:mm)
   const formatTimeInput = (value) => {
@@ -82,18 +116,19 @@ const Option = ({ selectedDate }) => {
     return `${hour}:${minute}`;
   };
 
-  // 메인 작업 시간 선택
   const handleSelectWorkTime = (start, finish) => {
     setStartTime(start);
     setFinishTime(finish);
     setWorkTime(`${start}~${finish}`);
   };
 
-  const handleSelectLocation = (loc) => {
-    setLocation(loc);
-  };
+  const handleSelectLocation = (loc) => setLocation(loc);
 
-  // 총 작업 시간 계산
+  // ✅ baseShift(주간/야간)에 따라 작업시간 리스트 필터
+  // ⚠️ workTimeList 항목에 shift 필드가 있어야 함:
+  // 예) { shift:"day", startTime:"09:00", finishTime:"18:00" }
+  const filteredWorkTimeList = workTimeList.filter((t) => t.shift === baseShift);
+
   useEffect(() => {
     if (startTime && finishTime) {
       const duration = calculateDurationInHM(startTime, finishTime);
@@ -103,14 +138,20 @@ const Option = ({ selectedDate }) => {
     }
   }, [startTime, finishTime]);
 
-  // ✅ 추가근무: 특정 줄 값 변경
+  // ✅ 주간/야간 바뀌면 작업시간 선택 초기화
+  useEffect(() => {
+    setStartTime("");
+    setFinishTime("");
+    setWorkTime("");
+    setTotalWorkTime("");
+  }, [baseShift]);
+
   const updateExtraWork = (idx, patch) => {
     setExtraWorks((prev) =>
       prev.map((row, i) => {
         if (i !== idx) return row;
         const next = { ...row, ...patch };
 
-        // duration 자동 계산
         if (next.start && next.finish) {
           next.duration = calculateDurationInHM(next.start, next.finish);
         } else {
@@ -121,7 +162,6 @@ const Option = ({ selectedDate }) => {
     );
   };
 
-  // ✅ + 줄 추가
   const handleAddExtraRow = () => {
     setExtraWorks((prev) => [
       ...prev,
@@ -129,7 +169,6 @@ const Option = ({ selectedDate }) => {
     ]);
   };
 
-  // ✅ 줄 삭제
   const handleRemoveExtraRow = (idx) => {
     setExtraWorks((prev) => {
       const next = prev.filter((_, i) => i !== idx);
@@ -142,7 +181,7 @@ const Option = ({ selectedDate }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!location || !totalWorkTime) {
+    if (!location || !startTime || !finishTime) {
       alert("장소와 작업시간을 입력해주세요.");
       return;
     }
@@ -151,33 +190,21 @@ const Option = ({ selectedDate }) => {
       ? extraWorks.filter((r) => r.type && r.start && r.finish)
       : [];
 
-    const reduceByType = (type) => {
+    const reduceByTypeMinutes = (type) => {
       const items = rows.filter((r) => r.type === type);
-      if (!items.length) {
-        return { checked: false, start: "", finish: "", duration: "" };
-      }
-
-      // duration 합산(분)
-      const totalMins = items.reduce(
-        (sum, r) => sum + hmToMinutes(r.duration),
-        0
-      );
-
-      // start 최소, finish 최대 (문자열 정렬로 OK: "09:00" < "18:00")
-      const minStart = items.map((r) => r.start).sort().at(0);
-      const maxFinish = items.map((r) => r.finish).sort().at(-1);
-
-      return {
-        checked: true,
-        start: minStart || "",
-        finish: maxFinish || "",
-        duration: minutesToHM(totalMins),
-      };
+      return items.reduce((sum, r) => sum + diffMinutes(r.start, r.finish), 0);
     };
 
-    const overtime = reduceByType("overtime");
-    const lunch = reduceByType("lunch");
-    const special = reduceByType("special");
+    const overtimeMins = reduceByTypeMinutes("overtime"); // 잔업
+    const lunchMins = reduceByTypeMinutes("lunch"); // 중식
+
+    // ✅ 특근은 "추가근무"에서 제거됨 (isSpecial로만 처리)
+    const details = [
+      { work_type: "잔업", minutes: overtimeMins },
+      { work_type: "중식", minutes: lunchMins },
+    ].filter((d) => d.minutes > 0);
+
+    console.log("✅ details:", details);
 
     try {
       const { data, newRecord } = await submitWorkInfo({
@@ -186,37 +213,24 @@ const Option = ({ selectedDate }) => {
         selectedDate,
         startTime,
         finishTime,
-        totalWorkTime,
         location,
-
-        // 잔업
-        overtimeChecked: overtime.checked,
-        overtimeStart: overtime.start,
-        overtimeFinish: overtime.finish,
-        overtimeDuration: overtime.duration,
-
-        // 중식
-        lunchChecked: lunch.checked,
-        lunchStart: lunch.start,
-        lunchFinish: lunch.finish,
-        lunchDuration: lunch.duration,
-
-        // 특근
-        specialWorkChecked: special.checked,
-        specialWorkStart: special.start,
-        specialWorkFinish: special.finish,
-        specialWorkDuration: special.duration,
+        baseShift,   // ✅ "day" | "night"
+        isSpecial,   // ✅ 특근 여부 true/false
+        details,
       });
 
       console.log("서버 응답:", data);
+      console.log("보낸 payload:", newRecord);
+
       setRecords([...records, newRecord]);
 
-      // 초기화
       setLocation("");
       setStartTime("");
       setFinishTime("");
       setWorkTime("");
       setTotalWorkTime("");
+
+      setIsSpecial(false);
 
       setExtraEnabled(false);
       setExtraWorks([{ type: "", start: "", finish: "", duration: "" }]);
@@ -227,7 +241,6 @@ const Option = ({ selectedDate }) => {
 
   return (
     <Stack as="form" spacing={4} onSubmit={handleSubmit} color="white">
-      {/* ✅ 선택한 날짜 표시 (추가) */}
       <Box
         bg="gray.800"
         borderRadius="md"
@@ -248,7 +261,45 @@ const Option = ({ selectedDate }) => {
 
       <Divider opacity={0.2} />
 
-      {/* 🔹 작업 시간 선택 */}
+      {/* ✅ 근무형태: 주간/야간(단일) + 특근(추가 토글) */}
+      <Box>
+        <Text fontSize="sm" mb={1} fontWeight="600">
+          근무형태
+        </Text>
+
+        <HStack spacing={5}>
+          {/* 주간/야간: 둘 중 하나만 체크되도록 */}
+          <Checkbox
+            isChecked={baseShift === "day"}
+            onChange={() => setBaseShift("day")}
+            colorScheme="green"
+          >
+            주간
+          </Checkbox>
+
+          <Checkbox
+            isChecked={baseShift === "night"}
+            onChange={() => setBaseShift("night")}
+            colorScheme="purple"
+          >
+            야간
+          </Checkbox>
+
+          {/* 특근: 주간/야간과 동시에 가능 */}
+          <Checkbox
+            isChecked={isSpecial}
+            onChange={(e) => setIsSpecial(e.target.checked)}
+            colorScheme="orange"
+          >
+            특근
+          </Checkbox>
+        </HStack>
+
+        <Text fontSize="xs" color="gray.300" mt={2}>
+          ※ 특근은 주간/야간 중 하나를 선택한 상태에서 추가로 켤 수 있어요.
+        </Text>
+      </Box>
+
       <Box>
         <Text fontSize="sm" mb={1} fontWeight="600">
           작업 시간
@@ -268,8 +319,9 @@ const Option = ({ selectedDate }) => {
           >
             {workTime || "작업 시간 선택"}
           </MenuButton>
+
           <MenuList maxH="240px" overflowY="auto" bg="white" color="gray.800">
-            {workTimeList.map(({ startTime, finishTime }, idx) => (
+            {filteredWorkTimeList.map(({ startTime, finishTime }, idx) => (
               <MenuItem
                 key={idx}
                 onClick={() => handleSelectWorkTime(startTime, finishTime)}
@@ -281,7 +333,6 @@ const Option = ({ selectedDate }) => {
         </Menu>
       </Box>
 
-      {/* 🔹 장소 선택 */}
       <Box>
         <Text fontSize="sm" mb={1} fontWeight="600">
           업체 / 장소
@@ -301,6 +352,7 @@ const Option = ({ selectedDate }) => {
           >
             {location || "업체/장소 선택"}
           </MenuButton>
+
           <MenuList maxH="240px" overflowY="auto" bg="white" color="gray.800">
             {locationsList.map((loc, idx) => (
               <MenuItem key={idx} onClick={() => handleSelectLocation(loc)}>
@@ -311,7 +363,6 @@ const Option = ({ selectedDate }) => {
         </Menu>
       </Box>
 
-      {/* 🔹 총 작업 시간 */}
       <Box>
         <Text fontSize="sm" mb={1} fontWeight="600">
           총 작업 시간
@@ -327,11 +378,10 @@ const Option = ({ selectedDate }) => {
         />
       </Box>
 
-      {/* ⭐ 추가 근무 블록 (잔업 / 특근 / 중식) */}
       <Box mt={2} bg="gray.700" p={3} borderRadius="md">
         <HStack justify="space-between" mb={2}>
           <Text fontSize="sm" fontWeight="600">
-            추가 근무 (잔업 / 특근 / 중식)
+            추가 근무 (잔업 / 중식)
           </Text>
 
           <HStack>
@@ -353,7 +403,6 @@ const Option = ({ selectedDate }) => {
 
         {extraEnabled && (
           <Stack spacing={3} mt={2}>
-            {/* ✅ + 추가 버튼 */}
             <Button
               size="xs"
               leftIcon={<AddIcon />}
@@ -365,10 +414,8 @@ const Option = ({ selectedDate }) => {
               추가 근무 항목 추가
             </Button>
 
-            {/* ✅ 여러 줄 입력 */}
             {extraWorks.map((row, idx) => (
               <Box key={idx} p={2} borderRadius="md" bg="gray.800">
-                {/* 유형 + 삭제 */}
                 <HStack spacing={2} mb={2}>
                   <Select
                     placeholder="유형 선택"
@@ -377,19 +424,17 @@ const Option = ({ selectedDate }) => {
                     onChange={(e) =>
                       updateExtraWork(idx, { type: e.target.value })
                     }
-                    bg="gray.900"
+                    bg="white"
+                    color="gray.800"
                     borderColor="gray.500"
-                    color="gray.100"
+                    _hover={{ borderColor: "gray.400" }}
+                    _focus={{
+                      borderColor: "blue.400",
+                      boxShadow: "0 0 0 1px #63B3ED",
+                    }}
                   >
-                    <option style={{ color: "black" }} value="overtime">
-                      잔업
-                    </option>
-                    <option style={{ color: "black" }} value="special">
-                      특근
-                    </option>
-                    <option style={{ color: "black" }} value="lunch">
-                      중식
-                    </option>
+                    <option value="overtime">잔업</option>
+                    <option value="lunch">중식</option>
                   </Select>
 
                   <IconButton
@@ -402,7 +447,6 @@ const Option = ({ selectedDate }) => {
                   />
                 </HStack>
 
-                {/* 시간 */}
                 <HStack spacing={3} align="center">
                   <Input
                     placeholder="시작"
@@ -444,10 +488,6 @@ const Option = ({ selectedDate }) => {
                 </HStack>
               </Box>
             ))}
-
-            <Text fontSize="xs" color="gray.300">
-              * 같은 유형을 여러 번 추가하면 전송 시 총 시간이 합산되어 저장돼요.
-            </Text>
           </Stack>
         )}
       </Box>

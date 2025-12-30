@@ -744,14 +744,43 @@ class AdminPageWorkDayListAPIView(APIView):
     permission_classes     = [IsAuthenticated]
 
     def get(self, request):
+        status         = request.query_params.get("status")      # 대기, 완료, 거절, 전체
+        start_date_str = request.query_params.get("start_date")  # YYYY-MM-DD
+        end_date_str   = request.query_params.get("end_date")    # YYYY-MM-DD
+
         user_work_day = (
             User_WorkDay.objects
             .prefetch_related("details")
-            .order_by("-work_date")  
+            .order_by("-work_date")
         )
 
-        user_work_day_data = UserWorkDaySerializer(user_work_day, many=True).data
-        return Response({"success": True, "work_days": user_work_day_data})
+        # 상태 필터 (선택)
+        if status   == "대기":
+            user_work_day = user_work_day.filter(approve_status__isnull=True)
+        elif status == "완료":
+            user_work_day = user_work_day.filter(approve_status="Y")
+        elif status == "거절":
+            user_work_day = user_work_day.filter(approve_status="N")
+        elif status == "전체" or status is None:
+            pass
+        else:
+            return Response({"success": False})
+
+        # 날짜 필터 (선택)
+        if start_date_str and end_date_str:
+            try:
+                start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+                end_date   = datetime.strptime(end_date, "%Y-%m-%d").date()
+            except ValueError:
+                return Response({"success": False})
+
+            user_work_day = user_work_day.filter(
+                work_date__gte=start_date,
+                work_date__lte=end_date
+            )
+
+        serializer = UserWorkDaySerializer(user_work_day, many=True)
+        return Response({"success": True,})
 
 # ----------------------
 # 2 데이터 처리 뷰 - User
@@ -761,7 +790,7 @@ class UserWorkInfoAPIView(APIView):
     authentication_classes = [UserJWTAuthentication]
     permission_classes     = [IsAuthenticated]
 
-    def post(self, request):    #patch, get, patch 정하기
+    def post(self, request):
         data = request.data
 
         serializer = UserWorkDaySerializer(data=data)

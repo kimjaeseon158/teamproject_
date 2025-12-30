@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.db import transaction
 from .models import User_Login_Info, Expense, Income, User_WorkDay, User_WorkDetail
 
 class User_Login_InfoSerializer(serializers.ModelSerializer):
@@ -32,7 +33,7 @@ class UserWorkDetailSerializer(serializers.ModelSerializer):
 
 
 class UserWorkDaySerializer(serializers.ModelSerializer):
-    details = UserWorkDetailSerializer(many=True, read_only=True)
+    details = UserWorkDetailSerializer(many=True)
 
     class Meta:
         model = User_WorkDay
@@ -46,13 +47,13 @@ class UserWorkDaySerializer(serializers.ModelSerializer):
             "details",
         ]
 
+    @transaction.atomic
+    
     def create(self, validated_data):
-        details_data = validated_data.pop("details")
+        details_data = validated_data.pop("details")  # details 무조건 온다
 
-        # WorkDay 생성
         work_day = User_WorkDay.objects.create(**validated_data)
 
-        # WorkDetail 생성
         User_WorkDetail.objects.bulk_create([
             User_WorkDetail(work_day=work_day, **d) for d in details_data
         ])

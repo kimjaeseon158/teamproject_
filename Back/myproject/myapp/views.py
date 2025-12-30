@@ -761,23 +761,10 @@ class UserWorkInfoAPIView(APIView):
     authentication_classes = [UserJWTAuthentication]
     permission_classes     = [IsAuthenticated]
 
-    def patch(self, request):
+    def post(self, request):    #patch, get, patch 정하기
         data = request.data
 
-        employee_number = data.get("employee_number")
-        work_date = data.get("work_date")
-        work_place = data.get("work_place")  
-
-        # 같은 사원/같은 날짜라도 근무지별로 따로 저장
-        # 같은 근무지로 다시 보내면 덮어쓰기
-        
-        instance = User_WorkDay.objects.filter(
-            employee_number=employee_number,
-            work_date=work_date,
-            work_place=work_place            
-        ).first()
-
-        serializer = UserWorkDaySerializer(instance=instance, data=data)
+        serializer = UserWorkDaySerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response({"success": True})

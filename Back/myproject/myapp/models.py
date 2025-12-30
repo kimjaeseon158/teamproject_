@@ -49,7 +49,8 @@ class User_WorkDay(models.Model):
 
 
 class User_WorkDetail(models.Model):
-    work_day        = models.ForeignKey(User_WorkDay,on_delete=models.CASCADE,related_name="details")
+    employee_number = models.ForeignKey(User_Login_Info,on_delete=models.CASCADE)   # 사원번호 (FK)
+    work_date       = models.ForeignKey(User_WorkDay,on_delete=models.CASCADE,related_name="details")
     work_type       = models.CharField(max_length=20)                               # DAY, NIGHT, OVERTIME, MEAL_OT 등
     minutes         = models.PositiveIntegerField()                                 # 근무 시간 (분)
 

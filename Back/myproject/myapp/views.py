@@ -782,6 +782,58 @@ class AdminPageWorkDayListAPIView(APIView):
         serializer = UserWorkDaySerializer(user_work_day, many=True)
         return Response({"success": True,})
 
+
+class AdminWorkDayStatusUpdateAPIView(APIView):
+    authentication_classes = [AdminJWTAuthentication]
+    permission_classes     = [IsAuthenticated]
+
+    def patch(self, request):
+        employee_number = request.data.get("employee_number")
+        work_date_str   = request.data.get("work_date")
+        status          = request.data.get("status")   # Y / N
+        reject_reason   = request.data.get("reject_reason")
+
+        if not employee_number or not work_date_str or not status:
+            return Response({"success": False})
+
+        if status not in ["Y", "N"]:
+            return Response({"success": False})
+
+        try:
+            work_date = datetime.strptime(work_date_str, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"success": False},)
+
+        try:
+            work_day = User_WorkDay.objects.get(
+                employee_number_id=employee_number,
+                work_date=work_date
+            )
+        except User_WorkDay.DoesNotExist:
+            return Response({"success": False},)
+
+        # 완료(승인)
+        if status == "Y":
+            work_day.is_approved   = "Y"
+            work_day.reject_reason = None
+
+        # 거절(반려)
+        elif status == "N":
+            if not reject_reason:
+                return Response({"success": False})  # 반려 사유 반드시 기제
+            work_day.is_approved   = "N"
+            work_day.reject_reason = reject_reason
+
+        work_day.save()
+
+        return Response({
+            "success": True,
+            "employee_number": employee_number,
+            "work_date": work_date_str,
+            "status": status,  # Y / N
+            "reject_reason": work_day.reject_reason
+        })
+
 # ----------------------
 # 2 데이터 처리 뷰 - User
 # ----------------------

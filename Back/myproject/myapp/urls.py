@@ -24,23 +24,26 @@ from .views import (
     GoogleCalendarEventsAPIView,
     AdminLogoutAPIView,
     UserLogoutAPIView,
-    AdminPageWorkDayListAPIView
+    AdminPageWorkDayListAPIView,
+    AdminWorkDayStatusUpdateAPIView
 )
 
 urlpatterns = [
     # Login-Home
     path('check_admin_login/', CheckAdminLoginAPIView.as_view(),  name='check-admin-login'),
-    path('admin_logout/',      AdminLogoutAPIView.as_view(),  name='admin-logout'),
+    path('admin_logout/',      AdminLogoutAPIView.as_view(),      name='admin-logout'),
     path('check_user_login/',  CheckUserLoginAPIView.as_view(),   name='check-user-login'),
-    path('user_logout/',       UserLogoutAPIView.as_view(),  name='user-logout'),
+    path('user_logout/',       UserLogoutAPIView.as_view(),       name='user-logout'),
     
     # Dashboard-admin-page
-    path('user_info_list/',       UserInfoListAPIView.as_view(),       name='user-info-list'),
-    path('user_info_delete/',     UserInfoDeleteAPIView.as_view(),     name='user-info-delete'),
-    path('user_info_update/',     UserInfoUpdateAPIView.as_view(),     name='user-info-update'),
-    path('user_info_add/',        UserInfoAddAPIView.as_view(),        name='user-info-add'),    
-    path('user_info_filtering/',  UserInfoFilteringAPIView.as_view(),  name='user-info-filtering'),
-    path('admin_page_workday/',  AdminPageWorkDayListAPIView.as_view(),  name='admin-page-workday'),
+    path('user_info_list/',                UserInfoListAPIView.as_view(),              name='user-info-list'),
+    path('user_info_delete/',              UserInfoDeleteAPIView.as_view(),            name='user-info-delete'),
+    path('user_info_update/',              UserInfoUpdateAPIView.as_view(),            name='user-info-update'),
+    path('user_info_add/',                 UserInfoAddAPIView.as_view(),               name='user-info-add'),    
+    path('user_info_filtering/',           UserInfoFilteringAPIView.as_view(),         name='user-info-filtering'),
+    path('admin_page_workday/',            AdminPageWorkDayListAPIView.as_view(),      name='admin-page-workday'),
+    path('admin_WorkDay_Status_Update/',   AdminWorkDayStatusUpdateAPIView.as_view(),  name='admin-WorkDay-Status-Update'),
+
 
 
     # Dashboard-google-calendar

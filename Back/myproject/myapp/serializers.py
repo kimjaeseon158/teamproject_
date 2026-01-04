@@ -55,8 +55,13 @@ class UserWorkDaySerializer(serializers.ModelSerializer):
         work_day = User_WorkDay.objects.create(**validated_data)
 
         User_WorkDetail.objects.bulk_create([
-            User_WorkDetail(work_day=work_day, **d) for d in details_data
+            User_WorkDetail(
+                work_date=work_day,                     # FK 이름 맞추기
+                employee_number=work_day.employee_number,  # 반드시 필요
+                **d
+            )
+            for d in details_data
         ])
-
+        
         return work_day
 

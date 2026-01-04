@@ -42,7 +42,7 @@ urlpatterns = [
     path('user_info_add/',                 UserInfoAddAPIView.as_view(),               name='user-info-add'),    
     path('user_info_filtering/',           UserInfoFilteringAPIView.as_view(),         name='user-info-filtering'),
     path('admin_page_workday/',            AdminPageWorkDayListAPIView.as_view(),      name='admin-page-workday'),
-    path('admin_WorkDay_Status_Update/',   AdminWorkDayStatusUpdateAPIView.as_view(),  name='admin-WorkDay-Status-Update'),
+    path('admin_workday_status_update/',   AdminWorkDayStatusUpdateAPIView.as_view(),  name='admin-workday-status-update'),
 
 
 

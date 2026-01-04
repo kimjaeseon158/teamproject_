@@ -54,7 +54,7 @@ const hmToMinutes = (hm) => {
   return h * 60 + m;
 };
 
-// ✅ start/finish로 분 계산 (같은 날 기준)
+// ✅ start/finish로 분 계산 (같은 날 기준, 야간跨일이면 Option에서 처리해서 minutes로 보내는 편이 안전)
 const calcMinutesFromStartFinish = (start, finish) => {
   const s = hmToMinutes(start);
   const f = hmToMinutes(finish);
@@ -66,12 +66,15 @@ const submitWorkInfo = async (
     user,
     employeeNumber,
     selectedDate,
-    startTime,      // "09:30"
-    finishTime,     // "18:30"
+    startTime, // "09:30"
+    finishTime, // "18:30"
     location,
 
-    // ✅ Option에서 만든 잔업/특근/중식 minutes
-    // 예: [{work_type:"OVERTIME", minutes:120}, {work_type:"EXTRA", minutes:60}]
+    // ✅ Option에서 만든 최종 근무유형: "주간", "야간", "주간-특근", "야간-특근"
+    workType = "주간",
+
+    // ✅ Option에서 만든 잔업/중식 minutes
+    // 예: [{work_type:"잔업", minutes:120}, {work_type:"중식", minutes:60}]
     details: extraDetails = [],
   },
   { toast } = {}
@@ -92,9 +95,9 @@ const submitWorkInfo = async (
   const breakMinutes = rawMinutes > 240 ? 60 : 0;
   const dayMinutes = Math.max(rawMinutes - breakMinutes, 0);
 
-  // ✅ 최종 details: DAY + (잔업/특근/중식 등)
+  // ✅ 최종 details: (주간/야간/주간-특근/야간-특근) + (잔업/중식 등)
   const details = [
-    { work_type: "주간", minutes: dayMinutes },
+    { work_type: workType, minutes: dayMinutes }, // ✅ 여기 핵심 변경!!
     ...extraDetails.filter((d) => d?.work_type && Number(d?.minutes) > 0),
   ];
 
@@ -112,10 +115,9 @@ const submitWorkInfo = async (
 
   console.log("📦 payload:", newRecord);
 
-  // ✅ refresh 포함 fetchWithAuth 그대로
   const res = await fetchWithAuth(
     "/api/user_work_info/",
-    { method: "PATCH", body: JSON.stringify(newRecord) },
+    { method: "POST", body: JSON.stringify(newRecord) },
     { toast }
   );
 

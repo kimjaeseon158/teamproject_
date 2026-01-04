@@ -20,9 +20,30 @@ import {
   useDisclosure,
   Spinner,
   Text,
+  Select,
+  Checkbox,
+  HStack,
+  useToast,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverBody,
+  PopoverArrow,
+  PopoverCloseButton,
 } from "@chakra-ui/react";
 
-import { fetchWithAuth } from "../../api/fetchWithAuth"; // ✅ 경로 프로젝트에 맞게 조정
+import { DayPicker } from "react-day-picker";
+import "react-day-picker/dist/style.css";
+
+import { fetchWithAuth } from "../../api/fetchWithAuth";
+
+// ✅ 상태값(한글) -> 서버로 보낼 status 값 매핑 (한글로 전송)
+const STATUS_MAP = {
+  전체: "전체",
+  승인: "승인",
+  대기: "대기",
+  거절: "거절",
+};
 
 // minutes -> "HH:MM"
 const minutesToHM = (mins) => {
@@ -41,9 +62,7 @@ const getMinutesByType = (details = [], type) => {
 // ISO/문자열 날짜에서 YYYY-MM-DD만
 const toDateOnly = (value) => {
   if (!value) return "";
-  // "2025-12-29T09:00:00+09:00" -> "2025-12-29"
   if (typeof value === "string" && value.includes("T")) return value.split("T")[0];
-  // "2025-12-29 09:00:00" -> "2025-12-29"
   if (typeof value === "string" && value.includes(" ")) return value.split(" ")[0];
   return String(value);
 };
@@ -51,12 +70,10 @@ const toDateOnly = (value) => {
 // work_start/end에서 HH:MM만 (표시용)
 const toTimeHM = (value) => {
   if (!value) return "";
-  // "2025-12-29T09:00:00+09:00"
   if (typeof value === "string" && value.includes("T")) {
     const timePart = value.split("T")[1] || "";
-    return timePart.slice(0, 5); // "09:00"
+    return timePart.slice(0, 5);
   }
-  // "2025-12-29 09:00:00"
   if (typeof value === "string" && value.includes(" ")) {
     const timePart = value.split(" ")[1] || "";
     return timePart.slice(0, 5);
@@ -64,10 +81,9 @@ const toTimeHM = (value) => {
   return "";
 };
 
-// 상태 태그 (일단 기본 "대기"로 두고 추후 서버값 연결)
+// 상태 태그
 const StatusTag = ({ status }) => {
-  const cs =
-    status === "승인" ? "green" : status === "거절" ? "red" : "yellow";
+  const cs = status === "승인" ? "green" : status === "거절" ? "red" : "yellow";
   return (
     <Tag size="sm" colorScheme={cs}>
       {status}
@@ -75,97 +91,213 @@ const StatusTag = ({ status }) => {
   );
 };
 
+// yyyy-mm-dd 포맷
+const toYMD = (d) => {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
 export default function ApprovePage() {
+  const toast = useToast();
+
   const [loading, setLoading] = useState(true);
-  const [rows, setRows] = useState([]); // 화면용 데이터
+  const [rows, setRows] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+
+  const [statusFilter, setStatusFilter] = useState("전체");
+  const [selectedIds, setSelectedIds] = useState(new Set());
+
+  const today = useMemo(() => new Date(), []);
+  const [range, setRange] = useState({ from: today, to: today });
+
+  const startDate = useMemo(() => (range?.from ? toYMD(range.from) : ""), [range]);
+
+  const endDate = useMemo(() => {
+    if (range?.to) return toYMD(range.to);
+    if (range?.from) return toYMD(range.from);
+    return "";
+  }, [range]);
 
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  // ✅ 서버에서 조회
+  const fetchList = async () => {
+    try {
+      setLoading(true);
+
+      const params = {
+        status: STATUS_MAP[statusFilter] || "",
+        start_date: startDate,
+        end_date: endDate,
+      };
+
+      if (!params.status) delete params.status;
+
+      const qs = new URLSearchParams(params).toString();
+      const url = qs ? `/api/admin_page_workday/?${qs}` : `/api/admin_page_workday/`;
+
+      const res = await fetchWithAuth(url, { method: "GET" });
+
+      if (!res.ok) throw new Error("근무내역 조회 실패");
+      const json = await res.json();
+
+      const workDays = json?.work_days || [];
+
+      const mapped = workDays.map((w, idx) => {
+        const dayMins =
+          getMinutesByType(w.details, "DAY") || getMinutesByType(w.details, "주간");
+        const overtimeMins =
+          getMinutesByType(w.details, "OVERTIME") || getMinutesByType(w.details, "잔업");
+        const lunchMins =
+          getMinutesByType(w.details, "LUNCH") || getMinutesByType(w.details, "중식");
+        const extraMins =
+          getMinutesByType(w.details, "EXTRA") || getMinutesByType(w.details, "특근");
+
+        const startHM = toTimeHM(w.work_start);
+        const endHM = toTimeHM(w.work_end);
+
+        const statusFromServer = w.status || w.approval_status || "대기";
+
+        return {
+          id: w.id ?? `${w.employee_number}-${toDateOnly(w.work_date)}-${idx}`,
+          employeeNumber: w.employee_number,
+          name: w.user_name,
+          date: toDateOnly(w.work_date),
+          location: w.work_place,
+
+          workTime: startHM && endHM ? `${startHM}~${endHM}` : "",
+          dayHM: minutesToHM(dayMins),
+
+          overtimeMins,
+          lunchMins,
+          extraMins,
+
+          overtimeDuration: minutesToHM(overtimeMins),
+          lunchDuration: minutesToHM(lunchMins),
+          specialWorkDuration: minutesToHM(extraMins),
+
+          overtimeChecked: overtimeMins > 0,
+          lunchChecked: lunchMins > 0,
+          specialWorkChecked: extraMins > 0,
+
+          status: statusFromServer,
+          raw: w,
+        };
+      });
+
+      setRows(mapped);
+      setSelectedIds(new Set());
+    } catch (e) {
+      console.error(e);
+      setRows([]);
+      toast({
+        title: "조회 실패",
+        description: "근무내역을 불러오지 못했습니다.",
+        status: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchList = async () => {
-      try {
-        setLoading(true);
-        const res = await fetchWithAuth("/api/admin_page_workday/", {
-          method: "GET",
-        });
-
-        if (!res.ok) {
-          throw new Error("근무내역 조회 실패");
-        }
-
-        const json = await res.json();
-
-        // 서버 응답 형태: { success:true, work_days:[...] }
-        const workDays = json?.work_days || [];
-
-        // ✅ 화면용으로 변환
-        const mapped = workDays.map((w, idx) => {
-          // 타입 이름은 서버 기준에 맞춰서 지정해야 함
-          // (이미지 예시는 DAY/OVERTIME)
-          // 너가 한글로 바꿨다면 "주간/잔업/특근/중식"으로 바꿔줘.
-          const dayMins = getMinutesByType(w.details, "DAY") || getMinutesByType(w.details, "주간");
-          const overtimeMins = getMinutesByType(w.details, "OVERTIME") || getMinutesByType(w.details, "잔업");
-          const lunchMins = getMinutesByType(w.details, "LUNCH") || getMinutesByType(w.details, "중식");
-          const extraMins = getMinutesByType(w.details, "EXTRA") || getMinutesByType(w.details, "특근");
-
-          const startHM = toTimeHM(w.work_start);
-          const endHM = toTimeHM(w.work_end);
-
-          return {
-            id: idx + 1,
-            employeeNumber: w.employee_number,
-            name: w.user_name,
-            date: toDateOnly(w.work_date),
-            location: w.work_place,
-
-            // 표시용
-            workTime: startHM && endHM ? `${startHM}~${endHM}` : "",
-            dayHM: minutesToHM(dayMins),
-
-            overtimeMins,
-            lunchMins,
-            extraMins,
-
-            overtimeDuration: minutesToHM(overtimeMins),
-            lunchDuration: minutesToHM(lunchMins),
-            specialWorkDuration: minutesToHM(extraMins),
-
-            overtimeChecked: overtimeMins > 0,
-            lunchChecked: lunchMins > 0,
-            specialWorkChecked: extraMins > 0,
-
-            // 상태는 서버에 없으니 일단 "대기"
-            status: "대기",
-            raw: w, // 원본 보관(필요시)
-          };
-        });
-
-        setRows(mapped);
-      } catch (e) {
-        console.error(e);
-        setRows([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const tableRows = useMemo(() => rows, [rows]);
 
   const handleRowClick = (emp) => {
     setSelectedEmployee(emp);
     onOpen();
   };
 
-  const tableRows = useMemo(() => rows, [rows]);
+  const allChecked = tableRows.length > 0 && tableRows.every((r) => selectedIds.has(r.id));
+  const isIndeterminate = tableRows.some((r) => selectedIds.has(r.id)) && !allChecked;
+
+  const toggleAll = (checked) => {
+    const next = new Set(selectedIds);
+    if (checked) tableRows.forEach((r) => next.add(r.id));
+    else tableRows.forEach((r) => next.delete(r.id));
+    setSelectedIds(next);
+  };
+
+  const toggleOne = (id, checked) => {
+    const next = new Set(selectedIds);
+    if (checked) next.add(id);
+    else next.delete(id);
+    setSelectedIds(next);
+  };
 
   return (
     <Box p={6}>
       <Text fontWeight="bold" fontSize="20px">
         사원 승인 페이지 (근무내역)
       </Text>
+
+      <Flex mt={4} gap={3} align="flex-start" wrap="wrap">
+        <HStack spacing={3} align="center">
+          <HStack>
+            <Text fontSize="sm" color="gray.600">
+              조회 방식
+            </Text>
+            <Select
+              size="sm"
+              w="180px"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="전체">전체</option>
+              <option value="승인">승인</option>
+              <option value="대기">대기</option>
+              <option value="거절">거절</option>
+            </Select>
+          </HStack>
+
+          <Button
+            size="sm"
+            colorScheme="blue"
+            onClick={fetchList}
+            isLoading={loading}
+            loadingText="조회 중"
+          >
+            조회
+          </Button>
+
+          <Text fontSize="sm" color="gray.600">
+            선택: {selectedIds.size}건
+          </Text>
+        </HStack>
+
+        <Box ml="auto">
+          <Popover placement="bottom-end">
+            <PopoverTrigger>
+              <Button size="sm" variant="outline">
+                📅 {startDate} ~ {endDate}
+              </Button>
+            </PopoverTrigger>
+
+            <PopoverContent w="auto">
+              <PopoverArrow />
+              <PopoverCloseButton />
+              <PopoverBody>
+                <DayPicker
+                  mode="range"
+                  numberOfMonths={1}
+                  defaultMonth={today}
+                  selected={range}
+                  onSelect={(r) => {
+                    if (!r?.from) {
+                      setRange({ from: today, to: today });
+                      return;
+                    }
+                    setRange({ from: r.from, to: r.to ?? r.from });
+                  }}
+                />
+              </PopoverBody>
+            </PopoverContent>
+          </Popover>
+        </Box>
+      </Flex>
 
       {loading ? (
         <Flex mt={6} align="center" gap={3}>
@@ -176,11 +308,18 @@ export default function ApprovePage() {
         <Table mt={4} variant="striped">
           <Thead>
             <Tr>
+              <Th w="60px">
+                <Checkbox
+                  isChecked={allChecked}
+                  isIndeterminate={isIndeterminate}
+                  onChange={(e) => toggleAll(e.target.checked)}
+                />
+              </Th>
               <Th>사번</Th>
               <Th>이름</Th>
               <Th>상태</Th>
               <Th>근무일</Th>
-              <Th>주간(분)</Th>
+              <Th>주간(표시)</Th>
               <Th>업체/장소</Th>
             </Tr>
           </Thead>
@@ -201,6 +340,13 @@ export default function ApprovePage() {
                       : "#fffbe6",
                 }}
               >
+                <Td onClick={(e) => e.stopPropagation()}>
+                  <Checkbox
+                    isChecked={selectedIds.has(emp.id)}
+                    onChange={(e) => toggleOne(emp.id, e.target.checked)}
+                  />
+                </Td>
+
                 <Td>{emp.employeeNumber}</Td>
                 <Td>{emp.name}</Td>
                 <Td>
@@ -215,20 +361,13 @@ export default function ApprovePage() {
         </Table>
       )}
 
-      {/* 상세 모달 */}
       {selectedEmployee && (
         <Modal isOpen={isOpen} onClose={onClose} size="lg">
           <ModalOverlay />
           <ModalContent>
             <ModalHeader>근무 상세 정보</ModalHeader>
             <ModalBody>
-              <Box
-                border="1px solid #ddd"
-                borderRadius="8px"
-                p={4}
-                mb={4}
-                bg="#f9f9f9"
-              >
+              <Box border="1px solid #ddd" borderRadius="8px" p={4} mb={4} bg="#f9f9f9">
                 <Flex mb={2}>
                   <Box flex="1">
                     <strong>사번:</strong> {selectedEmployee.employeeNumber}
@@ -258,7 +397,7 @@ export default function ApprovePage() {
 
                 <Flex mb={2}>
                   <Box flex="1">
-                    <strong>주간:</strong> {selectedEmployee.dayHM} (분)
+                    <strong>주간:</strong> {selectedEmployee.dayHM} (표시)
                   </Box>
                   <Box flex="1">
                     <strong>잔업:</strong>{" "}
@@ -271,9 +410,7 @@ export default function ApprovePage() {
                 <Flex mb={2}>
                   <Box flex="1">
                     <strong>중식:</strong>{" "}
-                    {selectedEmployee.lunchChecked
-                      ? selectedEmployee.lunchDuration
-                      : "없음"}
+                    {selectedEmployee.lunchChecked ? selectedEmployee.lunchDuration : "없음"}
                   </Box>
                   <Box flex="1">
                     <strong>특근:</strong>{" "}
@@ -282,9 +419,6 @@ export default function ApprovePage() {
                       : "없음"}
                   </Box>
                 </Flex>
-
-                {/* 원본 필요하면 */}
-                {/* <pre>{JSON.stringify(selectedEmployee.raw, null, 2)}</pre> */}
               </Box>
             </ModalBody>
 
@@ -292,10 +426,7 @@ export default function ApprovePage() {
               <Button
                 colorScheme="green"
                 mr={3}
-                onClick={() => {
-                  // TODO: 승인 API 붙일 자리
-                  alert("승인 기능은 다음 단계에서 API 연결하면 됩니다.");
-                }}
+                onClick={() => alert("승인 기능은 다음 단계에서 API 연결하면 됩니다.")}
               >
                 승인
               </Button>
@@ -303,10 +434,7 @@ export default function ApprovePage() {
               <Button
                 colorScheme="red"
                 mr={3}
-                onClick={() => {
-                  // TODO: 거절 API 붙일 자리
-                  alert("거절 기능은 다음 단계에서 API 연결하면 됩니다.");
-                }}
+                onClick={() => alert("거절 기능은 다음 단계에서 API 연결하면 됩니다.")}
               >
                 거절
               </Button>

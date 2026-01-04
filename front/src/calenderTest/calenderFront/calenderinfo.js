@@ -21,7 +21,11 @@ import { ChevronDownIcon, AddIcon, DeleteIcon } from "@chakra-ui/icons";
 
 import UserContext from "../../login/js/userContext";
 import locationsList from "../js/locationsList";
+
+// ✅ 경로는 너 프로젝트 구조에 맞게!
+// - workTimeList가 src/constants/workTimeList.js 라면 아래처럼
 import workTimeList from "../js/workTimeList";
+
 import { calculateDurationInHM } from "../js/timeUtils";
 import submitWorkInfo from "../js/submitWorkInfo";
 import "../css/activity.css";
@@ -66,13 +70,11 @@ const Option = ({ selectedDate }) => {
 
   const { user, employeeNumber } = useContext(UserContext);
 
-  // ✅ 근무형태:
-  // baseShift: 주간/야간 중 1개(필수)
-  // isSpecial: 특근 ON/OFF (주간/야간과 동시에 가능)
-  const [baseShift, setBaseShift] = useState("day"); // "day" | "night"
-  const [isSpecial, setIsSpecial] = useState(false); // true/false
+  // ✅ 근무형태: 주간/야간 중 1개 + 특근 ON/OFF
+  const [baseShift, setBaseShift] = useState("주간"); // "주간" | "야간"
+  const [isSpecial, setIsSpecial] = useState(false); // 특근 여부
 
-  // ✅ 추가 근무(여러 줄)
+  // ✅ 추가 근무(여러 줄) — 특근 제거 (잔업/중식만)
   const [extraEnabled, setExtraEnabled] = useState(false);
   const [extraWorks, setExtraWorks] = useState([
     { type: "", start: "", finish: "", duration: "" },
@@ -89,7 +91,10 @@ const Option = ({ selectedDate }) => {
     const s = hmToMinutes(start);
     const f = hmToMinutes(finish);
     if (s == null || f == null) return 0;
-    return Math.max(f - s, 0);
+
+    // ✅ 야간跨일 처리: 종료가 더 작으면 +24h
+    const fixedF = f < s ? f + 24 * 60 : f;
+    return Math.max(fixedF - s, 0);
   };
 
   // 시간 입력 자동 포맷(HH:mm)
@@ -124,13 +129,13 @@ const Option = ({ selectedDate }) => {
 
   const handleSelectLocation = (loc) => setLocation(loc);
 
-  // ✅ baseShift(주간/야간)에 따라 작업시간 리스트 필터
-  // ⚠️ workTimeList 항목에 shift 필드가 있어야 함:
-  // 예) { shift:"day", startTime:"09:00", finishTime:"18:00" }
+  // ✅ 주간/야간에 따라 작업시간 리스트 필터
+  // workTimeList 항목: { shift:"주간"|"야간", startTime:"", finishTime:"" }
   const filteredWorkTimeList = workTimeList.filter((t) => t.shift === baseShift);
 
   useEffect(() => {
     if (startTime && finishTime) {
+      // calculateDurationInHM이 야간跨일을 처리 못한다면 diffMinutes 기반으로 바꿔도 됨
       const duration = calculateDurationInHM(startTime, finishTime);
       setTotalWorkTime(duration);
     } else {
@@ -198,13 +203,16 @@ const Option = ({ selectedDate }) => {
     const overtimeMins = reduceByTypeMinutes("overtime"); // 잔업
     const lunchMins = reduceByTypeMinutes("lunch"); // 중식
 
-    // ✅ 특근은 "추가근무"에서 제거됨 (isSpecial로만 처리)
     const details = [
       { work_type: "잔업", minutes: overtimeMins },
       { work_type: "중식", minutes: lunchMins },
     ].filter((d) => d.minutes > 0);
 
+    // ✅ 최종 근무유형 문자열: "주간", "야간", "주간-특근", "야간-특근"
+    const workType = isSpecial ? `${baseShift}-특근` : baseShift;
+
     console.log("✅ details:", details);
+    console.log("✅ workType:", workType);
 
     try {
       const { data, newRecord } = await submitWorkInfo({
@@ -214,8 +222,7 @@ const Option = ({ selectedDate }) => {
         startTime,
         finishTime,
         location,
-        baseShift,   // ✅ "day" | "night"
-        isSpecial,   // ✅ 특근 여부 true/false
+        workType, // ✅ 여기로 통일
         details,
       });
 
@@ -261,31 +268,29 @@ const Option = ({ selectedDate }) => {
 
       <Divider opacity={0.2} />
 
-      {/* ✅ 근무형태: 주간/야간(단일) + 특근(추가 토글) */}
+      {/* ✅ 근무형태: 주간/야간(단일) + 특근(추가) */}
       <Box>
         <Text fontSize="sm" mb={1} fontWeight="600">
           근무형태
         </Text>
 
         <HStack spacing={5}>
-          {/* 주간/야간: 둘 중 하나만 체크되도록 */}
           <Checkbox
-            isChecked={baseShift === "day"}
-            onChange={() => setBaseShift("day")}
+            isChecked={baseShift === "주간"}
+            onChange={() => setBaseShift("주간")}
             colorScheme="green"
           >
             주간
           </Checkbox>
 
           <Checkbox
-            isChecked={baseShift === "night"}
-            onChange={() => setBaseShift("night")}
+            isChecked={baseShift === "야간"}
+            onChange={() => setBaseShift("야간")}
             colorScheme="purple"
           >
             야간
           </Checkbox>
 
-          {/* 특근: 주간/야간과 동시에 가능 */}
           <Checkbox
             isChecked={isSpecial}
             onChange={(e) => setIsSpecial(e.target.checked)}
@@ -296,7 +301,7 @@ const Option = ({ selectedDate }) => {
         </HStack>
 
         <Text fontSize="xs" color="gray.300" mt={2}>
-          ※ 특근은 주간/야간 중 하나를 선택한 상태에서 추가로 켤 수 있어요.
+          ※ 특근은 주간/야간 선택 후 추가로 켤 수 있어요.
         </Text>
       </Box>
 

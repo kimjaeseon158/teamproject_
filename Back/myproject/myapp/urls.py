@@ -1,11 +1,11 @@
 # myapp/urls.py
 from django.urls import path
 from .views import (
-    CheckAdminLoginAPIView, 
-    UserWorkInfoAPIView, 
-    UserInfoDeleteAPIView, 
-    UserInfoUpdateAPIView, 
-    CheckUserLoginAPIView, 
+    CheckAdminLoginAPIView,
+    UserWorkInfoAPIView,
+    UserInfoDeleteAPIView,
+    UserInfoUpdateAPIView,
+    CheckUserLoginAPIView,
     UserInfoFilteringAPIView,
     UserInfoListAPIView,
     UserInfoAddAPIView,
@@ -25,9 +25,10 @@ from .views import (
     AdminLogoutAPIView,
     UserLogoutAPIView,
     AdminPageWorkDayListAPIView,
-    AdminWorkDayStatusUpdateAPIView
+    AdminWorkDayStatusUpdateAPIView,
 )
 
+# fmt:off
 urlpatterns = [
     # Login-Home
     path('check_admin_login/', CheckAdminLoginAPIView.as_view(),  name='check-admin-login'),
@@ -69,3 +70,4 @@ urlpatterns = [
     # Refersh-Token
     path('refresh_token/',   TokenRefreshAPIView.as_view(), name='refresh-token')
 ]
+# fmt:on

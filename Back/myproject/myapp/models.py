@@ -2,8 +2,9 @@ from django.db import models
 from django.contrib.auth.hashers import make_password
 from .unique_serial import generate_unique_serial
 
-# User 관련 테이블
 
+# fmt:off
+# User 관련 테이블
 class User_Login_Info(models.Model):
     employee_number = models.CharField(max_length=50, primary_key=True)
     user_name       = models.CharField(max_length=50, default='홍길동')   # 유저 이름
@@ -136,8 +137,8 @@ class AdminRefreshToken(models.Model):
     )
     
     hashed_token = models.CharField(max_length=255, unique=True, editable=False)
-    expires_at = models.DateTimeField()
-    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at   = models.DateTimeField()
+    created_at   = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):    # 디버깅용 코드 차후 삭제 고려
         return f"Admin Token for {self.admin.admin_name}"
@@ -153,8 +154,10 @@ class UserRefreshToken(models.Model):
     )
     
     hashed_token = models.CharField(max_length=255, unique=True, editable=False)
-    expires_at = models.DateTimeField()
-    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at   = models.DateTimeField()
+    created_at   = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):    # 디버깅용 코드 차후 삭제 고려
         return f"User Token for {self.user.user_name}"
+
+# fmt:on

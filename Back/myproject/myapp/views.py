@@ -758,10 +758,10 @@ class AdminPageWorkDayListAPIView(APIView):
         if status   == "대기":
             user_work_day = user_work_day.filter(is_approved__isnull=True)
         elif status == "완료":
-            user_work_day = user_work_day.filter(is_approved="Y")
+            user_work_day = user_work_day.filter(is_approved=True)
         elif status == "거절":
-            user_work_day = user_work_day.filter(is_approved="N")
-        elif status == "전체" or status is None:
+            user_work_day = user_work_day.filter(is_approved=False)
+        elif status == "전체":
             pass
         else:
             return Response({"success": False})
@@ -790,7 +790,7 @@ class AdminWorkDayStatusUpdateAPIView(APIView):
     def patch(self, request):
         employee_number = request.data.get("employee_number")
         work_date_str   = request.data.get("work_date")
-        status          = request.data.get("status")   # Y / N
+        status          = request.data.get("status")   # True / False
         reject_reason   = request.data.get("reject_reason")
 
         if not employee_number or not work_date_str or not status:
@@ -814,14 +814,14 @@ class AdminWorkDayStatusUpdateAPIView(APIView):
 
         # 완료(승인)
         if status == "Y":
-            work_day.is_approved   = "Y"
+            work_day.is_approved   = True
             work_day.reject_reason = None
 
         # 거절(반려)
         elif status == "N":
             if not reject_reason:
                 return Response({"success": False})  # 반려 사유 반드시 기제
-            work_day.is_approved   = "N"
+            work_day.is_approved   = False
             work_day.reject_reason = reject_reason
 
         work_day.save()

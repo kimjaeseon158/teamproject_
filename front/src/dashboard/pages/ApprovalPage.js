@@ -37,10 +37,11 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 
 import { fetchWithAuth } from "../../api/fetchWithAuth";
+import { adminWorkdayStatusUpdate } from "../js/ApprovalUpdateAPI";
 
 // ✅ 상태값(한글) -> 서버로 보낼 status 값
 const STATUS_MAP = {
-  전체: "", // 전체면 status 파라미터 제거
+  전체: "전체",
   승인: "승인",
   대기: "대기",
   거절: "거절",
@@ -54,13 +55,11 @@ const minutesToHM = (mins) => {
   return `${hh}:${mm}`;
 };
 
-// details 배열에서 특정 work_type minutes 찾기
 const getMinutesByType = (details = [], type) => {
   const found = details.find((d) => d.work_type === type);
   return Number(found?.minutes) || 0;
 };
 
-// ISO/문자열 날짜에서 YYYY-MM-DD만
 const toDateOnly = (value) => {
   if (!value) return "";
   if (typeof value === "string" && value.includes("T")) return value.split("T")[0];
@@ -68,7 +67,6 @@ const toDateOnly = (value) => {
   return String(value);
 };
 
-// work_start/end에서 HH:MM만 (표시용)
 const toTimeHM = (value) => {
   if (!value) return "";
   if (typeof value === "string" && value.includes("T")) {
@@ -82,7 +80,6 @@ const toTimeHM = (value) => {
   return "";
 };
 
-// ✅ 서버가 status를 안 줄 때 대비: is_approved / reject_reason로 계산
 const deriveStatus = (w) => {
   if (w?.is_approved === true) return "승인";
   const rr = (w?.reject_reason ?? "").trim();
@@ -90,7 +87,6 @@ const deriveStatus = (w) => {
   return "대기";
 };
 
-// 상태 태그
 const StatusTag = ({ status }) => {
   const cs = status === "승인" ? "green" : status === "거절" ? "red" : "yellow";
   return (
@@ -100,7 +96,6 @@ const StatusTag = ({ status }) => {
   );
 };
 
-// yyyy-mm-dd 포맷
 const toYMD = (d) => {
   const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -109,15 +104,19 @@ const toYMD = (d) => {
 export default function ApprovePage() {
   const toast = useToast();
 
-  const [loading, setLoading] = useState(true);
+  // ✅ 최초 1회 자동 조회를 했는지
+  const [didInitialFetch, setDidInitialFetch] = useState(false);
+
+  const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
-  const [statusFilter, setStatusFilter] = useState("전체");
+  // ✅ 화면 필터는 기본을 "대기"로 (원하는 동작이라면)
+  const [statusFilter, setStatusFilter] = useState("대기");
   const [selectedIds, setSelectedIds] = useState(new Set());
 
-  // ✅ 거절 사유 입력
   const [rejectReason, setRejectReason] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const today = useMemo(() => new Date(), []);
   const [range, setRange] = useState({ from: today, to: today });
@@ -133,20 +132,28 @@ export default function ApprovePage() {
 
   const handleCloseModal = () => {
     setRejectReason("");
+    setSelectedEmployee(null);
     onClose();
   };
 
-  const fetchList = async () => {
+  /**
+   * ✅ fetchList는 "버튼 조회"용이 기본
+   * - overrideStatus가 있으면 그 값으로 강제 조회(최초 1회 자동 조회에 사용)
+   * - 그 외는 현재 statusFilter/startDate/endDate 기준으로 조회
+   */
+  const fetchList = async ({ overrideStatus } = {}) => {
     try {
       setLoading(true);
 
+      const statusToSend =
+        typeof overrideStatus === "string" ? overrideStatus : statusFilter;
+
       const params = {
-        status: STATUS_MAP[statusFilter] ?? "",
+        status: STATUS_MAP[statusToSend] ?? "",
         start_date: startDate,
         end_date: endDate,
       };
 
-      // ✅ "전체"면 status 파라미터 제거
       if (!params.status) delete params.status;
 
       const qs = new URLSearchParams(params).toString();
@@ -157,7 +164,6 @@ export default function ApprovePage() {
 
       const json = await res.json().catch(() => ({}));
 
-      // ✅ 응답: { success: true, data: [...] } 기준 + fallback
       const workDays = Array.isArray(json?.data)
         ? json.data
         : Array.isArray(json?.work_days)
@@ -177,7 +183,6 @@ export default function ApprovePage() {
         const startHM = toTimeHM(w.work_start);
         const endHM = toTimeHM(w.work_end);
 
-        // ✅ 서버 status 우선, 없으면 계산
         const statusFromServer = w.status || w.approval_status || deriveStatus(w);
 
         const empNo = w.employee_number ?? "";
@@ -189,7 +194,6 @@ export default function ApprovePage() {
           name: w.user_name ?? "",
           date: dateOnly,
           location: w.work_place ?? "",
-
           workTime: startHM && endHM ? `${startHM}~${endHM}` : "",
           dayHM: minutesToHM(dayMins),
 
@@ -210,7 +214,6 @@ export default function ApprovePage() {
         };
       });
 
-      // ✅ 날짜 최신순 정렬
       mapped.sort((a, b) => (a.date < b.date ? 1 : -1));
 
       setRows(mapped);
@@ -228,17 +231,23 @@ export default function ApprovePage() {
     }
   };
 
-  // ✅ 필터/날짜 바뀌면 자동 조회
+  // ✅ 핵심: 최초 1회만 "대기"로 자동 조회
   useEffect(() => {
-    fetchList();
+    if (didInitialFetch) return;
+
+    // 화면 상태도 "대기"로 보고 싶다면 이미 statusFilter 기본값을 "대기"로 줬음
+    // 통신은 overrideStatus로 강제 "대기" 조회
+    fetchList({ overrideStatus: "대기" }).finally(() => {
+      setDidInitialFetch(true);
+    });
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, startDate, endDate]);
+  }, [didInitialFetch]);
 
   const tableRows = useMemo(() => rows, [rows]);
 
   const handleRowClick = (emp) => {
     setSelectedEmployee(emp);
-    // ✅ 모달 열 때 기존 사유 초기화
     setRejectReason("");
     onOpen();
   };
@@ -260,6 +269,72 @@ export default function ApprovePage() {
     setSelectedIds(next);
   };
 
+  // ✅ 승인 (PATCH → 즉시 재조회) : 여기서 재조회는 "현재 화면 필터 기준"으로 버튼 조회랑 동일
+  const handleApprove = async () => {
+    if (!selectedEmployee) return;
+
+    setSaving(true);
+    try {
+      const payload = {
+        employee_number: selectedEmployee.employeeNumber,
+        work_date: selectedEmployee.date,
+        status: "Y",
+      };
+
+      await adminWorkdayStatusUpdate(payload, { toast });
+      toast({ title: "승인 완료", status: "success" });
+
+      await fetchList(); // ✅ 업데이트 후 최신 반영
+      handleCloseModal();
+    } catch (e) {
+      toast({
+        title: "승인 실패",
+        description: e?.message || "승인 처리 중 오류",
+        status: "error",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ✅ 거절 (PATCH + 사유 → 즉시 재조회)
+  const handleReject = async () => {
+    if (!selectedEmployee) return;
+
+    if (!rejectReason.trim()) {
+      toast({
+        title: "거절 사유 필요",
+        description: "거절 사유를 입력해주세요.",
+        status: "warning",
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const payload = {
+        employee_number: selectedEmployee.employeeNumber,
+        work_date: selectedEmployee.date,
+        status: "N",
+        reject_reason: rejectReason.trim(),
+      };
+
+      await adminWorkdayStatusUpdate(payload, { toast });
+      toast({ title: "거절 완료", status: "success" });
+
+      await fetchList();
+      handleCloseModal();
+    } catch (e) {
+      toast({
+        title: "거절 실패",
+        description: e?.message || "거절 처리 중 오류",
+        status: "error",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Box p={6}>
       <Text fontWeight="bold" fontSize="20px">
@@ -277,6 +352,7 @@ export default function ApprovePage() {
               w="180px"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
+              isDisabled={loading || saving}
             >
               <option value="전체">전체</option>
               <option value="승인">승인</option>
@@ -285,12 +361,14 @@ export default function ApprovePage() {
             </Select>
           </HStack>
 
+          {/* ✅ 이제부터는 무조건 버튼 눌러야 통신 */}
           <Button
             size="sm"
             colorScheme="blue"
-            onClick={fetchList}
+            onClick={() => fetchList()}
             isLoading={loading}
             loadingText="조회 중"
+            isDisabled={saving}
           >
             조회
           </Button>
@@ -298,12 +376,18 @@ export default function ApprovePage() {
           <Text fontSize="sm" color="gray.600">
             선택: {selectedIds.size}건
           </Text>
+
+          {!didInitialFetch && (
+            <Tag size="sm" colorScheme="blue">
+              초기 조회중...
+            </Tag>
+          )}
         </HStack>
 
         <Box ml="auto">
           <Popover placement="bottom-end">
             <PopoverTrigger>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" isDisabled={loading || saving}>
                 📅 {startDate} ~ {endDate}
               </Button>
             </PopoverTrigger>
@@ -323,6 +407,7 @@ export default function ApprovePage() {
                       return;
                     }
                     setRange({ from: r.from, to: r.to ?? r.from });
+                    // ✅ 날짜 바꿔도 통신 X (버튼 조회만)
                   }}
                 />
               </PopoverBody>
@@ -345,6 +430,7 @@ export default function ApprovePage() {
                   isChecked={allChecked}
                   isIndeterminate={isIndeterminate}
                   onChange={(e) => toggleAll(e.target.checked)}
+                  isDisabled={saving}
                 />
               </Th>
               <Th>사번</Th>
@@ -376,6 +462,7 @@ export default function ApprovePage() {
                   <Checkbox
                     isChecked={selectedIds.has(emp.id)}
                     onChange={(e) => toggleOne(emp.id, e.target.checked)}
+                    isDisabled={saving}
                   />
                 </Td>
 
@@ -453,7 +540,6 @@ export default function ApprovePage() {
                 </Flex>
               </Box>
 
-              {/* ✅ 거절 사유 입력 */}
               <Box>
                 <Text fontSize="sm" fontWeight="bold" mb={1}>
                   거절 사유
@@ -464,6 +550,7 @@ export default function ApprovePage() {
                   onChange={(e) => setRejectReason(e.target.value)}
                   size="sm"
                   resize="none"
+                  isDisabled={saving}
                 />
               </Box>
             </ModalBody>
@@ -472,7 +559,9 @@ export default function ApprovePage() {
               <Button
                 colorScheme="green"
                 mr={3}
-                onClick={() => alert("승인 기능은 다음 단계에서 API 연결하면 됩니다.")}
+                onClick={handleApprove}
+                isLoading={saving}
+                loadingText="처리 중"
               >
                 승인
               </Button>
@@ -480,36 +569,14 @@ export default function ApprovePage() {
               <Button
                 colorScheme="red"
                 mr={3}
-                onClick={() => {
-                  if (!rejectReason.trim()) {
-                    toast({
-                      title: "거절 사유 필요",
-                      description: "거절 사유를 입력해주세요.",
-                      status: "warning",
-                    });
-                    return;
-                  }
-
-                  // 🔥 다음 단계에서 여기서 API 연결하면 됨
-                  console.log("거절 처리(임시)", {
-                    id: selectedEmployee.id,
-                    reason: rejectReason,
-                    raw: selectedEmployee.raw,
-                  });
-
-                  toast({
-                    title: "거절 처리됨 (임시)",
-                    description: `사유: ${rejectReason}`,
-                    status: "success",
-                  });
-
-                  handleCloseModal();
-                }}
+                onClick={handleReject}
+                isLoading={saving}
+                loadingText="처리 중"
               >
                 거절
               </Button>
 
-              <Button colorScheme="gray" onClick={handleCloseModal}>
+              <Button colorScheme="gray" onClick={handleCloseModal} isDisabled={saving}>
                 닫기
               </Button>
             </ModalFooter>

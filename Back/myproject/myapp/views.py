@@ -756,11 +756,11 @@ class AdminPageWorkDayListAPIView(APIView):
 
         # 상태 필터 (선택)
         if status   == "대기":
-            user_work_day = user_work_day.filter(approve_status__isnull=True)
+            user_work_day = user_work_day.filter(is_approved__isnull=True)
         elif status == "완료":
-            user_work_day = user_work_day.filter(approve_status="Y")
+            user_work_day = user_work_day.filter(is_approved="Y")
         elif status == "거절":
-            user_work_day = user_work_day.filter(approve_status="N")
+            user_work_day = user_work_day.filter(is_approved="N")
         elif status == "전체" or status is None:
             pass
         else:

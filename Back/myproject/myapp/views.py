@@ -744,9 +744,9 @@ class AdminPageWorkDayListAPIView(APIView):
     permission_classes     = [IsAuthenticated]
 
     def get(self, request):
-        status         = request.query_params.get("status")      # 대기, 완료, 거절, 전체
-        start_date_str = request.query_params.get("start_date")  # YYYY-MM-DD
-        end_date_str   = request.query_params.get("end_date")    # YYYY-MM-DD
+        status         = request.data.get("status")      # 대기, 완료, 거절, 전체
+        start_date_str = request.data.get("start_date")  # YYYY-MM-DD
+        end_date_str   = request.data.get("end_date")    # YYYY-MM-DD
 
         user_work_day = (
             User_WorkDay.objects
@@ -758,9 +758,9 @@ class AdminPageWorkDayListAPIView(APIView):
         if status   == "대기":
             user_work_day = user_work_day.filter(is_approved__isnull=True)
         elif status == "완료":
-            user_work_day = user_work_day.filter(is_approved=True)
+            user_work_day = user_work_day.filter(is_approved="Y")
         elif status == "거절":
-            user_work_day = user_work_day.filter(is_approved=False)
+            user_work_day = user_work_day.filter(is_approved="N")
         elif status == "전체" or status is None:
             pass
         else:

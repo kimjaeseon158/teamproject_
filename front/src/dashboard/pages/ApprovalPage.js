@@ -39,7 +39,7 @@ import { fetchWithAuth } from "../../api/fetchWithAuth";
 
 // ✅ 상태값(한글) -> 서버로 보낼 status 값 매핑 (한글로 전송)
 const STATUS_MAP = {
-  전체: "전체",
+  전체: " ",
   승인: "승인",
   대기: "대기",
   거절: "거절",

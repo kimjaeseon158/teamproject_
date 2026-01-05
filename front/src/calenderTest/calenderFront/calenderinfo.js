@@ -1,5 +1,5 @@
 // src/attendance/calenderinfo.js
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useMemo } from "react";
 import {
   Box,
   Stack,
@@ -23,10 +23,8 @@ import UserContext from "../../login/js/userContext";
 import locationsList from "../js/locationsList";
 
 // ✅ 경로는 너 프로젝트 구조에 맞게!
-// - workTimeList가 src/constants/workTimeList.js 라면 아래처럼
 import workTimeList from "../js/workTimeList";
 
-import { calculateDurationInHM } from "../js/timeUtils";
 import submitWorkInfo from "../js/submitWorkInfo";
 import "../css/activity.css";
 
@@ -59,6 +57,14 @@ const toMinutesAny = (v) => {
   return Number.isFinite(n) ? n : 0;
 };
 
+// ✅ minutes -> "HH:MM"
+const minutesToHM = (mins) => {
+  const m = Math.max(0, Number(mins) || 0);
+  const hh = String(Math.floor(m / 60)).padStart(2, "0");
+  const mm = String(m % 60).padStart(2, "0");
+  return `${hh}:${mm}`;
+};
+
 const Option = ({ selectedDate }) => {
   const [records, setRecords] = useState([]);
 
@@ -74,7 +80,7 @@ const Option = ({ selectedDate }) => {
   const [baseShift, setBaseShift] = useState("주간"); // "주간" | "야간"
   const [isSpecial, setIsSpecial] = useState(false); // 특근 여부
 
-  // ✅ 추가 근무(여러 줄) — 특근 제거 (잔업/중식만)
+  // ✅ 추가 근무(여러 줄) — 잔업/중식만
   const [extraEnabled, setExtraEnabled] = useState(false);
   const [extraWorks, setExtraWorks] = useState([
     { type: "", start: "", finish: "", duration: "" },
@@ -87,12 +93,13 @@ const Option = ({ selectedDate }) => {
     return h * 60 + m;
   };
 
+  // ✅ 야간跨일 처리 포함
   const diffMinutes = (start, finish) => {
     const s = hmToMinutes(start);
     const f = hmToMinutes(finish);
     if (s == null || f == null) return 0;
 
-    // ✅ 야간跨일 처리: 종료가 더 작으면 +24h
+    // ✅ 종료가 더 작으면 자정 넘어감 → +24h
     const fixedF = f < s ? f + 24 * 60 : f;
     return Math.max(fixedF - s, 0);
   };
@@ -131,17 +138,19 @@ const Option = ({ selectedDate }) => {
 
   // ✅ 주간/야간에 따라 작업시간 리스트 필터
   // workTimeList 항목: { shift:"주간"|"야간", startTime:"", finishTime:"" }
-  const filteredWorkTimeList = workTimeList.filter((t) => t.shift === baseShift);
+  const filteredWorkTimeList = useMemo(() => {
+    return workTimeList.filter((t) => t.shift === baseShift);
+  }, [baseShift]);
 
+  // ✅ 총 작업 시간 계산: calculateDurationInHM 대신 diffMinutes로 계산 (야간跨일 OK)
   useEffect(() => {
     if (startTime && finishTime) {
-      // calculateDurationInHM이 야간跨일을 처리 못한다면 diffMinutes 기반으로 바꿔도 됨
-      const duration = calculateDurationInHM(startTime, finishTime);
-      setTotalWorkTime(duration);
+      const mins = diffMinutes(startTime, finishTime);
+      setTotalWorkTime(minutesToHM(mins));
     } else {
       setTotalWorkTime("");
     }
-  }, [startTime, finishTime]);
+  }, [startTime, finishTime]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ✅ 주간/야간 바뀌면 작업시간 선택 초기화
   useEffect(() => {
@@ -157,8 +166,10 @@ const Option = ({ selectedDate }) => {
         if (i !== idx) return row;
         const next = { ...row, ...patch };
 
+        // ✅ 추가근무 duration도 diffMinutes로 계산 (야간跨일 OK)
         if (next.start && next.finish) {
-          next.duration = calculateDurationInHM(next.start, next.finish);
+          const mins = diffMinutes(next.start, next.finish);
+          next.duration = minutesToHM(mins);
         } else {
           next.duration = "";
         }
@@ -211,20 +222,20 @@ const Option = ({ selectedDate }) => {
     // ✅ 최종 근무유형 문자열: "주간", "야간", "주간-특근", "야간-특근"
     const workType = isSpecial ? `${baseShift}-특근` : baseShift;
 
-    console.log("✅ details:", details);
-    console.log("✅ workType:", workType);
-
     try {
-      const { data, newRecord } = await submitWorkInfo({
-        user,
-        employeeNumber,
-        selectedDate,
-        startTime,
-        finishTime,
-        location,
-        workType, // ✅ 여기로 통일
-        details,
-      });
+      const { data, newRecord } = await submitWorkInfo(
+        {
+          user,
+          employeeNumber,
+          selectedDate,
+          startTime,
+          finishTime,
+          location,
+          workType,
+          details,
+        },
+        {}
+      );
 
       console.log("서버 응답:", data);
       console.log("보낸 payload:", newRecord);
@@ -390,11 +401,7 @@ const Option = ({ selectedDate }) => {
           </Text>
 
           <HStack>
-            <Text
-              fontSize="xs"
-              color={extraEnabled ? "green.300" : "red.300"}
-              mr={1}
-            >
+            <Text fontSize="xs" color={extraEnabled ? "green.300" : "red.300"} mr={1}>
               {extraEnabled ? "ON" : "OFF"}
             </Text>
             <Switch
@@ -426,9 +433,7 @@ const Option = ({ selectedDate }) => {
                     placeholder="유형 선택"
                     size="sm"
                     value={row.type}
-                    onChange={(e) =>
-                      updateExtraWork(idx, { type: e.target.value })
-                    }
+                    onChange={(e) => updateExtraWork(idx, { type: e.target.value })}
                     bg="white"
                     color="gray.800"
                     borderColor="gray.500"
@@ -458,9 +463,7 @@ const Option = ({ selectedDate }) => {
                     value={row.start}
                     maxLength={5}
                     onChange={(e) =>
-                      updateExtraWork(idx, {
-                        start: formatTimeInput(e.target.value),
-                      })
+                      updateExtraWork(idx, { start: formatTimeInput(e.target.value) })
                     }
                     flex="1"
                     size="sm"
@@ -474,9 +477,7 @@ const Option = ({ selectedDate }) => {
                     value={row.finish}
                     maxLength={5}
                     onChange={(e) =>
-                      updateExtraWork(idx, {
-                        finish: formatTimeInput(e.target.value),
-                      })
+                      updateExtraWork(idx, { finish: formatTimeInput(e.target.value) })
                     }
                     flex="1"
                     size="sm"
@@ -497,13 +498,7 @@ const Option = ({ selectedDate }) => {
         )}
       </Box>
 
-      <Button
-        type="submit"
-        colorScheme="blue"
-        alignSelf="flex-end"
-        mt={2}
-        size="sm"
-      >
+      <Button type="submit" colorScheme="blue" alignSelf="flex-end" mt={2} size="sm">
         추가
       </Button>
     </Stack>

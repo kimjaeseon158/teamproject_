@@ -2,9 +2,18 @@ import React, { useState } from "react";
 import { Box, SimpleGrid, Text, Button } from "@chakra-ui/react";
 
 const MONTHS = [
-  "1월", "2월", "3월", "4월",
-  "5월", "6월", "7월", "8월",
-  "9월", "10월", "11월", "12월",
+  "1월",
+  "2월",
+  "3월",
+  "4월",
+  "5월",
+  "6월",
+  "7월",
+  "8월",
+  "9월",
+  "10월",
+  "11월",
+  "12월",
 ];
 
 const MiniCalendarChakra = ({ onSelect }) => {
@@ -25,10 +34,19 @@ const MiniCalendarChakra = ({ onSelect }) => {
   return (
     <Box>
       {/* 연도 선택 */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Button size="xs" onClick={() => setYear((y) => y - 1)}>◀</Button>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={3}
+      >
+        <Button size="xs" onClick={() => setYear((y) => y - 1)}>
+          ◀
+        </Button>
         <Text fontWeight="800">{year}년</Text>
-        <Button size="xs" onClick={() => setYear((y) => y + 1)}>▶</Button>
+        <Button size="xs" onClick={() => setYear((y) => y + 1)}>
+          ▶
+        </Button>
       </Box>
 
       {/* 4 x 3 월 그리드 */}

@@ -780,7 +780,7 @@ class AdminPageWorkDayListAPIView(APIView):
             )
 
         serializer = UserWorkDaySerializer(user_work_day, many=True)
-        return Response({"success": True,})
+        return Response({"success": True,"data": serializer.data})
 
 
 class AdminWorkDayStatusUpdateAPIView(APIView):

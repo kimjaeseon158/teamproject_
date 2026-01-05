@@ -38,7 +38,7 @@ class User_Login_Info(models.Model):
         return True
 
 class User_WorkDay(models.Model):
-    employee_number = models.ForeignKey(User_Login_Info,on_delete=models.CASCADE)   # 사원번호 (FK)
+    employee_number = models.ForeignKey(User_Login_Info, on_delete=models.CASCADE)  # 사원번호 (FK)
     user_name       = models.CharField(max_length=50)                               # 유저 이름
     work_date       = models.DateField()                                            # 근무 날짜
     work_start      = models.DateTimeField()                                        # 작업 시작 시간 (시간만)
@@ -47,12 +47,23 @@ class User_WorkDay(models.Model):
     is_approved     = models.BooleanField(null=True,blank=True)                     # 승인 여부 (None=미처리)
     reject_reason   = models.TextField(null=True,blank=True)                        # 반려 사유
 
+    # FK값 -> PK값 파싱 클래스 단순화
+    @property
+    def employee_number_str(self):
+        return self.employee_number.employee_number
+
 
 class User_WorkDetail(models.Model):
-    employee_number = models.ForeignKey(User_Login_Info,on_delete=models.CASCADE)   # 사원번호 (FK)
-    work_date       = models.ForeignKey(User_WorkDay,on_delete=models.CASCADE,related_name="details")
+    employee_number = models.CharField(max_length=50)
+    work_date       = models.ForeignKey(User_WorkDay, on_delete=models.CASCADE,related_name="details")
     work_type       = models.CharField(max_length=20)                               # DAY, NIGHT, OVERTIME, MEAL_OT 등
     minutes         = models.PositiveIntegerField()                                 # 근무 시간 (분)
+
+    # employee_nubmer, work_date 값이 비어있을 경우 에러 반환
+    def save(self, *args, **kwargs):
+        if not self.employee_number and self.work_date_id:
+            self.employee_number = self.work_date.employee_number
+        super().save(*args, **kwargs)
 
 
 

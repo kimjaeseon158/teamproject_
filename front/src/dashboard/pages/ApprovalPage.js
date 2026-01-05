@@ -30,6 +30,7 @@ import {
   PopoverBody,
   PopoverArrow,
   PopoverCloseButton,
+  Textarea,
 } from "@chakra-ui/react";
 
 import { DayPicker } from "react-day-picker";
@@ -37,9 +38,9 @@ import "react-day-picker/dist/style.css";
 
 import { fetchWithAuth } from "../../api/fetchWithAuth";
 
-// ✅ 상태값(한글) -> 서버로 보낼 status 값 매핑 (한글로 전송)
+// ✅ 상태값(한글) -> 서버로 보낼 status 값
 const STATUS_MAP = {
-  전체: " ",
+  전체: "", // 전체면 status 파라미터 제거
   승인: "승인",
   대기: "대기",
   거절: "거절",
@@ -81,6 +82,14 @@ const toTimeHM = (value) => {
   return "";
 };
 
+// ✅ 서버가 status를 안 줄 때 대비: is_approved / reject_reason로 계산
+const deriveStatus = (w) => {
+  if (w?.is_approved === true) return "승인";
+  const rr = (w?.reject_reason ?? "").trim();
+  if (rr) return "거절";
+  return "대기";
+};
+
 // 상태 태그
 const StatusTag = ({ status }) => {
   const cs = status === "승인" ? "green" : status === "거절" ? "red" : "yellow";
@@ -107,11 +116,13 @@ export default function ApprovePage() {
   const [statusFilter, setStatusFilter] = useState("전체");
   const [selectedIds, setSelectedIds] = useState(new Set());
 
+  // ✅ 거절 사유 입력
+  const [rejectReason, setRejectReason] = useState("");
+
   const today = useMemo(() => new Date(), []);
   const [range, setRange] = useState({ from: today, to: today });
 
   const startDate = useMemo(() => (range?.from ? toYMD(range.from) : ""), [range]);
-
   const endDate = useMemo(() => {
     if (range?.to) return toYMD(range.to);
     if (range?.from) return toYMD(range.from);
@@ -120,27 +131,38 @@ export default function ApprovePage() {
 
   const { isOpen, onOpen, onClose } = useDisclosure();
 
+  const handleCloseModal = () => {
+    setRejectReason("");
+    onClose();
+  };
+
   const fetchList = async () => {
     try {
       setLoading(true);
 
       const params = {
-        status: STATUS_MAP[statusFilter] || "",
+        status: STATUS_MAP[statusFilter] ?? "",
         start_date: startDate,
         end_date: endDate,
       };
 
+      // ✅ "전체"면 status 파라미터 제거
       if (!params.status) delete params.status;
 
       const qs = new URLSearchParams(params).toString();
       const url = qs ? `/api/admin_page_workday/?${qs}` : `/api/admin_page_workday/`;
 
-      const res = await fetchWithAuth(url, { method: "GET" });
-
+      const res = await fetchWithAuth(url, { method: "GET" }, { toast });
       if (!res.ok) throw new Error("근무내역 조회 실패");
-      const json = await res.json();
 
-      const workDays = json?.work_days || [];
+      const json = await res.json().catch(() => ({}));
+
+      // ✅ 응답: { success: true, data: [...] } 기준 + fallback
+      const workDays = Array.isArray(json?.data)
+        ? json.data
+        : Array.isArray(json?.work_days)
+        ? json.work_days
+        : [];
 
       const mapped = workDays.map((w, idx) => {
         const dayMins =
@@ -155,14 +177,18 @@ export default function ApprovePage() {
         const startHM = toTimeHM(w.work_start);
         const endHM = toTimeHM(w.work_end);
 
-        const statusFromServer = w.status || w.approval_status || "대기";
+        // ✅ 서버 status 우선, 없으면 계산
+        const statusFromServer = w.status || w.approval_status || deriveStatus(w);
+
+        const empNo = w.employee_number ?? "";
+        const dateOnly = toDateOnly(w.work_date);
 
         return {
-          id: w.id ?? `${w.employee_number}-${toDateOnly(w.work_date)}-${idx}`,
-          employeeNumber: w.employee_number,
-          name: w.user_name,
-          date: toDateOnly(w.work_date),
-          location: w.work_place,
+          id: w.id ?? `${empNo}-${dateOnly}-${idx}`,
+          employeeNumber: empNo,
+          name: w.user_name ?? "",
+          date: dateOnly,
+          location: w.work_place ?? "",
 
           workTime: startHM && endHM ? `${startHM}~${endHM}` : "",
           dayHM: minutesToHM(dayMins),
@@ -184,6 +210,9 @@ export default function ApprovePage() {
         };
       });
 
+      // ✅ 날짜 최신순 정렬
+      mapped.sort((a, b) => (a.date < b.date ? 1 : -1));
+
       setRows(mapped);
       setSelectedIds(new Set());
     } catch (e) {
@@ -191,7 +220,7 @@ export default function ApprovePage() {
       setRows([]);
       toast({
         title: "조회 실패",
-        description: "근무내역을 불러오지 못했습니다.",
+        description: e?.message || "근무내역을 불러오지 못했습니다.",
         status: "error",
       });
     } finally {
@@ -199,15 +228,18 @@ export default function ApprovePage() {
     }
   };
 
+  // ✅ 필터/날짜 바뀌면 자동 조회
   useEffect(() => {
     fetchList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [statusFilter, startDate, endDate]);
 
   const tableRows = useMemo(() => rows, [rows]);
 
   const handleRowClick = (emp) => {
     setSelectedEmployee(emp);
+    // ✅ 모달 열 때 기존 사유 초기화
+    setRejectReason("");
     onOpen();
   };
 
@@ -362,7 +394,7 @@ export default function ApprovePage() {
       )}
 
       {selectedEmployee && (
-        <Modal isOpen={isOpen} onClose={onClose} size="lg">
+        <Modal isOpen={isOpen} onClose={handleCloseModal} size="lg">
           <ModalOverlay />
           <ModalContent>
             <ModalHeader>근무 상세 정보</ModalHeader>
@@ -420,6 +452,20 @@ export default function ApprovePage() {
                   </Box>
                 </Flex>
               </Box>
+
+              {/* ✅ 거절 사유 입력 */}
+              <Box>
+                <Text fontSize="sm" fontWeight="bold" mb={1}>
+                  거절 사유
+                </Text>
+                <Textarea
+                  placeholder="거절 사유를 입력하세요"
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  size="sm"
+                  resize="none"
+                />
+              </Box>
             </ModalBody>
 
             <ModalFooter>
@@ -434,12 +480,36 @@ export default function ApprovePage() {
               <Button
                 colorScheme="red"
                 mr={3}
-                onClick={() => alert("거절 기능은 다음 단계에서 API 연결하면 됩니다.")}
+                onClick={() => {
+                  if (!rejectReason.trim()) {
+                    toast({
+                      title: "거절 사유 필요",
+                      description: "거절 사유를 입력해주세요.",
+                      status: "warning",
+                    });
+                    return;
+                  }
+
+                  // 🔥 다음 단계에서 여기서 API 연결하면 됨
+                  console.log("거절 처리(임시)", {
+                    id: selectedEmployee.id,
+                    reason: rejectReason,
+                    raw: selectedEmployee.raw,
+                  });
+
+                  toast({
+                    title: "거절 처리됨 (임시)",
+                    description: `사유: ${rejectReason}`,
+                    status: "success",
+                  });
+
+                  handleCloseModal();
+                }}
               >
                 거절
               </Button>
 
-              <Button colorScheme="gray" onClick={onClose}>
+              <Button colorScheme="gray" onClick={handleCloseModal}>
                 닫기
               </Button>
             </ModalFooter>

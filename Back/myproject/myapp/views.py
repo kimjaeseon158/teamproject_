@@ -735,7 +735,7 @@ class ExpenseDeleteAPIView(APIView):
             expense_data = ExpenseSerializer(expense_qs, many=True)
 
             return Response({"success": True, "expense_data": expense_data.data})
-
+ 
         except Expense.DoesNotExist:
             return Response({"success": False})
 

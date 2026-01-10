@@ -124,7 +124,6 @@ export function useAddPersonLogic(existingEmployees, onSave, onClose) {
 
     try {
       const result = await AddUser_PostData(panel_post_data); // 여기서 result 선언
-      console.log("전송 응답:", result);
 
       if (result.success) {
         const addedUser = result.users?.[result.users.length - 1];

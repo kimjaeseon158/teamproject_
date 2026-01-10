@@ -12,7 +12,6 @@ export const deleteEmployees = async (employee_Numbers, { toast } = {}) => {
         employee_number: empNo, // 서버에서 요구하는 구조
       };
 
-      console.log("DELETE 요청 바디:", body);
 
       // ✅ fetch → fetchWithAuth 로 변경
       const response = await fetchWithAuth(
@@ -44,7 +43,7 @@ export const deleteEmployees = async (employee_Numbers, { toast } = {}) => {
       try {
         parsed = JSON.parse(text);
       } catch (e) {
-        console.error(`사원번호 ${empNo} 응답이 JSON이 아닙니다.`, e);
+        console.error(`응답이 JSON이 아닙니다.`, e);
         failed.push({
           employee_number: empNo,
           error: "응답 JSON 파싱 실패",
@@ -56,11 +55,9 @@ export const deleteEmployees = async (employee_Numbers, { toast } = {}) => {
       const userData = parsed?.user_data || [];
 
       if (success) {
-        console.log(` ${empNo} 삭제 성공`);
         deleted_Users.push(...userData); // 여러 명 삭제되었을 수도 있음
         results.push({ employee_number: empNo, success: true });
       } else {
-        console.warn(`${empNo} 삭제 실패`);
         failed.push({
           employee_number: empNo,
           success: false,

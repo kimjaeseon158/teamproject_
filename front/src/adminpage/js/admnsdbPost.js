@@ -39,7 +39,6 @@ export const Panel_PostData = async (data = {}, toast) => {
     }
 
     const result = await res.json();
-    console.log("서버 응답:", result);
     return result;
 
   } catch (error) {

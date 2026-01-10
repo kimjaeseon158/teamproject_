@@ -111,15 +111,17 @@ export default function ApprovePage() {
   const [rows, setRows] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
-  // ✅ 화면 필터는 기본을 "대기"로 (원하는 동작이라면)
+  // ✅ 화면 필터는 기본을 "대기"로
   const [statusFilter, setStatusFilter] = useState("대기");
   const [selectedIds, setSelectedIds] = useState(new Set());
 
   const [rejectReason, setRejectReason] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // ✅ 오늘 + 달력 표시 월(month) 제어
   const today = useMemo(() => new Date(), []);
   const [range, setRange] = useState({ from: today, to: today });
+  const [calendarMonth, setCalendarMonth] = useState(today);
 
   const startDate = useMemo(() => (range?.from ? toYMD(range.from) : ""), [range]);
   const endDate = useMemo(() => {
@@ -231,12 +233,10 @@ export default function ApprovePage() {
     }
   };
 
-  // ✅ 핵심: 최초 1회만 "대기"로 자동 조회
+  // ✅ 최초 1회만 "대기"로 자동 조회
   useEffect(() => {
     if (didInitialFetch) return;
 
-    // 화면 상태도 "대기"로 보고 싶다면 이미 statusFilter 기본값을 "대기"로 줬음
-    // 통신은 overrideStatus로 강제 "대기" 조회
     fetchList({ overrideStatus: "대기" }).finally(() => {
       setDidInitialFetch(true);
     });
@@ -269,7 +269,7 @@ export default function ApprovePage() {
     setSelectedIds(next);
   };
 
-  // ✅ 승인 (PATCH → 즉시 재조회) : 여기서 재조회는 "현재 화면 필터 기준"으로 버튼 조회랑 동일
+  // ✅ 승인
   const handleApprove = async () => {
     if (!selectedEmployee) return;
 
@@ -284,7 +284,7 @@ export default function ApprovePage() {
       await adminWorkdayStatusUpdate(payload, { toast });
       toast({ title: "승인 완료", status: "success" });
 
-      await fetchList(); // ✅ 업데이트 후 최신 반영
+      await fetchList();
       handleCloseModal();
     } catch (e) {
       toast({
@@ -297,7 +297,7 @@ export default function ApprovePage() {
     }
   };
 
-  // ✅ 거절 (PATCH + 사유 → 즉시 재조회)
+  // ✅ 거절
   const handleReject = async () => {
     if (!selectedEmployee) return;
 
@@ -335,6 +335,9 @@ export default function ApprovePage() {
     }
   };
 
+  // ✅ 헤더 아래 라인 스타일(반복 줄이기)
+  const headLine = { borderBottom: "1px solid", borderColor: "blackAlpha.600" };
+
   return (
     <Box p={6}>
       <Text fontWeight="bold" fontSize="20px">
@@ -361,7 +364,6 @@ export default function ApprovePage() {
             </Select>
           </HStack>
 
-          {/* ✅ 이제부터는 무조건 버튼 눌러야 통신 */}
           <Button
             size="sm"
             colorScheme="blue"
@@ -384,6 +386,7 @@ export default function ApprovePage() {
           )}
         </HStack>
 
+        {/* ✅ 달력 Popover */}
         <Box ml="auto">
           <Popover placement="bottom-end">
             <PopoverTrigger>
@@ -392,18 +395,45 @@ export default function ApprovePage() {
               </Button>
             </PopoverTrigger>
 
-            <PopoverContent w="auto">
+            <PopoverContent w="auto" p={0}>
               <PopoverArrow />
-              <PopoverCloseButton />
-              <PopoverBody>
+
+              {/* ✅ 상단바: Today + 닫기(X) 분리 */}
+              <Flex
+                align="center"
+                justify="space-between"
+                px={3}
+                py={2}
+                borderBottom="1px solid"
+                borderColor="blackAlpha.200"
+                bg="white"
+              >
+                <Button
+                  size="xs"
+                  variant="outline"
+                  onClick={() => {
+                    setRange({ from: today, to: today });
+                    setCalendarMonth(today);
+                  }}
+                  isDisabled={saving || loading}
+                >
+                  Today
+                </Button>
+
+                <PopoverCloseButton position="static" />
+              </Flex>
+
+              <PopoverBody p={3}>
                 <DayPicker
                   mode="range"
                   numberOfMonths={1}
-                  defaultMonth={today}
+                  month={calendarMonth}
+                  onMonthChange={setCalendarMonth}
                   selected={range}
                   onSelect={(r) => {
                     if (!r?.from) {
                       setRange({ from: today, to: today });
+                      setCalendarMonth(today);
                       return;
                     }
                     setRange({ from: r.from, to: r.to ?? r.from });
@@ -422,62 +452,81 @@ export default function ApprovePage() {
           <Text>불러오는 중...</Text>
         </Flex>
       ) : (
-        <Table mt={4} variant="striped">
-          <Thead>
-            <Tr>
-              <Th w="60px">
-                <Checkbox
-                  isChecked={allChecked}
-                  isIndeterminate={isIndeterminate}
-                  onChange={(e) => toggleAll(e.target.checked)}
-                  isDisabled={saving}
-                />
-              </Th>
-              <Th>사번</Th>
-              <Th>이름</Th>
-              <Th>상태</Th>
-              <Th>근무일</Th>
-              <Th>주간(표시)</Th>
-              <Th>업체/장소</Th>
-            </Tr>
-          </Thead>
-
-          <Tbody>
-            {tableRows.map((emp) => (
-              <Tr
-                key={emp.id}
-                onClick={() => handleRowClick(emp)}
-                cursor="pointer"
-                _hover={{ opacity: 0.9 }}
-                style={{
-                  backgroundColor:
-                    emp.status === "승인"
-                      ? "#e6ffed"
-                      : emp.status === "거절"
-                      ? "#ffe6e6"
-                      : "#fffbe6",
-                }}
-              >
-                <Td onClick={(e) => e.stopPropagation()}>
+        <Box
+          mt={4}
+          borderWidth="1px"
+          borderStyle="solid"
+          borderColor="black"
+          borderRadius="12px"
+          overflow="hidden"
+          bg="white"
+        >
+          <Table variant="simple" tableLayout="fixed">
+            <Thead bg="gray.50">
+              <Tr>
+                <Th
+                  w="40px"
+                  minW="40px"
+                  maxW="40px"
+                  p="0"
+                  textAlign="center"
+                  {...headLine}
+                >
                   <Checkbox
-                    isChecked={selectedIds.has(emp.id)}
-                    onChange={(e) => toggleOne(emp.id, e.target.checked)}
+                    size="sm"
+                    isChecked={allChecked}
+                    isIndeterminate={isIndeterminate}
+                    onChange={(e) => toggleAll(e.target.checked)}
                     isDisabled={saving}
                   />
-                </Td>
+                </Th>
 
-                <Td>{emp.employeeNumber}</Td>
-                <Td>{emp.name}</Td>
-                <Td>
-                  <StatusTag status={emp.status} />
-                </Td>
-                <Td>{emp.date}</Td>
-                <Td>{emp.dayHM}</Td>
-                <Td>{emp.location}</Td>
+                <Th {...headLine}>사번</Th>
+                <Th {...headLine}>이름</Th>
+                <Th {...headLine}>상태</Th>
+                <Th {...headLine}>근무일</Th>
+                <Th {...headLine}>근무 시간</Th>
+                <Th {...headLine}>근무지</Th>
               </Tr>
-            ))}
-          </Tbody>
-        </Table>
+            </Thead>
+
+            <Tbody>
+              {tableRows.map((emp) => (
+                <Tr
+                  key={emp.id}
+                  onClick={() => handleRowClick(emp)}
+                  cursor="pointer"
+                  _hover={{ bg: "gray.50" }}
+                >
+                  <Td
+                    w="40px"
+                    minW="40px"
+                    maxW="40px"
+                    p="0"
+                    textAlign="center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Checkbox
+                      size="sm"
+                      isChecked={selectedIds.has(emp.id)}
+                      onChange={(e) => toggleOne(emp.id, e.target.checked)}
+                      isDisabled={saving}
+                    />
+                  </Td>
+
+                  <Td>{emp.employeeNumber}</Td>
+                  <Td>{emp.name}</Td>
+                  <Td>
+                    <StatusTag status={emp.status} />
+                  </Td>
+                  <Td>{emp.date}</Td>
+                  <Td>{emp.dayHM}</Td>
+                  <Td>{emp.location}</Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        </Box>
       )}
 
       {selectedEmployee && (
@@ -486,7 +535,7 @@ export default function ApprovePage() {
           <ModalContent>
             <ModalHeader>근무 상세 정보</ModalHeader>
             <ModalBody>
-              <Box border="1px solid #ddd" borderRadius="8px" p={4} mb={4} bg="#f9f9f9">
+              <Box border="1px solid #333" borderRadius="8px" p={4} mb={4} bg="#f9f9f9">
                 <Flex mb={2}>
                   <Box flex="1">
                     <strong>사번:</strong> {selectedEmployee.employeeNumber}

@@ -15,7 +15,6 @@ export const HandleLogin = async (id, password, admin_code) => {
     });
 
     const data = await response.json();
-    console.log("로그인 응답 전체 데이터:", data);
 
     if (data.success && admin_code) {
       // 🔥 access 토큰이 응답에 있다고 가정 (data.access)

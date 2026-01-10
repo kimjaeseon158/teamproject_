@@ -124,7 +124,8 @@ const AdminPage = () => {
       setchecked_Items({});
       alert("삭제가 완료되었습니다.");
     } else {
-      console.error("삭제 실패:", result.failedItems || result.error);
+      //보류
+      console.error("삭제 실패:", result.error);
     }
   };
 

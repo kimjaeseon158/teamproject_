@@ -26,7 +26,7 @@ export const updateEmployee = async (employee_Data, { toast } = {}) => {
     try {
       result = JSON.parse(text);
     } catch (e) {
-      console.error("업데이트 응답 JSON 파싱 실패:", e, text);
+      console.error("업데이트 응답 JSON 파싱 실패:", e);
       throw new Error("서버 응답 형식 오류");
     }
 

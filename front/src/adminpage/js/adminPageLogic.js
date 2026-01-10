@@ -44,7 +44,6 @@ export async function fetchFilteredPeople(queryParams, { toast } = {}) {
     }
 
     const result = await res.json();
-    console.log(result.data);
 
     if (Array.isArray(result?.data)) {
       return result.data;

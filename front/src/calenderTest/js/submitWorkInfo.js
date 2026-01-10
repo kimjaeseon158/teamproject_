@@ -122,7 +122,6 @@ const submitWorkInfo = async (
     details,
   };
 
-  console.log("📦 submitWorkInfo payload:", payload);
 
   const res = await fetchWithAuth(
     "/api/user_work_info/",

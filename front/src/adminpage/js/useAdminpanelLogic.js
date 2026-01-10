@@ -37,7 +37,6 @@ export function useAdminPanelLogic(initLocations, onClose) {
     };
     try {
       const result = await Panel_PostData(payLoad);
-      console.log("저장 성공", result);
       onClose();
     } catch (err) {
       alert("저장 중 오류 발생");

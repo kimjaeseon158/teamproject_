@@ -1,7 +1,6 @@
 export const Handle_User_Login = async (user_id, password) => {
   try {
     const loginData = { user_id, password };
-    console.log("사원 로그인 데이터:", loginData);
 
     const response = await fetch("/api/check_user_login/", {
       method: "POST",
@@ -15,11 +14,8 @@ export const Handle_User_Login = async (user_id, password) => {
       data = await response.json();
     } catch {
       const text = await response.text();
-      console.error("서버 응답이 JSON이 아닙니다:", text);
       return { success: false, message: "서버 오류" };
     }
-
-    console.log("사원 로그인 응답 데이터:", data);
 
     if (data.success) {
       return {

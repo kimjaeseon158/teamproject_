@@ -236,10 +236,6 @@ const Option = ({ selectedDate }) => {
         },
         {}
       );
-
-      console.log("서버 응답:", data);
-      console.log("보낸 payload:", newRecord);
-
       setRecords([...records, newRecord]);
 
       setLocation("");

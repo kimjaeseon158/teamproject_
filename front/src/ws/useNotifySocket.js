@@ -17,7 +17,7 @@ export function useNotifySocket({ token, onMessage }) {
       // 혹시 이전 소켓이 남아있다면 정리
       wsRef.current?.close();
 
-      const ws = new WebSocket("ws://127.0.0.1:8000/ws/notify/", ["jwt", token]);
+      const ws = new WebSocket("ws://localhost:8000/ws/requests/", ["header", token]);
       wsRef.current = ws;
 
       ws.onopen = () => {

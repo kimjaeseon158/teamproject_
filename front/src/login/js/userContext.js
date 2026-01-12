@@ -8,6 +8,10 @@ import React, {
 } from "react";
 import { fetchWithAuth } from "../../api/fetchWithAuth";
 
+// ✅ 추가
+import { getAccessToken } from "../../api/token";
+import { useNotifySocket } from "../../ws/useNotifySocket";
+
 const UserContext = createContext({
   user: null,
   setUser: () => {},
@@ -20,7 +24,6 @@ const UserContext = createContext({
 });
 
 export function UserProvider({ children }) {
-  // ✅ 스냅샷 로드 함수 (localStorage → 초기값)
   const loadSnapshot = () => {
     try {
       const raw = localStorage.getItem("user_snapshot");
@@ -32,17 +35,14 @@ export function UserProvider({ children }) {
 
   const snapshot = loadSnapshot();
 
-  // ✅ 처음엔 localStorage 스냅샷으로 user 세팅 (없으면 null)
   const [user, setUser] = useState(snapshot);
-
-  // ✅ snapshot에 employee_number가 있으면 그걸로 employeeNumber 초기값 설정
   const [employeeNumber, setEmployeeNumber] = useState(
     snapshot?.employee_number ?? null
   );
 
-  const [loading, setLoading] = useState(false); // 처음부터 false
+  const [loading, setLoading] = useState(false);
   const [userData, setUserData] = useState([]);
-  // ✅ user 바뀔 때 스냅샷 저장/삭제
+
   useEffect(() => {
     try {
       if (user) {
@@ -50,47 +50,28 @@ export function UserProvider({ children }) {
       } else {
         localStorage.removeItem("user_snapshot");
       }
-    } catch {
-      // localStorage 오류는 조용히 무시
-    }
+    } catch {}
   }, [user]);
 
-  /**
-   * 🔁 세션/로그인 상태 재검증
-   * - /api/check_user_login/ → { success, user_name, employee_number, access }
-   * - 필요 시 /api/check_admin_login/ 도 fallback
-   */
   const revalidate = useCallback(async () => {
     setLoading(true);
 
     try {
-      // 1) 일반 유저 로그인 확인
-      let res = await fetchWithAuth("/api/check_user_login/", {
-        method: "GET",
-      });
+      let res = await fetchWithAuth("/api/check_user_login/", { method: "GET" });
 
-      // 2) 안 되면 관리자 로그인 확인
       if (!res || !res.ok) {
-        res = await fetchWithAuth("/api/check_admin_login/", {
-          method: "GET",
-        });
+        res = await fetchWithAuth("/api/check_admin_login/", { method: "GET" });
       }
 
       if (res && res.ok) {
         const data = await res.json();
 
-
         let nextUser = null;
 
-        // ✅ 일반 유저: 지금 네가 보여준 형태
         if (data.employee_number) {
-          // ex) { success, user_name, employee_number, access }
           nextUser = data;
           setEmployeeNumber(data.employee_number);
-        }
-        // ✅ (옵션) 관리자 응답 형태가 있다면 여기서 처리
-        else if (data.admin_id) {
-          // ex) { success, admin_id, admin_name, ... }
+        } else if (data.admin_id) {
           nextUser = data;
           setEmployeeNumber(null);
         } else {
@@ -117,9 +98,16 @@ export function UserProvider({ children }) {
     }
   }, []);
 
-  // ✅ user/employeeNumber가 바뀔 때마다 상태 확인용 로그
-  useEffect(() => {
-  }, [user, employeeNumber]);
+  // ✅ 전역에서 WS 연결
+  const token = getAccessToken();
+
+  useNotifySocket({
+    token: user ? token : null,
+    onMessage: (msg) => {
+      console.log("WS 메시지:", msg);
+      // 예: msg.type === "approval_updated"면 목록 refetch 트리거 걸기
+    },
+  });
 
   const value = {
     user,

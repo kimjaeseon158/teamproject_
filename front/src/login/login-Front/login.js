@@ -16,6 +16,7 @@ import { validation } from "../js/validation";
 import { HandleLogin } from "../js/admin_login_info";   // 관리자 로그인 전용
 import { Handle_User_Login } from "../js/user_login_info"; // 사원 로그인 전용
 import UserContext from "../js/userContext";
+import { setAccessToken } from "../../api/token";
 
 const MotionBox = motion(Box);
 
@@ -79,7 +80,14 @@ const Login = () => {
       // 👉 관리자 로그인 API 호출
       loginsuccess = await HandleLogin(currentId, currentPassword, adminCode);
 
-      if (loginsuccess.success === "admin") {
+     if (loginsuccess.success === "admin") {
+        const access =
+          loginsuccess.access ||
+          loginsuccess.access_token ||
+          loginsuccess.accessToken;
+
+        if (access) setAccessToken(access);
+
         setFadeOut(true);
         setUser("admin");
         setUserData(loginsuccess.user_Data);

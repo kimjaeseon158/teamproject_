@@ -17,7 +17,7 @@ export function useNotifySocket({ token, onMessage }) {
       // 혹시 이전 소켓이 남아있다면 정리
       wsRef.current?.close();
 
-      const ws = new WebSocket("ws://localhost:8000/ws/requests/", ["header", token]);
+      const ws = new WebSocket("ws://localhost:8000/ws/requests/", [token]);
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -35,7 +35,7 @@ export function useNotifySocket({ token, onMessage }) {
 
       ws.onclose = () => {
         if (cancelled) return;
-        const delay = Math.min(1000 * 2 ** retryRef.current, 5000);
+        const delay = Math.min(3000 * 2 ** retryRef.current, 12000);
         retryRef.current += 1;
         timerRef.current = setTimeout(connect, delay);
       };

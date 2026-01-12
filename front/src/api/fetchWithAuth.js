@@ -3,7 +3,6 @@ import { getAccessToken, setAccessToken, clearAccessToken } from "./token";
 
 export async function fetchWithAuth(url, options = {}, { toast } = {}) {
   const token = getAccessToken();
-  console.log(token);
   const baseHeaders = {
     "Content-Type": "application/json",
     ...(options.headers || {}),

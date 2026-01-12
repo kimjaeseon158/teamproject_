@@ -1,29 +1,20 @@
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
 from rest_framework_simplejwt.tokens import AccessToken
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
+from myapp.models import Admin_Login_Info  # ✅ 관리자 모델 임포트
 
 
 @database_sync_to_async
 def get_user(token_key):
     try:
-        # 1. 토큰 해독 및 검증
+        print(f"--- 미들웨어에 도달한 토큰: {token_key[:20]}... ---")  # 첫 부분 출력
         access_token = AccessToken(token_key)
+        sub = access_token.get("sub")
+        print(f"--- 토큰 파싱 성공 (sub: {sub}) ---")
 
-        # 2. 'sub' 필드(사번) 추출
-        emp_num = access_token.get("sub")
-
-        if not emp_num:
-            return AnonymousUser()
-
-        # 3. 유저 조회 (employee_number 필드명 확인 완료)
-        return User.objects.get(employee_number=emp_num)
-
+        return Admin_Login_Info.objects.get(admin_id=sub)
     except Exception as e:
-        # 토큰 만료, 서명 불일치, 유저 없음 등 모든 예외 처리
-        print(f"WS Auth Error: {e}")
+        print(f"❌ WS Auth Error 상세: {e}")  # 에러 원인 구체적으로 출력
         return AnonymousUser()
 
 
@@ -32,12 +23,9 @@ class TokenAuthMiddleware:
         self.inner = inner
 
     async def __call__(self, scope, receive, send):
-        # 1. Subprotocols 리스트에서 토큰 추출
-        # 클라이언트가 [token] 식으로 보냈으므로 첫 번째 요소를 가져옵니다.
         subprotocols = scope.get("subprotocols", [])
-
         if subprotocols:
-            token_key = subprotocols[0]  # 첫 번째 인자가 토큰
+            token_key = subprotocols[0]
             scope["user"] = await get_user(token_key)
         else:
             scope["user"] = AnonymousUser()

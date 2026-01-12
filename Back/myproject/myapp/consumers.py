@@ -1,17 +1,20 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
-
+from django.contrib.auth.models import AnonymousUser  # ✅ 인증 확인을 위해 임포트
 
 class RequestMonitorConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         # 1. 미들웨어에서 인증된 유저 가져오기
-        self.user = self.scope["user"]
+        self.user = self.scope.get("user")
 
-        # 2. 토큰 인증 실패(AnonymousUser) 시 연결 거부
-        if self.user.is_anonymous:
+        # 2. ✅ 수정됨: Admin_Login_Info 객체에는 is_anonymous 속성이 없으므로 isinstance로 체크
+        if self.user is None or isinstance(self.user, AnonymousUser):
+            print("WS 연결 거부: 인증되지 않은 사용자")
             await self.close()
             return
+
+        print(f"WS 연결 수락: 관리자({self.user.admin_id}) 접속")
 
         self.group_name = "request_monitor_group"
         self.last_count = None  # 직전 카운트 상태 저장용
@@ -19,7 +22,7 @@ class RequestMonitorConsumer(AsyncWebsocketConsumer):
         # 3. 그룹 가입
         await self.channel_layer.group_add(self.group_name, self.channel_name)
 
-        # 4. ✅ Subprotocol 수락 (클라이언트가 보낸 토큰을 그대로 응답 헤더에 포함)
+        # 4. Subprotocol 수락 (클라이언트가 보낸 토큰을 그대로 응답 헤더에 포함)
         subprotocols = self.scope.get("subprotocols", [])
         if subprotocols:
             await self.accept(subprotocols[0])
@@ -46,6 +49,7 @@ class RequestMonitorConsumer(AsyncWebsocketConsumer):
         # 그룹 탈퇴
         if hasattr(self, "group_name"):
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
+            print(f"WS 연결 종료: 코드 {close_code}")
 
     # 스케줄러(operator.py)로부터 메시지를 받았을 때 실행
     async def count_update_message(self, event):

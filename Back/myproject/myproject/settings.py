@@ -20,6 +20,7 @@ DEBUG = True
 ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -28,6 +29,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "myapp",
+    "django_apscheduler"
 ]
 
 # --------------------------
@@ -114,11 +116,28 @@ DATABASES = {
     }
 }
 
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels_redis.core.RedisChannelLayer",
+#         "CONFIG": {
+#             "hosts": [("127.0.0.1", 6379)], # Redis 기본 포트
+#         },
+#     },
+# }
+
+CHANNEL_LAYERS = {
+    "default": {
+        # ✅ 별도의 Redis 서버 설치 없이 작동하는 방식
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
+}
+
 # --------------------------
 # Other
 # --------------------------
 ROOT_URLCONF = "myproject.urls"
 WSGI_APPLICATION = "myproject.wsgi.application"
+ASGI_APPLICATION = "myproject.asgi.application"
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Seoul"
 USE_I18N = True

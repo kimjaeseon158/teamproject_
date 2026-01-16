@@ -19,6 +19,7 @@ psycopg2-binary>=2.9.0
 # WebSocket 지원 (Channels)
 channels>=4.0.0
 channels-redis>=4.1.0
+daphne>=4.0.0
 
 # Google OAuth
 google-auth-oauthlib>=1.0.0
@@ -26,3 +27,9 @@ google-auth>=2.23.0
 
 # HTTP 요청
 requests>=2.31.0
+
+# 스케줄링 작업
+django-apscheduler>=0.6.2
+
+# 코드 포맷터
+black>=23.0.0

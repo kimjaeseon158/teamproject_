@@ -1,0 +1,28 @@
+# Django 기본 패키지
+Django>=4.2.0,<5.0.0
+
+# REST Framework
+djangorestframework>=3.14.0
+
+# JWT 인증
+djangorestframework-simplejwt>=5.2.0
+
+# CORS 처리
+django-cors-headers>=4.0.0
+
+# 환경 변수 관리
+django-environ>=0.11.0
+
+# PostgreSQL 데이터베이스
+psycopg2-binary>=2.9.0
+
+# WebSocket 지원 (Channels)
+channels>=4.0.0
+channels-redis>=4.1.0
+
+# Google OAuth
+google-auth-oauthlib>=1.0.0
+google-auth>=2.23.0
+
+# HTTP 요청
+requests>=2.31.0

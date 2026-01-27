@@ -18,7 +18,6 @@ class User_Login_Info(models.Model):
     
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['user_uuid'],       name='unique_user_uuid'),
             models.UniqueConstraint(fields=['user_id'],         name='unique_user_id'),
             models.UniqueConstraint(fields=['resident_number'], name='unique_resident_number'),
             models.UniqueConstraint(fields=['phone_number'],    name='unique_phone_number'),

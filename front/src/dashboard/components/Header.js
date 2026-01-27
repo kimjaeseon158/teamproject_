@@ -11,8 +11,6 @@ export default function Header() {
       admin_id: user, // 🔥 로그인한 관리자 아이디만 담기
     };
 
-    console.log("admin_logout DELETE 바디:", body);
-    console.log("admin_logout DELETE 바디(JSON):", JSON.stringify(body));
 
     try {
       const response = await fetch("/api/admin_logout/", {
@@ -23,10 +21,6 @@ export default function Header() {
         credentials: "include",
         body: JSON.stringify(body),
       });
-
-      console.log(body);
-      const text = await response.text();
-      console.log("admin_logout 응답:", text);
 
       if (!response.ok) {
         throw new Error("Logout failed");

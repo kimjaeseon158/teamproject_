@@ -461,7 +461,7 @@ export default function ApprovePage() {
           overflow="hidden"
           bg="white"
         >
-          <Table variant="simple" tableLayout="fixed">
+          <Table variant="simple"  sx={{ tableLayout: "fixed" }}>
             <Thead bg="gray.50">
               <Tr>
                 <Th

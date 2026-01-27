@@ -91,8 +91,6 @@ const Login = () => {
         setFadeOut(true);
         setUser("admin");
         setUserData(loginsuccess.user_Data);
-        sessionStorage.setItem("userRole", "admin");
-        sessionStorage.setItem("userData", JSON.stringify(loginsuccess.user_Data));
         setTimeout(() => navigate("/dashboard"), 500);
       } else {
         setAdminLoginError("아이디, 비밀번호 또는 인증코드가 틀렸습니다.");
@@ -106,9 +104,6 @@ const Login = () => {
         setFadeOut(true);
         setUser(loginsuccess.name);
         setEmployeeNumber(loginsuccess.employee_number);
-        sessionStorage.setItem("userRole", "user");
-        sessionStorage.setItem("userName", loginsuccess.name);
-        sessionStorage.setItem("employeeNumber", loginsuccess.employee_number);
         setTimeout(() => navigate("/data"), 500);
       } else {
         setUserLoginError("아이디 또는 비밀번호가 틀렸습니다.");

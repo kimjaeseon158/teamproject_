@@ -4,46 +4,67 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("myapp", "0009_remove_adminrefreshtoken_admin_and_more"),
+        ("myapp", "0010a_enable_pgcrypto"),
     ]
 
     operations = [
         migrations.RunSQL(
             sql=r"""
-            -- 1) user_uuid NULL 있으면 안 됨
-            UPDATE myapp_user_login_info
-            SET user_uuid = gen_random_uuid()
-            WHERE user_uuid IS NULL;
+              -- 1) user_uuid NULL 있으면 채우기 (pgcrypto 필요)
+              UPDATE myapp_user_login_info
+              SET user_uuid = gen_random_uuid()
+              WHERE user_uuid IS NULL;
 
-            -- 2) 중복 제거(혹시라도) - 중복 있으면 여기서 에러날 수 있음
-            -- (중복이 있다면 먼저 데이터를 정리해야 함)
+              -- 2) 현재 PK 제약조건 이름을 찾아서 drop (이름이 뭐든 상관없이)
+              DO $$
+              DECLARE
+                pkname text;
+              BEGIN
+                SELECT c.conname INTO pkname
+                FROM pg_constraint c
+                WHERE c.conrelid = 'myapp_user_login_info'::regclass
+                  AND c.contype = 'p'
+                LIMIT 1;
 
-            -- 3) 기존 PK(employee_number) 제거
-            ALTER TABLE myapp_user_login_info
-            DROP CONSTRAINT myapp_user_login_info_pkey;
+                IF pkname IS NOT NULL THEN
+                  EXECUTE format('ALTER TABLE myapp_user_login_info DROP CONSTRAINT %I', pkname);
+                END IF;
+              END$$;
 
-            -- 4) user_uuid를 PK로 설정
-            ALTER TABLE myapp_user_login_info
-            ADD CONSTRAINT myapp_user_login_info_pkey PRIMARY KEY (user_uuid);
+              -- 3) PK가 없다면 user_uuid를 PK로 설정 (이미 PK면 건드리지 않음)
+              DO $$
+              BEGIN
+                IF NOT EXISTS (
+                  SELECT 1 FROM pg_constraint
+                  WHERE conrelid = 'myapp_user_login_info'::regclass
+                    AND contype = 'p'
+                ) THEN
+                  ALTER TABLE myapp_user_login_info
+                  ADD CONSTRAINT myapp_user_login_info_pkey PRIMARY KEY (user_uuid);
+                END IF;
+              END$$;
 
-            -- 5) employee_number는 UNIQUE로 남김(원하면 유지)
-            DO $$
-            BEGIN
-              IF NOT EXISTS (
-                SELECT 1 FROM pg_constraint
-                WHERE conname = 'myapp_user_login_info_employee_number_key'
-              ) THEN
-                ALTER TABLE myapp_user_login_info
-                ADD CONSTRAINT myapp_user_login_info_employee_number_key UNIQUE (employee_number);
-              END IF;
-            END$$;
-            """,
-            reverse_sql=r"""
-            ALTER TABLE myapp_user_login_info
-            DROP CONSTRAINT myapp_user_login_info_pkey;
-
-            ALTER TABLE myapp_user_login_info
-            ADD CONSTRAINT myapp_user_login_info_pkey PRIMARY KEY (employee_number);
-            """,
+              -- 4) employee_number UNIQUE(원하면 유지)
+              DO $$
+              BEGIN
+                IF EXISTS (
+                  SELECT 1
+                  FROM information_schema.columns
+                  WHERE table_name='myapp_user_login_info'
+                    AND column_name='employee_number'
+                ) THEN
+                  IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint
+                    WHERE conname = 'myapp_user_login_info_employee_number_key'
+                  ) THEN
+                    ALTER TABLE myapp_user_login_info
+                    ADD CONSTRAINT myapp_user_login_info_employee_number_key UNIQUE (employee_number);
+                  END IF;
+                END IF;
+              END$$;
+              """,
+              reverse_sql=r"""
+              -- 롤백은 현실적으로 PK/FK 대수술이라 안전하게 noop 권장
+              """,
         ),
     ]

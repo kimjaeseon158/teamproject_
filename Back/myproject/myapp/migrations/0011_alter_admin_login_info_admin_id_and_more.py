@@ -7,7 +7,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("myapp", "0010_switch_user_pk_to_uuid"),
+        ("myapp", "0010b_fill_admin_uuid"),
     ]
 
     operations = [

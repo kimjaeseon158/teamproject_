@@ -210,12 +210,12 @@ class CheckAdminLoginAPIView(APIView):
         admin_code = request.data.get("admin_code")
 
         # 0) 크리덴셜 검증
-        success = check_admin_credentials(admin_id, password, admin_code)
+        success, admin_uuid = check_admin_credentials(admin_id, password, admin_code)
         if not success:
             return Response({"success": False}, status=status.HTTP_400_BAD_REQUEST)
 
         # 1) 관리자 인스턴스 조회
-        admin_instance = Admin_Login_Info.objects.get(admin_id=admin_id)
+        admin_instance = Admin_Login_Info.objects.get(admin_uuid=admin_uuid)
 
         # 2) JWT 생성 (원하는 클레임 포함)
         refresh = CustomRefreshToken.for_subject(
@@ -238,8 +238,9 @@ class CheckAdminLoginAPIView(APIView):
         # 4) 응답 구성: access는 body, refresh는 HttpOnly 쿠키 ONLY
         response = Response(
             {
-                "success": True,
-                "access": str(access),
+                "success"    : True,
+                "admin_uuid" : admin_uuid,
+                "access"     : str(access),
             }
         )
 
@@ -315,6 +316,7 @@ class CheckUserLoginAPIView(APIView):
             {
                 "success": True,
                 "user_name": user_name,
+                "user_uuid": user_uuid,
                 "access": str(access),
             }
         )

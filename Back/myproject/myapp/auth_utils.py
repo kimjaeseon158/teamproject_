@@ -9,7 +9,7 @@ def check_user_credentials(user_id, password):
     try:
         user = User_Login_Info.objects.get(user_id=user_id)
         if check_password(password, user.password):  # 평문 vs 해시 비교
-            return True, user.user_name, user.employee_number
+            return True, user.user_name, user.user_uuid
     except User_Login_Info.DoesNotExist:
         pass
     return False, None, None
@@ -32,18 +32,18 @@ def hash_refresh(raw: str) -> str:
 
 
 # REFRESH_TOKEN 
-def save_or_update_admin_refresh_token(admin_id: str, raw_refresh_token: str, lifetime_days: int = 7):
+def save_or_update_admin_refresh_token(admin_uuid: str, raw_refresh_token: str, lifetime_days: int = 7):
     """
-    admin_id(FK)로 연결된 기존 리프레시 토큰이 있으면 업데이트,
+    admin_uuid(FK)로 연결된 기존 리프레시 토큰이 있으면 업데이트,
     없으면 새로 생성.
     """
-    admin_instance = Admin_Login_Info.objects.get(admin_id=admin_id)
+    admin_instance = Admin_Login_Info.objects.get(admin_uuid=admin_uuid)
 
     hashed_token = hash_refresh(raw_refresh_token)
     expires_at = timezone.now() + timedelta(days=lifetime_days)
 
     token_obj, _created = AdminRefreshToken.objects.update_or_create(
-        admin=admin_instance,
+        admin_uuid=admin_instance,
         defaults={
             "hashed_token": hashed_token,
             "expires_at": expires_at,
@@ -51,12 +51,12 @@ def save_or_update_admin_refresh_token(admin_id: str, raw_refresh_token: str, li
     )
     return token_obj
 
-def save_or_update_user_refresh_token(employee_number: str, raw_refresh_token: str, lifetime_days: int = 7):
+def save_or_update_user_refresh_token(user_uuid: str, raw_refresh_token: str, lifetime_days: int = 7):
     """
-    employee_number(FK) 기준으로 기존 토큰이 있으면 업데이트,
+    user_uuid(FK) 기준으로 기존 토큰이 있으면 업데이트,
     없으면 새로 생성하는 함수
     """
-    user_instance = User_Login_Info.objects.get(employee_number=employee_number)
+    user_instance = User_Login_Info.objects.get(user_uuid=user_uuid)
     hashed_token = hash_refresh(raw_refresh_token)
     expires_at = timezone.now() + timedelta(days=lifetime_days)
 

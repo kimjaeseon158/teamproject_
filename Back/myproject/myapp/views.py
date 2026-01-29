@@ -219,7 +219,7 @@ class CheckAdminLoginAPIView(APIView):
 
         # 2) JWT 생성 (원하는 클레임 포함)
         refresh = CustomRefreshToken.for_subject(
-            subject_value=admin_instance.admin_id,
+            subject_value=str(admin_instance.admin_uuid),   
             admin_name=admin_instance.admin_name,
             role="admin",
         )
@@ -230,7 +230,7 @@ class CheckAdminLoginAPIView(APIView):
         #    기존 것이 있으면 hashed_token, expires_at 업데이트
         #    없으면 새로 생성
         save_or_update_admin_refresh_token(
-            admin_id=admin_instance.admin_id,
+            admin_uuid=str(admin_instance.admin_uuid),   
             raw_refresh_token=raw_refresh_token,
             lifetime_days=7,
         )
@@ -288,15 +288,15 @@ class CheckUserLoginAPIView(APIView):
         password = request.data.get("password")
 
         # (1) 로그인 검증
-        success, user_name, employee_number = check_user_credentials(user_id, password)
+        success, user_name, user_uuid  = check_user_credentials(user_id, password)
         if not success:
             return Response({"success": False}, status=status.HTTP_400_BAD_REQUEST)
 
-        user_instance = User_Login_Info.objects.get(employee_number=employee_number)
+        user_instance = User_Login_Info.objects.get(user_uuid =user_uuid )
 
         # (2) JWT 생성
         refresh = CustomRefreshToken.for_subject(
-            subject_value=employee_number,
+            subject_value=str(user_instance.user_uuid) ,
             user_name=user_name,
             role="user",
         )
@@ -305,7 +305,7 @@ class CheckUserLoginAPIView(APIView):
 
         # (3) Refresh 토큰 저장 (기존 있으면 업데이트)
         save_or_update_user_refresh_token(
-            employee_number=employee_number,
+            user_uuid=str(user_instance.user_uuid),
             raw_refresh_token=raw_refresh_token,
             lifetime_days=7,
         )
@@ -315,7 +315,6 @@ class CheckUserLoginAPIView(APIView):
             {
                 "success": True,
                 "user_name": user_name,
-                "employee_number": employee_number,
                 "access": str(access),
             }
         )

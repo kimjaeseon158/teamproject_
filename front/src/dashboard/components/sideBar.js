@@ -1,35 +1,52 @@
+// src/dashboard/components/Sidebar.jsx
 import { Box, VStack, Link, useToast } from "@chakra-ui/react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
-// ✅ 경로는 프로젝트 구조에 맞게 조정 (지금 기준: src/dashboard/components/Sidebar.jsx)
 import { useUser } from "../../login/js/userContext";
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
-  const { user, loading } = useUser(); // ✅ 로그인/인증 상태
 
-  // 현재 경로가 Total Sales 관련이면 하위 메뉴 열기
-  const isTotalSalesActive = location.pathname.startsWith("/dashboard/total-sales");
+  // 🔑 인증 기준: userUuid
+  const { userUuid, loading } = useUser();
+
+  // Total Sales 하위 메뉴 열림 여부
+  const isTotalSalesActive = location.pathname.startsWith(
+    "/dashboard/total-sales"
+  );
 
   const activeStyle = (isActive) => ({
     fontWeight: isActive ? "bold" : "normal",
     color: isActive ? "teal" : "white",
   });
 
-  // ✅ 보호된 페이지 이동 공통 처리 함수
+  // ✅ 보호된 이동 처리 (최종 정답)
   const handleProtectedNav = (path) => {
-    // 아직 인증 확인 중이거나, user 정보가 없으면 막기
-    if (loading || !user) {
+    // 1️⃣ 아직 부트스트랩 중
+    if (loading) {
       toast({
         title: "로그인 정보 확인 중입니다.",
-        description: "잠시 후 다시 시도해주세요.",
         status: "info",
-        duration: 2500,
+        duration: 2000,
         isClosable: true,
       });
       return;
     }
+
+    // 2️⃣ 인증 안 됨
+    if (!userUuid) {
+      toast({
+        title: "로그인이 필요합니다.",
+        status: "warning",
+        duration: 2000,
+        isClosable: true,
+      });
+      navigate("/");
+      return;
+    }
+
+    // 3️⃣ 통과
     navigate(path);
   };
 
@@ -42,7 +59,7 @@ export default function Sidebar() {
       display="flex"
       flexDirection="column"
     >
-      {/* 로고/타이틀 클릭 → 대시보드 이동도 보호 */}
+      {/* 로고 */}
       <Box
         cursor="pointer"
         fontSize="2xl"
@@ -60,8 +77,8 @@ export default function Sidebar() {
           to="/dashboard"
           end
           onClick={(e) => {
-            e.preventDefault();               // NavLink 기본 이동 막고
-            handleProtectedNav("/dashboard"); // 우리가 직접 처리
+            e.preventDefault();
+            handleProtectedNav("/dashboard");
           }}
           style={({ isActive }) => activeStyle(isActive)}
         >
@@ -107,9 +124,8 @@ export default function Sidebar() {
           Daily Pay
         </Link>
 
-        {/* Total Sales 그룹 */}
+        {/* Total Sales */}
         <Box>
-          {/* 상위 Total Sales 제목 클릭 */}
           <Box
             cursor="pointer"
             fontWeight={isTotalSalesActive ? "bold" : "normal"}
@@ -133,6 +149,7 @@ export default function Sidebar() {
               >
                 Total page
               </Link>
+
               <Link
                 as={NavLink}
                 to="/dashboard/total-sales/company"
@@ -144,6 +161,7 @@ export default function Sidebar() {
               >
                 total_company
               </Link>
+
               <Link
                 as={NavLink}
                 to="/dashboard/total-sales/expense"

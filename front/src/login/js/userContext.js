@@ -18,9 +18,9 @@ export function UserProvider({ children }) {
   const [userUuid, setUserUuid] = useState(null);
 
   /**
-   * ✅ 새로고침 / 첫 진입 시
-   * - refresh_token → access 재발급
-   * - JWT payload에서 uuid 추출
+   * ✅ 앱 최초 진입 / 새로고침 시
+   * 1) refresh_token → access 재발급
+   * 2) access JWT에서 uuid 추출
    */
   useEffect(() => {
     (async () => {
@@ -48,21 +48,17 @@ export function UserProvider({ children }) {
           return;
         }
 
-        // 1️⃣ access 저장 (메모리)
+        // ✅ access token 메모리 저장
         setAccessToken(access);
 
-        // 2️⃣ JWT payload 파싱해서 uuid 추출
-        const payload = JSON.parse(
-          atob(access.split(".")[1])
-        );
-
+        // ✅ JWT payload 파싱 → uuid 추출
+        const payload = JSON.parse(atob(access.split(".")[1]));
         const uuid = payload?.sub ?? null;
 
         console.log("✅ [CTX] uuid from token:", uuid);
-
         setUserUuid(uuid);
-      } catch (e) {
-        console.error("❌ refresh bootstrap failed:", e);
+      } catch (err) {
+        console.error("❌ refresh bootstrap failed:", err);
         clearAccessToken();
         setUserUuid(null);
       } finally {
@@ -72,7 +68,7 @@ export function UserProvider({ children }) {
   }, []);
 
   /**
-   * ✅ WebSocket 연결
+   * ✅ WebSocket 연결 (uuid + token)
    */
   const token = getAccessToken();
 
@@ -85,12 +81,7 @@ export function UserProvider({ children }) {
   });
 
   return (
-    <UserContext.Provider
-      value={{
-        loading,
-        userUuid,
-      }}
-    >
+    <UserContext.Provider value={{ loading, userUuid }}>
       {children}
     </UserContext.Provider>
   );

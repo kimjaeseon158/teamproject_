@@ -12,7 +12,7 @@ def get_user(token_key):
         sub = access_token.get("sub")
         print(f"--- 토큰 파싱 성공 (sub: {sub}) ---")
 
-        return Admin_Login_Info.objects.get(admin_id=sub)
+        return Admin_Login_Info.objects.get(admin_uuid=sub)
     except Exception as e:
         print(f"❌ WS Auth Error 상세: {e}")  # 에러 원인 구체적으로 출력
         return AnonymousUser()

@@ -12,6 +12,7 @@
 /build
 
 git rm --cached node_modules
+.vscode/
 
 # misc
 .DS_Store

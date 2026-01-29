@@ -61,7 +61,7 @@ def save_or_update_user_refresh_token(user_uuid: str, raw_refresh_token: str, li
     expires_at = timezone.now() + timedelta(days=lifetime_days)
 
     token_obj, created = UserRefreshToken.objects.update_or_create(
-        user=user_instance,  # FK 기준
+        user_uuid=user_instance,  # FK 기준
         defaults={
             "hashed_token": hashed_token,
             "expires_at": expires_at,

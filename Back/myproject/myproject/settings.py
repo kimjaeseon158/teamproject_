@@ -116,21 +116,31 @@ DATABASES = {
     }
 }
 
-# CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "channels_redis.core.RedisChannelLayer",
-#         "CONFIG": {
-#             "hosts": [("127.0.0.1", 6379)], # Redis 기본 포트
-#         },
-#     },
-# }
-
 CHANNEL_LAYERS = {
     "default": {
-        # ✅ 별도의 Redis 서버 설치 없이 작동하는 방식
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)], # Redis 기본 포트
+        },
     },
 }
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+# CHANNEL_LAYERS = {
+#     "default": {
+#         # ✅ 별도의 Redis 서버 설치 없이 작동하는 방식
+#         "BACKEND": "channels.layers.InMemoryChannelLayer",
+#     },
+# }
 
 # --------------------------
 # Other

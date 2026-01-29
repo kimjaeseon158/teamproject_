@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.contrib.auth.hashers import make_password
 from .unique_serial import generate_unique_serial
@@ -6,9 +7,9 @@ from .unique_serial import generate_unique_serial
 # fmt:off
 # User 관련 테이블
 class User_Login_Info(models.Model):
-    employee_number = models.CharField(max_length=50, primary_key=True)
+    user_uuid       = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user_name       = models.CharField(max_length=50, default='홍길동')   # 유저 이름
-    user_id         = models.CharField(max_length=50)
+    user_id         = models.CharField(max_length=50,unique=True)
     password        = models.CharField(max_length=100, default='1234')
     phone_number    = models.CharField(max_length=20)
     mobile_carrier  = models.CharField(max_length=20)
@@ -17,7 +18,6 @@ class User_Login_Info(models.Model):
     
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['employee_number'], name='unique_employee_number'),
             models.UniqueConstraint(fields=['user_id'],         name='unique_user_id'),
             models.UniqueConstraint(fields=['resident_number'], name='unique_resident_number'),
             models.UniqueConstraint(fields=['phone_number'],    name='unique_phone_number'),
@@ -39,7 +39,13 @@ class User_Login_Info(models.Model):
         return True
 
 class User_WorkDay(models.Model):
-    employee_number = models.ForeignKey(User_Login_Info, on_delete=models.CASCADE)  # 사원번호 (FK)
+    user_uuid = models.ForeignKey(
+        User_Login_Info,
+        to_field="user_uuid",        # UUID 컬럼을 참조
+        on_delete=models.CASCADE,
+        null=False,                   
+        related_name="workdays",
+    )
     user_name       = models.CharField(max_length=50)                               # 유저 이름
     work_date       = models.DateField()                                            # 근무 날짜
     work_start      = models.DateTimeField()                                        # 작업 시작 시간 (시간만)
@@ -50,8 +56,8 @@ class User_WorkDay(models.Model):
 
     # FK값 -> PK값 파싱 클래스 단순화
     @property
-    def employee_number_str(self):
-        return self.employee_number.employee_number
+    def user_uuid_str(self):
+        return str(self.user_uuid_id)
 
 
 class User_WorkDetail(models.Model):
@@ -69,7 +75,13 @@ class User_WorkDetail(models.Model):
 
 
 class User_Work_Pay(models.Model):
-    employee_number = models.ForeignKey(User_Login_Info, on_delete=models.CASCADE)  # FK 선언
+    user_uuid = models.ForeignKey(
+        User_Login_Info,
+        to_field="user_uuid",        # UUID 컬럼을 참조
+        on_delete=models.CASCADE,
+        null=False,                   
+        related_name="work_pays",
+    )
     company         = models.CharField(max_length=50)                               # 회사명
     daily_wages     = models.IntegerField()                                         # 일급
 
@@ -78,8 +90,9 @@ class User_Work_Pay(models.Model):
 # Admin 관련 테이블 
 
 class Admin_Login_Info(models.Model):
+    admin_uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     admin_name = models.CharField(max_length=50)                         # 관리자 이름
-    admin_id   = models.CharField(max_length=50, primary_key=True)       # 관리자 ID
+    admin_id   = models.CharField(max_length=50, unique=True)            # 관리자 ID
     password   = models.CharField(max_length=100)                        # 관리자 비밀번호
     admin_code = models.CharField(max_length=20)                         # 설정한 인증번호
 
@@ -130,12 +143,14 @@ class Expense(models.Model):
 
 class AdminRefreshToken(models.Model):
     """관리자 전용 리프레시 토큰"""
-    admin = models.ForeignKey(
-        Admin_Login_Info, 
+
+    admin_uuid = models.ForeignKey(
+        Admin_Login_Info,
+        to_field="admin_uuid",
         on_delete=models.CASCADE,
-        related_name="refresh_tokens"
+        null=False,   # 처음엔 null 허용
+        related_name="refresh_tokens",
     )
-    
     hashed_token = models.CharField(max_length=255, unique=True, editable=False)
     expires_at   = models.DateTimeField()
     created_at   = models.DateTimeField(auto_now_add=True)
@@ -146,11 +161,12 @@ class AdminRefreshToken(models.Model):
 
 class UserRefreshToken(models.Model):
     """일반 유저(Employee) 전용 리프레시 토큰"""
-    user = models.ForeignKey(
+    user_uuid = models.ForeignKey(
         User_Login_Info,
-        to_field='employee_number',   #  employee_number 참조
+        to_field="user_uuid",        # UUID 컬럼을 참조
         on_delete=models.CASCADE,
-        related_name='refresh_tokens'
+        null=False,                   # 처음엔 null 허용 (데이터 이관 때문에)
+        related_name="refresh_tokens",
     )
     
     hashed_token = models.CharField(max_length=255, unique=True, editable=False)

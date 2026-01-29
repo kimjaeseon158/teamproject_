@@ -21,7 +21,7 @@ import { setAccessToken } from "../../api/token";
 const MotionBox = motion(Box);
 
 const Login = () => {
-  const { setUser, setEmployeeNumber, setUserData } = useContext(UserContext);
+  const {  } = useContext(UserContext);
   const navigate = useNavigate();
 
   const [adminId, setAdminId] = useState("");
@@ -59,7 +59,6 @@ const Login = () => {
     const currentId = role === "admin" ? adminId : userId;
     const currentPassword = role === "admin" ? adminPassword : userPassword;
 
-    // 공통 유효성 검사
     const isValid = await validation({
       id: currentId,
       setId: role === "admin" ? setAdminId : setUserId,
@@ -77,39 +76,38 @@ const Login = () => {
     let loginsuccess;
 
     if (role === "admin") {
-      // 👉 관리자 로그인 API 호출
       loginsuccess = await HandleLogin(currentId, currentPassword, adminCode);
 
-     if (loginsuccess.success === "admin") {
-        const access =
-          loginsuccess.access ||
-          loginsuccess.access_token ||
-          loginsuccess.accessToken;
-
-        if (access) setAccessToken(access);
+      if (loginsuccess?.success === "admin") {
+        if (loginsuccess.access) {
+          setAccessToken(loginsuccess.access);
+        }
 
         setFadeOut(true);
-        setUser("admin");
-        setUserData(loginsuccess.user_Data);
-        setTimeout(() => navigate("/dashboard"), 500);
-      } else {
-        setAdminLoginError("아이디, 비밀번호 또는 인증코드가 틀렸습니다.");
+        navigate("/dashboard");
+        return;
       }
 
-    } else {
-      // 👉 사원 로그인 API 호출
-      loginsuccess = await Handle_User_Login(currentId, currentPassword);
-
-      if (loginsuccess.success === "user") {
-        setFadeOut(true);
-        setUser(loginsuccess.name);
-        setEmployeeNumber(loginsuccess.employee_number);
-        setTimeout(() => navigate("/data"), 500);
-      } else {
-        setUserLoginError("아이디 또는 비밀번호가 틀렸습니다.");
-      }
+      setAdminLoginError("아이디, 비밀번호 또는 인증코드가 틀렸습니다.");
+      return;
     }
+
+    // user 로그인
+    loginsuccess = await Handle_User_Login(currentId, currentPassword);
+
+    if (loginsuccess?.success === "user") {
+      if (loginsuccess.access) {
+        setAccessToken(loginsuccess.access);
+      }
+
+      setFadeOut(true);
+      navigate("/data");
+      return;
+    }
+
+    setUserLoginError("아이디 또는 비밀번호가 틀렸습니다.");
   };
+
 
   const preventSpace = (e) => {
     if (e.key === " ") e.preventDefault();

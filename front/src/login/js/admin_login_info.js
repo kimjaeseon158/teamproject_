@@ -15,7 +15,7 @@ export const HandleLogin = async (id, password, admin_code) => {
     });
 
     const data = await response.json();
-
+    console.log(data);
     if (data.success && admin_code) {
       // 🔥 access 토큰이 응답에 있다고 가정 (data.access)
       if (data.access) {
@@ -24,7 +24,7 @@ export const HandleLogin = async (id, password, admin_code) => {
 
       return {
         success: "admin",
-        user_Data: data?.user_data ?? null,
+        user_Data: data?.admin_uuid ?? null,
       };
     } else {
       return {

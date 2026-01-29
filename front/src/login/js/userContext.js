@@ -157,9 +157,6 @@ export function UserProvider({ children }) {
 
   useNotifySocket({
     token: !loading && user && token ? token : null,
-    onMessage: (msg) => {
-      console.log("WS 메시지:", msg);
-    },
   });
 
   const value = {

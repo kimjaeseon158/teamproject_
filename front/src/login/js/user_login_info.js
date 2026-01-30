@@ -1,33 +1,46 @@
+import { setAccessToken } from "../../api/token";
+
 export const Handle_User_Login = async (user_id, password) => {
   try {
-    const loginData = { user_id, password };
-
     const response = await fetch("/api/check_user_login/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(loginData),
       credentials: "include",
+      body: JSON.stringify({
+        user_id,
+        password,
+      }),
     });
 
-    let data;  
+    let data;
     try {
       data = await response.json();
     } catch {
-      const text = await response.text();
-      return { success: false, message: "서버 오류" };
+      return { success: false, message: "서버 응답 오류" };
     }
 
-    if (data.success) {
-      return {
-        success: "user",
-        employee_number: data?.employee_number ?? null,
-        name: data?.user_name ?? null,
-      };
-    } else {
+    if (!response.ok || !data?.success) {
       return { success: false, message: "로그인 실패" };
     }
+    // 🔥 핵심: access token 즉시 저장
+    if (data.access) {
+      setAccessToken(data.access);
+    } else {
+      console.error("❌ access token missing");
+      return { success: false, message: "토큰 없음" };
+    }
+
+    return {
+      success: true,
+      role: "user",
+      name: data?.user_name ?? null,
+      data: data?.user_uuid ?? null,
+    };
   } catch (error) {
     console.error("서버 통신 오류:", error);
-    return { success: false, message: "서버와의 통신 중 오류가 발생했습니다." };
+    return {
+      success: false,
+      message: "서버와의 통신 중 오류가 발생했습니다.",
+    };
   }
 };

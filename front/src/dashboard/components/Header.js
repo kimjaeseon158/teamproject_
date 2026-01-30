@@ -1,55 +1,61 @@
 import { Flex, Box, Button } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../login/js/userContext";
+import { clearAccessToken } from "../../api/token";
+import { Alarm } from "../../aralm";
 
 export default function Header() {
   const navigate = useNavigate();
-  const { user } = useUser(); // 여기서 user.admin_id 가 "admin" 이런 값이라고 가정
+  const { userUuid } = useUser();
 
   const handleLogout = async () => {
-    const body = {
-      admin_id: user, // 🔥 로그인한 관리자 아이디만 담기
-    };
-
-
     try {
-      const response = await fetch("/api/admin_logout/", {
+      await fetch("/api/admin_logout/", {
         method: "DELETE",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          uuid: userUuid,
+        }),
       });
-
-      if (!response.ok) {
-        throw new Error("Logout failed");
-      }
-
+    } catch (err) {
+      console.error("logout error", err);
+    } finally {
+      clearAccessToken();
       navigate("/");
-    } catch (error) {
-      console.error(error);
-      alert("Logout error");
     }
   };
 
   return (
     <Flex
       as="header"
-      p="4"
+      px="4"
+      h="60px"
       bg="white"
-      borderBottom="1px"
+      borderBottom="1px solid"
       borderColor="gray.200"
-      justify="space-between"
       align="center"
+      justify="space-between"
     >
+      {/* 왼쪽 */}
       <Box fontWeight="bold" fontSize="lg">
-        Welcome, {user?.admin_id || "Admin"}
+        Dashboard
       </Box>
 
-      <Button colorScheme="teal" size="sm" onClick={handleLogout}>
-        Logout
-      </Button>
+      {/* 오른쪽 */}
+      <Flex align="center" gap="3">
+        <Alarm />
+        <Button
+          colorScheme="teal"
+          size="sm"
+          onClick={handleLogout}
+          isDisabled={!userUuid}
+        >
+          Logout
+        </Button>
+      </Flex>
     </Flex>
   );
 }

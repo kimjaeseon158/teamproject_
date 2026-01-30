@@ -7,7 +7,7 @@ import Calendar from "./calenderTest/calenderFront/calender";
 import AdminPage from "./adminpage/adminpage-Front/adminPage";
 import Dashboard from "./dashboard/dashboard";
 import AdminInformation from "./adminpage/adminpage-Front/adminInformation";
-
+import { AlarmProvider } from "./aralm";
 import reportWebVitals from "./reportWebVitals";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
@@ -25,8 +25,9 @@ import GoogleCallbackDone from "./dashboard/js/GoogleCallbackDone";
 
 const Root = () => {
   return (
-    <ChakraProvider>
-      <UserProvider>
+   <ChakraProvider>
+    <UserProvider>
+      <AlarmProvider>
         <BrowserRouter basename="/">
           <Routes>
             {/* 로그인 페이지 */}
@@ -65,7 +66,7 @@ const Root = () => {
               }
             />
 
-            {/* (선택) 어드민 페이지 라우트가 필요하면 여기도 보호 */}
+            {/* 어드민 페이지 */}
             <Route
               path="/adminpage/*"
               element={
@@ -76,8 +77,9 @@ const Root = () => {
             />
           </Routes>
         </BrowserRouter>
-      </UserProvider>
-    </ChakraProvider>
+      </AlarmProvider>
+    </UserProvider>
+  </ChakraProvider>
   );
 };
 

@@ -5,27 +5,35 @@ import React, {
   useContext,
 } from "react";
 
-import { getAccessToken, setAccessToken, clearAccessToken } from "../../api/token";
+import {
+  getAccessToken,
+  setAccessToken,
+  clearAccessToken,
+} from "../../api/token";
 import { useNotifySocket } from "../../ws/useNotifySocket";
 
 const UserContext = createContext({
   loading: true,
   userUuid: null,
+  role: null,
+  resetUser: () => {},
 });
 
 export function UserProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [userUuid, setUserUuid] = useState(null);
+  const [role, setRole] = useState(null);
 
-  /**
-   * ✅ 앱 최초 진입 / 새로고침 시
-   * 1) refresh_token → access 재발급
-   * 2) access JWT에서 uuid 추출
-   */
+  const resetUser = () => {
+    setUserUuid(null);
+    setRole(null);
+    setLoading(false);
+  };
+
+  // ✅ refresh → access → uuid + role 추출
   useEffect(() => {
     (async () => {
       setLoading(true);
-
       try {
         const res = await fetch("/api/refresh_token/", {
           method: "POST",
@@ -34,7 +42,7 @@ export function UserProvider({ children }) {
 
         if (!res.ok) {
           clearAccessToken();
-          setUserUuid(null);
+          resetUser();
           return;
         }
 
@@ -44,44 +52,51 @@ export function UserProvider({ children }) {
 
         if (!access) {
           clearAccessToken();
-          setUserUuid(null);
+          resetUser();
           return;
         }
 
-        // ✅ access token 메모리 저장
         setAccessToken(access);
 
-        // ✅ JWT payload 파싱 → uuid 추출
         const payload = JSON.parse(atob(access.split(".")[1]));
         const uuid = payload?.sub ?? null;
+        const roleFromToken = payload?.role ?? null;
 
-        console.log("✅ [CTX] uuid from token:", uuid);
+        console.log("✅ [CTX INIT]", { uuid, roleFromToken });
+
         setUserUuid(uuid);
+        setRole(roleFromToken);
       } catch (err) {
         console.error("❌ refresh bootstrap failed:", err);
         clearAccessToken();
-        setUserUuid(null);
+        resetUser();
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  /**
-   * ✅ WebSocket 연결 (uuid + token)
-   */
+  // ✅ WS 연결 (role 기준 URL 분기)
   const token = getAccessToken();
 
   useNotifySocket({
-    token: !loading && token && userUuid ? token : null,
+    token: !loading && token && userUuid && role ? token : null,
     uuid: userUuid,
+    role,
     onMessage: (data) => {
       console.log("📩 WS MESSAGE:", data);
     },
   });
 
   return (
-    <UserContext.Provider value={{ loading, userUuid }}>
+    <UserContext.Provider
+      value={{
+        loading,
+        userUuid,
+        role,       // 🔥 반드시 전달
+        resetUser,
+      }}
+    >
       {children}
     </UserContext.Provider>
   );

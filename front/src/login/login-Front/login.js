@@ -82,7 +82,6 @@ const Login = () => {
         if (loginsuccess.access) {
           setAccessToken(loginsuccess.access);
         }
-
         setFadeOut(true);
         navigate("/dashboard");
         return;
@@ -95,11 +94,10 @@ const Login = () => {
     // user 로그인
     loginsuccess = await Handle_User_Login(currentId, currentPassword);
 
-    if (loginsuccess?.success === "user") {
+    if (loginsuccess?.success === true) {
       if (loginsuccess.access) {
         setAccessToken(loginsuccess.access);
       }
-
       setFadeOut(true);
       navigate("/data");
       return;

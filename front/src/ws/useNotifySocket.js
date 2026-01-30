@@ -1,22 +1,26 @@
 import { useEffect, useRef } from "react";
 
-export function useNotifySocket({ token, uuid, onMessage }) {
+export function useNotifySocket({ token, uuid, role, onMessage }) {
   const wsRef = useRef(null);
   const retryRef = useRef(0);
   const timerRef = useRef(null);
-  console.log(token, uuid)
+
   const onMessageRef = useRef(onMessage);
   useEffect(() => {
     onMessageRef.current = onMessage;
   }, [onMessage]);
-  console.log(token, uuid)
+
   useEffect(() => {
-    if (!token || !uuid) {
-      console.warn("[WS] skip connect", { token, uuid });
+    console.log("🔔 [WS EFFECT]", { token, uuid, role });
+
+    // ✅ role까지 반드시 있어야 연결
+    if (!token || !uuid || !role) {
+      console.warn("[WS] skip connect", { token, uuid, role });
       return;
     }
+
     let cancelled = false;
-    retryRef.current = 0; // 🔥 token/uuid 변경 시 리셋
+    retryRef.current = 0;
 
     const connect = () => {
       if (cancelled) return;
@@ -26,23 +30,26 @@ export function useNotifySocket({ token, uuid, onMessage }) {
       } catch {}
       wsRef.current = null;
 
-      console.log("[WS] connecting...", { uuid });
+      // ✅ 서버 routing과 정확히 맞추기
+      const wsUrl =
+        role === "admin"
+          ? `ws://localhost:8000/ws/admin/request-monitor/?admin_uuid=${uuid}`
+          : `ws://localhost:8000/ws/user/request-monitor/?user_uuid=${uuid}`;
 
-      const ws = new WebSocket(
-        `ws://localhost:8000/ws/requests/?uuid=${uuid}`,
-        [token]
-      );
+      console.log("🔌 WS CONNECT TRY:", wsUrl);
 
+      const ws = new WebSocket(wsUrl,[token]);
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log("✅ WS CONNECTED", { uuid });
+        console.log("✅ WS CONNECTED", { uuid, role });
         retryRef.current = 0;
       };
 
       ws.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data);
+          console.log("📩 WS MESSAGE:", data);
           onMessageRef.current?.(data);
         } catch {
           console.warn("[WS] parse error", e.data);
@@ -80,7 +87,7 @@ export function useNotifySocket({ token, uuid, onMessage }) {
       } catch {}
       wsRef.current = null;
     };
-  }, [token, uuid]);
+  }, [token, uuid, role]); // 🔥 role 반드시 포함
 
   return {};
 }

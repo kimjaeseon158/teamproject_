@@ -261,12 +261,12 @@ class AdminLogoutAPIView(APIView):
     permission_classes = [AllowAny]
 
     def delete(self, request):
-        admin_id = request.data.get("admin_id")
-        if not admin_id:
+        admin_uuid = request.data.get("admin_uuid")
+        if not admin_uuid:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            admin = Admin_Login_Info.objects.get(admin_id=admin_id)
+            admin = Admin_Login_Info.objects.get(admin_uuid=admin_uuid)
         except Admin_Login_Info.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
@@ -338,12 +338,12 @@ class UserLogoutAPIView(APIView):
     permission_classes = [AllowAny]
 
     def delete(self, request):
-        employee_number = request.data.get("employee_number")
-        if not employee_number:
+        user_uuid = request.data.get("user_uuid")
+        if not user_uuid:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            user = User_Login_Info.objects.get(employee_number=employee_number)
+            user = User_Login_Info.objects.get(user_uuid=user_uuid)
         except User_Login_Info.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 

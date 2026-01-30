@@ -95,7 +95,7 @@ class UserRejectMonitorConsumer(AsyncWebsocketConsumer):
         def _initial_payload():
             qs = (
                 User_WorkDay.objects
-                .filter(user_uuid_id=self.user_uuid, is_approved="N")
+                .filter(user_uuid_id=self.user_uuid, is_approved=False)
                 .order_by("-work_date")
                 .values("work_date", "reject_reason")
             )
@@ -108,12 +108,12 @@ class UserRejectMonitorConsumer(AsyncWebsocketConsumer):
         initial_count, rejects = await sync_to_async(_initial_payload)()
         self.last_count = initial_count
 
-        # 초기 전송 (0이어도 보내고 싶으면 조건 제거)
-        await self.send(text_data=json.dumps({
-            "count": initial_count,
-            "rejects": rejects,
-            "is_initial": True
-        }))
+        if initial_count > 0:            # 최초 접속 시 0보다 크면 데이터 전송
+            await self.send(text_data=json.dumps({
+                "count": initial_count,
+                "rejects": rejects,
+                "is_initial": True
+            }))
 
     async def disconnect(self, close_code):
         if hasattr(self, "group_name"):
@@ -123,8 +123,8 @@ class UserRejectMonitorConsumer(AsyncWebsocketConsumer):
         new_count = event["count"]
         rejects = event.get("rejects", [])
 
-        # 값이 바뀐 경우만 전송 (원하면 always 전송으로 바꿔도 됨)
-        if new_count != self.last_count:
+        # 값이 바뀐 경우만 전송
+        if new_count > 0 and new_count != self.last_count:
             self.last_count = new_count
             await self.send(text_data=json.dumps({
                 "count": new_count,

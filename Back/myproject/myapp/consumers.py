@@ -16,7 +16,7 @@ class RequestMonitorConsumer(AsyncWebsocketConsumer):
 
         print(f"WS 연결 수락: 관리자({self.user.admin_id}) 접속")
 
-        self.group_name = f"admin_request_monitor_{self.admin_uuid}" # 여러
+        self.group_name = "admin_request_monitor"
         self.last_count = None  # 직전 카운트 상태 저장용
 
         # 3. 그룹 가입

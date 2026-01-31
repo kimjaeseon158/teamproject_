@@ -18,7 +18,6 @@ class User_Login_Info(models.Model):
     
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['user_id'],         name='unique_user_id'),
             models.UniqueConstraint(fields=['resident_number'], name='unique_resident_number'),
             models.UniqueConstraint(fields=['phone_number'],    name='unique_phone_number'),
         ]
@@ -61,17 +60,9 @@ class User_WorkDay(models.Model):
 
 
 class User_WorkDetail(models.Model):
-    employee_number = models.CharField(max_length=50)
     work_date       = models.ForeignKey(User_WorkDay, on_delete=models.CASCADE,related_name="details")
     work_type       = models.CharField(max_length=20)                               # DAY, NIGHT, OVERTIME, MEAL_OT 등
     minutes         = models.PositiveIntegerField()                                 # 근무 시간 (분)
-
-    # employee_nubmer, work_date 값이 비어있을 경우 에러 반환
-    def save(self, *args, **kwargs):
-        if not self.employee_number and self.work_date_id:
-            self.employee_number = self.work_date.employee_number
-        super().save(*args, **kwargs)
-
 
 
 class User_Work_Pay(models.Model):

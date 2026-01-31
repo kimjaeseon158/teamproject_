@@ -1,10 +1,10 @@
 import React, {
   createContext,
+  useContext,
   useEffect,
   useState,
-  useContext,
+  useCallback,
 } from "react";
-
 import {
   getAccessToken,
   setAccessToken,
@@ -12,79 +12,69 @@ import {
 } from "../../api/token";
 import { useNotifySocket } from "../../ws/useNotifySocket";
 
-const UserContext = createContext({
-  loading: true,
-  userUuid: null,
-  role: null,
-  resetUser: () => {},
-});
+const UserContext = createContext(null);
 
-export function UserProvider({ children }) {
+export function UserProvider({ children, loginType }) {
   const [loading, setLoading] = useState(true);
   const [userUuid, setUserUuid] = useState(null);
-  const [role, setRole] = useState(null);
+  const [alarms, setAlarms] = useState([]);
+  // 🔔 알림 상태
+  const [alarmCount, setAlarmCount] = useState(0);
 
-  const resetUser = () => {
-    setUserUuid(null);
-    setRole(null);
-    setLoading(false);
-  };
+  // 인증 동기화
+  const revalidate = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/refresh_token/", {
+        method: "POST",
+        credentials: "include",
+      });
 
-  // ✅ refresh → access → uuid + role 추출
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const res = await fetch("/api/refresh_token/", {
-          method: "POST",
-          credentials: "include",
-        });
+      if (!res.ok) throw new Error();
 
-        if (!res.ok) {
-          clearAccessToken();
-          resetUser();
-          return;
-        }
+      const json = await res.json();
+      const access = json?.access;
+      if (!access) throw new Error();
 
-        const json = await res.json();
-        const access =
-          json?.access || json?.access_token || json?.accessToken;
+      setAccessToken(access);
 
-        if (!access) {
-          clearAccessToken();
-          resetUser();
-          return;
-        }
-
-        setAccessToken(access);
-
-        const payload = JSON.parse(atob(access.split(".")[1]));
-        const uuid = payload?.sub ?? null;
-        const roleFromToken = payload?.role ?? null;
-
-        console.log("✅ [CTX INIT]", { uuid, roleFromToken });
-
-        setUserUuid(uuid);
-        setRole(roleFromToken);
-      } catch (err) {
-        console.error("❌ refresh bootstrap failed:", err);
-        clearAccessToken();
-        resetUser();
-      } finally {
-        setLoading(false);
-      }
-    })();
+      const payload = JSON.parse(atob(access.split(".")[1]));
+      setUserUuid(payload?.sub ?? null);
+      return true;
+    } catch {
+      clearAccessToken();
+      setUserUuid(null);
+      setAlarmCount(0);
+      return false;
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // ✅ WS 연결 (role 기준 URL 분기)
+  // 최초 진입 시 (access 없을 때만)
+  useEffect(() => {
+    const token = getAccessToken();
+    if (!token) {
+      revalidate();
+    } else {
+      setLoading(false);
+    }
+  }, [revalidate]);
+
   const token = getAccessToken();
 
-  useNotifySocket({
-    token: !loading && token && userUuid && role ? token : null,
+  // 🔥 WS 연결
+  const { connected: wsConnected } = useNotifySocket({
+    token: !loading && token && userUuid ? token : null,
     uuid: userUuid,
-    role,
+    loginType,
     onMessage: (data) => {
       console.log("📩 WS MESSAGE:", data);
+
+      // 서버에서 계산된 알람 카운트
+      if (typeof data?.count === "number") {
+        setAlarmCount(data.count);
+      }
     },
   });
 
@@ -93,8 +83,10 @@ export function UserProvider({ children }) {
       value={{
         loading,
         userUuid,
-        role,       // 🔥 반드시 전달
-        resetUser,
+        alarmCount,
+        alarms,
+        wsConnected, // 🔥 핵심
+        revalidate,
       }}
     >
       {children}
@@ -103,7 +95,9 @@ export function UserProvider({ children }) {
 }
 
 export function useUser() {
-  return useContext(UserContext);
+  const ctx = useContext(UserContext);
+  if (!ctx) {
+    throw new Error("useUser must be used within UserProvider");
+  }
+  return ctx;
 }
-
-export default UserContext;

@@ -1,57 +1,35 @@
-import { createContext, useContext, useState } from "react";
-import { useNotifySocket } from "../ws/useNotifySocket";
+import { createContext, useContext } from "react";
 import { useUser } from "../login/js/userContext";
-import { getAccessToken } from "../api/token";
 
 const AlarmContext = createContext(null);
 
 export function AlarmProvider({ children }) {
-  const [alarms, setAlarms] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const { alarmCount, alarms, wsConnected } = useUser();
 
-  const { loading, userUuid } = useUser();
-  const token = getAccessToken();
+  // 🔥 타입 안정성 보장
+  const safeAlarms =
+    wsConnected && Array.isArray(alarms) ? alarms : [];
 
-  useNotifySocket({
-    token: !loading && token && userUuid ? token : null,
-    uuid: userUuid,
-    onMessage: (data) => {
-      console.log("📩 WS DATA:", data.count);
-
-      // ✅ 서버에서 count만 주는 경우
-      if (typeof data.count === "number") {
-        setUnreadCount(data.count);
-      }
-
-      // (선택) 알람 상세도 같이 오는 경우
-      if (data.type === "ALARM") {
-        setAlarms((prev) => [
-          {
-            id: data.id,
-            title: data.title,
-            date: data.date,
-            time: data.time,
-            read: false,
-          },
-          ...prev,
-        ]);
-      }
-    },
-  });
+  const unreadCount =
+    wsConnected && typeof alarmCount === "number" ? alarmCount : 0;
 
   return (
     <AlarmContext.Provider
-        value={{
-            alarms,
-            unreadCount,      // 🔥 이름 맞춤
-            setUnreadCount,
-        }}
-        >
+      value={{
+        alarms: safeAlarms,
+        unreadCount,
+        wsConnected,
+      }}
+    >
       {children}
     </AlarmContext.Provider>
   );
 }
 
 export function useAlarm() {
-  return useContext(AlarmContext);
+  const ctx = useContext(AlarmContext);
+  if (!ctx) {
+    throw new Error("useAlarm must be used within AlarmProvider");
+  }
+  return ctx;
 }

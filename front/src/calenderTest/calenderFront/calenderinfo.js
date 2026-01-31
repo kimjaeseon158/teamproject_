@@ -19,7 +19,7 @@ import {
 } from "@chakra-ui/react";
 import { ChevronDownIcon, AddIcon, DeleteIcon } from "@chakra-ui/icons";
 
-import UserContext from "../../login/js/userContext";
+import { useUser }  from "../../login/js/userContext";
 import locationsList from "../js/locationsList";
 
 // ✅ 경로는 너 프로젝트 구조에 맞게!
@@ -74,7 +74,7 @@ const Option = ({ selectedDate }) => {
   const [finishTime, setFinishTime] = useState("");
   const [totalWorkTime, setTotalWorkTime] = useState("");
 
-  const { user, employeeNumber } = useContext(UserContext);
+  const { userUuid } = useUser();
 
   // ✅ 근무형태: 주간/야간 중 1개 + 특근 ON/OFF
   const [baseShift, setBaseShift] = useState("주간"); // "주간" | "야간"
@@ -225,8 +225,7 @@ const Option = ({ selectedDate }) => {
     try {
       const { data, newRecord } = await submitWorkInfo(
         {
-          user,
-          employeeNumber,
+          userUuid,
           selectedDate,
           startTime,
           finishTime,

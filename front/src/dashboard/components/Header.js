@@ -17,7 +17,7 @@ export default function Header() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          uuid: userUuid,
+          admin_uuid: userUuid,
         }),
       });
     } catch (err) {

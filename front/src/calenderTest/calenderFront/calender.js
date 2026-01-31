@@ -93,7 +93,7 @@ const Calendar = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          uuid: userUuid,
+          user_uuid: userUuid,
         }),
       });
     } catch (error) {

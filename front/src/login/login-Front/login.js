@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Button,
@@ -13,15 +13,15 @@ import {
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { validation } from "../js/validation";
-import { HandleLogin } from "../js/admin_login_info";   // 관리자 로그인 전용
-import { Handle_User_Login } from "../js/user_login_info"; // 사원 로그인 전용
-import UserContext from "../js/userContext";
+import { HandleLogin } from "../js/admin_login_info";        // 관리자 로그인
+import { Handle_User_Login } from "../js/user_login_info";  // 사원 로그인
+import { useUser } from "../js/userContext";                // ✅ Context 훅
 import { setAccessToken } from "../../api/token";
 
 const MotionBox = motion(Box);
 
 const Login = () => {
-  const {  } = useContext(UserContext);
+  const { revalidate } = useUser(); // ✅ Context 동기화용
   const navigate = useNavigate();
 
   const [adminId, setAdminId] = useState("");
@@ -75,6 +75,7 @@ const Login = () => {
 
     let loginsuccess;
 
+    // ================= 관리자 로그인 =================
     if (role === "admin") {
       loginsuccess = await HandleLogin(currentId, currentPassword, adminCode);
 
@@ -82,6 +83,10 @@ const Login = () => {
         if (loginsuccess.access) {
           setAccessToken(loginsuccess.access);
         }
+
+        // ✅ Context와 서버 상태 동기화
+        await revalidate();
+
         setFadeOut(true);
         navigate("/dashboard");
         return;
@@ -91,13 +96,17 @@ const Login = () => {
       return;
     }
 
-    // user 로그인
+    // ================= 사원 로그인 =================
     loginsuccess = await Handle_User_Login(currentId, currentPassword);
 
     if (loginsuccess?.success === true) {
       if (loginsuccess.access) {
         setAccessToken(loginsuccess.access);
       }
+
+      // ✅ Context와 서버 상태 동기화
+      await revalidate();
+
       setFadeOut(true);
       navigate("/data");
       return;
@@ -105,7 +114,6 @@ const Login = () => {
 
     setUserLoginError("아이디 또는 비밀번호가 틀렸습니다.");
   };
-
 
   const preventSpace = (e) => {
     if (e.key === " ") e.preventDefault();
@@ -122,7 +130,7 @@ const Login = () => {
         px={4}
         className={fadeOut ? "fade-out" : ""}
       >
-        {/* 탭 버튼 (관리자 / 사원 선택) */}
+        {/* 역할 선택 탭 */}
         <Flex
           mb={6}
           bg="gray.200"
@@ -185,19 +193,21 @@ const Login = () => {
             {role === "admin" ? "관리자 로그인" : "사원 로그인"}
           </Text>
 
-          <FormControl isInvalid={errors.idError}>
+          <FormControl isInvalid={!!errors.idError}>
             <FormLabel>아이디</FormLabel>
             <Input
               value={role === "admin" ? adminId : userId}
               onChange={(e) =>
-                role === "admin" ? setAdminId(e.target.value) : setUserId(e.target.value)
+                role === "admin"
+                  ? setAdminId(e.target.value)
+                  : setUserId(e.target.value)
               }
               onKeyDown={preventSpace}
             />
             <FormErrorMessage>{errors.idError}</FormErrorMessage>
           </FormControl>
 
-          <FormControl isInvalid={errors.passwordError}>
+          <FormControl isInvalid={!!errors.passwordError}>
             <FormLabel>비밀번호</FormLabel>
             <Input
               type="password"
@@ -213,7 +223,7 @@ const Login = () => {
           </FormControl>
 
           {role === "admin" && (
-            <FormControl isInvalid={errors.admin_codeError}>
+            <FormControl isInvalid={!!errors.admin_codeError}>
               <FormLabel>인증코드</FormLabel>
               <Input
                 type="password"

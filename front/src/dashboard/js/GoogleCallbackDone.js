@@ -1,25 +1,44 @@
-import { useEffect, useContext } from "react";
+import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import UserContext from "../../login/js/userContext"; // ← 대소문자/경로 주의!
+import { useUser } from "../../login/js/userContext"; // ✅ 변경 포인트
 
 export default function GoogleCallbackDone() {
-  const { revalidate } = useContext(UserContext);
+  const { revalidate } = useUser(); // ✅ context 직접 접근 ❌
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
+    // ✅ StrictMode / 중복 실행 방지
+    if (sessionStorage.getItem("oauthDone")) return;
+    sessionStorage.setItem("oauthDone", "1");
+
+    let mounted = true;
+
     (async () => {
-      // 서버 콜백에서 HttpOnly 쿠키(액세스/리프레시) 설정했다는 가정
-      await revalidate();
+      try {
+        await revalidate();
 
-      // 콜백 1회성 플래그 해제
-      sessionStorage.removeItem("oauthInFlight");
+        if (!mounted) return;
 
-      // 목적지 있으면 그쪽으로, 없으면 대시보드로
-      const params = new URLSearchParams(location.search);
-      const to = params.get("to") || "/dashboard";
-      navigate(to, { replace: true });
+        sessionStorage.removeItem("oauthInFlight");
+
+        const params = new URLSearchParams(location.search);
+        const to = params.get("to") || "/dashboard";
+
+        navigate(to, { replace: true });
+      } catch (err) {
+        console.error("Google OAuth revalidate 실패:", err);
+
+        sessionStorage.removeItem("oauthInFlight");
+        sessionStorage.removeItem("oauthDone");
+
+        navigate("/login", { replace: true });
+      }
     })();
+
+    return () => {
+      mounted = false;
+    };
   }, [revalidate, navigate, location.search]);
 
   return <div>로그인 완료 처리 중...</div>;

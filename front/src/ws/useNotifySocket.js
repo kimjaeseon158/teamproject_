@@ -1,93 +1,87 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-export function useNotifySocket({ token, uuid, role, onMessage }) {
+export function useNotifySocket({ token, uuid, loginType, onMessage }) {
   const wsRef = useRef(null);
-  const retryRef = useRef(0);
-  const timerRef = useRef(null);
-
   const onMessageRef = useRef(onMessage);
+  const retryRef = useRef(0);
+  const retryTimerRef = useRef(null);
+
+  // 🔥 WS 연결 상태
+  const [connected, setConnected] = useState(false);
+
+  // 최신 onMessage 유지
   useEffect(() => {
     onMessageRef.current = onMessage;
   }, [onMessage]);
 
   useEffect(() => {
-    console.log("🔔 [WS EFFECT]", { token, uuid, role });
+    if (!token || !uuid || !loginType) return;
 
-    // ✅ role까지 반드시 있어야 연결
-    if (!token || !uuid || !role) {
-      console.warn("[WS] skip connect", { token, uuid, role });
-      return;
-    }
-
-    let cancelled = false;
-    retryRef.current = 0;
+    let closedByCleanup = false;
 
     const connect = () => {
-      if (cancelled) return;
-
       try {
-        wsRef.current?.close();
+        wsRef.current?.close(1000, "reconnect");
       } catch {}
       wsRef.current = null;
 
-      // ✅ 서버 routing과 정확히 맞추기
       const wsUrl =
-        role === "admin"
+        loginType === "admin"
           ? `ws://localhost:8000/ws/admin/request-monitor/?admin_uuid=${uuid}`
           : `ws://localhost:8000/ws/user/request-monitor/?user_uuid=${uuid}`;
 
-      console.log("🔌 WS CONNECT TRY:", wsUrl);
 
-      const ws = new WebSocket(wsUrl,[token]);
+      const ws = new WebSocket(wsUrl, [token]);
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log("✅ WS CONNECTED", { uuid, role });
+        console.log("✅ WS CONNECTED", loginType);
         retryRef.current = 0;
+        setConnected(true); // 🔥 연결 성공
       };
 
       ws.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data);
-          console.log("📩 WS MESSAGE:", data);
           onMessageRef.current?.(data);
         } catch {
-          console.warn("[WS] parse error", e.data);
+          console.warn("WS parse error", e.data);
         }
-      };
-
-      ws.onerror = (err) => {
-        console.error("❌ WS ERROR", err);
       };
 
       ws.onclose = (e) => {
         console.warn("⚠️ WS CLOSED", e.code, e.reason);
+        setConnected(false); // 🔥 연결 끊김
 
-        if (cancelled) return;
+        if (closedByCleanup) return;
+        if (e.code === 1000) return; // 정상 종료
+        if (e.code === 1008) return; // 인증 실패
 
-        const delay = Math.min(3000 * 2 ** retryRef.current, 12000);
+        // 🔁 재연결 (지수 백오프)
+        const delay = Math.min(1000 * 2 ** retryRef.current, 30000);
         retryRef.current += 1;
 
-        timerRef.current = setTimeout(connect, delay);
+        console.log(`🔁 WS RECONNECT IN ${delay}ms`);
+        retryTimerRef.current = setTimeout(connect, delay);
+      };
+
+      ws.onerror = (e) => {
+        console.error("❌ WS ERROR");
       };
     };
 
     connect();
 
     return () => {
-      cancelled = true;
-
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-
+      closedByCleanup = true;
+      clearTimeout(retryTimerRef.current);
       try {
-        wsRef.current?.close();
+        wsRef.current?.close(1000, "cleanup");
       } catch {}
       wsRef.current = null;
+      setConnected(false);
     };
-  }, [token, uuid, role]); // 🔥 role 반드시 포함
+  }, [token, uuid, loginType]);
 
-  return {};
+  return { connected };
 }

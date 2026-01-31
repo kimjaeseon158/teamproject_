@@ -9,8 +9,7 @@ from .serializers import (
     User_InfoSerializer,
     IncomeSerializer,
     ExpenseSerializer,
-    UserWorkDaySerializer
-    
+    UserWorkDaySerializer,
 )
 from .auth_utils import check_user_credentials, check_admin_credentials
 from .jwt_utils import (
@@ -25,8 +24,8 @@ from .models import (
     Income,
     AdminRefreshToken,
     UserRefreshToken,
-    User_WorkDay, 
-    User_WorkDetail
+    User_WorkDay,
+    User_WorkDetail,
 )
 from django.db.models import Sum
 from datetime import datetime
@@ -219,7 +218,7 @@ class CheckAdminLoginAPIView(APIView):
 
         # 2) JWT 생성 (원하는 클레임 포함)
         refresh = CustomRefreshToken.for_subject(
-            subject_value=str(admin_instance.admin_uuid),   
+            subject_value=str(admin_instance.admin_uuid),
             admin_name=admin_instance.admin_name,
             role="admin",
         )
@@ -230,7 +229,7 @@ class CheckAdminLoginAPIView(APIView):
         #    기존 것이 있으면 hashed_token, expires_at 업데이트
         #    없으면 새로 생성
         save_or_update_admin_refresh_token(
-            admin_uuid=str(admin_instance.admin_uuid),   
+            admin_uuid=str(admin_instance.admin_uuid),
             raw_refresh_token=raw_refresh_token,
             lifetime_days=7,
         )
@@ -238,9 +237,9 @@ class CheckAdminLoginAPIView(APIView):
         # 4) 응답 구성: access는 body, refresh는 HttpOnly 쿠키 ONLY
         response = Response(
             {
-                "success"    : True,
-                "admin_uuid" : admin_uuid,
-                "access"     : str(access),
+                "success": True,
+                "admin_uuid": admin_uuid,
+                "access": str(access),
             }
         )
 
@@ -289,15 +288,15 @@ class CheckUserLoginAPIView(APIView):
         password = request.data.get("password")
 
         # (1) 로그인 검증
-        success, user_name, user_uuid  = check_user_credentials(user_id, password)
+        success, user_name, user_uuid = check_user_credentials(user_id, password)
         if not success:
             return Response({"success": False}, status=status.HTTP_400_BAD_REQUEST)
 
-        user_instance = User_Login_Info.objects.get(user_uuid =user_uuid )
+        user_instance = User_Login_Info.objects.get(user_uuid=user_uuid)
 
         # (2) JWT 생성
         refresh = CustomRefreshToken.for_subject(
-            subject_value=str(user_instance.user_uuid) ,
+            subject_value=str(user_instance.user_uuid),
             user_name=user_name,
             role="user",
         )
@@ -377,9 +376,9 @@ class UserInfoDeleteAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
-        employee_number = request.data.get("employee_number")
+        user_uuid = request.data.get("user_uuid")
         try:
-            user_instance = User_Login_Info.objects.get(employee_number=employee_number)
+            user_instance = User_Login_Info.objects.get(user_uuid=user_uuid)
             user_instance.delete()
             all_data = User_Login_Info.objects.all()
             user_data = User_InfoSerializer(all_data, many=True)
@@ -404,9 +403,9 @@ class UserInfoUpdateAPIView(APIView):
 
     def patch(self, request):
         # 사용자 정보 업데이트
-        employee_number = request.data.get("employee_number")
+        user_uuid = request.data.get("user_uuid")
         try:
-            user_instance = User_Login_Info.objects.get(employee_number=employee_number)
+            user_instance = User_Login_Info.objects.get(user_uuid=user_uuid)
             serializer = User_Login_InfoSerializer(
                 user_instance, data=request.data, partial=True
             )
@@ -723,7 +722,7 @@ class ExpenseDeleteAPIView(APIView):
         serial_number = request.data["serial_number"]
         start_date = datetime.strptime(request.data["start_date"], "%Y-%m-%d").date()
         end_date = datetime.strptime(request.data["end_date"], "%Y-%m-%d").date()
-        
+
         try:
             # 레코드 삭제
             expense_instance = Expense.objects.get(serial_number=serial_number)
@@ -736,27 +735,26 @@ class ExpenseDeleteAPIView(APIView):
             expense_data = ExpenseSerializer(expense_qs, many=True)
 
             return Response({"success": True, "expense_data": expense_data.data})
- 
+
         except Expense.DoesNotExist:
             return Response({"success": False})
 
+
 class AdminPageWorkDayListAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
-    permission_classes     = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        status         = request.query_params.get("status")      # 대기, 승인, 거절, 전체
+        status = request.query_params.get("status")  # 대기, 승인, 거절, 전체
         start_date_str = request.query_params.get("start_date")  # YYYY-MM-DD
-        end_date_str   = request.query_params.get("end_date")    # YYYY-MM-DD
+        end_date_str = request.query_params.get("end_date")  # YYYY-MM-DD
 
-        user_work_day = (
-            User_WorkDay.objects
-            .prefetch_related("details")
-            .order_by("-work_date")
+        user_work_day = User_WorkDay.objects.prefetch_related("details").order_by(
+            "-work_date"
         )
 
         # 상태 필터 (선택)
-        if status   == "대기":
+        if status == "대기":
             user_work_day = user_work_day.filter(is_approved__isnull=True)
         elif status == "승인":
             user_work_day = user_work_day.filter(is_approved=True)
@@ -771,30 +769,29 @@ class AdminPageWorkDayListAPIView(APIView):
         if start_date_str and end_date_str:
             try:
                 start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-                end_date   = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+                end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
             except ValueError:
                 return Response({"success": False})
 
             user_work_day = user_work_day.filter(
-                work_date__gte=start_date,
-                work_date__lte=end_date
+                work_date__gte=start_date, work_date__lte=end_date
             )
 
         serializer = UserWorkDaySerializer(user_work_day, many=True)
-        return Response({"success": True,"data": serializer.data})
+        return Response({"success": True, "data": serializer.data})
 
 
 class AdminWorkDayStatusUpdateAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
-    permission_classes     = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def patch(self, request):
-        employee_number = request.data.get("employee_number")
-        work_date_str   = request.data.get("work_date")
-        status          = request.data.get("status")   # True / False
-        reject_reason   = request.data.get("reject_reason")
+        user_uuid = request.data.get("user_uuid")
+        work_date_str = request.data.get("work_date")
+        status = request.data.get("status")  # True / False
+        reject_reason = request.data.get("reject_reason")
 
-        if not employee_number or not work_date_str or not status:
+        if not user_uuid or not work_date_str or not status:
             return Response({"success": False})
 
         if status not in ["Y", "N"]:
@@ -803,45 +800,52 @@ class AdminWorkDayStatusUpdateAPIView(APIView):
         try:
             work_date = datetime.strptime(work_date_str, "%Y-%m-%d").date()
         except ValueError:
-            return Response({"success": False},)
+            return Response(
+                {"success": False},
+            )
 
         try:
             work_day = User_WorkDay.objects.get(
-                employee_number_id=employee_number,
-                work_date=work_date
+                user_uuid_id=user_uuid, work_date=work_date
             )
         except User_WorkDay.DoesNotExist:
-            return Response({"success": False},)
+            return Response(
+                {"success": False},
+            )
 
         # 완료(승인)
         if status == "Y":
-            work_day.is_approved   = True
+            work_day.is_approved = True
             work_day.reject_reason = None
 
         # 거절(반려)
         elif status == "N":
             if not reject_reason:
                 return Response({"success": False})  # 반려 사유 반드시 기제
-            work_day.is_approved   = False
+            work_day.is_approved = False
             work_day.reject_reason = reject_reason
 
         work_day.save()
 
-        return Response({
-            "success": True,
-            "employee_number": employee_number,
-            "work_date": work_date_str,
-            "status": status,  # Y / N
-            "reject_reason": work_day.reject_reason
-        })
+        return Response(
+            {
+                "success": True,
+                "user_uuid": user_uuid,
+                "work_date": work_date_str,
+                "status": status,  # Y / N
+                "reject_reason": work_day.reject_reason,
+            }
+        )
+
 
 # ----------------------
 # 2 데이터 처리 뷰 - User
 # ----------------------
-        
+
+
 class UserWorkInfoAPIView(APIView):
     authentication_classes = [UserJWTAuthentication]
-    permission_classes     = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         data = request.data

@@ -47,10 +47,6 @@ const AdminInformation = ({ person, onClose, onSave }) => {
         <form onSubmit={handleSubmit}>
           <ModalBody>
             <VStack spacing={4} align="stretch">
-              <FormControl>
-                <FormLabel>사원 번호</FormLabel>
-                <Input value={formData.employee_number || ""} isReadOnly />
-              </FormControl>
 
               <FormControl>
                 <FormLabel>이름</FormLabel>

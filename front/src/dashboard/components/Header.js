@@ -1,7 +1,7 @@
 import { Flex, Box, Button } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../login/js/userContext";
-import { clearAccessToken } from "../../api/token";
+import { getAccessToken, clearAccessToken } from "../../api/token";
 import { Alarm } from "../../aralm";
 
 export default function Header() {
@@ -9,20 +9,21 @@ export default function Header() {
   const { userUuid } = useUser();
 
   const handleLogout = async () => {
+    const token = getAccessToken();
+
     try {
       await fetch("/api/admin_logout/", {
         method: "DELETE",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
-        body: JSON.stringify({
-          admin_uuid: userUuid,
-        }),
       });
     } catch (err) {
       console.error("logout error", err);
     } finally {
+      // 🔥 클라이언트 상태 정리
       clearAccessToken();
       navigate("/");
     }
@@ -59,3 +60,4 @@ export default function Header() {
     </Flex>
   );
 }
+  

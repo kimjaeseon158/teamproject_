@@ -1,10 +1,10 @@
-// src/admin/components/AdminPage.jsx
 import React, { useState, useEffect } from "react";
 import AdminInformation from "./adminInformation";
 import AddPersonModal from "./addPersonModal";
 import AddButton from "./adminAddBtn";
-import { deleteEmployees } from "../js/adminPageDelete";
-import { updateEmployee } from "../js/adminPageUpdate";
+
+import { deleteEmployees } from "../js/adminPageDelete";   // UUID 배열
+import { updateEmployee } from "../js/adminPageUpdate";   // user_uuid 기준
 import { fetchFilteredPeople } from "../js/adminPageLogic";
 import { Panel_PostData } from "../js/admnsdbPost";
 
@@ -29,16 +29,14 @@ import {
   FormControl,
   FormLabel,
   Input,
-  Select,
   Button,
   VStack,
-  HStack,
 } from "@chakra-ui/react";
 
 import { formatResidentNumber, formatPhoneNumber } from "../js/utils";
 
 /* =========================
-   검색 초기값
+   검색 초기값 (UUID 제외)
 ========================= */
 const initialSearchForm = {
   user_name: "",
@@ -50,16 +48,19 @@ const initialSearchForm = {
 const AdminPage = () => {
   /* =========================
      state
+     - 모든 식별자는 user_uuid 기준
   ========================= */
-  const [peopleData, setPeopleData] = useState([]);
+  const [peopleData, setPeopleData] = useState([]);      // [{ user_uuid, ... }]
   const [selectedPerson, setSelectedPerson] = useState(null);
-  const [checkedItems, setCheckedItems] = useState({});
+  const [checkedItems, setCheckedItems] = useState({}); // { [user_uuid]: boolean }
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchForm, setSearchForm] = useState(initialSearchForm);
 
   /* =========================
      초기 데이터 로드
+     - 서버는 UUID만 내려줌
   ========================= */
   useEffect(() => {
     const load = async () => {
@@ -76,49 +77,53 @@ const AdminPage = () => {
   }, []);
 
   /* =========================
-     선택 / 체크
+     체크박스 (UUID 기준)
   ========================= */
-  const handleCheckboxChange = (uuid) => {
+  const handleCheckboxChange = (user_uuid) => {
     setCheckedItems((prev) => ({
       ...prev,
-      [uuid]: !prev[uuid],
+      [user_uuid]: !prev[user_uuid],
     }));
   };
 
+  /* =========================
+     행 클릭 → 상세 정보
+  ========================= */
   const handleRowClick = (person) => {
-    setSelectedPerson(person);
+    setSelectedPerson(person); // person.user_uuid 포함
   };
 
   /* =========================
-     삭제 (uuid 기준)
+     삭제 (UUID 배열)
   ========================= */
   const handleDeleteSelected = async () => {
-    const uuids = Object.entries(checkedItems)
+    const userUuids = Object.entries(checkedItems)
       .filter(([_, checked]) => checked)
       .map(([uuid]) => uuid);
 
-    if (uuids.length === 0) return;
+    if (userUuids.length === 0) return;
 
-    const result = await deleteEmployees(uuids);
+    const result = await deleteEmployees(userUuids);
 
-    if (result.success) {
+    if (result?.success) {
       setPeopleData((prev) =>
-        prev.filter((p) => !uuids.includes(p.user_uuid))
+        prev.filter((p) => !userUuids.includes(p.user_uuid))
       );
       setCheckedItems({});
       alert("삭제 완료");
     } else {
-      console.error("삭제 실패:", result.error);
+      console.error("삭제 실패:", result?.error);
+      alert("삭제 실패");
     }
   };
 
   /* =========================
-     수정 저장
+     수정 저장 (UUID 기준)
   ========================= */
   const handleSave = async (updatedPerson) => {
     const result = await updateEmployee(updatedPerson);
 
-    if (result.success) {
+    if (result?.success) {
       setPeopleData((prev) =>
         prev.map((p) =>
           p.user_uuid === updatedPerson.user_uuid ? updatedPerson : p
@@ -132,7 +137,7 @@ const AdminPage = () => {
   };
 
   /* =========================
-     검색
+     검색 입력 처리
   ========================= */
   const handleSearchChange = (e) => {
     const { name, value } = e.target;
@@ -144,6 +149,9 @@ const AdminPage = () => {
     setSearchForm((prev) => ({ ...prev, [name]: v }));
   };
 
+  /* =========================
+     검색 적용
+  ========================= */
   const applySearch = async () => {
     const filters = {};
     Object.entries(searchForm).forEach(([k, v]) => {
@@ -156,7 +164,7 @@ const AdminPage = () => {
     }
 
     const result = await fetchFilteredPeople({ filters });
-    setPeopleData(result);
+    setPeopleData(Array.isArray(result) ? result : []);
     setShowSearchModal(false);
   };
 
@@ -165,6 +173,7 @@ const AdminPage = () => {
   ========================= */
   return (
     <div className="adminPage_Bk">
+      {/* 상단 버튼 */}
       <div className="adminPage-btn">
         <AddButton
           onAdd={() => setShowAddModal(true)}
@@ -174,6 +183,7 @@ const AdminPage = () => {
         />
       </div>
 
+      {/* 테이블 */}
       <Box p={4} bg="#f9f9f9" borderRadius="md" overflowX="auto">
         <Table variant="simple">
           <Thead>
@@ -196,7 +206,9 @@ const AdminPage = () => {
                 <Td onClick={(e) => e.stopPropagation()}>
                   <Checkbox
                     isChecked={!!checkedItems[item.user_uuid]}
-                    onChange={() => handleCheckboxChange(item.user_uuid)}
+                    onChange={() =>
+                      handleCheckboxChange(item.user_uuid)
+                    }
                   />
                 </Td>
                 <Td>{item.user_name}</Td>
@@ -211,6 +223,7 @@ const AdminPage = () => {
         </Table>
       </Box>
 
+      {/* 상세 정보 모달 */}
       {selectedPerson && (
         <AdminInformation
           person={selectedPerson}
@@ -219,17 +232,19 @@ const AdminPage = () => {
         />
       )}
 
+      {/* 추가 모달 */}
       {showAddModal && (
         <AddPersonModal
           isOpen={showAddModal}
-          onSave={(p) => {
-            setPeopleData((prev) => [...prev, p]);
+          onSave={(newPerson) => {
+            setPeopleData((prev) => [...prev, newPerson]);
             setShowAddModal(false);
           }}
           onClose={() => setShowAddModal(false)}
         />
       )}
 
+      {/* 검색 모달 */}
       {showSearchModal && (
         <Modal isOpen onClose={() => setShowSearchModal(false)} isCentered>
           <ModalOverlay />

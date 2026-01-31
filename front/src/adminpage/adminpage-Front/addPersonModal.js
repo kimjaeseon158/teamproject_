@@ -1,14 +1,34 @@
 import React from "react";
 import { useAddPersonLogic } from "../js/useAddPersonLogic";
 import {
-  Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter,
-  ModalBody, ModalCloseButton, Button, FormControl, FormLabel,
-  Input, Select, Flex
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  Button,
+  FormControl,
+  FormLabel,
+  Input,
+  Select,
+  Flex,
 } from "@chakra-ui/react";
 
-const AddPersonModal = ({ isOpen, onClose, onSave, existingEmployees }) => {
-  const { formData, handleChange, handleSubmitBase, setFormData } =
-    useAddPersonLogic(existingEmployees, onSave, onClose);
+const AddPersonModal = ({ isOpen, onClose, onSave }) => {
+  /**
+   * 🔥 중요
+   * useAddPersonLogic 시그니처:
+   * (existingEmployees, onSave, onClose)
+   * → 첫 번째 인자는 반드시 배열이어야 함
+   */
+  const {
+    formData,
+    handleChange,
+    handleSubmitBase,
+    setFormData,
+  } = useAddPersonLogic([], onSave, onClose);
 
   const handleAddressSearch = () => {
     new window.daum.Postcode({
@@ -38,11 +58,7 @@ const AddPersonModal = ({ isOpen, onClose, onSave, existingEmployees }) => {
 
         <form onSubmit={handleSubmit}>
           <ModalBody>
-            <FormControl mb={3}>
-              <FormLabel>사원번호</FormLabel>
-              <Input value={formData.employee_Number || ""} isReadOnly />
-            </FormControl>
-
+            {/* 이름 */}
             <FormControl mb={3}>
               <FormLabel>이름</FormLabel>
               <Input
@@ -54,17 +70,18 @@ const AddPersonModal = ({ isOpen, onClose, onSave, existingEmployees }) => {
               />
             </FormControl>
 
+            {/* 주민등록번호 */}
             <FormControl mb={3}>
               <FormLabel>주민등록번호</FormLabel>
               <Input
                 name="resident_Number"
-                value={formData.masked_Resident_Number || ""}
+                value={formData.resident_Number || ""}
                 onChange={handleChange}
-                placeholder="ex)000000-0******"
+                placeholder="ex) 000000-0******"
               />
             </FormControl>
 
-            {/* 통신사 + 전화번호 한 줄 */}
+            {/* 통신사 + 전화번호 */}
             <FormControl mb={3}>
               <FormLabel>전화번호</FormLabel>
               <Flex gap={2}>
@@ -80,6 +97,7 @@ const AddPersonModal = ({ isOpen, onClose, onSave, existingEmployees }) => {
                   <option value="LGU+">LG U+</option>
                   <option value="알뜰폰">알뜰폰</option>
                 </Select>
+
                 <Input
                   name="phone_Number"
                   value={formData.phone_Number || ""}
@@ -91,7 +109,7 @@ const AddPersonModal = ({ isOpen, onClose, onSave, existingEmployees }) => {
               </Flex>
             </FormControl>
 
-            {/* 주소 검색 버튼 + 주소 입력 한 줄 */}
+            {/* 주소 */}
             <FormControl mb={3}>
               <FormLabel>주소</FormLabel>
               <Flex gap={2}>
@@ -111,6 +129,7 @@ const AddPersonModal = ({ isOpen, onClose, onSave, existingEmployees }) => {
                   주소 검색
                 </Button>
               </Flex>
+
               <Input
                 mt={2}
                 name="address_Detail"
@@ -120,6 +139,7 @@ const AddPersonModal = ({ isOpen, onClose, onSave, existingEmployees }) => {
               />
             </FormControl>
 
+            {/* ID */}
             <FormControl mb={3}>
               <FormLabel>ID</FormLabel>
               <Input
@@ -131,6 +151,7 @@ const AddPersonModal = ({ isOpen, onClose, onSave, existingEmployees }) => {
               />
             </FormControl>
 
+            {/* 비밀번호 */}
             <FormControl mb={3}>
               <FormLabel>비밀번호</FormLabel>
               <Input

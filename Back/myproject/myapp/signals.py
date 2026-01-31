@@ -13,7 +13,7 @@ def notify_count_change(sender, instance, **kwargs):
     
     # 그룹 전체에 알림 (로직 처리는 Consumer에서 수행)
     async_to_sync(channel_layer.group_send)(
-        "request_monitor_group",
+        "admin_request_monitor",
         {
             "type": "count_update_message",
             "count": current_null_count,

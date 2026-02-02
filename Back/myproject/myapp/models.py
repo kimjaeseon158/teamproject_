@@ -60,9 +60,10 @@ class User_WorkDay(models.Model):
 
 
 class User_WorkDetail(models.Model):
-    work_date       = models.ForeignKey(User_WorkDay, on_delete=models.CASCADE,related_name="details")
-    work_type       = models.CharField(max_length=20)                               # DAY, NIGHT, OVERTIME, MEAL_OT 등
-    minutes         = models.PositiveIntegerField()                                 # 근무 시간 (분)
+    user_uuid = models.UUIDField()
+    work_date = models.ForeignKey(User_WorkDay, on_delete=models.CASCADE,related_name="details")
+    work_type = models.CharField(max_length=20)                               # DAY, NIGHT, OVERTIME, MEAL_OT 등
+    minutes   = models.PositiveIntegerField()                                 # 근무 시간 (분)
 
 
 class User_Work_Pay(models.Model):

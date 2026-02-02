@@ -21,7 +21,7 @@ import { setAccessToken } from "../../api/token";
 const MotionBox = motion(Box);
 
 const Login = () => {
-  const { revalidate } = useUser(); // ✅ Context 동기화용
+  const { revalidate, setUserName  } = useUser(); // ✅ Context 동기화용
   const navigate = useNavigate();
 
   const [adminId, setAdminId] = useState("");
@@ -103,7 +103,7 @@ const Login = () => {
       if (loginsuccess.access) {
         setAccessToken(loginsuccess.access);
       }
-
+      setUserName(loginsuccess.name);
       // ✅ Context와 서버 상태 동기화
       await revalidate();
 

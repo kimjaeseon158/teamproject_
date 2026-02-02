@@ -18,7 +18,6 @@ export const Handle_User_Login = async (user_id, password) => {
     } catch {
       return { success: false, message: "서버 응답 오류" };
     }
-
     if (!response.ok || !data?.success) {
       return { success: false, message: "로그인 실패" };
     }

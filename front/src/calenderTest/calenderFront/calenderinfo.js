@@ -34,7 +34,7 @@ const minutesToHM = (mins) => {
 };
 
 const Option = ({ selectedDate }) => {
-  const { userUuid } = useUser();
+  const { userUuid, userName  } = useUser();
 
   const [records, setRecords] = useState([]);
 
@@ -140,7 +140,6 @@ const Option = ({ selectedDate }) => {
         : [{ type: "", start: "", finish: "", duration: "" }];
     });
   };
-
   /* =========================
      🔥 기능 수정 ONLY
   ========================= */
@@ -173,10 +172,11 @@ const Option = ({ selectedDate }) => {
     ].filter((d) => d.minutes > 0);
 
     const workType = isSpecial ? `${baseShift}-특근` : baseShift;
-
+    
     try {
       const { newRecord } = await submitWorkInfo({
         user_uuid: userUuid, // 🔥 key만 수정
+        user_name: userName ,
         selectedDate,
         startTime,
         finishTime,

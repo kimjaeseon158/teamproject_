@@ -58,7 +58,7 @@ const pad2 = (n) => String(n).padStart(2, "0");
 
 const Calendar = () => {
   const navigate = useNavigate();
-  const { userUuid, user } = useUser(); // ✅ uuid 사용
+  const { userUuid, userName } = useUser(); // ✅ uuid 사용
 
   const [selectedDate, setSelectedDate] = useState(getTodayInfo());
   const [monthPickerYear, setMonthPickerYear] = useState(
@@ -150,7 +150,7 @@ const Calendar = () => {
         gap="20px"
       >
         <Box fontSize="24px" fontWeight="800">
-          {user?.user_name || "사용자"} 님
+          {userName}님
         </Box>
 
         <Box bg="#2c2c2e" p="14px" borderRadius="10px">

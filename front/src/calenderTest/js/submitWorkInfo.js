@@ -58,6 +58,7 @@ const calcMinutesFromStartFinish = (start, finish) => {
 const submitWorkInfo = async (
   {
     user_uuid,          // 🔥 핵심 식별자
+    user_name,
     selectedDate,
     startTime,
     finishTime,
@@ -88,6 +89,7 @@ const submitWorkInfo = async (
 
   const payload = {
     user_uuid,                // 🔥 UUID만 전달
+    user_name,
     work_date: workDate,
     work_start: toDateTime(workDate, startTime),
     work_end: toDateTime(workDate, finishTime),

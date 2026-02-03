@@ -123,6 +123,13 @@ const Calendar = () => {
       ? ["selected-day-cell"]
       : [];
   };
+  const handleGoToday = () => {
+    const today = getTodayInfo();
+    setSelectedDate(today);
+
+    const api = window.calendarRef?.getApi();
+    api?.gotoDate(today.formatted);
+  };
 
   const handlePickMonth = (m, onClose) => {
     const y = monthPickerYear;
@@ -215,7 +222,9 @@ const Calendar = () => {
           >
             ▶
           </Button>
-
+          <Button size="sm" variant="outline" onClick={handleGoToday}>
+            Today
+          </Button>
           {/* 월 선택 */}
           <Popover placement="bottom-start">
             {({ onClose }) => (

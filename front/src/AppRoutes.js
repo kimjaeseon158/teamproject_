@@ -2,7 +2,7 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import { UserProvider } from "./login/js/userContext";
 import { AlarmProvider } from "./aralm";
 
-import Login from "./login/login-Front/login";
+import LoginPage from "./login/Pages/LoginPage";
 import Calendar from "./calenderTest/calenderFront/calender";
 import Dashboard from "./dashboard/dashboard";
 import AdminPage from "./adminpage/adminpage-Front/adminPage";
@@ -23,7 +23,7 @@ export default function AppRoutes() {
     <UserProvider loginType={loginType}>
       <AlarmProvider>
         <Routes>
-          <Route path="/" element={<Login />} />
+          <Route path="/" element={<LoginPage />} />
           <Route path="/oauth/callback" element={<GoogleCallbackDone />} />
 
           <Route

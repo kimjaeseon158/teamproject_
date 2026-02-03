@@ -44,3 +44,30 @@
   max-height: 60vh;
   overflow-y: auto;
 }
+
+/* ✅ 선택한 날짜 강조 */
+.selected-day-cell {
+  background-color: #ebf8ff; /* 연한 파랑 */
+}
+
+.selected-day-cell .fc-daygrid-day-frame {
+  background-color: #ebf8ff;
+  border-radius: 8px;
+  padding: 6px;
+}
+
+/* 날짜 숫자 강조 */
+.selected-day-cell .fc-daygrid-day-number {
+  background-color: #3182ce; /* Chakra blue.500 */
+  color: white;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+.fc-day-today {
+  background: transparent !important;
+}

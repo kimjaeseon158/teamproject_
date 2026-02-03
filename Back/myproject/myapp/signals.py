@@ -26,7 +26,7 @@ def notify_count_change(sender, instance, **kwargs):
 
     qs = (
         User_WorkDay.objects
-        .filter(user_uuid_id=user_uuid, is_approved="N")
+        .filter(user_uuid_id=user_uuid, is_approved=False)
         .order_by("-work_date")
         .values("work_date", "reject_reason")
     )

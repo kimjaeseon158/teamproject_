@@ -29,7 +29,7 @@ class IncomeSerializer(serializers.ModelSerializer):
 class UserWorkDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = User_WorkDetail
-        fields = ["work_type", "minutes"]
+        fields = ["work_type", "minutes", "is_overtime_approved"]
 
 
 class UserWorkDaySerializer(serializers.ModelSerializer):

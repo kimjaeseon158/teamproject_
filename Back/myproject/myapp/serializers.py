@@ -44,6 +44,7 @@ class UserWorkDaySerializer(serializers.ModelSerializer):
             "work_start",
             "work_end",
             "work_place",
+            "work_shift",
             "is_approved",
             "details",
         ]

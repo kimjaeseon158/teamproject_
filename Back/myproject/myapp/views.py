@@ -788,6 +788,7 @@ class AdminWorkDayStatusUpdateAPIView(APIView):
     def patch(self, request):
         user_uuid = request.data.get("user_uuid")
         work_date_str = request.data.get("work_date")
+        work_shift = request.data.get("work_shift")
         status = request.data.get("status")  # True / False
         reject_reason = request.data.get("reject_reason")
 
@@ -806,7 +807,7 @@ class AdminWorkDayStatusUpdateAPIView(APIView):
 
         try:
             work_day = User_WorkDay.objects.get(
-                user_uuid_id=user_uuid, work_date=work_date
+                user_uuid_id=user_uuid, work_date=work_date, work_shift=work_shift
             )
         except User_WorkDay.DoesNotExist:
             return Response(
@@ -827,15 +828,7 @@ class AdminWorkDayStatusUpdateAPIView(APIView):
 
         work_day.save()
 
-        return Response(
-            {
-                "success": True,
-                "user_uuid": user_uuid,
-                "work_date": work_date_str,
-                "status": status,  # Y / N
-                "reject_reason": work_day.reject_reason,
-            }
-        )
+        return Response({"success": True})
 
 
 # ----------------------

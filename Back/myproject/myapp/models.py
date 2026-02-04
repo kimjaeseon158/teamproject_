@@ -45,18 +45,27 @@ class User_WorkDay(models.Model):
         null=False,                   
         related_name="workdays",
     )
-    user_name       = models.CharField(max_length=50)                               # 유저 이름
-    work_date       = models.DateField()                                            # 근무 날짜
-    work_start      = models.DateTimeField()                                        # 작업 시작 시간 (시간만)
-    work_end        = models.DateTimeField()                                        # 작업 종료 시간 (시간만)
-    work_place      = models.CharField(max_length=100)                              # 근무 장소
-    is_approved     = models.BooleanField(null=True,blank=True)                     # 승인 여부 (None=미처리)
-    reject_reason   = models.TextField(null=True,blank=True)                        # 반려 사유
+    work_shift      = models.CharField(max_length=2)                        # "주간", "야간"
+    user_name       = models.CharField(max_length=50)                       # 유저 이름
+    work_date       = models.DateField()                                    # 근무 날짜
+    work_start      = models.DateTimeField()                                # 작업 시작 시간 (시간만)
+    work_end        = models.DateTimeField()                                # 작업 종료 시간 (시간만)
+    work_place      = models.CharField(max_length=100)                      # 근무 장소
+    is_approved     = models.BooleanField(null=True,blank=True)             # 승인 여부 (None=미처리)
+    reject_reason   = models.TextField(null=True,blank=True)                # 반려 사유
 
     # FK값 -> PK값 파싱 클래스 단순화
     @property
     def user_uuid_str(self):
         return str(self.user_uuid_id)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user_uuid", "work_date", "work_shift"],
+                name="uniq_user_date_shift"
+            )
+        ]
 
 
 class User_WorkDetail(models.Model):

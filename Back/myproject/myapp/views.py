@@ -842,11 +842,13 @@ class UserWorkInfoAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        data = request.data
+        data = request.data.get("data")
 
-        serializer = UserWorkDaySerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"success": True})
-        else:
-            return Response({"success": False})
+        # 1개/여러개 자동 판별
+        is_many = isinstance(data, list)
+
+        serializer = UserWorkDaySerializer(data=data, many=is_many)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({"success": True})

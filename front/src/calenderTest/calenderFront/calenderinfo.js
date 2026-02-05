@@ -1,5 +1,4 @@
-// src/attendance/calenderinfo.js
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Box,
   Stack,
@@ -15,9 +14,15 @@ import {
   Switch,
   Checkbox,
   IconButton,
-  Divider,
+  useToast,
+  AlertDialog,
+  AlertDialogOverlay,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogBody,
+  AlertDialogFooter,
 } from "@chakra-ui/react";
-import { ChevronDownIcon, AddIcon, DeleteIcon } from "@chakra-ui/icons";
+import { ChevronDownIcon, DeleteIcon } from "@chakra-ui/icons";
 
 import { useUser } from "../../login/js/userContext";
 import locationsList from "../js/locationsList";
@@ -25,19 +30,46 @@ import workTimeList from "../js/workTimeList";
 import submitWorkInfo from "../js/submitWorkInfo";
 import "../css/activity.css";
 
-// minutes -> "HH:MM"
+/* =========================
+   utils
+========================= */
 const minutesToHM = (mins) => {
   const m = Math.max(0, Number(mins) || 0);
-  const hh = String(Math.floor(m / 60)).padStart(2, "0");
-  const mm = String(m % 60).padStart(2, "0");
-  return `${hh}:${mm}`;
+  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(
+    m % 60
+  ).padStart(2, "0")}`;
 };
 
+const hmToMinutes = (hm) => {
+  if (!hm || !hm.includes(":")) return null;
+  const [h, m] = hm.split(":").map(Number);
+  return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : null;
+};
+
+const diffMinutes = (s, f) => {
+  const start = hmToMinutes(s);
+  const end = hmToMinutes(f);
+  if (start == null || end == null) return 0;
+  return Math.max((end < start ? end + 1440 : end) - start, 0);
+};
+
+const formatTimeInput = (v) => {
+  const c = v.replace(/[^0-9]/g, "");
+  if (!c) return "";
+  const h = c.slice(0, 2);
+  const m = c.slice(2, 4);
+  return m ? `${h}:${m}` : h;
+};
+
+/* =========================
+   component
+========================= */
 const Option = ({ selectedDate }) => {
-  const { userUuid, userName  } = useUser();
+  const { userUuid, userName } = useUser();
+  const toast = useToast();
+  const cancelRef = useRef();
 
-  const [records, setRecords] = useState([]);
-
+  /* ===== 입력 상태 ===== */
   const [location, setLocation] = useState("");
   const [workTime, setWorkTime] = useState("");
   const [startTime, setStartTime] = useState("");
@@ -48,53 +80,22 @@ const Option = ({ selectedDate }) => {
   const [isSpecial, setIsSpecial] = useState(false);
 
   const [extraEnabled, setExtraEnabled] = useState(false);
-  const [extraWorks, setExtraWorks] = useState([
-    { type: "", start: "", finish: "", duration: "" },
-  ]);
+  const [extraWorks, setExtraWorks] = useState([]);
 
-  const hmToMinutes = (hm) => {
-    if (!hm || typeof hm !== "string" || !hm.includes(":")) return null;
-    const [h, m] = hm.split(":").map(Number);
-    if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
-    return h * 60 + m;
-  };
+  /* ===== 장바구니 ===== */
+  const [cart, setCart] = useState([]);
 
-  const diffMinutes = (start, finish) => {
-    const s = hmToMinutes(start);
-    const f = hmToMinutes(finish);
-    if (s == null || f == null) return 0;
-    const fixedF = f < s ? f + 24 * 60 : f;
-    return Math.max(fixedF - s, 0);
-  };
+  /* 🔥 전체 등록 확인용 */
+  const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
 
-  const formatTimeInput = (value) => {
-    let cleaned = value.replace(/[^0-9]/g, "");
-    if (cleaned.length === 0) return "";
+  const filteredWorkTimeList = useMemo(
+    () => workTimeList.filter((t) => t.shift === baseShift),
+    [baseShift]
+  );
 
-    let hour = cleaned.slice(0, 2);
-    let minute = cleaned.slice(2, 4);
-
-    if (hour.length === 1 && Number(hour) > 2) hour = "2";
-    if (hour.length === 2 && Number(hour) > 24) hour = "24";
-    if (minute.length === 1 && Number(minute) > 5) minute = "5";
-    if (minute.length === 2 && Number(minute) > 59) minute = "59";
-
-    if (minute.length === 0) return hour;
-    return `${hour}:${minute}`;
-  };
-
-  const handleSelectWorkTime = (start, finish) => {
-    setStartTime(start);
-    setFinishTime(finish);
-    setWorkTime(`${start}~${finish}`);
-  };
-
-  const handleSelectLocation = (loc) => setLocation(loc);
-
-  const filteredWorkTimeList = useMemo(() => {
-    return workTimeList.filter((t) => t.shift === baseShift);
-  }, [baseShift]);
-
+  /* =========================
+     effects
+  ========================= */
   useEffect(() => {
     if (startTime && finishTime) {
       setTotalWorkTime(minutesToHM(diffMinutes(startTime, finishTime)));
@@ -110,350 +111,437 @@ const Option = ({ selectedDate }) => {
     setTotalWorkTime("");
   }, [baseShift]);
 
+  useEffect(() => {
+    if (extraEnabled && extraWorks.length === 0) {
+      setExtraWorks([{ type: "", start: "", finish: "", duration: "" }]);
+    }
+    if (!extraEnabled) setExtraWorks([]);
+  }, [extraEnabled]);
+
+  /* =========================
+     handlers
+  ========================= */
+  const resetForm = () => {
+    setLocation("");
+    setWorkTime("");
+    setStartTime("");
+    setFinishTime("");
+    setTotalWorkTime("");
+    setIsSpecial(false);
+    setExtraEnabled(false);
+    setExtraWorks([]);
+  };
+
+  const handleSelectWorkTime = (s, f) => {
+    setStartTime(s);
+    setFinishTime(f);
+    setWorkTime(`${s}~${f}`);
+  };
+
   const updateExtraWork = (idx, patch) => {
     setExtraWorks((prev) =>
-      prev.map((row, i) => {
-        if (i !== idx) return row;
-        const next = { ...row, ...patch };
-        if (next.start && next.finish) {
-          next.duration = minutesToHM(diffMinutes(next.start, next.finish));
-        } else {
-          next.duration = "";
-        }
-        return next;
+      prev.map((r, i) => {
+        if (i !== idx) return r;
+        const n = { ...r, ...patch };
+        n.duration =
+          n.start && n.finish
+            ? minutesToHM(diffMinutes(n.start, n.finish))
+            : "";
+        return n;
       })
     );
   };
 
-  const handleAddExtraRow = () => {
-    setExtraWorks((prev) => [
-      ...prev,
-      { type: "", start: "", finish: "", duration: "" },
-    ]);
-  };
-
-  const handleRemoveExtraRow = (idx) => {
-    setExtraWorks((prev) => {
-      const next = prev.filter((_, i) => i !== idx);
-      return next.length
-        ? next
-        : [{ type: "", start: "", finish: "", duration: "" }];
-    });
-  };
   /* =========================
-     🔥 기능 수정 ONLY
+     장바구니 추가
   ========================= */
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // 🔥 로그인 체크 (UI 영향 없음)
-    if (!userUuid) {
-      alert("로그인이 필요합니다.");
-      return;
-    }
-
+  const handleAddToCart = () => {
     if (!location || !startTime || !finishTime) {
-      alert("장소와 작업시간을 입력해주세요.");
+      toast({ title: "필수 항목을 입력하세요", status: "warning" });
       return;
     }
 
-    const rows = extraEnabled
+    const extraRows = extraEnabled
       ? extraWorks.filter((r) => r.type && r.start && r.finish)
       : [];
 
-    const reduceByTypeMinutes = (type) => {
-      const items = rows.filter((r) => r.type === type);
-      return items.reduce((sum, r) => sum + diffMinutes(r.start, r.finish), 0);
-    };
-
     const details = [
-      { work_type: "잔업", minutes: reduceByTypeMinutes("overtime") },
-      { work_type: "중식", minutes: reduceByTypeMinutes("lunch") },
-    ].filter((d) => d.minutes > 0);
+      {
+        work_type: baseShift,
+        minutes: diffMinutes(startTime, finishTime),
+        is_overtime_approved: isSpecial,
+      },
+      ...extraRows.map((r) => ({
+        work_type: r.type === "overtime" ? "잔업" : "중식",
+        minutes: diffMinutes(r.start, r.finish),
+        is_overtime_approved: true,
+      })),
+    ];
 
-    const workType = isSpecial ? `${baseShift}-특근` : baseShift;
-    
-    try {
-      const { newRecord } = await submitWorkInfo({
-        user_uuid: userUuid, // 🔥 key만 수정
-        user_name: userName ,
-        selectedDate,
+    setCart((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        work_date: { ...selectedDate },
+        location,
         startTime,
         finishTime,
-        location,
-        workType,
+        baseShift,
         details,
-      });
+      },
+    ]);
 
-      setRecords((prev) => [...prev, newRecord]);
-
-      // ✅ 성공했을 때만 리셋 (기존 UX 유지)
-      setLocation("");
-      setStartTime("");
-      setFinishTime("");
-      setWorkTime("");
-      setTotalWorkTime("");
-      setIsSpecial(false);
-      setExtraEnabled(false);
-      setExtraWorks([{ type: "", start: "", finish: "", duration: "" }]);
-    } catch (error) {
-      console.error("전송 중 오류 발생:", error);
-      return; // 🔥 실패 시 UI 유지
-    }
+    toast({ title: "장바구니에 추가됨", status: "info", duration: 1200 });
+    resetForm();
   };
 
   /* =========================
-     UI (원본 그대로)
+     전체 등록
+  ========================= */
+  const handleSubmitAll = () => {
+    if (cart.length === 0) {
+      toast({ title: "등록할 항목이 없습니다", status: "info" });
+      return;
+    }
+    setIsSubmitConfirmOpen(true);
+  };
+  const handleRemoveExtraRow = (idx) => {
+    setExtraWorks((prev) => prev.filter((_, i) => i !== idx));
+  };
+  console.log(userUuid)
+ const handleConfirmSubmitAll = async () => {
+  try {
+    const payload = cart.map(item => ({
+      user_uuid: userUuid,
+      user_name: userName,
+      work_date: item.work_date,
+      startTime: item.startTime,
+      finishTime: item.finishTime,
+      work_shift: item.baseShift,
+      location: item.location,
+      details: item.details,
+    }));
+
+    await submitWorkInfo(payload); // 🔥 배열 그대로 전달
+
+    setCart([]);
+    setIsSubmitConfirmOpen(false);
+    toast({ title: "전체 등록 완료", status: "success" });
+  } catch (e) {
+    console.error(e);
+    toast({ title: "등록 실패", status: "error" });
+  }
+};
+  /* =========================
+     UI
   ========================= */
   return (
-    <Stack as="form" spacing={4} onSubmit={handleSubmit} color="white">
-      <Box
+    <Stack spacing={4} color="white" w="100%" >
+      {/* 날짜 */}
+      <Box bg="gray.800" p={3} borderRadius="md">
+        <Text fontSize="sm">
+          {selectedDate?.year}년 {selectedDate?.month}월 {selectedDate?.day}일
+        </Text>
+      </Box>
+
+      {/* 근무형태 */}
+      <HStack>
+        <Checkbox
+          isChecked={baseShift === "주간"}
+          onChange={() => setBaseShift("주간")}
+        >
+          주간
+        </Checkbox>
+        <Checkbox
+          isChecked={baseShift === "야간"}
+          onChange={() => setBaseShift("야간")}
+        >
+          야간
+        </Checkbox>
+        <Checkbox
+          isChecked={isSpecial}
+          onChange={(e) => setIsSpecial(e.target.checked)}
+        >
+          특근
+        </Checkbox>
+      </HStack>
+
+      {/* 작업 시간 */}
+     <Menu>
+      <MenuButton
+        as={Button}
+        variant="outline"
+        rightIcon={<ChevronDownIcon />}
+        width="100%"
+        justifyContent="space-between"
         bg="gray.800"
-        borderRadius="md"
-        p={3}
-        border="1px solid"
         borderColor="gray.600"
+        color={workTime ? "gray.100" : "gray.400"}
+        _hover={{ bg: "gray.700" }}
       >
-        <Text fontSize="xs" color="gray.400" mb={1}>
-          선택한 날짜
-        </Text>
-        <HStack justify="space-between">
-          <Text fontSize="md" fontWeight="800" color="gray.100">
-            {selectedDate?.year}년 {selectedDate?.month}월 {selectedDate?.day}일
-          </Text>
-        </HStack>
-      </Box>
+        {workTime || "작업 시간 선택"}
+      </MenuButton>
 
-      <Divider opacity={0.2} />
-
-      <Box>
-        <Text fontSize="sm" mb={1} fontWeight="600">
-          근무형태
-        </Text>
-        <HStack spacing={5}>
-          <Checkbox
-            isChecked={baseShift === "주간"}
-            onChange={() => setBaseShift("주간")}
-            colorScheme="green"
-          >
-            주간
-          </Checkbox>
-          <Checkbox
-            isChecked={baseShift === "야간"}
-            onChange={() => setBaseShift("야간")}
-            colorScheme="purple"
-          >
-            야간
-          </Checkbox>
-          <Checkbox
-            isChecked={isSpecial}
-            onChange={(e) => setIsSpecial(e.target.checked)}
-            colorScheme="orange"
-          >
-            특근
-          </Checkbox>
-        </HStack>
-      </Box>
-
-      <Box>
-        <Text fontSize="sm" mb={1} fontWeight="600">
-          작업 시간
-        </Text>
-        <Menu>
-          <MenuButton
-            as={Button}
-            variant="outline"
-            rightIcon={<ChevronDownIcon />}
-            width="100%"
-            justifyContent="space-between"
-            fontWeight={workTime ? "500" : "400"}
-            color={workTime ? "gray.100" : "gray.400"}
+      <MenuList
+        bg="gray.800"
+        borderColor="gray.600"
+        color="gray.100"
+        maxH="240px"
+        overflowY="auto"
+      >
+        {filteredWorkTimeList.map((t, i) => (
+          <MenuItem
+            key={i}
             bg="gray.800"
-            borderColor="gray.600"
             _hover={{ bg: "gray.700" }}
+            onClick={() => handleSelectWorkTime(t.startTime, t.finishTime)}
           >
-            {workTime || "작업 시간 선택"}
-          </MenuButton>
+            {t.startTime} ~ {t.finishTime}
+          </MenuItem>
+        ))}
+      </MenuList>
+    </Menu>
 
-          <MenuList maxH="240px" overflowY="auto" bg="white" color="gray.800">
-            {filteredWorkTimeList.map(({ startTime, finishTime }, idx) => (
-              <MenuItem
-                key={idx}
-                onClick={() => handleSelectWorkTime(startTime, finishTime)}
-              >
-                {startTime}~{finishTime}
-              </MenuItem>
-            ))}
-          </MenuList>
-        </Menu>
-      </Box>
+      {/* 장소 */}
+      <Menu>
+        <MenuButton
+          as={Button}
+          variant="outline"
+          rightIcon={<ChevronDownIcon />}
+          width="100%"
+          justifyContent="space-between"
+          bg="gray.800"
+          borderColor="gray.600"
+          color={location ? "gray.100" : "gray.400"}
+          _hover={{ bg: "gray.700" }}
+        >
+          {location || "업체 / 장소 선택"}
+        </MenuButton>
 
-      <Box>
-        <Text fontSize="sm" mb={1} fontWeight="600">
-          업체 / 장소
-        </Text>
-        <Menu>
-          <MenuButton
-            as={Button}
-            variant="outline"
-            rightIcon={<ChevronDownIcon />}
-            width="100%"
-            justifyContent="space-between"
-            fontWeight={location ? "500" : "400"}
-            color={location ? "gray.100" : "gray.400"}
-            bg="gray.800"
-            borderColor="gray.600"
-            _hover={{ bg: "gray.700" }}
-          >
-            {location || "업체/장소 선택"}
-          </MenuButton>
-
-          <MenuList maxH="240px" overflowY="auto" bg="white" color="gray.800">
-            {locationsList.map((loc, idx) => (
-              <MenuItem key={idx} onClick={() => handleSelectLocation(loc)}>
-                {loc}
-              </MenuItem>
-            ))}
-          </MenuList>
-        </Menu>
-      </Box>
-
-      <Box>
-        <Text fontSize="sm" mb={1} fontWeight="600">
-          총 작업 시간
-        </Text>
-        <Input
-          value={totalWorkTime}
-          placeholder="총 작업 시간"
-          isReadOnly
+        <MenuList
           bg="gray.800"
           borderColor="gray.600"
           color="gray.100"
-          _placeholder={{ color: "gray.500" }}
-        />
-      </Box>
-
-      <Box mt={2} bg="gray.700" p={3} borderRadius="md">
-        <HStack justify="space-between" mb={2}>
-          <Text fontSize="sm" fontWeight="600">
-            추가 근무 (잔업 / 중식)
-          </Text>
-          <HStack>
-            <Text
-              fontSize="xs"
-              color={extraEnabled ? "green.300" : "red.300"}
-              mr={1}
+          maxH="240px"
+          overflowY="auto"
+        >
+          {locationsList.map((loc, idx) => (
+            <MenuItem
+              key={idx}
+              bg="gray.800"
+              _hover={{ bg: "gray.700" }}
+              onClick={() => setLocation(loc)}
             >
-              {extraEnabled ? "ON" : "OFF"}
-            </Text>
-            <Switch
-              isChecked={extraEnabled}
-              onChange={(e) => setExtraEnabled(e.target.checked)}
-              colorScheme="green"
-              size="md"
-            />
-          </HStack>
+              {loc}
+            </MenuItem>
+          ))}
+        </MenuList>
+      </Menu>
+
+      {/* 총 시간 */}
+      <Input
+        value={totalWorkTime}
+        isReadOnly
+        bg="gray.800"
+        borderColor="gray.600"
+        color="gray.100"
+        _placeholder={{ color: "gray.500" }}
+        placeholder="총 작업 시간"
+      />
+
+      {/* 추가 근무 */}
+      <Switch
+        isChecked={extraEnabled}
+        onChange={(e) => setExtraEnabled(e.target.checked)}
+      >
+        추가 근무
+      </Switch>
+
+   {extraWorks.map((row, idx) => (
+      <Box
+        key={idx}
+        p={3}
+        borderRadius="md"
+        bg="gray.800"
+        border="1px solid"
+        borderColor="gray.600"
+      >
+        <HStack spacing={2} mb={2}>
+         <Select
+            size="sm"
+            placeholder="선택하세요"
+            value={row.type}
+            bg="gray.900"
+            color="gray.100"
+            borderColor="gray.600"
+            sx={{
+              option: {
+                bg: "gray.800",
+                color: "gray.100",
+              },
+            }}
+            _hover={{ borderColor: "gray.500" }}
+            _focus={{
+              borderColor: "blue.400",
+              boxShadow: "0 0 0 1px #63B3ED",
+            }}
+            onChange={(e) =>
+              updateExtraWork(idx, { type: e.target.value })
+            }
+          >
+            <option value="overtime">잔업</option>
+            <option value="lunch">중식</option>
+          </Select>
+          <IconButton
+            icon={<DeleteIcon />}
+            size="sm"
+            variant="ghost"
+            colorScheme="red"
+            onClick={() => handleRemoveExtraRow(idx)}
+            aria-label="삭제"
+          />
         </HStack>
 
-        {extraEnabled && (
-          <Stack spacing={3} mt={2}>
-            <Button
-              size="xs"
-              leftIcon={<AddIcon />}
-              variant="none"
-              alignSelf="flex-start"
-              color="white.100"
-              onClick={handleAddExtraRow}
-            >
-              추가 근무 항목 추가
-            </Button>
+        <HStack spacing={3}>
+            <Input
+              placeholder="시작"
+              value={row.start}
+              bg="gray.900"
+              color="gray.100"
+              borderColor="gray.600"
+              onChange={(e) =>
+                updateExtraWork(idx, {
+                  start: formatTimeInput(e.target.value),
+                })
+              }
+            />
+            <Text color="gray.300">~</Text>
+            <Input
+              placeholder="종료"
+              value={row.finish}
+              bg="gray.900"
+              color="gray.100"
+              borderColor="gray.600"
+              onChange={(e) =>
+                updateExtraWork(idx, {
+                  finish: formatTimeInput(e.target.value),
+                })
+              }
+            />
+            <Text fontSize="xs" color="gray.200" minW="80px">
+              {row.duration ? `총 ${row.duration}` : "총 시간 -"}
+            </Text>
+          </HStack>
+        </Box>
+      ))}
 
-            {extraWorks.map((row, idx) => (
-              <Box key={idx} p={2} borderRadius="md" bg="gray.800">
-                <HStack spacing={2} mb={2}>
-                  <Select
-                    placeholder="유형 선택"
-                    size="sm"
-                    value={row.type}
-                    onChange={(e) =>
-                      updateExtraWork(idx, { type: e.target.value })
-                    }
-                    bg="white"
-                    color="gray.800"
-                    borderColor="gray.500"
-                    _hover={{ borderColor: "gray.400" }}
-                    _focus={{
-                      borderColor: "blue.400",
-                      boxShadow: "0 0 0 1px #63B3ED",
-                    }}
-                  >
-                    <option value="overtime">잔업</option>
-                    <option value="lunch">중식</option>
-                  </Select>
+      {/* 장바구니 */}
+      {cart.length > 0 && (
+        <Box bg="gray.800" p={3} borderRadius="md">
+          <Text fontSize="sm" fontWeight="600" mb={2}>
+            🧺 장바구니 ({cart.length})
+          </Text>
 
-                  <IconButton
-                    aria-label="삭제"
-                    icon={<DeleteIcon />}
-                    size="sm"
-                    colorScheme="red"
-                    variant="ghost"
-                    onClick={() => handleRemoveExtraRow(idx)}
-                  />
-                </HStack>
+          <Stack spacing={1}>
+            {cart.map((item) => (
+              <HStack
+                key={item.id}
+                justify="space-between"
+                bg="gray.700"
+                px={3}
+                py={2}
+                borderRadius="md"
+                fontSize="sm"
+              >
+                <Text>
+                  {item.work_date.year}.{item.work_date.month}.{item.work_date.day} ·{" "}
+                  {item.baseShift} · {item.startTime}~{item.finishTime}
+                </Text>
 
-                <HStack spacing={3} align="center">
-                  <Input
-                    placeholder="시작"
-                    value={row.start}
-                    maxLength={5}
-                    onChange={(e) =>
-                      updateExtraWork(idx, {
-                        start: formatTimeInput(e.target.value),
-                      })
-                    }
-                    flex="1"
-                    size="sm"
-                    bg="white"
-                    color="gray.800"
-                    _placeholder={{ color: "gray.400" }}
-                  />
-                  <Text color="gray.200">~</Text>
-                  <Input
-                    placeholder="종료"
-                    value={row.finish}
-                    maxLength={5}
-                    onChange={(e) =>
-                      updateExtraWork(idx, {
-                        finish: formatTimeInput(e.target.value),
-                      })
-                    }
-                    flex="1"
-                    size="sm"
-                    bg="white"
-                    color="gray.800"
-                    _placeholder={{ color: "gray.400" }}
-                  />
-                  <Box minW="90px" textAlign="right">
-                    <Text fontSize="xs" color="gray.200">
-                      {row.duration ? `총 ${row.duration}` : "총 시간 -"}
-                    </Text>
-                  </Box>
-                </HStack>
-              </Box>
+                <IconButton
+                  icon={<DeleteIcon />}
+                  size="xs"
+                  variant="ghost"
+                  colorScheme="red"
+                  onClick={() =>
+                    setCart((prev) => prev.filter((c) => c.id !== item.id))
+                  }
+                  aria-label="삭제"
+                />
+              </HStack>
             ))}
           </Stack>
-        )}
-      </Box>
+        </Box>
+      )}
 
-      <Button
-        type="submit"
-        colorScheme="blue"
-        alignSelf="flex-end"
-        mt={2}
-        size="sm"
-      >
+      {/* 액션 */}
+      <Button colorScheme="blue" onClick={handleAddToCart}>
         추가
       </Button>
+
+      <Button
+        colorScheme="green"
+        onClick={handleSubmitAll}
+        isDisabled={cart.length === 0}
+      >
+        전체 등록 ({cart.length})
+      </Button>
+      <AlertDialog
+        isOpen={isSubmitConfirmOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={() => setIsSubmitConfirmOpen(false)}
+        isCentered
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent bg="gray.800" color="white">
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              전체 등록 확인
+            </AlertDialogHeader>
+
+          <AlertDialogBody>
+            <Stack spacing={2} fontSize="sm">
+              {cart.map((c) => (
+                <Box
+                  key={c.id}
+                  bg="gray.700"
+                  p={2}
+                  borderRadius="md"
+                >
+                  <Text>
+                    📅 {c.work_date.year}-
+                    {String(c.work_date.month).padStart(2, "0")}-
+                    {String(c.work_date.day).padStart(2, "0")}
+                  </Text>
+
+                  <Text>
+                    🕘 {c.baseShift} · {c.startTime} ~ {c.finishTime}
+                  </Text>
+
+                  <Text>
+                    📍 {c.location}
+                  </Text>
+                </Box>
+              ))}
+            </Stack>
+          </AlertDialogBody>
+            <AlertDialogFooter>
+              <Button
+                ref={cancelRef}
+                onClick={() => setIsSubmitConfirmOpen(false)}
+              >
+                취소
+              </Button>
+              <Button
+                colorScheme="green"
+                ml={3}
+                onClick={handleConfirmSubmitAll}
+              >
+                등록
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </Stack>
   );
 };

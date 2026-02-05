@@ -39,7 +39,10 @@ import "react-day-picker/dist/style.css";
 import { fetchWithAuth } from "../../api/fetchWithAuth";
 import { adminWorkdayStatusUpdate } from "../js/ApprovalUpdateAPI";
 
-// ✅ 상태값(한글) -> 서버로 보낼 status 값
+/* =========================
+   기존 유틸 그대로
+========================= */
+
 const STATUS_MAP = {
   전체: "전체",
   승인: "승인",
@@ -47,7 +50,6 @@ const STATUS_MAP = {
   거절: "거절",
 };
 
-// minutes -> "HH:MM"
 const minutesToHM = (mins) => {
   const m = Math.max(0, Number(mins) || 0);
   const hh = String(Math.floor(m / 60)).padStart(2, "0");
@@ -82,8 +84,7 @@ const toTimeHM = (value) => {
 
 const deriveStatus = (w) => {
   if (w?.is_approved === true) return "승인";
-  const rr = (w?.reject_reason ?? "").trim();
-  if (rr) return "거절";
+  if (w?.is_approved === false) return "거절";
   return "대기";
 };
 
@@ -101,24 +102,40 @@ const toYMD = (d) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 
+const InfoCard = ({ title, children }) => (
+  <Box
+    border="1px solid"
+    borderColor="gray.300"
+    borderRadius="12px"
+    p={4}
+    mb={3}
+    bg="gray.50"
+  >
+    <Text fontSize="sm" fontWeight="bold" mb={2} color="gray.700">
+      {title}
+    </Text>
+    {children}
+  </Box>
+);
+/* =========================
+   메인
+========================= */
+
 export default function ApprovePage() {
   const toast = useToast();
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
-  // ✅ 최초 1회 자동 조회를 했는지
   const [didInitialFetch, setDidInitialFetch] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
-  // ✅ 화면 필터는 기본을 "대기"로
   const [statusFilter, setStatusFilter] = useState("대기");
   const [selectedIds, setSelectedIds] = useState(new Set());
 
   const [rejectReason, setRejectReason] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // ✅ 오늘 + 달력 표시 월(month) 제어
   const today = useMemo(() => new Date(), []);
   const [range, setRange] = useState({ from: today, to: today });
   const [calendarMonth, setCalendarMonth] = useState(today);
@@ -130,19 +147,6 @@ export default function ApprovePage() {
     return "";
   }, [range]);
 
-  const { isOpen, onOpen, onClose } = useDisclosure();
-
-  const handleCloseModal = () => {
-    setRejectReason("");
-    setSelectedEmployee(null);
-    onClose();
-  };
-
-  /**
-   * ✅ fetchList는 "버튼 조회"용이 기본
-   * - overrideStatus가 있으면 그 값으로 강제 조회(최초 1회 자동 조회에 사용)
-   * - 그 외는 현재 statusFilter/startDate/endDate 기준으로 조회
-   */
   const fetchList = async ({ overrideStatus } = {}) => {
     try {
       setLoading(true);
@@ -159,7 +163,9 @@ export default function ApprovePage() {
       if (!params.status) delete params.status;
 
       const qs = new URLSearchParams(params).toString();
-      const url = qs ? `/api/admin_page_workday/?${qs}` : `/api/admin_page_workday/`;
+      const url = qs
+        ? `/api/admin_page_workday/?${qs}`
+        : `/api/admin_page_workday/`;
 
       const res = await fetchWithAuth(url, { method: "GET" }, { toast });
       if (!res.ok) throw new Error("근무내역 조회 실패");
@@ -173,36 +179,36 @@ export default function ApprovePage() {
         : [];
 
       const mapped = workDays.map((w, idx) => {
-        const dayMins =
-          getMinutesByType(w.details, "DAY") || getMinutesByType(w.details, "주간");
-        const overtimeMins =
-          getMinutesByType(w.details, "OVERTIME") || getMinutesByType(w.details, "잔업");
-        const lunchMins =
-          getMinutesByType(w.details, "LUNCH") || getMinutesByType(w.details, "중식");
-        const extraMins =
-          getMinutesByType(w.details, "EXTRA") || getMinutesByType(w.details, "특근");
+        const dayMins = getMinutesByType(w.details, "주간");
+        const overtimeMins = getMinutesByType(w.details, "잔업");
+        const lunchMins = getMinutesByType(w.details, "중식");
+        const extraMins = getMinutesByType(w.details, "특근");
 
-        const startHM = toTimeHM(w.work_start);
-        const endHM = toTimeHM(w.work_end);
-
-        const statusFromServer = w.status || w.approval_status || deriveStatus(w);
-
-        const empNo = w.employee_number ?? "";
-        const dateOnly = toDateOnly(w.work_date);
+        // ✅ 변경: 근무구분 (details 기반)
+        const workType =
+          Array.isArray(w.details) && w.details.length > 0
+            ? w.details[0].work_type
+            : "-";
 
         return {
-          id: w.id ?? `${empNo}-${dateOnly}-${idx}`,
-          employeeNumber: empNo,
+          id: w.id ?? `${w.user_uuid}-${w.work_date}-${idx}`,
+
+          // ❌ 사원번호 제거
+          user_uuid: w.user_uuid,
+
           name: w.user_name ?? "",
-          date: dateOnly,
+          date: toDateOnly(w.work_date),
           location: w.work_place ?? "",
-          workTime: startHM && endHM ? `${startHM}~${endHM}` : "",
+          workTime:
+            toTimeHM(w.work_start) && toTimeHM(w.work_end)
+              ? `${toTimeHM(w.work_start)}~${toTimeHM(w.work_end)}`
+              : "",
+
+          // ✅ 테이블 표시용
+          workType,
+
+          // 🔥 이하 상세 모달용 그대로
           dayHM: minutesToHM(dayMins),
-
-          overtimeMins,
-          lunchMins,
-          extraMins,
-
           overtimeDuration: minutesToHM(overtimeMins),
           lunchDuration: minutesToHM(lunchMins),
           specialWorkDuration: minutesToHM(extraMins),
@@ -211,18 +217,14 @@ export default function ApprovePage() {
           lunchChecked: lunchMins > 0,
           specialWorkChecked: extraMins > 0,
 
-          status: statusFromServer,
+          status: w.status || deriveStatus(w),
           raw: w,
         };
       });
 
-      mapped.sort((a, b) => (a.date < b.date ? 1 : -1));
-
       setRows(mapped);
       setSelectedIds(new Set());
     } catch (e) {
-      console.error(e);
-      setRows([]);
       toast({
         title: "조회 실패",
         description: e?.message || "근무내역을 불러오지 못했습니다.",
@@ -233,15 +235,11 @@ export default function ApprovePage() {
     }
   };
 
-  // ✅ 최초 1회만 "대기"로 자동 조회
   useEffect(() => {
     if (didInitialFetch) return;
-
-    fetchList({ overrideStatus: "대기" }).finally(() => {
-      setDidInitialFetch(true);
-    });
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchList({ overrideStatus: "대기" }).finally(() =>
+      setDidInitialFetch(true)
+    );
   }, [didInitialFetch]);
 
   const tableRows = useMemo(() => rows, [rows]);
@@ -252,8 +250,10 @@ export default function ApprovePage() {
     onOpen();
   };
 
-  const allChecked = tableRows.length > 0 && tableRows.every((r) => selectedIds.has(r.id));
-  const isIndeterminate = tableRows.some((r) => selectedIds.has(r.id)) && !allChecked;
+  const allChecked =
+    tableRows.length > 0 && tableRows.every((r) => selectedIds.has(r.id));
+  const isIndeterminate =
+    tableRows.some((r) => selectedIds.has(r.id)) && !allChecked;
 
   const toggleAll = (checked) => {
     const next = new Set(selectedIds);
@@ -264,78 +264,10 @@ export default function ApprovePage() {
 
   const toggleOne = (id, checked) => {
     const next = new Set(selectedIds);
-    if (checked) next.add(id);
-    else next.delete(id);
+    checked ? next.add(id) : next.delete(id);
     setSelectedIds(next);
   };
 
-  // ✅ 승인
-  const handleApprove = async () => {
-    if (!selectedEmployee) return;
-
-    setSaving(true);
-    try {
-      const payload = {
-        employee_number: selectedEmployee.employeeNumber,
-        work_date: selectedEmployee.date,
-        status: "Y",
-      };
-
-      await adminWorkdayStatusUpdate(payload, { toast });
-      toast({ title: "승인 완료", status: "success" });
-
-      await fetchList();
-      handleCloseModal();
-    } catch (e) {
-      toast({
-        title: "승인 실패",
-        description: e?.message || "승인 처리 중 오류",
-        status: "error",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // ✅ 거절
-  const handleReject = async () => {
-    if (!selectedEmployee) return;
-
-    if (!rejectReason.trim()) {
-      toast({
-        title: "거절 사유 필요",
-        description: "거절 사유를 입력해주세요.",
-        status: "warning",
-      });
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const payload = {
-        employee_number: selectedEmployee.employeeNumber,
-        work_date: selectedEmployee.date,
-        status: "N",
-        reject_reason: rejectReason.trim(),
-      };
-
-      await adminWorkdayStatusUpdate(payload, { toast });
-      toast({ title: "거절 완료", status: "success" });
-
-      await fetchList();
-      handleCloseModal();
-    } catch (e) {
-      toast({
-        title: "거절 실패",
-        description: e?.message || "거절 처리 중 오류",
-        status: "error",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // ✅ 헤더 아래 라인 스타일(반복 줄이기)
   const headLine = { borderBottom: "1px solid", borderColor: "blackAlpha.600" };
 
   return (
@@ -344,291 +276,263 @@ export default function ApprovePage() {
         사원 승인 페이지 (근무내역)
       </Text>
 
+      {/* ===== 상단 조회 영역 (그대로) ===== */}
       <Flex mt={4} gap={3} align="flex-start" wrap="wrap">
-        <HStack spacing={3} align="center">
-          <HStack>
-            <Text fontSize="sm" color="gray.600">
-              조회 방식
-            </Text>
-            <Select
-              size="sm"
-              w="180px"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              isDisabled={loading || saving}
-            >
-              <option value="전체">전체</option>
-              <option value="승인">승인</option>
-              <option value="대기">대기</option>
-              <option value="거절">거절</option>
-            </Select>
-          </HStack>
+        <HStack spacing={3}>
+          <Select
+            size="sm"
+            w="180px"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            isDisabled={loading || saving}
+          >
+            <option value="전체">전체</option>
+            <option value="승인">승인</option>
+            <option value="대기">대기</option>
+            <option value="거절">거절</option>
+          </Select>
 
           <Button
             size="sm"
             colorScheme="blue"
             onClick={() => fetchList()}
             isLoading={loading}
-            loadingText="조회 중"
-            isDisabled={saving}
           >
             조회
           </Button>
-
-          <Text fontSize="sm" color="gray.600">
-            선택: {selectedIds.size}건
-          </Text>
-
-          {!didInitialFetch && (
-            <Tag size="sm" colorScheme="blue">
-              초기 조회중...
-            </Tag>
-          )}
         </HStack>
-
-        {/* ✅ 달력 Popover */}
-        <Box ml="auto">
-          <Popover placement="bottom-end">
-            <PopoverTrigger>
-              <Button size="sm" variant="outline" isDisabled={loading || saving}>
-                📅 {startDate} ~ {endDate}
-              </Button>
-            </PopoverTrigger>
-
-            <PopoverContent w="auto" p={0}>
-              <PopoverArrow />
-
-              {/* ✅ 상단바: Today + 닫기(X) 분리 */}
-              <Flex
-                align="center"
-                justify="space-between"
-                px={3}
-                py={2}
-                borderBottom="1px solid"
-                borderColor="blackAlpha.200"
-                bg="white"
-              >
-                <Button
-                  size="xs"
-                  variant="outline"
-                  onClick={() => {
-                    setRange({ from: today, to: today });
-                    setCalendarMonth(today);
-                  }}
-                  isDisabled={saving || loading}
-                >
-                  Today
-                </Button>
-
-                <PopoverCloseButton position="static" />
-              </Flex>
-
-              <PopoverBody p={3}>
-                <DayPicker
-                  mode="range"
-                  numberOfMonths={1}
-                  month={calendarMonth}
-                  onMonthChange={setCalendarMonth}
-                  selected={range}
-                  onSelect={(r) => {
-                    if (!r?.from) {
-                      setRange({ from: today, to: today });
-                      setCalendarMonth(today);
-                      return;
-                    }
-                    setRange({ from: r.from, to: r.to ?? r.from });
-                    // ✅ 날짜 바꿔도 통신 X (버튼 조회만)
-                  }}
-                />
-              </PopoverBody>
-            </PopoverContent>
-          </Popover>
-        </Box>
       </Flex>
 
-      {loading ? (
-        <Flex mt={6} align="center" gap={3}>
-          <Spinner />
-          <Text>불러오는 중...</Text>
-        </Flex>
-      ) : (
-        <Box
-          mt={4}
-          borderWidth="1px"
-          borderStyle="solid"
-          borderColor="black"
-          borderRadius="12px"
-          overflow="hidden"
-          bg="white"
-        >
-          <Table variant="simple"  sx={{ tableLayout: "fixed" }}>
-            <Thead bg="gray.50">
-              <Tr>
-                <Th
+      {/* ===== 테이블 ===== */}
+      <Box mt={4} border="1px solid black" borderRadius="12px" overflow="hidden">
+        <Table variant="simple" sx={{ tableLayout: "fixed" }}>
+          <Thead bg="gray.50">
+            <Tr>
+              <Th w="40px" p="0" textAlign="center" {...headLine}>
+                <Checkbox
+                  size="sm"
+                  isChecked={allChecked}
+                  isIndeterminate={isIndeterminate}
+                  onChange={(e) => toggleAll(e.target.checked)}
+                />
+              </Th>
+
+              {/* ❌ 사번 제거 */}
+              <Th {...headLine}>이름</Th>
+              <Th {...headLine}>근무구분</Th> {/* ✅ 추가 */}
+              <Th {...headLine}>상태</Th>
+              <Th {...headLine}>근무일</Th>
+              <Th {...headLine}>근무 시간</Th>
+              <Th {...headLine}>근무지</Th>
+            </Tr>
+          </Thead>
+
+          <Tbody>
+            {tableRows.map((emp) => (
+              <Tr
+                key={emp.id}
+                onClick={() => handleRowClick(emp)}
+                cursor="pointer"
+                _hover={{ bg: "gray.50" }}
+              >
+                <Td
                   w="40px"
-                  minW="40px"
-                  maxW="40px"
                   p="0"
                   textAlign="center"
-                  {...headLine}
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <Checkbox
                     size="sm"
-                    isChecked={allChecked}
-                    isIndeterminate={isIndeterminate}
-                    onChange={(e) => toggleAll(e.target.checked)}
-                    isDisabled={saving}
+                    isChecked={selectedIds.has(emp.id)}
+                    onChange={(e) => toggleOne(emp.id, e.target.checked)}
                   />
-                </Th>
+                </Td>
 
-                <Th {...headLine}>사번</Th>
-                <Th {...headLine}>이름</Th>
-                <Th {...headLine}>상태</Th>
-                <Th {...headLine}>근무일</Th>
-                <Th {...headLine}>근무 시간</Th>
-                <Th {...headLine}>근무지</Th>
+                <Td>{emp.name}</Td>
+                <Td fontWeight="bold">{emp.workType}</Td>
+                <Td>
+                  <StatusTag status={emp.status} />
+                </Td>
+                <Td>{emp.date}</Td>
+                <Td>{emp.dayHM}</Td>
+                <Td>{emp.location}</Td>
               </Tr>
-            </Thead>
+            ))}
+          </Tbody>
+        </Table>
+      </Box>
 
-            <Tbody>
-              {tableRows.map((emp) => (
-                <Tr
-                  key={emp.id}
-                  onClick={() => handleRowClick(emp)}
-                  cursor="pointer"
-                  _hover={{ bg: "gray.50" }}
-                >
-                  <Td
-                    w="40px"
-                    minW="40px"
-                    maxW="40px"
-                    p="0"
-                    textAlign="center"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Checkbox
-                      size="sm"
-                      isChecked={selectedIds.has(emp.id)}
-                      onChange={(e) => toggleOne(emp.id, e.target.checked)}
-                      isDisabled={saving}
-                    />
-                  </Td>
-
-                  <Td>{emp.employeeNumber}</Td>
-                  <Td>{emp.name}</Td>
-                  <Td>
-                    <StatusTag status={emp.status} />
-                  </Td>
-                  <Td>{emp.date}</Td>
-                  <Td>{emp.dayHM}</Td>
-                  <Td>{emp.location}</Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
-        </Box>
-      )}
-
+      {/* ===== 근무 상세 모달 (원본 그대로) ===== */}
       {selectedEmployee && (
-        <Modal isOpen={isOpen} onClose={handleCloseModal} size="lg">
+        <Modal isOpen={isOpen} onClose={onClose} size="lg">
           <ModalOverlay />
           <ModalContent>
             <ModalHeader>근무 상세 정보</ModalHeader>
+
             <ModalBody>
-              <Box border="1px solid #333" borderRadius="8px" p={4} mb={4} bg="#f9f9f9">
-                <Flex mb={2}>
-                  <Box flex="1">
-                    <strong>사번:</strong> {selectedEmployee.employeeNumber}
+              {/* 📅 기본 정보 */}
+              <InfoCard title="📅 근무 요약">
+                <Flex justify="space-between">
+                  <Box>
+                    <Text fontSize="xs" color="gray.500">이름</Text>
+                    <Text fontWeight="600">{selectedEmployee.name}</Text>
                   </Box>
-                  <Box flex="1">
-                    <strong>이름:</strong> {selectedEmployee.name}
+
+                  <Box>
+                    <Text fontSize="xs" color="gray.500">근무일</Text>
+                    <Text fontWeight="600">{selectedEmployee.date}</Text>
+                  </Box>
+
+                  <Box>
+                    <Text fontSize="xs" color="gray.500">근무구분</Text>
+                    <Tag colorScheme="blue">{selectedEmployee.workType}</Tag>
                   </Box>
                 </Flex>
+              </InfoCard>
 
-                <Flex mb={2}>
-                  <Box flex="1">
-                    <strong>상태:</strong> <StatusTag status={selectedEmployee.status} />
+              {/* ⏰ 근무 시간 */}
+              <InfoCard title="⏰ 근무 시간">
+                <Flex justify="space-between">
+                  <Box>
+                    <Text fontSize="xs" color="gray.500">근무 시간</Text>
+                    <Text fontWeight="600">{selectedEmployee.workTime}</Text>
                   </Box>
-                  <Box flex="1">
-                    <strong>근무일:</strong> {selectedEmployee.date}
+
+                  <Box textAlign="right">
+                    <Text fontSize="xs" color="gray.500">총 근무</Text>
+                    <Text fontWeight="700" color="blue.600">
+                      {selectedEmployee.dayHM}
+                    </Text>
                   </Box>
                 </Flex>
+              </InfoCard>
 
-                <Flex mb={2}>
-                  <Box flex="1">
-                    <strong>작업시간:</strong> {selectedEmployee.workTime}
-                  </Box>
-                  <Box flex="1">
-                    <strong>업체명/위치:</strong> {selectedEmployee.location}
-                  </Box>
+              {/* 🏢 근무 장소 */}
+              <InfoCard title="🏢 근무 장소">
+                <Text fontWeight="600">{selectedEmployee.location}</Text>
+              </InfoCard>
+
+              {/* 📋 근무 상세 */}
+              <InfoCard title="📋 근무 상세">
+                <Flex direction="column" gap={2}>
+                  <Flex justify="space-between">
+                    <Tag colorScheme="green">주간</Tag>
+                    <Text fontWeight="600">{selectedEmployee.dayHM}</Text>
+                  </Flex>
+
+                  <Flex justify="space-between">
+                    <Tag colorScheme="orange">잔업</Tag>
+                    <Text fontWeight="600">
+                      {selectedEmployee.overtimeChecked
+                        ? selectedEmployee.overtimeDuration
+                        : "없음"}
+                    </Text>
+                  </Flex>
+
+                  <Flex justify="space-between">
+                    <Tag colorScheme="purple">중식</Tag>
+                    <Text fontWeight="600">
+                      {selectedEmployee.lunchChecked
+                        ? selectedEmployee.lunchDuration
+                        : "없음"}
+                    </Text>
+                  </Flex>
                 </Flex>
+              </InfoCard>
 
-                <Flex mb={2}>
-                  <Box flex="1">
-                    <strong>주간:</strong> {selectedEmployee.dayHM} (표시)
-                  </Box>
-                  <Box flex="1">
-                    <strong>잔업:</strong>{" "}
-                    {selectedEmployee.overtimeChecked
-                      ? selectedEmployee.overtimeDuration
-                      : "없음"}
-                  </Box>
-                </Flex>
-
-                <Flex mb={2}>
-                  <Box flex="1">
-                    <strong>중식:</strong>{" "}
-                    {selectedEmployee.lunchChecked ? selectedEmployee.lunchDuration : "없음"}
-                  </Box>
-                  <Box flex="1">
-                    <strong>특근:</strong>{" "}
-                    {selectedEmployee.specialWorkChecked
-                      ? selectedEmployee.specialWorkDuration
-                      : "없음"}
-                  </Box>
-                </Flex>
-              </Box>
-
-              <Box>
-                <Text fontSize="sm" fontWeight="bold" mb={1}>
-                  거절 사유
-                </Text>
+              {/* ❌ 거절 사유 */}
+              <InfoCard title="❌ 거절 사유">
                 <Textarea
                   placeholder="거절 사유를 입력하세요"
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
-                  size="sm"
                   resize="none"
-                  isDisabled={saving}
                 />
-              </Box>
+              </InfoCard>
             </ModalBody>
 
-            <ModalFooter>
-              <Button
-                colorScheme="green"
-                mr={3}
-                onClick={handleApprove}
-                isLoading={saving}
-                loadingText="처리 중"
-              >
-                승인
-              </Button>
+           <ModalFooter>
+            <Button
+              colorScheme="green"
+              mr={2}
+              isLoading={saving}
+              onClick={async () => {
+                if (!selectedEmployee) return;
 
-              <Button
-                colorScheme="red"
-                mr={3}
-                onClick={handleReject}
-                isLoading={saving}
-                loadingText="처리 중"
-              >
-                거절
-              </Button>
+                setSaving(true);
+                try {
+                  await adminWorkdayStatusUpdate(
+                    {
+                      user_uuid: selectedEmployee.user_uuid,
+                      work_date: selectedEmployee.date,
+                      work_shift: selectedEmployee.workType,
+                      status: "Y",
+                    },
+                    { toast }
+                  );
 
-              <Button colorScheme="gray" onClick={handleCloseModal} isDisabled={saving}>
-                닫기
-              </Button>
-            </ModalFooter>
+                  toast({ title: "승인 완료", status: "success" });
+                  onClose();
+                  fetchList();
+                } catch (e) {
+                  toast({
+                    title: "승인 실패",
+                    description: e?.message || "승인 중 오류",
+                    status: "error",
+                  });
+                } finally {
+                  setSaving(false);
+                }
+              }}
+            >
+              승인
+            </Button>
+
+            <Button
+              colorScheme="red"
+              mr={2}
+              isLoading={saving}
+              onClick={async () => {
+                if (!rejectReason.trim()) {
+                  toast({
+                    title: "거절 사유 필요",
+                    status: "warning",
+                  });
+                  return;
+                }
+
+                setSaving(true);
+                try {
+                  await adminWorkdayStatusUpdate(
+                    {
+                      user_uuid: selectedEmployee.user_uuid,
+                      work_date: selectedEmployee.date,
+                      work_shift: selectedEmployee.workType,
+                      status: "N",
+                      reject_reason: rejectReason,
+                    },
+                    { toast }
+                  );
+
+                  toast({ title: "거절 완료", status: "success" });
+                  onClose();
+                  fetchList();
+                } catch (e) {
+                  toast({
+                    title: "거절 실패",
+                    description: e?.message || "거절 중 오류",
+                    status: "error",
+                  });
+                } finally {
+                  setSaving(false);
+                }
+              }}
+            >
+              거절
+            </Button>
+
+            <Button onClick={onClose}>닫기</Button>
+          </ModalFooter>
           </ModalContent>
         </Modal>
       )}

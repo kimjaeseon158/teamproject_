@@ -145,7 +145,7 @@ const Calendar = () => {
   /* ---------- render ---------- */
 
   return (
-    <Box display="flex" height="100vh" bg="#f5f5f7">
+    <Box display="flex" height="100vh" w="100%" bg="#f5f5f7" overflowX="hidden">
       {/* LEFT SIDEBAR */}
       <Box
         width="350px"

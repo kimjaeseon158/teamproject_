@@ -51,7 +51,7 @@ export const useLogin = () => {
   const setRole = (nextRole) => {
     if (nextRole === role) return;
     setRoleState(nextRole);
-    resetValues(); // 🔥 핵심: role 바뀌면 전부 초기화
+    resetValues();
   };
 
   /* ================= handlers ================= */
@@ -87,15 +87,22 @@ export const useLogin = () => {
     // 2️⃣ API 호출
     let response;
 
-    if (role === "admin") {
-      response = await adminLoginAPI(
-        values.id,
-        values.password,
-        values.admin_code
-      );
-    } else {
-      response = await userLoginAPI(values.id, values.password);
+    try {
+      if (role === "admin") {
+        response = await adminLoginAPI(
+          values.id,
+          values.password,
+          values.admin_code
+        );
+      } else {
+        response = await userLoginAPI(values.id, values.password);
+      }
+    } catch (err) {
+      console.error("🔴 로그인 API 에러:", err);
+      setLoginError("서버 오류");
+      return;
     }
+
 
     if (!response?.success) {
       setLoginError(response?.message || "로그인 실패");
@@ -110,14 +117,17 @@ export const useLogin = () => {
 
     setAccessToken(response.access);
 
-    // 4️⃣ Context 동기화
+    // 🔥 4️⃣ userName 세팅 (여기가 핵심 수정)
+    setUserName(
+      response?.user_name ??
+      response?.admin_name ??
+      ""
+    );
+
+    // 5️⃣ Context 동기화 (uuid 복구)
     await revalidate();
 
-    if (role === "user") {
-      setUserName(response?.name ?? "");
-    }
-
-    // 5️⃣ 이동
+    // 6️⃣ 이동
     setFadeOut(true);
 
     if (role === "admin") {
@@ -131,7 +141,7 @@ export const useLogin = () => {
 
   return {
     role,
-    setRole,          // 👈 RoleTabs에서 이거만 쓰면 됨
+    setRole,
 
     values,
     errors,

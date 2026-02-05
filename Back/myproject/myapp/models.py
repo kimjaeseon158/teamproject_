@@ -1,7 +1,6 @@
 import uuid
 from django.db import models
 from django.contrib.auth.hashers import make_password
-from .unique_serial import generate_unique_serial
 
 
 # fmt:off
@@ -116,29 +115,18 @@ class Admin_Login_Info(models.Model):
 # 수입 매출 관련 테이블
 
 class Income(models.Model):
+    Income_uuid    = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
     date           = models.DateField()                                                      # 매출 날짜
     company_name   = models.CharField(max_length=100)                                        # 업체명 (자유 입력)
     company_detail = models.CharField(max_length=100,blank=True,null=True)                   # 업체명 상세 (자유 입력)
     amount         = models.IntegerField()                                                   # 매출 금액 (정수)
-    serial_number  = models.IntegerField(primary_key=True)    # 새 레코드 생성 시 자동 값 중복되지 않음 고유번호 저장 
-
-    def save(self, *args, **kwargs):
-        if not self.serial_number:
-            self.serial_number = generate_unique_serial(Income)
-        super().save(*args, **kwargs)
-
 
 class Expense(models.Model):
+    expense_uuid   = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
     date           = models.DateField()                                                      # 지출 날짜
     expense_name   = models.CharField(max_length=100)                                        # 지출명 (대분류, 자유 입력)
     expense_detail = models.CharField(max_length=100, blank=True, null=True)                 # 지출 상세 (자유 입력)
     amount         = models.IntegerField()                                                   # 지출 금액 (정수)
-    serial_number  = models.IntegerField(primary_key=True)    # 새 레코드 생성 시 자동 값 중복되지 않음 고유번호 저장 
-
-    def save(self, *args, **kwargs):
-        if not self.serial_number:
-            self.serial_number = generate_unique_serial(Expense)
-        super().save(*args, **kwargs)
 
 
 # Token 저장 테이블

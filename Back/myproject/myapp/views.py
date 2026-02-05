@@ -550,7 +550,7 @@ class IncomeDateFilteredAPIView(APIView):
         # 지정 날짜 범위의 모든 수입 가져오기
         incomes = Income.objects.filter(
             date__gte=start_date, date__lte=end_date
-        ).values("serial_number", "date", "company_name", "company_detail", "amount")
+        ).values("Income_uuid", "date", "company_name", "company_detail", "amount")
         result = list(incomes)
 
         return Response({"success": True, "data": result})
@@ -575,7 +575,7 @@ class ExpenseDateFilteredAPIView(APIView):
         # 지정 날짜 범위의 모든 지출 가져오기
         expenses = Expense.objects.filter(
             date__gte=start_date, date__lte=end_date
-        ).values("serial_number", "date", "expense_name", "expense_detail", "amount")
+        ).values("expense_uuid", "date", "expense_name", "expense_detail", "amount")
         result = list(expenses)
 
         return Response({"success": True, "data": result})
@@ -635,13 +635,13 @@ class IncomeUpdateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request):
-        # 필수: serial_number 및 날짜 범위
-        serial_number = request.data["serial_number"]
+        # 필수: Income_uuid 및 날짜 범위
+        Income_uuid = request.data["Income_uuid"]
         start_date = datetime.strptime(request.data["start_date"], "%Y-%m-%d").date()
         end_date = datetime.strptime(request.data["end_date"], "%Y-%m-%d").date()
 
         # 레코드 업데이트
-        income_instance = Income.objects.get(serial_number=serial_number)
+        income_instance = Income.objects.get(Income_uuid=Income_uuid)
         serializer = IncomeSerializer(income_instance, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -661,13 +661,13 @@ class ExpenseUpdateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request):
-        # 필수: serial_number 및 날짜 범위
-        serial_number = request.data["serial_number"]
+        # 필수: expense_uuid 및 날짜 범위
+        expense_uuid = request.data["expense_uuid"]
         start_date = datetime.strptime(request.data["start_date"], "%Y-%m-%d").date()
         end_date = datetime.strptime(request.data["end_date"], "%Y-%m-%d").date()
 
         # 레코드 업데이트
-        expense_instance = Expense.objects.get(serial_number=serial_number)
+        expense_instance = Expense.objects.get(expense_uuid=expense_uuid)
         serializer = ExpenseSerializer(
             expense_instance, data=request.data, partial=True
         )
@@ -691,14 +691,14 @@ class IncomeDeleteAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
-        # 필수: serial_number 및 날짜 범위
-        serial_number = request.data["serial_number"]
+        # 필수: Income_uuid 및 날짜 범위
+        Income_uuid = request.data["Income_uuid"]
         start_date = datetime.strptime(request.data["start_date"], "%Y-%m-%d").date()
         end_date = datetime.strptime(request.data["end_date"], "%Y-%m-%d").date()
 
         try:
             # 레코드 삭제
-            income_instance = Income.objects.get(serial_number=serial_number)
+            income_instance = Income.objects.get(Income_uuid=Income_uuid)
             income_instance.delete()
 
             # 삭제 후 날짜 범위 필터링된 데이터 반환
@@ -718,14 +718,14 @@ class ExpenseDeleteAPIView(APIView):
 
     def delete(self, request):
 
-        # 필수: serial_number 및 날짜 범위
-        serial_number = request.data["serial_number"]
+        # 필수: expense_uuid 및 날짜 범위
+        expense_uuid = request.data["expense_uuid"]
         start_date = datetime.strptime(request.data["start_date"], "%Y-%m-%d").date()
         end_date = datetime.strptime(request.data["end_date"], "%Y-%m-%d").date()
 
         try:
             # 레코드 삭제
-            expense_instance = Expense.objects.get(serial_number=serial_number)
+            expense_instance = Expense.objects.get(expense_uuid=expense_uuid)
             expense_instance.delete()
 
             # 삭제 후 날짜 범위 필터링된 데이터 반환
@@ -792,11 +792,12 @@ class AdminWorkDayStatusUpdateAPIView(APIView):
         status = request.data.get("status")  # True / False
         reject_reason = request.data.get("reject_reason")
 
-        if not user_uuid or not work_date_str or not status:
+        if not user_uuid or not work_date_str or not status is None or not work_shift:
             return Response({"success": False})
 
-        if status not in ["Y", "N"]:
+        if status not in [True, False]:
             return Response({"success": False})
+        
 
         try:
             work_date = datetime.strptime(work_date_str, "%Y-%m-%d").date()
@@ -815,12 +816,12 @@ class AdminWorkDayStatusUpdateAPIView(APIView):
             )
 
         # 완료(승인)
-        if status == "Y":
+        if status == True:
             work_day.is_approved = True
             work_day.reject_reason = None
 
         # 거절(반려)
-        elif status == "N":
+        elif status == False:
             if not reject_reason:
                 return Response({"success": False})  # 반려 사유 반드시 기제
             work_day.is_approved = False

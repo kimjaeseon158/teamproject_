@@ -16,13 +16,13 @@ class ExpenseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Expense
         fields = '__all__'
-        read_only_fields = ('serial_number',)  
+        read_only_fields = ('expense_uuid',)  
 
 class IncomeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Income
         fields = '__all__'
-        read_only_fields = ('serial_number',)
+        read_only_fields = ('Income_uuid',)
 
 # user_work 저장
 

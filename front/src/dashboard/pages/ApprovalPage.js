@@ -137,9 +137,12 @@ export default function ApprovePage() {
   const [saving, setSaving] = useState(false);
 
   const today = useMemo(() => new Date(), []);
-  const [range, setRange] = useState({ from: today, to: today });
-  const [calendarMonth, setCalendarMonth] = useState(today);
-
+  const [range, setRange] = useState({ from: today, to: today });      // 확정값
+  const {
+    isOpen: isCalendarOpen,
+    onOpen: openCalendar,
+    onClose: closeCalendar,
+  } = useDisclosure();
   const startDate = useMemo(() => (range?.from ? toYMD(range.from) : ""), [range]);
   const endDate = useMemo(() => {
     if (range?.to) return toYMD(range.to);
@@ -235,13 +238,6 @@ export default function ApprovePage() {
     }
   };
 
-  useEffect(() => {
-    if (didInitialFetch) return;
-    fetchList({ overrideStatus: "대기" }).finally(() =>
-      setDidInitialFetch(true)
-    );
-  }, [didInitialFetch]);
-
   const tableRows = useMemo(() => rows, [rows]);
 
   const handleRowClick = (emp) => {
@@ -249,6 +245,36 @@ export default function ApprovePage() {
     setRejectReason("");
     onOpen();
   };
+  const startOfWeek = (date) => {
+    const d = new Date(date);
+    const day = d.getDay(); // 0=일, 1=월
+    const diff = day === 0 ? -6 : 1 - day; // 월요일 기준
+    d.setDate(d.getDate() + diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+
+  const endOfWeek = (date) => {
+    const start = startOfWeek(date);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+    return end;
+  };
+  const formatYMD = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate()
+  ).padStart(2, "0")}`;
+
+
+  const rangeLabel = useMemo(() => {
+    if (!range?.from) return "-";
+
+    const from = formatYMD(range.from);
+    const to = formatYMD(range.to ?? range.from);
+
+    return `${from} ~ ${to}`;
+  }, [range]);
 
   const allChecked =
     tableRows.length > 0 && tableRows.every((r) => selectedIds.has(r.id));
@@ -301,6 +327,61 @@ export default function ApprovePage() {
             조회
           </Button>
         </HStack>
+          {/* 👉 오른쪽 끝 */}
+          <Box ml="auto">
+  <Popover
+    placement="bottom-end"
+    isOpen={isCalendarOpen}
+    onClose={closeCalendar}
+  >
+    <PopoverTrigger>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={openCalendar}
+      >
+        {rangeLabel}
+      </Button>
+    </PopoverTrigger>
+
+    <PopoverContent w="auto">
+      <PopoverArrow />
+      <PopoverCloseButton />
+
+      <PopoverBody>
+        {/* 상단 버튼 */}
+        <Flex justify="space-between" mb={2}>
+          <Button
+            size="xs"
+            onClick={() => {
+              const now = new Date();
+              setRange({ from: now, to: now });
+              closeCalendar();
+            }}
+          >
+            Today
+          </Button>
+        </Flex>
+
+        {/* 달력 */}
+        <DayPicker
+          mode="range"
+          selected={range}
+          onSelect={(r) => {
+            if (!r?.from) return;
+
+            setRange({
+              from: r.from,
+              to: r.to ?? r.from,
+            });
+
+            closeCalendar(); // ✅ 선택되면 바로 닫힘
+          }}
+        />
+      </PopoverBody>
+    </PopoverContent>
+  </Popover>
+</Box>
       </Flex>
 
       {/* ===== 테이블 ===== */}

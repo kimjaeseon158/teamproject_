@@ -1,5 +1,5 @@
 import React from "react";
-import AdminPage from "../../adminpage/adminpage-Front/adminPage";
+import AdminPage from "../../adminpage/page/page";
 
 export default function EmployeeList() {
   return (

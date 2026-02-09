@@ -48,7 +48,9 @@ export function UserProvider({ children, loginType }) {
 
       // JWT payload → uuid만 복구
       const payload = JSON.parse(atob(access.split(".")[1]));
+            console.log(payload)
       setUserUuid(payload?.sub ?? null);
+      setUserName(payload?.user_name ?? null);
 
       // ❗ userName은 여기서 건드리지 않는다
       return true;
@@ -63,7 +65,6 @@ export function UserProvider({ children, loginType }) {
       setLoading(false);
     }
   }, []);
-
   /* =========================
      최초 진입 시 토큰 체크
   ========================= */

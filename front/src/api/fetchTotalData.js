@@ -1,5 +1,5 @@
 // src/js/fetchTotalData.js
-import { total_payPost } from "../dashboard/js/total_payPostLogic";
+import { total_payPost } from "../dashboard/api/total_payPostLogic";
 
 export async function fetchTotalData({ start, end, toast }) {
   const payload = {

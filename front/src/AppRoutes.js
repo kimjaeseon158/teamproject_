@@ -3,11 +3,11 @@ import { UserProvider } from "./login/js/userContext";
 import { AlarmProvider } from "./aralm";
 
 import LoginPage from "./login/Pages/LoginPage";
-import Calendar from "./calenderTest/calenderFront/calender";
+import Calendar from "./user_Calendar/page/CalendarPage";
 import Dashboard from "./dashboard/dashboard";
-import AdminPage from "./adminpage/adminpage-Front/adminPage";
-import AdminInformation from "./adminpage/adminpage-Front/adminInformation";
-import GoogleCallbackDone from "./dashboard/js/GoogleCallbackDone";
+import AdminPage from "./adminpage/page/page";
+import useAdminInformationLogic from "./adminpage/hooks/useAdminInformationLogic";
+import GoogleCallbackDone from "./dashboard/api/google/GoogleCallbackDone";
 import RequireAuth from "./requireauth";
 
 export default function AppRoutes() {
@@ -48,7 +48,7 @@ export default function AppRoutes() {
             path="/admin-info"
             element={
               <RequireAuth>
-                <AdminInformation />
+                <useAdminInformationLogic />
               </RequireAuth>
             }
           />

@@ -1,5 +1,4 @@
 // src/login/api/loginApi.js
-const API_BASE_URL = "https://teamproject-v2qg.onrender.com";
 export const adminLoginAPI = async (id, password, admin_code) => {
   const response = await fetch("/api/check_admin_login/", {
     method: "POST",

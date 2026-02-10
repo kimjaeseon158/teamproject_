@@ -9,9 +9,7 @@ import { useAdminState } from "../hooks/useAdminState";
 import { useAdminData } from "../hooks/useAdminData";
 import { useAdminHandlers } from "../hooks/useAdminHandlers";
 
-import { Modal, ModalOverlay, ModalContent, ModalHeader,
-  ModalBody, ModalFooter, ModalCloseButton,
-  FormControl, FormLabel, Input, Button, VStack
+import { Modal
 } from "@chakra-ui/react";
 
 export default function Page() {

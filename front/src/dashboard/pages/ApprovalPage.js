@@ -41,7 +41,7 @@ export default function ApprovePage() {
       <ApproveFilterBar
         status={status}
         setStatus={setStatus}  
-        range={range}
+        setRange={setRange}
         rangeLabel={rangeLabel}
         loading={loading}
         onSearch={handleSearch}

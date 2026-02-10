@@ -33,3 +33,6 @@ django-apscheduler>=0.6.2
 
 # 코드 포맷터
 black>=23.0.0
+
+# Redis 캐시 백엔드 (Upstash 연동 필수 패키지)
+django-redis>=5.4.0

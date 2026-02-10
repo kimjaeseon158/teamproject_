@@ -116,31 +116,28 @@ DATABASES = {
     }
 }
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)], # Redis 기본 포트
-        },
-    },
-}
-
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": env("UPSTASH_REDIS_REST_URL"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "CONNECTION_POOL_KWARGS": {
+                "ssl_cert_reqs": None  # Upstash TLS 연결 허용
+            }
         }
     }
 }
 
-# CHANNEL_LAYERS = {
-#     "default": {
-#         # ✅ 별도의 Redis 서버 설치 없이 작동하는 방식
-#         "BACKEND": "channels.layers.InMemoryChannelLayer",
-#     },
-# }
+# 2. Django Channels 설정 (WebSocket용)
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [env("UPSTASH_REDIS_REST_URL")],
+        },
+    },
+}
 
 # --------------------------
 # Other

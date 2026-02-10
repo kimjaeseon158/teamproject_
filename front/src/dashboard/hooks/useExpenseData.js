@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { expense_filter_Data } from "../api/expense_filter";
-import { expense_Data } from "../api/expense_API";
 
 export function useExpenseData({ toast }) {
   const [range, setRange] = useState({ from: null, to: null });

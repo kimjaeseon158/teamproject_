@@ -79,7 +79,7 @@ export async function fetchWithAuth(url, options = {}, { toast } = {}) {
 
   if (!res.ok) {
     try {
-      const clone = res.clone();
+
     } catch (e) {
       console.warn("❌ 응답 body 읽기 실패:", e);
     }

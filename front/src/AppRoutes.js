@@ -6,7 +6,6 @@ import LoginPage from "./login/Pages/LoginPage";
 import Calendar from "./user_Calendar/page/CalendarPage";
 import Dashboard from "./dashboard/dashboard";
 import AdminPage from "./adminpage/page/page";
-import useAdminInformationLogic from "./adminpage/hooks/useAdminInformationLogic";
 import GoogleCallbackDone from "./dashboard/api/google/GoogleCallbackDone";
 import RequireAuth from "./requireauth";
 

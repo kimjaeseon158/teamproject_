@@ -1,4 +1,4 @@
-import { Box, Button, Flex, Text, useDisclosure } from "@chakra-ui/react";
+import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import { login } from "../api/google/googleAuth";
@@ -10,7 +10,6 @@ const localizer = momentLocalizer(moment);
 
 export default function CalendarSection({ onSelectEvent }) {
   const google = useGoogleLinkStatus();
-  const { onOpen } = useDisclosure();
   const events = google.events || [];
 
   return (

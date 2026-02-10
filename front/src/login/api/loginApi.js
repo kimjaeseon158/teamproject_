@@ -12,7 +12,7 @@ export const adminLoginAPI = async (id, password, admin_code) => {
 };
 
 export const userLoginAPI = async (id, password) => {
-  const response = await fetch(`${API_BASE_URL}/api/check_user_login/`, {
+  const response = await fetch(`/api/check_user_login/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",

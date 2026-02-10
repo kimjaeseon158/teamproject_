@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://teamproject-v2qg.onrender.com/api/$1"
+    }
+  ]
+}

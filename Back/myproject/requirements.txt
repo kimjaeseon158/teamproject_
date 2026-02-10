@@ -36,3 +36,7 @@ black>=23.0.0
 
 # Redis 캐시 백엔드 (Upstash 연동 필수 패키지)
 django-redis>=5.4.0
+
+# 배포용 웹 서버 및 정적 파일 관리
+gunicorn>=21.2.0
+whitenoise>=6.5.0

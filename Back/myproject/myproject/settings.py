@@ -17,7 +17,7 @@ REFRESH_TOKEN_HASH_SECRET = env('REFRESH_TOKEN_HASH_SECRET')
 DEBUG = env('DEBUG')
 
 DEBUG = True
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "teamproject-v2qg.onrender.com"]
 
 INSTALLED_APPS = [
     "daphne",

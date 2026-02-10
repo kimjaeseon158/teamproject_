@@ -101,7 +101,7 @@ const AddPersonModal = ({ isOpen, onClose, onSave }) => {
                   onClick={openAddressSearch}
                   type="button" // ✅ submit 방지
                 >
-                  주소 검색 
+                  주소 검색
                 </Button>
                 <Input
                   name="address"

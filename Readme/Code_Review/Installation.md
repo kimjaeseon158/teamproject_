@@ -57,6 +57,25 @@ npm install
 ```
 - `package.json`에 명시된 라이브러리들이 설치됩니다.
 
+### 사용 Library
+
+* "@chakra-ui/react": "^2.10.9"    ( 명령어 : npm install @chakra-ui/react@2  )
+* "@emotion/react": "^11.14.0"     ( 명령어 : npm install @emotion/react  )
+* "@emotion/styled": "^11.14.1"    ( 명령어 : npm install @emotion/styled )
+* "recharts": "^3.1.2"             ( 명령어 : npm install recharts )
+* "date-fns": "^4.1.0"             ( 명령어 : npm install date-fns  )
+* "framer-motion": "^12.23.12"     ( 명령어 : npm install framer-motion )
+* "moment": "^2.30.1"              ( 명령어 : npm install moment  )
+* "react": "^19.0.0"               ( 명령어 : npm install react )
+* "react-big-calendar": "^1.19.4"  ( 명령어 : npm install react-big-calendar )
+* "react-dom": "^19.0.0"           ( 명령어 : npm install react-dom )
+* "react-icons": "^5.5.0"          ( 명령어 : npm install react-icons )
+* "react-router-dom": "^7.3.0"     ( 명령어 : npm install react-router-dom )
+* "concurrently": "^9.1.2"         ( 명령어 : npm install -D concurrently )
+* "nodemon": "^3.1.9"              ( 명령어 : npm install -D nodemon ) 
+* "eslint": "^8.56.0"              ( 명령어 : npm install -D eslint )
+* "react-day-picker": "^9.9.0"     ( 명령어 : npm install react-day-picker )
+
 ### 3-2. concurrently 설치
 ```bash
 npm install concurrently --save-dev

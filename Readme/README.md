@@ -56,10 +56,12 @@ TRAMPROJECT_
 │          ├── myapp/
 │                └── apps.py                     # Django 앱 설정 등록 
 │                └── auth_utils.py               # 용자 및 관리자 로그인 인증 함수 구현
-│                └── models.py                   # user(사용자), admin(관리자), 근무정보, 급여 데이터 모델 정의
+│                └── models.py                   # user(사용자), admin(관리자), 근무정보, 급여, 수입지출 데이터 모델 정의
 │                └── serializers.py              # 모델 데이터를 JSON으로 직렬화/역직렬화 처리
-│                └── urls.py                     # API 엔드포인트 라우팅 (현재 `/items/` 단일 경로)
-│                └── views.py                    # API 요청 분기 처리, `data_type`에 따라 기능 실행
+│                └── jwt_utils.py                # 쿠키에서 토큰 추출 후 검증, Access Token 문자열로 부터 토큰 검증, 고유 식별자 employee_number, admin_id 등 원하는 값으로 지정
+│                └── urls.py                     # 각 기능 마다 API 분리, admin page 등 page 분류하여 API 관리 
+│                                                  (/api/check_admin_login/ 등 각각의 경로 지정)
+│                └── views.py                    # API 요청 분기 처리, 각 class 따라 기능 실행, 각각의 class 마다 JWT 검증 로직 구성
 │     ├── dbsqlite3                              # Django 내장 데이터베이스, 데이터베이스 스키마와 데이터를 파일 기반 저장
 │     ├── manage.py                              # Django 프로젝트 관리 커맨드 실행
 │
@@ -67,41 +69,61 @@ TRAMPROJECT_
 │     ├── src/
 │          ├── calenderTest/
 │              ├── calenderFront/
-│                └── calender.js                 # 달력 및 날짜선택
-│                └── calenderinfo.js             # 작업 입력 컴포넌트
+│                └── calender.js                 # 캘린더 날짜 강조 및 옵션 표시
+│                └── calenderinfo.js             # 작업 기록 입력
 │
 │          ├── js/
-│                └── submitWorkInfo.js           # 서버 전송 함수
-│                └── timeUtils.js                # 시간 계산 함수
-│                └── locationsList.js            # 장소 리스트
-│                └── workTimeList.js             # 시간 리스트
+│                └── submitWorkInfo.js           # 근정 정보 전송
+│                └── timeUtils.js                # 작업 시간 계산
+│                └── locationsList.js            # 근무지 
+│                └── workTimeList.js             # 작업 시간
 │ 
 │     ├── adminpage/
 │          ├── adminpag-Font/
-│                └── adminPage.js                # 메인 관리자 페이지
-│                └── adminInformation.js         # 정보 수정 
-│                └── addPersonModal.js           # 직원 추가 
-│                └── adminAddBtn.js              # 추가 버튼
-│                └── addPanel.js                 # 회사·일급 입력
-│                └── adminResizableTable.js      # 너비·높이 조절
+│                └── adminPage.js                # 사원 관리 페이지 (추가·수정·삭제·검색/정렬)
+│                └── adminInformation.js         # 사원 정보 수정 
+│                └── addPersonModal.js           # 사원 정보 입력 
+│                └── adminAddBtn.js              # 직원 추가·삭제·검색 버튼
+│                └── addPanel.js                 # 회사명·일급 입력 
+│                └── adminResizableTable.js      # 테이블 행·열 크기 조절(Dashborad 사용으로 삭제 예정)
+│                └── admnsButon.js               # 회사별 일급 수정
 │
 │          ├── js/
-│                └── adminPageLogic.js           # 필터/정렬 API 호출 로직
-│                └── admnsdbPost.js              # POST 요청
-│                └── adminPageUpdate.js          # 직원 정보 업데이트
-│                └── adminPageDelete.js          # 직원 삭제 요청
-│                └── useAdminpanelLogic.js       # 일급 관리
-│                └── useAdminInformationLogic.js # 직원 정보 수정
-│                └── useAddPersonLogic.js        # 신규 직원 등록
+│                └── adminPageAddPerson.js       # 신규 사용자 서버 전송 
+│                └── adminPageDelete.js          # 선택 사원 삭제 서버 함수
+│                └── adminPageLogic.js           # 사원 필터링/정렬 서버 조회 함수
+│                └── adminPageUpdate.js          # 사원 정보 업데이트 서버 함수
+│                └── admnsdbPost.js              # 사원 목록 조회 서버 함수
+│                └── useAddPersonLogic.js        # 사원 추가
+│                └── useAdminInformationLogic.js # 사원 정보 모달 로직
+│                └── useAdminpanelLogic.js       # 일급 관리 패널 로직
+│                └── utils.js                    # 사원 주민등록번호·전화번호 포맷
+│
+│     ├── dashboard/
+│                └── dashboard.js                # Dashboard 레이아웃
+│          ├── components/
+│                └── FinalCahart.js              # 월별 수입·지출 차트 표시
+│                └── Header.js                   # 관리자 문구와 로그아웃 버튼 표시
+│                └── sideBar.js                  # 사이드바 메뉴와 Total Sales 하위 메뉴 표시 및 활성 
+│          ├── adminpag-Font/
+│                └── employeeData.js             # 직원 근무·상태·시간·위치 등 데이터 배열
+│                └── googleAuth.js               # 구글 OAuth 토큰 연동
+│          ├── adminpag-Font/
+│                └── ApprovalPage.js             # 사원 목록과 승인/거절 관리
+│                └── DailyPayPage.js             # 일급 관리 페이지 표시
+│                └── EmployeeList.js             # AdminPage 렌더링
+│                └── overview.js                 # Google Calendar 연동과 총 지출/승인 대기 사원 표시
+│                └── TotalSalesPage.js           # 업체별 매출, 지출 및 순이익 그래프
 │
 │     ├──  login/
 │          ├── login-Font/
 │                └── login.js                    # 로그인 컴포넌트
 │
 │          ├── js/
-│                └── logindata.js                # 로그인 API 호출
+│                └── validation.js               # 로그인 API 호출
 │                └── userContext.js              # 로그인 사용자 정보 관리
-│                └── validation.js               # 로그인 유효성 검사
+│                └── user_login_info.js          # 사원 로그인 시도 후 성공 시 사원 정보, 실패 시 오류 반환
+│                └── admin_login_info.js         # 로그인 시도 후 결과와 사용자 데이터 반환
 ```
 
 ##  🔍코드 리뷰 보기

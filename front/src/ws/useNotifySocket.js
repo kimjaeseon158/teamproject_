@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-const WS_BASE_URL = process.env.REACT_APP_WS_BASE_URL;
+const WS_BASE_URL = process.env.REACT_APP_WS_BASE_URL; 
 export function useNotifySocket({ token, uuid, loginType, onMessage }) {
   const wsRef = useRef(null);
   const onMessageRef = useRef(onMessage);

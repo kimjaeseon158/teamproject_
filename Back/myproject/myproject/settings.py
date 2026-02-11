@@ -29,7 +29,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "myapp",
-    "django_apscheduler"
+    "django_apscheduler",
+    "channels"
 ]
 
 # --------------------------

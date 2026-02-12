@@ -865,7 +865,47 @@ class WorkPlaceRateListCreateAPIView(APIView):
         data = WorkPlaceRateSerializer(WorkPlace_qs, many=True).data
         return Response({"success": True, "rates": data})
     
+class WorkPlaceRateUpdateDeleteAPIView(APIView):
+    authentication_classes = [AdminJWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
+    def patch(self, request):
+        rate_uuid = request.data.get("rate_uuid")
+        if not rate_uuid:
+            return Response({"success": False})
+
+        try:
+            rate = WorkPlaceRate.objects.select_related("user").get(rate_uuid=rate_uuid)
+        except WorkPlaceRate.DoesNotExist:
+            return Response({"success": False})
+
+        serializer = WorkPlaceRateSerializer(rate, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response({"success": False})
+
+        serializer.save()
+
+        # 수정 후 전체 목록 반환
+        WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
+        data = WorkPlaceRateSerializer(WorkPlace_qs, many=True).data
+        return Response({"success": True, "rates": data})
+
+    def delete(self, request):
+        rate_uuid = request.data.get("rate_uuid")
+        if not rate_uuid:
+            return Response({"success": False})
+
+        try:
+            rate = WorkPlaceRate.objects.get(rate_uuid=rate_uuid)
+        except WorkPlaceRate.DoesNotExist:
+            return Response({"success": False})
+
+        rate.delete()
+
+        # 삭제 후 전체 목록 반환
+        WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
+        data = WorkPlaceRateSerializer(WorkPlace_qs, many=True).data
+        return Response({"success": True, "rates": data})
 
 # ----------------------
 # 2 데이터 처리 뷰 - User

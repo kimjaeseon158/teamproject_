@@ -75,16 +75,27 @@ class User_WorkDetail(models.Model):
     is_overtime_approved = models.BooleanField(default=False)                            # 특근 여부
 
 
-class User_Work_Pay(models.Model):
-    user_uuid = models.ForeignKey(
-        User_Login_Info,
-        to_field="user_uuid",        # UUID 컬럼을 참조
+class WorkPlaceRate(models.Model):
+    rate_uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        "User_Login_Info",
+        to_field="user_uuid",
         on_delete=models.CASCADE,
-        null=False,                   
-        related_name="work_pays",
+        related_name="rates",
     )
-    company         = models.CharField(max_length=50)                               # 회사명
-    daily_wages     = models.IntegerField()                                         # 일급
+    work_place = models.CharField(max_length=100)                  #  근무지 마다 금액이 다를경우 대비
+
+    #  전부 시간당 단가
+    base_hourly_wage     = models.PositiveIntegerField(default=0)  # 기본 시급
+    overtime_hourly_wage = models.PositiveIntegerField(default=0)  # 잔업(연장)
+    meal_ot_hourly_wage  = models.PositiveIntegerField(default=0)  # 중식연장
+    special_hourly_wage  = models.PositiveIntegerField(default=0)  # 특근
+    overnight_hourly_wage= models.PositiveIntegerField(default=0)  # 철야 
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "work_place"], name="uniq_user_work_place_rate")
+        ]                       
 
 
 
@@ -127,7 +138,13 @@ class Expense(models.Model):
     expense_name   = models.CharField(max_length=100)                                        # 지출명 (대분류, 자유 입력)
     expense_detail = models.CharField(max_length=100, blank=True, null=True)                 # 지출 상세 (자유 입력)
     amount         = models.IntegerField()                                                   # 지출 금액 (정수)
-
+    # 급여 지출의 출처 , Expense에 저장된 work_day(FK)로 User_WorkDay를 조회
+    work_day = models.OneToOneField(
+        "User_WorkDay",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="salary_expense",
+    )
 
 # Token 저장 테이블
 

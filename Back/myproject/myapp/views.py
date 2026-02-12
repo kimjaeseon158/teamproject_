@@ -10,6 +10,7 @@ from .serializers import (
     IncomeSerializer,
     ExpenseSerializer,
     UserWorkDaySerializer,
+    WorkPlaceRateSerializer,
 )
 from .auth_utils import check_user_credentials, check_admin_credentials
 from .jwt_utils import (
@@ -26,6 +27,7 @@ from .models import (
     UserRefreshToken,
     User_WorkDay,
     User_WorkDetail,
+    WorkPlaceRate
 )
 from django.db.models import Sum
 from datetime import datetime
@@ -830,6 +832,39 @@ class AdminWorkDayStatusUpdateAPIView(APIView):
         work_day.save()
 
         return Response({"success": True})
+
+
+class WorkPlaceRateListCreateAPIView(APIView):
+    authentication_classes = [AdminJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_uuid = request.query_params.get("user_uuid")      # optional
+        work_place = request.query_params.get("work_place")    # optional (검색)
+
+        WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
+
+        if user_uuid:
+            WorkPlace_qs = WorkPlace_qs.filter(user_id=user_uuid)
+
+        if work_place:
+            WorkPlace_qs = WorkPlace_qs.filter(work_place__icontains=work_place)
+
+        data = WorkPlaceRateSerializer(WorkPlace_qs, many=True).data
+        return Response({"success": True, "rates": data})
+
+    def post(self, request):
+        serializer = WorkPlaceRateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({"success": False})
+
+        serializer.save()
+
+        # 생성 후 전체 목록 반환
+        WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
+        data = WorkPlaceRateSerializer(WorkPlace_qs, many=True).data
+        return Response({"success": True, "rates": data})
+    
 
 
 # ----------------------

@@ -26,6 +26,7 @@ from .views import (
     UserLogoutAPIView,
     AdminPageWorkDayListAPIView,
     AdminWorkDayStatusUpdateAPIView,
+    WorkPlaceRateListCreateAPIView,
 )
 
 # fmt:off
@@ -44,6 +45,8 @@ urlpatterns = [
     path('user_info_filtering/',           UserInfoFilteringAPIView.as_view(),         name='user-info-filtering'),
     path('admin_page_workday/',            AdminPageWorkDayListAPIView.as_view(),      name='admin-page-workday'),
     path('admin_workday_status_update/',   AdminWorkDayStatusUpdateAPIView.as_view(),  name='admin-workday-status-update'),
+    path('Work_Place_Rate_List_Create/',   WorkPlaceRateListCreateAPIView.as_view(),   name='Work-Place-Rate-List-Create'),
+    
 
 
 

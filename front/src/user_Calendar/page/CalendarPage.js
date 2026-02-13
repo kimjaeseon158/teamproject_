@@ -1,4 +1,4 @@
-import { useBreakpointValue, useMediaQuery  } from "@chakra-ui/react";
+import { useMediaQuery  } from "@chakra-ui/react";
 import { useState } from "react";
 import { useUser } from "../../login/js/userContext";
 import { useCalendarState } from "../hooks/useCalendarsState";

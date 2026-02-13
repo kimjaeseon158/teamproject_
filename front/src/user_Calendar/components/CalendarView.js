@@ -44,7 +44,7 @@ export default function CalendarView({
           return ["fc-selected-day"];
         }
         return [];
-      }}
+      }} 
     />
   );
 }

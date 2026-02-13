@@ -30,6 +30,7 @@ from .models import (
     WorkPlaceRate
 )
 from django.db.models import Sum
+from django.db import transaction
 from datetime import datetime
 from django.conf import settings
 from django.shortcuts import redirect
@@ -41,7 +42,7 @@ from .auth_utils import (
     save_or_update_admin_refresh_token,
     save_or_update_user_refresh_token,
 )
-
+from .salary import sync_salary_expense_for_workday
 import requests
 
 
@@ -794,7 +795,7 @@ class AdminWorkDayStatusUpdateAPIView(APIView):
         status = request.data.get("status")  # True / False
         reject_reason = request.data.get("reject_reason")
 
-        if not user_uuid or not work_date_str or not status is None or not work_shift:
+        if not user_uuid or not work_date_str or status is None or not work_shift:
             return Response({"success": False})
 
         if status not in [True, False]:
@@ -817,19 +818,23 @@ class AdminWorkDayStatusUpdateAPIView(APIView):
                 {"success": False},
             )
 
-        # 완료(승인)
-        if status == True:
-            work_day.is_approved = True
-            work_day.reject_reason = None
+        with transaction.atomic():
+            # 완료(승인)
+            if status == True:
+                work_day.is_approved = True
+                work_day.reject_reason = None
 
         # 거절(반려)
-        elif status == False:
-            if not reject_reason:
-                return Response({"success": False})  # 반려 사유 반드시 기제
-            work_day.is_approved = False
-            work_day.reject_reason = reject_reason
+            elif status == False:
+                if not reject_reason:
+                    return Response({"success": False})  # 반려 사유 반드시 기제
+                work_day.is_approved = False
+                work_day.reject_reason = reject_reason
 
-        work_day.save()
+            work_day.save()
+
+            # 승인/반려/대기 상태에 따라 Expense 동기화
+            sync_salary_expense_for_workday(work_day)
 
         return Response({"success": True})
 

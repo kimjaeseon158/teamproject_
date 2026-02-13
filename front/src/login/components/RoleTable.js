@@ -1,73 +1,57 @@
-import { Flex, Button, Box } from "@chakra-ui/react";
-import { motion } from "framer-motion";
-
-const MotionBox = motion(Box);
+import { Flex, Box, Text } from "@chakra-ui/react";
 
 const RoleTabs = ({ role, setRole }) => {
   const isAdmin = role === "admin";
 
   return (
-    <Flex
-      position="relative"
-      bg="gray.100"
-      h="48px"
-      p="4px"
-      mb={2}
-      borderTopRadius="xl"     // 🔥 지붕 느낌
-      borderBottomRadius="md"  // 🔥 아래는 살짝만
-    >
-      {/* 🔥 움직이는 지붕 캡 */}
-      <MotionBox
+    <Box position="relative" borderBottom="1px solid" borderColor="gray.200">
+      <Flex>
+        <Flex
+          flex="1"
+          justify="center"
+          py={3}
+          cursor="pointer"
+          onClick={() => setRole("admin")}
+        >
+          <Text
+            fontWeight={isAdmin ? "bold" : "medium"}
+            color={isAdmin ? "blue.600" : "gray.500"}
+            transition="all 0.2s"
+          >
+            관리자
+          </Text>
+        </Flex>
+
+        <Flex
+          flex="1"
+          justify="center"
+          py={3}
+          cursor="pointer"
+          onClick={() => setRole("user")}
+        >
+          <Text
+            fontWeight={!isAdmin ? "bold" : "medium"}
+            color={!isAdmin ? "blue.600" : "gray.500"}
+            transition="all 0.2s"
+          >
+            사원
+          </Text>
+        </Flex>
+      </Flex>
+
+      {/* 움직이는 밑줄 */}
+      <Box
         position="absolute"
-        top="4px"
-        left="4px"
-        w="calc(50% - 4px)"
-        h="calc(100% - 8px)"
+        bottom="0"
+        left="0"
+        width="50%"
+        height="3px"
         bg="blue.600"
-        borderTopRadius="lg"   // 🔥 캡 느낌
-        borderBottomRadius="md"
+        borderRadius="full"
         transform={isAdmin ? "translateX(0%)" : "translateX(100%)"}
-        transition={{
-          type: "spring",
-          stiffness: 260,
-          damping: 24,
-        }}
-        zIndex={0}
-        boxShadow="sm"         // 🔥 살짝 떠 있는 느낌
+        transition="transform 0.3s ease"
       />
-
-      {/* 관리자 */}
-      <Button
-        flex="1"
-        h="100%"
-        px={0}
-        zIndex={1}
-        variant="ghost"
-        fontSize="sm"
-        fontWeight="600"
-        color={isAdmin ? "white" : "gray.600"}
-        _hover={{ bg: "transparent" }}
-        onClick={() => setRole("admin")}
-      >
-        관리자
-      </Button>
-
-      {/* 사원 */}
-      <Button
-        flex="1"
-        h="100%"
-        px={0}
-        zIndex={1}
-        variant="ghost"
-        fontSize="sm"
-        fontWeight="600"
-        color={!isAdmin ? "white" : "gray.600"}
-        _hover={{ bg: "transparent" }}
-        onClick={() => setRole("user")}
-      >
-        사원
-      </Button>
-    </Flex>
+    </Box>
   );
 };
 

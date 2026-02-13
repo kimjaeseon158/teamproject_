@@ -2,10 +2,20 @@
 import { useState } from "react";
 
 export function useCalendarState() {
-  const [selectedDate, setSelectedDate] = useState(null);
+  const today = new Date();
+
+  const initialDate = {
+    year: today.getFullYear(),
+    month: today.getMonth() + 1,
+    day: today.getDate(),
+    formatted: today.toISOString().slice(0, 10),
+  };
+
+  const [selectedDate, setSelectedDate] = useState(initialDate);
 
   const handleDateClick = (info) => {
     const d = info.date;
+
     const next = {
       year: d.getFullYear(),
       month: d.getMonth() + 1,
@@ -14,7 +24,6 @@ export function useCalendarState() {
     };
 
     setSelectedDate(next);
-    window.selectedDate = next; // 🔥 CalendarView용
   };
 
   const goToday = () => {
@@ -32,23 +41,29 @@ export function useCalendarState() {
     };
 
     setSelectedDate(next);
-    window.selectedDate = next;
   };
 
-  const goToDate = ({ year, month, day, formatted }) => {
+  const goToDate = ({ formatted }) => {
     const api = window.calendarRef?.getApi();
     if (!api) return;
 
     api.gotoDate(formatted);
 
-    const next = { year, month, day, formatted };
+    const d = new Date(formatted);
+
+    const next = {
+      year: d.getFullYear(),
+      month: d.getMonth() + 1,
+      day: d.getDate(),
+      formatted,
+    };
+
     setSelectedDate(next);
-    window.selectedDate = next;
   };
 
   return {
     selectedDate,
-    setSelectedDate, // ✅ 이거 추가
+    setSelectedDate,
     handleDateClick,
     goToday,
     goToDate,

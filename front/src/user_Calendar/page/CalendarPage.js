@@ -1,24 +1,23 @@
-// src/user_calender/page/CalendarPage.jsx
-import { Box } from "@chakra-ui/react";
+import { useBreakpointValue, useMediaQuery  } from "@chakra-ui/react";
 import { useState } from "react";
 import { useUser } from "../../login/js/userContext";
 import { useCalendarState } from "../hooks/useCalendarsState";
-
-import CalendarSidebar from "../components/CalendarSidebar";
-import CalendarHeader from "../components/CalendarHeader";
-import CalendarView from "../components/CalendarView";
-
 import "../css/calender.css";
+
+import CalendarDesktopLayout from "../layout/CalendarDesktopLayout";
+import CalendarMobileLayout from "../layout/CalendarMobileLayout";
 
 export default function CalendarPage() {
   const { userName, userUuid } = useUser();
+  const [calendarTitle, setCalendarTitle] = useState("");
+
   const calendar = useCalendarState();
 
+  const [isMobile] = useMediaQuery("(max-width: 1024px)");
   const [monthPickerYear, setMonthPickerYear] = useState(
     new Date().getFullYear()
   );
 
-  /* Today 버튼 */
   const goToday = () => {
     const api = window.calendarRef?.getApi();
     if (!api) return;
@@ -38,34 +37,22 @@ export default function CalendarPage() {
     window.calendarRef?.getApi()?.gotoDate(formatted);
   };
 
-  return (
-    <Box display="flex" height="100vh" overflow="hidden">
-      {/* 사이드바 */}
-      <CalendarSidebar
-        userName={userName}
-        selectedDate={calendar.selectedDate}
-      />
+  const layoutProps = {
+    userName,
+    userUuid,
+    calendar,
+    monthPickerYear,
+    setMonthPickerYear,
+    goToday,
+    goToDate,
 
-      {/* 메인 영역 */}
-      <Box flex="1" px="20px" pt="30px">
-        {/* ✅ 헤더 */}
-        <CalendarHeader
-          userUuid={userUuid}
-          monthPickerYear={monthPickerYear}
-          setMonthPickerYear={setMonthPickerYear}
-          goToday={goToday}
-          goToDate={goToDate}
-        />
+    calendarTitle,        // 🔥 추가
+    setCalendarTitle, 
+  };
 
-        {/* 캘린더 */}
-        <Box mt={2} height="calc(100vh - 120px)" pt="35px">
-          <CalendarView
-            events={[]}
-            onDateClick={calendar.handleDateClick}
-            selectedDate={calendar.selectedDate}
-          />
-        </Box>
-      </Box>
-    </Box>
+  return isMobile ? (
+    <CalendarMobileLayout {...layoutProps} />
+  ) : (
+    <CalendarDesktopLayout {...layoutProps} />
   );
 }

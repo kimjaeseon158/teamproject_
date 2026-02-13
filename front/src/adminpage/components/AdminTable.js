@@ -10,11 +10,20 @@ export default function AdminTable({
   onRowClick,
 }) {
   return (
-    <Box p={4} bg="#f9f9f9" borderRadius="md" overflowX="auto">
-      <Table tableLayout="fixed">
-        <Thead>
+    <Box
+      p={6}
+      bg="white"
+      borderRadius="xl"
+      boxShadow="sm"
+      overflowX="auto"
+    >
+      <Table
+        variant="simple"
+        size="md"
+      >
+        <Thead bg="gray.50" h="60px">
           <Tr>
-            <Th w="36px" px={1} textAlign="center">선택</Th>
+            <Th w="60px" textAlign="center">선택</Th>
             <Th>이름</Th>
             <Th>주민등록번호</Th>
             <Th>주소</Th>
@@ -27,20 +36,22 @@ export default function AdminTable({
             <Tr
               key={item.user_uuid}
               onClick={() => onRowClick(item)}
-              _hover={{ bg: "gray.100" }}
+              _hover={{ bg: "gray.50" }}
               cursor="pointer"
             >
               <Td
-                w="36px"
-                px={1}
+                w="60px"
                 textAlign="center"
                 onClick={(e) => e.stopPropagation()}
               >
                 <Checkbox
+                  size="sm"
+                  colorScheme="blue"
                   isChecked={!!checkedItems[item.user_uuid]}
                   onChange={() => onCheck(item.user_uuid)}
                 />
               </Td>
+
               <Td>{item.user_name}</Td>
               <Td>{item.resident_number}</Td>
               <Td>{item.address}</Td>

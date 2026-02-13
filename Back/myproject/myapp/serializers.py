@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.db import transaction
-from .models import User_Login_Info, Expense, Income, User_WorkDay, User_WorkDetail
+from .models import User_Login_Info, Expense, Income, User_WorkDay, User_WorkDetail, WorkPlaceRate
 
 class User_Login_InfoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -67,3 +67,8 @@ class UserWorkDaySerializer(serializers.ModelSerializer):
         
         return work_day
 
+
+class WorkPlaceRateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkPlaceRate
+        fields = "__all__"

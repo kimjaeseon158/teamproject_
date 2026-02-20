@@ -35,13 +35,15 @@ export default function ApproveDetailModal({
             <Flex justify="space-between">
               <Text>{employee.name}</Text>
               <Text>{employee.date}</Text>
-              <Tag>{employee.workType}</Tag>
+              <Text>{employee.location}</Text>
+              
             </Flex>
           </InfoCard>
 
           <InfoCard title="근무 시간">
             <Flex justify="space-between">
               <Text>{employee.workTime}</Text>
+              <Tag>{employee.workType}</Tag>
               <Text fontWeight="bold">{employee.dayHM}</Text>
             </Flex>
           </InfoCard>

@@ -16,15 +16,29 @@ export default function ApprovePage() {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
-  const today = new Date();
-  const [range, setRange] = useState({ from: today, to: today });
+  // 🔥 range 초기값을 undefined로
+  const [range, setRange] = useState({
+    from: undefined,
+    to: undefined,
+  });
 
-  const rangeLabel = useMemo(
-    () => `${toYMD(range.from)} ~ ${toYMD(range.to ?? range.from)}`,
-    [range]
-  );
+  // 🔥 rangeLabel 정상 처리
+  const rangeLabel = useMemo(() => {
+    if (!range?.from) return "날짜 선택";
+    if (!range?.to) return toYMD(range.from);
+    return `${toYMD(range.from)} ~ ${toYMD(range.to)}`;
+  }, [range]);
 
   const handleSearch = () => {
+    if (!range?.from) {
+      toast({
+        title: "날짜를 선택해주세요",
+        status: "warning",
+        duration: 2000,
+      });
+      return;
+    }
+
     fetchList({
       status,
       startDate: toYMD(range.from),
@@ -40,7 +54,8 @@ export default function ApprovePage() {
 
       <ApproveFilterBar
         status={status}
-        setStatus={setStatus}  
+        setStatus={setStatus}
+        range={range}
         setRange={setRange}
         rangeLabel={rangeLabel}
         loading={loading}

@@ -7,8 +7,9 @@ import {
   PopoverTrigger,
   PopoverContent,
   PopoverBody,
-  PopoverArrow,
   PopoverCloseButton,
+  Text,
+  HStack,
 } from "@chakra-ui/react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
@@ -37,7 +38,12 @@ export default function ApproveFilterBar({
         <option value="거절">거절</option>
       </Select>
 
-      <Button size="sm" colorScheme="blue" onClick={onSearch} isLoading={loading}>
+      <Button
+        size="sm"
+        colorScheme="blue"
+        onClick={onSearch}
+        isLoading={loading}
+      >
         조회
       </Button>
 
@@ -49,18 +55,45 @@ export default function ApproveFilterBar({
             </Button>
           </PopoverTrigger>
 
-          <PopoverContent w="auto">
-            <PopoverArrow />
-            <PopoverCloseButton />
+          <PopoverContent w="auto" p={4}>
+            {/* 🔥 Arrow 제거해서 겹침 해결 */}
+            <PopoverCloseButton top="8px" right="8px" />
+
             <PopoverBody>
+              {/* 🔥 선택 기간 표시 */}
+              <Text fontSize="sm" mb={3} fontWeight="medium">
+                선택 기간: {rangeLabel}
+              </Text>
+
               <DayPicker
                 mode="range"
                 selected={range}
-                onSelect={(r) => {
-                  if (!r?.from) return;
-                  setRange({ from: r.from, to: r.to ?? r.from });
-                }}
+                onSelect={setRange}
               />
+
+              {/* 🔥 Today 버튼 */}
+              <HStack mt={4} justify="space-between">
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  onClick={() => {
+                    const today = new Date();
+                    setRange({ from: today, to: today });
+                  }}
+                >
+                  Today
+                </Button>
+
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  onClick={() =>
+                    setRange({ from: undefined, to: undefined })
+                  }
+                >
+                  초기화
+                </Button>
+              </HStack>
             </PopoverBody>
           </PopoverContent>
         </Popover>

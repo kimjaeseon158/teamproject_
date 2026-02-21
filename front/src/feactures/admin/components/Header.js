@@ -2,7 +2,7 @@ import { Flex, Box, Button } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../auth/userContext";
 import { getAccessToken, clearAccessToken } from "../../../services/api/token";
-import { Alarm } from "../../aralm";
+import { Alarm } from "../../alarm";
 
 export default function Header() {
   const navigate = useNavigate();

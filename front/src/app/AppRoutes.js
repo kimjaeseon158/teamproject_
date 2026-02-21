@@ -1,6 +1,6 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import { UserProvider } from "../feactures/auth/userContext";
-import { AlarmProvider } from "../feactures/aralm";
+import { AlarmProvider } from "../feactures/alarm";
 
 import LoginPage from "../pages/LoginPage/LoginPage";
 import Calendar from "../pages/UserPage/CalendarPage";

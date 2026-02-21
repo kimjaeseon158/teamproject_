@@ -21,7 +21,7 @@ import {
 } from "@chakra-ui/icons";
 
 import { useNavigate } from "react-router-dom";
-import { Alarm } from "../../aralm";
+import { Alarm } from "../../alarm";
 
 export default function CalendarHeader({
   userUuid,

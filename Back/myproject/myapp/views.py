@@ -857,16 +857,8 @@ class WorkPlaceRateListCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user_uuid = request.query_params.get("user_uuid")      
-        work_place = request.query_params.get("work_place")    
 
-        WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
-
-        if user_uuid:
-            WorkPlace_qs = WorkPlace_qs.filter(user_id=user_uuid)
-
-        if work_place:
-            WorkPlace_qs = WorkPlace_qs.filter(work_place__icontains=work_place)
+        WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all()
 
         grouped = group_rates_by_user(WorkPlace_qs)
 

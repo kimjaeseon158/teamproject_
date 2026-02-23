@@ -76,6 +76,7 @@ class WorkPlaceRateSerializer(serializers.ModelSerializer):
         model = WorkPlaceRate
         fields = [
             "rate_uuid",
+            "user_uuid"
             "user",        
             "user_name",   
             "work_place",

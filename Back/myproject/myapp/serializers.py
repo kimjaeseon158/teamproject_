@@ -69,14 +69,14 @@ class UserWorkDaySerializer(serializers.ModelSerializer):
 
 
 class WorkPlaceRateSerializer(serializers.ModelSerializer):
-    user_uuid = serializers.UUIDField(source="user_id", read_only=True)  
-    user_name = serializers.CharField(source="user.user_name", read_only=True)
+    user_uuid = serializers.CharField(source="user_uuid_str", read_only=True)
+    user_name = serializers.CharField(read_only=True)
 
     class Meta:
         model = WorkPlaceRate
         fields = [
             "rate_uuid",
-            "user_uuid"
+            "user_uuid",
             "user",        
             "user_name",   
             "work_place",

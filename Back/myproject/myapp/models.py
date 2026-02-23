@@ -98,6 +98,13 @@ class WorkPlaceRate(models.Model):
             models.UniqueConstraint(fields=["user", "work_place"], name="uniq_user_work_place_rate")
         ]                       
 
+    @property
+    def user_uuid_str(self):
+        return str(self.user_id) if self.user_id else None
+
+    @property
+    def user_name(self):
+        return self.user.user_name if self.user else None
 
 
 # Admin 관련 테이블 

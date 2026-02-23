@@ -72,3 +72,20 @@ class WorkPlaceRateSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkPlaceRate
         fields = "__all__"
+
+
+class WorkPlaceRateCreateSerializer(serializers.ModelSerializer):
+    user_uuid = serializers.UUIDField(write_only=True)
+
+    class Meta:
+        model = WorkPlaceRate
+        fields = [
+            "user_uuid",            
+            "work_place",
+            "base_hourly_wage",
+            "overtime_hourly_wage",
+            "meal_ot_hourly_wage",
+            "special_hourly_wage",
+            "overnight_hourly_wage",
+            "overnight_ot_hourly_wage",
+        ]

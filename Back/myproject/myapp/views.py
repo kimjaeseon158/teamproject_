@@ -11,6 +11,7 @@ from .serializers import (
     ExpenseSerializer,
     UserWorkDaySerializer,
     WorkPlaceRateSerializer,
+    WorkPlaceRateCreateSerializer
 )
 from .auth_utils import check_user_credentials, check_admin_credentials
 from .jwt_utils import (
@@ -31,6 +32,7 @@ from .models import (
 )
 from django.db.models import Sum
 from django.db import transaction
+from django.db.utils import IntegrityError
 from datetime import datetime
 from django.conf import settings
 from django.shortcuts import redirect
@@ -42,8 +44,12 @@ from .auth_utils import (
     save_or_update_admin_refresh_token,
     save_or_update_user_refresh_token,
 )
-from .salary import sync_salary_expense_for_workday
+from .salary import (
+    sync_salary_expense_for_workday,
+    group_rates_by_user
+)
 import requests
+
 
 
 # ------------------- Refresh API -------------------
@@ -443,7 +449,14 @@ class UserInfoAddAPIView(APIView):
         # 새로운 사용자 생성
         serializer = User_Login_InfoSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            # 유저 생성
+            user = serializer.save()
+
+            # 자동 Rate 생성
+            WorkPlaceRate.objects.create(
+                user=user,
+                work_place="미지정",   # 기본 근무지
+            )
             all_data = User_Login_Info.objects.all()
             user_data = User_InfoSerializer(all_data, many=True)
             result = user_data.data
@@ -844,8 +857,8 @@ class WorkPlaceRateListCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user_uuid = request.query_params.get("user_uuid")      # optional
-        work_place = request.query_params.get("work_place")    # optional (검색)
+        user_uuid = request.query_params.get("user_uuid")      
+        work_place = request.query_params.get("work_place")    
 
         WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
 
@@ -855,20 +868,31 @@ class WorkPlaceRateListCreateAPIView(APIView):
         if work_place:
             WorkPlace_qs = WorkPlace_qs.filter(work_place__icontains=work_place)
 
-        data = WorkPlaceRateSerializer(WorkPlace_qs, many=True).data
-        return Response({"success": True, "rates": data})
+        grouped = group_rates_by_user(WorkPlace_qs)
 
+        return Response({"success": True, "users": grouped})
+
+    @transaction.atomic
     def post(self, request):
-        serializer = WorkPlaceRateSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response({"success": False})
+        create_ser = WorkPlaceRateCreateSerializer(data=request.data)
+        if not create_ser.is_valid():
+            return Response({"success": False, "errors": "입력 정보가 유효하지 않습니다."})
 
-        serializer.save()
+        user_uuid = create_ser.validated_data.pop("user_uuid")
 
-        # 생성 후 전체 목록 반환
+        try:
+            user = User_Login_Info.objects.get(user_uuid=user_uuid)
+        except User_Login_Info.DoesNotExist:
+            return Response({"success": False, "message": "존재하지 않는 user 입니다."})
+
+        try:
+            WorkPlaceRate.objects.create(user=user, **create_ser.validated_data)
+        except IntegrityError:
+            return Response({"success": False, "message": "이미 존재하는 근무지입니다."})
+
         WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
-        data = WorkPlaceRateSerializer(WorkPlace_qs, many=True).data
-        return Response({"success": True, "rates": data})
+        grouped = group_rates_by_user(WorkPlace_qs)
+        return Response({"success": True, "users": grouped})
     
 class WorkPlaceRateUpdateDeleteAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
@@ -892,8 +916,8 @@ class WorkPlaceRateUpdateDeleteAPIView(APIView):
 
         # 수정 후 전체 목록 반환
         WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
-        data = WorkPlaceRateSerializer(WorkPlace_qs, many=True).data
-        return Response({"success": True, "rates": data})
+        grouped = group_rates_by_user(WorkPlace_qs)
+        return Response({"success": True, "users": grouped})
 
     def delete(self, request):
         rate_uuid = request.data.get("rate_uuid")
@@ -909,8 +933,8 @@ class WorkPlaceRateUpdateDeleteAPIView(APIView):
 
         # 삭제 후 전체 목록 반환
         WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
-        data = WorkPlaceRateSerializer(WorkPlace_qs, many=True).data
-        return Response({"success": True, "rates": data})
+        grouped = group_rates_by_user(WorkPlace_qs)
+        return Response({"success": True, "users": grouped})
 
 # ----------------------
 # 2 데이터 처리 뷰 - User

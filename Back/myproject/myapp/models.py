@@ -86,12 +86,12 @@ class WorkPlaceRate(models.Model):
     work_place = models.CharField(max_length=100)                       #  근무지 마다 금액이 다를경우 대비
 
     #  전부 시간당 단가
-    base_hourly_wage          = models.PositiveIntegerField(default=0)  # 기본 시급
-    overtime_hourly_wage      = models.PositiveIntegerField(default=0)  # 잔업(연장)
-    meal_ot_hourly_wage       = models.PositiveIntegerField(default=0)  # 중식연장
-    special_hourly_wage       = models.PositiveIntegerField(default=0)  # 특근
-    overnight_hourly_wage     = models.PositiveIntegerField(default=0)  # 철야(기본)
-    overnight_ot_hourly_wage  = models.PositiveIntegerField(default=0)  # 철야 연장(OT)
+    base_hourly_wage          = models.PositiveIntegerField(null=True, blank=True)  # 기본 시급
+    overtime_hourly_wage      = models.PositiveIntegerField(null=True, blank=True)  # 잔업(연장)
+    meal_ot_hourly_wage       = models.PositiveIntegerField(null=True, blank=True)  # 중식연장
+    special_hourly_wage       = models.PositiveIntegerField(null=True, blank=True)  # 특근
+    overnight_hourly_wage     = models.PositiveIntegerField(null=True, blank=True)  # 철야(기본)
+    overnight_ot_hourly_wage  = models.PositiveIntegerField(null=True, blank=True)  # 철야 연장(OT)
 
     class Meta:
         constraints = [

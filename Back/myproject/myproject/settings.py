@@ -71,7 +71,7 @@ GOOGLE_OAUTH2_CLIENT_CONFIG = {
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",  # ✅ 맨 위 유지
     "django.middleware.security.SecurityMiddleware",
-    'whitenoise.middleware.WhiteNoiseMiddleware', # 외부 배포 설정
+    # 'whitenoise.middleware.WhiteNoiseMiddleware', # 외부 배포 설정
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     # "django.middleware.csrf.CsrfViewMiddleware",  # 쿠키 기반 CSRF를 쓰려면 추후 활성화 고려

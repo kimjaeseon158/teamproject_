@@ -117,7 +117,7 @@ def group_rates_by_user(qs):
         if user_uuid not in grouped:
             grouped[user_uuid] = {
                 "user_uuid": user_uuid,
-                "user_name": None,
+                "user_name": r.get("user_name"),
                 "rates": [],
             }
 

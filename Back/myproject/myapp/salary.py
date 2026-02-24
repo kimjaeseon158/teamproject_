@@ -102,13 +102,10 @@ def sync_salary_expense_for_workday(work_day):
     Expense.objects.filter(work_day=work_day).delete()
 
 
+RATE_REMOVE_KEYS = {"user", "user_uuid", "user_name"}
+
 def group_rates_by_user(qs):
-    """
-    WorkPlaceRate queryset → user 기준으로 묶어서 반환
-    """
-
     rate_list = WorkPlaceRateSerializer(qs, many=True).data
-
     grouped = OrderedDict()
 
     for r in rate_list:
@@ -121,12 +118,9 @@ def group_rates_by_user(qs):
                 "rates": [],
             }
 
-        grouped[user_uuid]["rates"].append(r)
+        # rates 안에서는 유저 관련 키 제거
+        rate_item = {k: v for k, v in r.items() if k not in RATE_REMOVE_KEYS}
 
-    # user_name 채우기
-    for obj in qs:
-        u = str(obj.user_id)
-        if u in grouped and grouped[u]["user_name"] is None:
-            grouped[u]["user_name"] = getattr(obj.user, "user_name", None)
+        grouped[user_uuid]["rates"].append(rate_item)
 
     return list(grouped.values())

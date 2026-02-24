@@ -927,6 +927,26 @@ class WorkPlaceRateUpdateDeleteAPIView(APIView):
         WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
         grouped = group_rates_by_user(WorkPlace_qs)
         return Response({"success": True, "users": grouped})
+    
+
+class WorkPlaceRateListfilteringAPIView(APIView):
+    authentication_classes = [AdminJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_name = request.query_params.get("user_name")   
+        work_place = request.query_params.get("work_place") 
+
+        WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all()
+
+        if user_name:
+            WorkPlace_qs = WorkPlace_qs.filter(user__user_name__icontains=user_name)
+
+        if work_place:
+            WorkPlace_qs = WorkPlace_qs.filter(work_place__icontains=work_place)
+
+        grouped = group_rates_by_user(WorkPlace_qs)
+        return Response({"success": True, "users": grouped})
 
 # ----------------------
 # 2 데이터 처리 뷰 - User

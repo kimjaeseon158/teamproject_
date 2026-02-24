@@ -28,6 +28,7 @@ from .views import (
     AdminWorkDayStatusUpdateAPIView,
     WorkPlaceRateListCreateAPIView,
     WorkPlaceRateUpdateDeleteAPIView,
+    WorkPlaceRateListfilteringAPIView,
 )
 
 # fmt:off
@@ -48,8 +49,8 @@ urlpatterns = [
     path('admin_workday_status_update/',     AdminWorkDayStatusUpdateAPIView.as_view(),    name='admin-workday-status-update'),
     path('work_place_rate_list_create/',     WorkPlaceRateListCreateAPIView.as_view(),     name='work-place-rate-list-create'),
     path('work_place_rate_update_delete/',   WorkPlaceRateUpdateDeleteAPIView.as_view(),   name='work-place-rate-update-delete'),
+    path('work_place_rate_list_filtering/',  WorkPlaceRateListfilteringAPIView.as_view(),  name='work-place-rate-list-filtering'),
     
-
 
 
     # Dashboard-google-calendar

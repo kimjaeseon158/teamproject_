@@ -28,7 +28,7 @@ export default function CommonTable({
             )}
 
             {columns.map(col => (
-              <Th key={col.key}>{col.label}</Th>
+              <Th key={col.key}  w={col.width || "auto"}  textAlign={col.align || "center"}>{col.label}</Th>
             ))}
           </Tr>
         </Thead>
@@ -57,7 +57,7 @@ export default function CommonTable({
               )}
 
               {columns.map(col => (
-                <Td key={col.key}>
+                <Td key={col.key}  w={col.width || "auto"} textAlign={col.align || "center"}>
                   {col.render
                     ? col.render(row[col.key], row)
                     : row[col.key]}

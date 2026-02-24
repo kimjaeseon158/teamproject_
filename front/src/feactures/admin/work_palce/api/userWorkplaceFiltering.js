@@ -1,12 +1,14 @@
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
 
-export async function getWorkPlaceList(params = {}, toast) {
+export async function getWorkPlaceFiltering({ user_name, work_place }, toast) {
   try {
-    // 🔥 값 있는 것만 query로 생성
-    const query = new URLSearchParams(params).toString();
+    const query = new URLSearchParams({
+      user_name,
+      work_place,
+    }).toString();
 
     const res = await fetchWithAuth(
-      `/api/work_place_rate_list_create/${query ? `?${query}` : ""}`,
+      `/api/work_place_rate_list_filtering/?${query}`,
       { method: "GET" },
       { toast }
     );
@@ -14,7 +16,6 @@ export async function getWorkPlaceList(params = {}, toast) {
     if (!res) return null;
 
     return await res.json();
-
   } catch (err) {
     if (toast) {
       toast({

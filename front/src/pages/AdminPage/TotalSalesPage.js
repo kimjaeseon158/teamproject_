@@ -1,75 +1,111 @@
+// TotalSalesPage.js
+
 import {
   Box,
   Flex,
   Heading,
-  Button,
   Card,
   CardBody,
-  useDisclosure,
   useToast,
 } from "@chakra-ui/react";
 
+import MonthPicker from "../../feactures/common/MonthPicker";
 import { useTotalFinance } from "../../feactures/admin/total_pay/hook/useTotalFinance";
-import { formatRangeLabel } from "../../feactures/admin/utils/dateUtils";
-
-import DateRangeModal from "../../feactures/admin/total_pay/section/DateRangeModal";
-import RevenuePieSection from "../../feactures/admin/total_pay/section/RevenuePieSection";
-import ExpensePieSection from "../../feactures/admin/total_pay/section/ExpensePieSection";
-import ReceiptSection from "../../feactures/admin/total_pay/section/ReceiptSection";
+import ThreeMonthBarSection from "../../feactures/admin/total_pay/section/ThreeMonthBarSection";
 
 export default function TotalSalesPage() {
   const toast = useToast();
-  const { isOpen, onOpen, onClose } = useDisclosure();
 
-  const {
-    range,
-    setRange,
-    revenueByCompany,
-    expenseData,
-    totalRevenue,
-    totalExpense,
-    netProfit,
-    fetchData,
-  } = useTotalFinance({ toast });
-
-  return (
+    const {
+      apiMonth,
+      setApiMonth,
+      selectedDetailMonth,
+      setSelectedDetailMonth,
+      threeMonthData,
+      detailData,
+      totalExpense,
+    } = useTotalFinance({ toast });
+    return (
     <Box p={6} bg="gray.50" minH="100vh">
-      <Flex justify="space-between" mb={6}>
+
+      {/* 상단 */}
+      <Flex justify="space-between" mb={6} align="center">
         <Heading>일급 현황</Heading>
-        <Button onClick={onOpen}>
-          {formatRangeLabel(range.from, range.to)}
-        </Button>
+
+        <MonthPicker
+          value={apiMonth}
+          onChange={(ym) => setApiMonth(ym)}
+        />
       </Flex>
 
-      <Flex gap={8} h="calc(100vh - 120px)">
-        <Flex direction="column" flex="2" gap={8}>
-          <RevenuePieSection data={revenueByCompany} />
-          {/* <ExpensePieSection data={expenseData} /> */}
+      <Flex gap={8}>
+
+        {/* 왼쪽 영역 */}
+        <Flex direction="column" flex="2" gap={6}>
+
+          {/* 3개월 그래프 */}
+         <ThreeMonthBarSection
+            data={threeMonthData}
+            selectedMonth={selectedDetailMonth}   // 🔥 추가
+            onMonthClick={(month) =>
+              setSelectedDetailMonth(month)
+            }
+          />
+
+          {/* 선택월 상세 */}
+          <Card>
+            <CardBody>
+              <Heading size="sm" mb={3}>
+                {selectedDetailMonth}월 상세 급여
+              </Heading>
+              {detailData.length === 0 ? (
+                <Box textAlign="center" py={6} color="gray.400">
+                  급여 내역이 없습니다.
+                </Box>
+              ) : (
+                detailData.map((item, i) => (
+                  <Flex key={i} justify="space-between">
+                    <Box>{item.name}</Box>
+                    <Box>{item.amount.toLocaleString()} 원</Box>
+                  </Flex>
+                ))
+              )}
+
+              <Flex justify="space-between" fontWeight="bold" mt={4}>
+                <Box>총 일급 지출</Box>
+                <Box>{(totalExpense ?? 0).toLocaleString()} 원</Box>
+              </Flex>
+            </CardBody>
+          </Card>
+
         </Flex>
 
+        {/* 오른쪽 요약 */}
         <Card flex="1" border="1px dashed gray">
           <CardBody>
-            <ReceiptSection
-              revenueByCompany={revenueByCompany}
-              expenseData={expenseData}
-              totalRevenue={totalRevenue}
-              totalExpense={totalExpense}
-              netProfit={netProfit}
-            />
+            <Heading size="sm" mb={3}>
+              최근 3개월 요약
+            </Heading>
+
+            {threeMonthData.map((item, i) => (
+              <Flex key={i} justify="space-between">
+                <Box>{item.label}</Box>
+                <Box>{item.total.toLocaleString()} 원</Box>
+              </Flex>
+            ))}
+
+            <Flex justify="space-between" fontWeight="bold" mt={4}>
+              <Box>3개월 총 합계</Box>
+              <Box>
+                {threeMonthData
+                  .reduce((sum, m) => sum + m.total, 0)
+                  .toLocaleString()} 원
+              </Box>
+            </Flex>
           </CardBody>
         </Card>
-      </Flex>
 
-      <DateRangeModal
-        isOpen={isOpen}
-        onClose={onClose}
-        range={range}
-        setRange={setRange}
-        onApply={() => {
-          fetchData(range.from, range.to);
-          onClose();
-        }}
-      />
+      </Flex>
     </Box>
   );
 }

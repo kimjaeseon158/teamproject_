@@ -1,14 +1,6 @@
 import {
   Box,
   Button,
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-  PopoverArrow,
-  PopoverCloseButton,
-  PopoverHeader,
-  PopoverBody,
-  SimpleGrid,
   IconButton,
   HStack,
   Text,
@@ -22,14 +14,13 @@ import {
 
 import { useNavigate } from "react-router-dom";
 import { Alarm } from "../../alarm";
+import MonthPicker from "../../common/MonthPicker";
 
 export default function CalendarHeader({
   userUuid,
-  monthPickerYear,
-  setMonthPickerYear,
   goToday,
   goToDate,
-  calendarTitle,
+  calendarTitle, // "2026-03"
 }) {
   const navigate = useNavigate();
 
@@ -51,14 +42,17 @@ export default function CalendarHeader({
     }
   };
 
+  const handleMonthChange = (ym) => {
+    const [year, month] = ym.split("-");
+    goToDate({
+      formatted: `${year}-${month}-01`,
+    });
+  };
+
   return (
     <Box mb={4} w="100%">
 
       {isMobile ? (
-
-        /* ========================= */
-        /* 📱 모바일 */
-        /* ========================= */
         <>
           <Box
             display="flex"
@@ -85,72 +79,10 @@ export default function CalendarHeader({
               onClick={() => window.calendarRef?.getApi()?.prev()}
             />
 
-            <Popover placement="bottom">
-              {({ onClose }) => (
-                <>
-                  <PopoverTrigger>
-                    <Box
-                      fontWeight="700"
-                      fontSize="lg"
-                      cursor="pointer"
-                      minW="140px"
-                      textAlign="center"
-                    >
-                      {calendarTitle}
-                    </Box>
-                  </PopoverTrigger>
-
-                  <PopoverContent w="280px">
-                    <PopoverArrow />
-                    <PopoverCloseButton />
-                    <PopoverHeader fontWeight="700">
-                      월 선택
-                    </PopoverHeader>
-
-                    <PopoverBody>
-                      <HStack justify="space-between" mb={3}>
-                        <IconButton
-                          size="sm"
-                          icon={<ChevronLeftIcon />}
-                          onClick={() =>
-                            setMonthPickerYear((y) => y - 1)
-                          }
-                        />
-                        <Text fontWeight="800">
-                          {monthPickerYear}년
-                        </Text>
-                        <IconButton
-                          size="sm"
-                          icon={<ChevronRightIcon />}
-                          onClick={() =>
-                            setMonthPickerYear((y) => y + 1)
-                          }
-                        />
-                      </HStack>
-
-                      <SimpleGrid columns={4} spacing={2}>
-                        {Array.from({ length: 12 }).map((_, i) => (
-                          <Button
-                            key={i}
-                            size="sm"
-                            onClick={() => {
-                              goToDate({
-                                formatted: `${monthPickerYear}-${String(
-                                  i + 1
-                                ).padStart(2, "0")}-01`,
-                              });
-                              onClose();
-                            }}
-                          >
-                            {i + 1}월
-                          </Button>
-                        ))}
-                      </SimpleGrid>
-                    </PopoverBody>
-                  </PopoverContent>
-                </>
-              )}
-            </Popover>
+            <MonthPicker
+              value={calendarTitle}
+              onChange={handleMonthChange}
+            />
 
             <IconButton
               size="sm"
@@ -160,15 +92,9 @@ export default function CalendarHeader({
             />
           </Box>
         </>
-
       ) : (
-
-        /* ========================= */
-        /* 💻 PC */
-        /* ========================= */
         <Box position="relative">
 
-          {/* 오른쪽 상단 고정 */}
           <Box
             position="absolute"
             right="0"
@@ -183,7 +109,6 @@ export default function CalendarHeader({
             </Button>
           </Box>
 
-          {/* 중앙 네비 */}
           <Box
             display="flex"
             justifyContent="center"
@@ -198,14 +123,9 @@ export default function CalendarHeader({
               ◀
             </Button>
 
-            <Box
-              fontSize="20px"
-              fontWeight="700"
-              minW="150px"
-              textAlign="center"
-            >
+            <Text fontSize="20px" fontWeight="700" minW="150px" textAlign="center">
               {calendarTitle}
-            </Box>
+            </Text>
 
             <Button
               size="sm"
@@ -219,65 +139,10 @@ export default function CalendarHeader({
               Today
             </Button>
 
-            <Popover placement="bottom-start">
-              {({ onClose }) => (
-                <>
-                  <PopoverTrigger>
-                    <Button size="sm" variant="outline">
-                      월 선택
-                    </Button>
-                  </PopoverTrigger>
-
-                  <PopoverContent w="280px">
-                    <PopoverArrow />
-                    <PopoverCloseButton />
-                    <PopoverHeader fontWeight="700">
-                      월 선택
-                    </PopoverHeader>
-                      <PopoverBody>
-                      <HStack justify="space-between" mb={3}>
-                        <IconButton
-                          size="sm"
-                          icon={<ChevronLeftIcon />}
-                          onClick={() =>
-                            setMonthPickerYear((y) => y - 1)
-                          }
-                        />
-                        <Text fontWeight="800">
-                          {monthPickerYear}년
-                        </Text>
-                        <IconButton
-                          size="sm"
-                          icon={<ChevronRightIcon />}
-                          onClick={() =>
-                            setMonthPickerYear((y) => y + 1)
-                          }
-                        />
-                      </HStack>
-
-                      <SimpleGrid columns={4} spacing={2}>
-                        {Array.from({ length: 12 }).map((_, i) => (
-                          <Button
-                            key={i}
-                            size="sm"
-                            onClick={() => {
-                              goToDate({
-                                formatted: `${monthPickerYear}-${String(
-                                  i + 1
-                                ).padStart(2, "0")}-01`,
-                              });
-                              onClose();
-                            }}
-                          >
-                            {i + 1}월
-                          </Button>
-                        ))}
-                      </SimpleGrid>
-                    </PopoverBody>
-                  </PopoverContent>
-                </>
-              )}
-            </Popover>
+            <MonthPicker
+              value={calendarTitle}
+              onChange={handleMonthChange}
+            />
           </Box>
         </Box>
       )}

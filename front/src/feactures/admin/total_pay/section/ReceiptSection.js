@@ -1,11 +1,9 @@
 import { Box, Flex, Heading } from "@chakra-ui/react";
 
 export default function ReceiptSection({
-  revenueByCompany,
-  expenseData,
-  totalRevenue,
-  totalExpense,
-  netProfit,
+  expenseData = [],
+  totalExpense = 0,
+  netProfit = 0,
 }) {
   return (
     <Box h="100%" display="flex" flexDirection="column" justifyContent="space-between">
@@ -14,28 +12,20 @@ export default function ReceiptSection({
           영수증
         </Heading>
 
-        <Heading size="sm" mb={2}>일급 매출</Heading>
-        {revenueByCompany.map((item, i) => (
+        <Heading size="sm" mb={2}>
+          최근 3개월 일급
+        </Heading>
+
+        {expenseData?.map((item, i) => (
           <Flex key={i} justify="space-between">
-            <Box>{item.name}</Box>
-            <Box>{item.value.toLocaleString()} 원</Box>
+            <Box>{item.month}</Box>
+            <Box>{(item.total ?? 0).toLocaleString()} 원</Box>
           </Flex>
         ))}
-        {/* <Flex justify="space-between" fontWeight="bold" mt={2}>
-          <Box>총 매출</Box>
-          <Box>{totalRevenue.toLocaleString()} 원</Box>
-        </Flex> */}
 
-        {/* <Heading size="sm" mt={6} mb={2}>지출 내역</Heading>
-        {expenseData.map((item, i) => (
-          <Flex key={i} justify="space-between">
-            <Box>{item.name}</Box>
-            <Box>{item.value.toLocaleString()} 원</Box>
-          </Flex>
-        ))} */}
-        <Flex justify="space-between" fontWeight="bold" mt={2}>
-          <Box>총 지출</Box>
-          <Box>{totalExpense.toLocaleString()} 원</Box>
+        <Flex justify="space-between" fontWeight="bold" mt={4}>
+          <Box>총 일급 지출</Box>
+          <Box>{(totalExpense ?? 0).toLocaleString()} 원</Box>
         </Flex>
       </Box>
 
@@ -47,7 +37,7 @@ export default function ReceiptSection({
         mt={4}
       >
         <Box>순이익</Box>
-        <Box>{netProfit.toLocaleString()} 원</Box>
+        <Box>{(netProfit ?? 0).toLocaleString()} 원</Box>
       </Flex>
     </Box>
   );

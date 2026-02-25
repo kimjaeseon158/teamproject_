@@ -156,12 +156,8 @@ def add_months(year: int, month: int, delta: int):
     m = month - delta
     y = year
 
-    while m <= 0:
+    if m <= 0:
         m += 12
         y -= 1
-
-    while m > 12:
-        m -= 12
-        y += 1
 
     return y, m

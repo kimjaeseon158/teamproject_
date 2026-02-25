@@ -617,11 +617,11 @@ class Expense3MonthsTotalsAPIView(APIView):
 
         data = {}
 
-        # 기준달(0), 지난달(-1), 지지난달(-2)
+        # 기준달(0), 지난달(1), 지지난달(2)
         for delta in [0, 1, 2]:
             y, m = add_months(year, month, delta)
 
-            month_key = f"expense_totals_{m}"
+            month_key = f"expense_totals_{y}-{m:02d}"
 
             start, next_start = month_start_end(y, m)
 

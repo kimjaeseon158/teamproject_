@@ -606,20 +606,23 @@ class Expense3MonthsTotalsAPIView(APIView):
     def get(self, request):
         month_str = request.query_params.get("month")  
         if not month_str:
-            return Response({"success": False, "message": "month is required. ex) 2026-03"})
+            return Response({"success": False})
 
         try:
             year, month = map(int, month_str.split("-"))
             if not (1 <= month <= 12):
                 raise ValueError
         except ValueError:
-            return Response({"success": False, "message": "Invalid month format. Use YYYY-MM"})
+            return Response({"success": False})
 
         data = {}
 
         # 기준달(0), 지난달(-1), 지지난달(-2)
-        for idx, delta in enumerate([0, -1, -2], start=1):
+        for delta in [0, 1, 2]:
             y, m = add_months(year, month, delta)
+
+            month_key = f"expense_totals_{m}"
+
             start, next_start = month_start_end(y, m)
 
             qs = (
@@ -628,15 +631,10 @@ class Expense3MonthsTotalsAPIView(APIView):
                 .values("expense_name")
                 .annotate(total=Coalesce(Sum("amount"), 0))
             )
-
-            totals = {row["expense_name"]: int(row["total"] or 0) for row in qs}
-
-            # idx=1 -> expense_totals_3 (기준달)
-            # idx=2 -> expense_totals_2 (지난달)
-            # idx=3 -> expense_totals_1 (지지난달)
-            key = f"expense_totals_{4 - idx}"
-            data[key] = totals
-
+            data[month_key] = {
+                row["expense_name"]: int(row["total"] or 0)
+                for row in qs
+            }
         return Response({"success": True, "data": data})
 
 class ExpenseAddAPIView(APIView):

@@ -54,7 +54,7 @@ export default function ApproveDetailModal({
           user_uuid: employee.user_uuid,
           work_date: employee.date,
           work_shift: employee.workType,
-          status: "true",
+          status: true,
         },
         { toast }
       );
@@ -96,7 +96,7 @@ export default function ApproveDetailModal({
           user_uuid: employee.user_uuid,
           work_date: employee.date,
           work_shift: employee.workType,
-          status: "false",
+          status: false,
           reject_reason: rejectReason,
         },
         { toast }

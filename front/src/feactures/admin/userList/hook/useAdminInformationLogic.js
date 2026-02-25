@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import locationsList from "../../../user/data/locationsList";
+import locationsList from "../../../common/work_placeCloums/locationsList";
 import {
   formatPhoneNumber,
   formatResidentNumber,

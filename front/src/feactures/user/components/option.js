@@ -8,7 +8,7 @@ import {
 import { ChevronDownIcon, DeleteIcon } from "@chakra-ui/icons";
 
 import { useUser } from "../../auth/userContext";
-import locationsList from "../data/locationsList";
+import locationsList from "../../common/work_placeCloums/locationsList";
 import workTimeList from "../data/workTimeList";
 import "./activity.css";
 

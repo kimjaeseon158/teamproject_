@@ -3,7 +3,7 @@ import { useDailyPay } from "../../feactures/admin/work_palce/hook/useWorkList";
 import { useToast, Button } from "@chakra-ui/react";
 import { userPlace_listColmns } from "./DailyPayColmns";
 
-import CommonTable from "../../feactures/admin/common/mytable";
+import CommonTable from "../../feactures/common/mytable";
 import AddRateModal from "../../feactures/admin/work_palce/components/AddRateModal";
 import SearchRateModal from "../../feactures/admin/work_palce/components/SearchRateModal";
 

@@ -1,5 +1,3 @@
-// RateEditModal.js
-
 import {
   Modal,
   ModalOverlay,
@@ -13,12 +11,15 @@ import {
 } from "@chakra-ui/react";
 import { useState, useMemo } from "react";
 
-import CommonTable from "../../common/mytable";
+import CommonTable from "../../../common/mytable";
 import getRateColumns from "./ratecolums";
 import { useWorkPlaceRate } from "../hook/useWrokPlaceRate";
 
-export default function RateEditModal({ user, onClose, onRefresh, onSuccess }) {
-
+export default function RateEditModal({
+  user,
+  onClose,
+  onSuccess,
+}) {
   const toast = useToast();
   const { handleAdd, handleUpdate, handleDelete } = useWorkPlaceRate(toast);
 
@@ -26,6 +27,11 @@ export default function RateEditModal({ user, onClose, onRefresh, onSuccess }) {
   const [editedValues, setEditedValues] = useState({});
   const [checkedItems, setCheckedItems] = useState({});
   const [tempRates, setTempRates] = useState([]);
+
+  /* ======================
+     테이블 데이터
+  ====================== */
+  const tableData = [...(user?.rates || []), ...tempRates];
 
   /* ======================
      체크박스
@@ -37,182 +43,195 @@ export default function RateEditModal({ user, onClose, onRefresh, onSuccess }) {
   const selectedId = Object.keys(checkedItems)
     .find(id => checkedItems[id]);
 
-  /* ======================
-     빈 Row 추가
-  ====================== */
-const handleAddRow = () => {
-
-  const tableData = [...user.rates, ...tempRates];
-
-  // 🔥 미지정 존재 체크
-  const hasUnassigned = tableData.some(
-    row => row.work_place === "미지정"
+  const selectedRow = tableData.find(
+    row => row.rate_uuid === selectedId
   );
 
-  if (hasUnassigned) {
-    toast({
-      title: "미지정 근무지가 존재합니다.",
-      description: "먼저 근무지를 설정한 후 추가해주세요.",
-      status: "warning",
-      duration: 2000,
-    });
-    return;
-  }
+  /* ======================
+     Row 추가
+  ====================== */
+  const handleAddRow = () => {
 
-  // 🔥 temp row 이미 존재하면 막기
-  if (tempRates.length > 0) {
-    toast({
-      title: "추가 중인 행을 먼저 저장하세요.",
-      status: "info",
-    });
-    return;
-  }
+    const hasUnassigned = tableData.some(
+      row => row.work_place === "미지정"
+    );
 
-  const newRow = {
-    rate_uuid: "temp-" + Date.now(),
-    work_place: "",
-    base_hourly_wage: "",
-    overtime_hourly_wage: "",
-    meal_ot_hourly_wage: "",
-    special_hourly_wage: "",
-    overnight_hourly_wage: "",
-    overnight_ot_hourly_wage: "",
-    isNew: true,
+    if (hasUnassigned) {
+      toast({
+        title: "미지정 근무지가 존재합니다.",
+        description: "먼저 근무지를 설정한 후 추가해주세요.",
+        status: "warning",
+      });
+      return;
+    }
+
+    if (tempRates.length > 0) {
+      toast({
+        title: "추가 중인 행을 먼저 저장하세요.",
+        status: "info",
+      });
+      return;
+    }
+
+    const newRow = {
+      rate_uuid: "temp-" + Date.now(),
+      work_place: "",
+      base_hourly_wage: "",
+      overtime_hourly_wage: "",
+      meal_ot_hourly_wage: "",
+      special_hourly_wage: "",
+      overnight_hourly_wage: "",
+      overnight_ot_hourly_wage: "",
+      isNew: true,
+    };
+
+    setTempRates(prev => [...prev, newRow]);
+    setEditingId(newRow.rate_uuid);
+    setEditedValues(newRow);
   };
 
-  setTempRates(prev => [...prev, newRow]);
-  setEditingId(newRow.rate_uuid);
-  setEditedValues(newRow);
-};
   /* ======================
-     삭제 (최소 1개 유지)
+     삭제
   ====================== */
-const handleDeleteClick = async () => {
+  const handleDeleteClick = async () => {
 
-  if (!selectedId) return;
+    if (!selectedId) return;
 
-  const totalCount = user.rates.length + tempRates.length;
-
-  // 🔥 마지막 1개일 경우
-  if (totalCount <= 1) {
-
-    await handleUpdate({
-      rate_uuid: selectedId,
-      work_place: "미지정",
-      base_hourly_wage: null,
-      overtime_hourly_wage: null,
-      meal_ot_hourly_wage: null,
-      special_hourly_wage: null,
-      overnight_hourly_wage: null,
-      overnight_ot_hourly_wage: null,
-    });
-
-    toast({
-      title: "마지막 근무지는 미지정으로 초기화되었습니다.",
-      status: "info",
-    });
-
-    onSuccess?.();
-    onClose?.();
-    return;
-  }
-
-  // 🔥 2개 이상이면 정상 삭제
-  await handleDelete({
-    user,
-    rate_uuid: selectedId,
-  });
-
-  toast({ title: "삭제 완료", status: "success" });
-
-  onSuccess?.();
-};
-  /* ======================
-     저장 (add / update 자동 분기)
-  ====================== */
-const handleSaveClick = async () => {
-
-  if (!editingId) return;
-
-  const tableData = [...user.rates, ...tempRates];
-
-  const hasUnassigned = tableData.some(row => {
-    const isEditingRow = row.rate_uuid === editingId;
-
-    if (isEditingRow) {
-      return !editedValues.work_place || editedValues.work_place === "미지정";
+    // 🔥 미지정 삭제 방지
+    if (selectedRow?.work_place === "미지정") {
+      toast({
+        title: "미지정 근무지는 삭제할 수 없습니다.",
+        status: "warning",
+      });
+      return;
     }
 
-    return !row.work_place || row.work_place === "미지정";
-  });
+    const totalCount = tableData.length;
 
-  if (hasUnassigned) {
-    toast({
-      title: "미지정 근무지가 존재합니다.",
-      status: "warning",
-    });
-    return;
-  }
-
-  const isNewRow = tempRates.some(
-    r => r.rate_uuid === editingId
-  );
-
-  try {
-
-    if (isNewRow) {
-      await handleAdd({
-        user_uuid: user.user_uuid,
-        ...editedValues,
-      });
-    } else {
+    // 마지막 1개면 삭제 대신 초기화
+    if (totalCount <= 1) {
       await handleUpdate({
-        rate_uuid: editingId,
-        ...editedValues,
+        rate_uuid: selectedId,
+        work_place: "미지정",
+        base_hourly_wage: null,
+        overtime_hourly_wage: null,
+        meal_ot_hourly_wage: null,
+        special_hourly_wage: null,
+        overnight_hourly_wage: null,
+        overnight_ot_hourly_wage: null,
       });
+
+      toast({
+        title: "마지막 근무지는 미지정으로 초기화되었습니다.",
+        status: "info",
+      });
+
+      onSuccess?.();
+      onClose?.();
+      return;
     }
 
-    toast({ title: "저장 완료", status: "success" });
-
-    onSuccess?.();   // 🔥 부모 fetchDailyPay 실행
-    onClose?.();     // 🔥 모달 닫기
-
-  } catch (err) {
-    toast({
-      title: "저장 중 오류 발생",
-      status: "error",
+    await handleDelete({
+      user,
+      rate_uuid: selectedId,
     });
-  }
-};
-  const tableData = [...user.rates, ...tempRates];
 
+    toast({ title: "삭제 완료", status: "success" });
+    onSuccess?.();
+  };
+
+  /* ======================
+     저장
+  ====================== */
+  const handleSaveClick = async () => {
+
+    if (!editingId) return;
+
+    const hasUnassigned = tableData.some(row => {
+      if (row.rate_uuid === editingId) {
+        return !editedValues.work_place || editedValues.work_place === "미지정";
+      }
+      return !row.work_place || row.work_place === "미지정";
+    });
+
+    if (hasUnassigned) {
+      toast({
+        title: "미지정 근무지가 존재합니다.",
+        status: "warning",
+      });
+      return;
+    }
+
+    const isNewRow = tempRates.some(
+      r => r.rate_uuid === editingId
+    );
+
+    try {
+      if (isNewRow) {
+        await handleAdd({
+          user_uuid: user.user_uuid,
+          ...editedValues,
+        });
+      } else {
+        await handleUpdate({
+          rate_uuid: editingId,
+          ...editedValues,
+        });
+      }
+
+      toast({ title: "저장 완료", status: "success" });
+      onSuccess?.();
+      onClose?.();
+
+    } catch {
+      toast({
+        title: "저장 중 오류 발생",
+        status: "error",
+      });
+    }
+  };
+
+  /* ======================
+     컬럼
+  ====================== */
   const columns = useMemo(() =>
     getRateColumns({
       editingId,
       editedValues,
       setEditedValues,
       setEditingId,
+      setTempRates,
     }),
   [editingId, editedValues]);
 
+  /* ======================
+     렌더
+  ====================== */
   return (
-    <Modal isOpen onClose={onClose} size="4xl">
-      <ModalOverlay />
-      <ModalContent>
+    <Modal isOpen onClose={onClose} isCentered>
+      <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(4px)" />
+      <ModalContent maxW="60vw" maxH="90vh" borderRadius="16px">
         <ModalHeader>{user.user_name} 일급 상세</ModalHeader>
         <ModalCloseButton />
 
-        <ModalBody>
+        <ModalBody overflow="auto">
 
           <Flex justify="flex-end" gap={2} mb={4}>
-            <Button size="sm" colorScheme="green" onClick={handleAddRow}>
+            <Button
+              size="sm"
+              colorScheme="green"
+              onClick={handleAddRow}
+            >
               추가
             </Button>
 
             <Button
               size="sm"
               colorScheme="red"
-              isDisabled={!selectedId}
+              isDisabled={
+                !selectedId ||
+                selectedRow?.work_place === "미지정"
+              }
               onClick={handleDeleteClick}
             >
               삭제

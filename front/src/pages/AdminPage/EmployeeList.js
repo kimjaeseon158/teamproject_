@@ -1,7 +1,7 @@
 import AdminInformation from "../../feactures/admin/userList/components/AdminInformation.js";
 import AddPersonModal from "../../feactures/admin/userList/components/AddPersonModal.js";
 import AddButton from "../../common/AddButton.js";
-import  CommonTable  from "../../feactures/admin/common/mytable.js";
+import  CommonTable  from "../../feactures/common/mytable.js";
 
 
 import { useAdminState } from "../../feactures/admin/userList/hook/useAdminState.js";

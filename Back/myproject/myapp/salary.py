@@ -154,9 +154,14 @@ def month_start_end(year: int, month: int):
 
 def add_months(year: int, month: int, delta: int):
     m = month - delta
-    new_month = m
-    new_year = year
-    if m >= 0 :
-        new_month = m + 12
-        new_year = year - 1
-    return new_year, new_month
+    y = year
+
+    while m <= 0:
+        m += 12
+        y -= 1
+
+    while m > 12:
+        m -= 12
+        y += 1
+
+    return y, m

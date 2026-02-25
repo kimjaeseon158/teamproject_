@@ -8,183 +8,116 @@ const getRateColumns = ({
   editedValues,
   setEditedValues,
   setEditingId,
-}) => [
-  {
-    key: "work_place",
-    label: "근무지",
-    width: "140px",
-    render: (value, row) => {
-      if (editingId === row.rate_uuid) {
-        return (
-          <Input
-            size="sm"
-            value={editedValues.work_place ?? ""}
-            onChange={(e) =>
-              setEditedValues((prev) => ({
-                ...prev,
-                work_place: e.target.value,
-              }))
-            }
-          />
-        );
-      }
-      return value ?? "-";
-    },
-  },
+}) => {
 
-  {
-    key: "base_hourly_wage",
-    label: "기본일당",
-    width: "120px",
-    render: (value, row) => {
-      if (editingId === row.rate_uuid) {
-        return (
-          <Input
-            size="sm"
-            value={editedValues.base_hourly_wage ?? ""}
-            onChange={(e) =>
-              setEditedValues((prev) => ({
-                ...prev,
-                base_hourly_wage: e.target.value,
-              }))
-            }
-          />
-        );
+  const renderInput = (field, row) => (
+    <Input
+      size="sm"
+      width="100%"
+      minW="120px"
+      value={
+        editedValues[field] !== undefined
+          ? editedValues[field]
+          : row[field] ?? ""
       }
-      return value != null ? value.toLocaleString() : "-";
-    },
-  },
-
-  {
-    key: "overtime_hourly_wage",
-    label: "연장일당",
-    width: "120px",
-    render: (value, row) => {
-      if (editingId === row.rate_uuid) {
-        return (
-          <Input
-            size="sm"
-            value={editedValues.overtime_hourly_wage ?? ""}
-            onChange={(e) =>
-              setEditedValues((prev) => ({
-                ...prev,
-                overtime_hourly_wage: e.target.value,
-              }))
-            }
-          />
-        );
+      onChange={(e) =>
+        setEditedValues((prev) => ({
+          ...prev,
+          [field]: e.target.value,
+        }))
       }
-      return value != null ? value.toLocaleString() : "-";
-    },
-  },
+    />
+  );
 
-  {
-    key: "meal_ot_hourly_wage",
-    label: "식대연장",
-    width: "120px",
-    render: (value, row) => {
-      if (editingId === row.rate_uuid) {
-        return (
-          <Input
-            size="sm"
-            value={editedValues.meal_ot_hourly_wage ?? ""}
-            onChange={(e) =>
-              setEditedValues((prev) => ({
-                ...prev,
-                meal_ot_hourly_wage: e.target.value,
-              }))
-            }
-          />
-        );
-      }
-      return value != null ? value.toLocaleString() : "-";
-    },
-  },
+  return [
 
-  {
-    key: "special_hourly_wage",
-    label: "특수수당",
-    width: "120px",
-    render: (value, row) => {
-      if (editingId === row.rate_uuid) {
-        return (
-          <Input
-            size="sm"
-            value={editedValues.special_hourly_wage ?? ""}
-            onChange={(e) =>
-              setEditedValues((prev) => ({
-                ...prev,
-                special_hourly_wage: e.target.value,
-              }))
-            }
-          />
-        );
-      }
-      return value != null ? value.toLocaleString() : "-";
+    {
+      key: "work_place",
+      label: "근무지",
+      width: "220px",
+      render: (value, row) =>
+        editingId === row.rate_uuid
+          ? renderInput("work_place", row)
+          : value ?? "-",
     },
-  },
 
-  {
-    key: "overnight_hourly_wage",
-    label: "야간일당",
-    width: "120px",
-    render: (value, row) => {
-      if (editingId === row.rate_uuid) {
-        return (
-          <Input
-            size="sm"
-            value={editedValues.overnight_hourly_wage ?? ""}
-            onChange={(e) =>
-              setEditedValues((prev) => ({
-                ...prev,
-                overnight_hourly_wage: e.target.value,
-              }))
-            }
-          />
-        );
-      }
-      return value != null ? value.toLocaleString() : "-";
+    {
+      key: "base_hourly_wage",
+      label: "기본일당",
+      width: "120px",
+      render: (value, row) =>
+        editingId === row.rate_uuid
+          ? renderInput("base_hourly_wage", row)
+          : value != null ? Number(value).toLocaleString() : "-",
     },
-  },
 
-  {
-    key: "overnight_ot_hourly_wage",
-    label: "야간연장",
-    width: "120px",
-    render: (value, row) => {
-      if (editingId === row.rate_uuid) {
-        return (
-          <Input
-            size="sm"
-            value={editedValues.overnight_ot_hourly_wage ?? ""}
-            onChange={(e) =>
-              setEditedValues((prev) => ({
-                ...prev,
-                overnight_ot_hourly_wage: e.target.value,
-              }))
-            }
-          />
-        );
-      }
-      return value != null ? value.toLocaleString() : "-";
+    {
+      key: "overtime_hourly_wage",
+      label: "연장일당",
+      width: "120px",
+      render: (value, row) =>
+        editingId === row.rate_uuid
+          ? renderInput("overtime_hourly_wage", row)
+          : value != null ? Number(value).toLocaleString() : "-",
     },
-  },
 
-  {
-    key: "edit",
-    label: "관리",
-    width: "70px",
-    render: (_, row) => (
-      <IconButton
-        icon={<FaEdit />}
-        size="xs"
-        onClick={() => {
-          setEditingId(row.rate_uuid);
-          setEditedValues(row);
-        }}
-      />
-    ),
-  },
-];
+    {
+      key: "meal_ot_hourly_wage",
+      label: "식대연장",
+      width: "120px",
+      render: (value, row) =>
+        editingId === row.rate_uuid
+          ? renderInput("meal_ot_hourly_wage", row)
+          : value != null ? Number(value).toLocaleString() : "-",
+    },
+
+    {
+      key: "special_hourly_wage",
+      label: "특수수당",
+      width: "120px",
+      render: (value, row) =>
+        editingId === row.rate_uuid
+          ? renderInput("special_hourly_wage", row)
+          : value != null ? Number(value).toLocaleString() : "-",
+    },
+
+    {
+      key: "overnight_hourly_wage",
+      label: "야간일당",
+      width: "120px",
+      render: (value, row) =>
+        editingId === row.rate_uuid
+          ? renderInput("overnight_hourly_wage", row)
+          : value != null ? Number(value).toLocaleString() : "-",
+    },
+
+    {
+      key: "overnight_ot_hourly_wage",
+      label: "야간연장",
+      width: "120px",
+      render: (value, row) =>
+        editingId === row.rate_uuid
+          ? renderInput("overnight_ot_hourly_wage", row)
+          : value != null ? Number(value).toLocaleString() : "-",
+    },
+
+    {
+      key: "edit",
+      label: "관리",
+      width: "70px",
+      render: (_, row) => (
+        <IconButton
+          icon={<FaEdit />}
+          size="xs"
+          onClick={() => {
+            setEditingId(row.rate_uuid);
+            setEditedValues(row);
+          }}
+        />
+      ),
+    },
+
+  ];
+};
 
 export default getRateColumns;

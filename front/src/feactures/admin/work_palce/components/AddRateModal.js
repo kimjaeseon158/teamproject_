@@ -17,7 +17,7 @@ import CommonTable from "../../common/mytable";
 import getRateColumns from "./ratecolums";
 import { useWorkPlaceRate } from "../hook/useWrokPlaceRate";
 
-export default function RateEditModal({ user, onClose, onRefresh }) {
+export default function RateEditModal({ user, onClose, onRefresh, onSuccess }) {
 
   const toast = useToast();
   const { handleAdd, handleUpdate, handleDelete } = useWorkPlaceRate(toast);
@@ -40,41 +40,93 @@ export default function RateEditModal({ user, onClose, onRefresh }) {
   /* ======================
      빈 Row 추가
   ====================== */
-  const handleAddRow = () => {
+const handleAddRow = () => {
 
-    const newRow = {
-      rate_uuid: "temp-" + Date.now(),
-      work_place: "",
-      base_hourly_wage: "",
-      overtime_hourly_wage: "",
-      meal_ot_hourly_wage: "",
-      special_hourly_wage: "",
-      overnight_hourly_wage: "",
-      overnight_ot_hourly_wage: "",
-      isNew: true,
-    };
+  const tableData = [...user.rates, ...tempRates];
 
-    setTempRates(prev => [...prev, newRow]);
-    setEditingId(newRow.rate_uuid);
-    setEditedValues(newRow);
+  // 🔥 미지정 존재 체크
+  const hasUnassigned = tableData.some(
+    row => row.work_place === "미지정"
+  );
+
+  if (hasUnassigned) {
+    toast({
+      title: "미지정 근무지가 존재합니다.",
+      description: "먼저 근무지를 설정한 후 추가해주세요.",
+      status: "warning",
+      duration: 2000,
+    });
+    return;
+  }
+
+  // 🔥 temp row 이미 존재하면 막기
+  if (tempRates.length > 0) {
+    toast({
+      title: "추가 중인 행을 먼저 저장하세요.",
+      status: "info",
+    });
+    return;
+  }
+
+  const newRow = {
+    rate_uuid: "temp-" + Date.now(),
+    work_place: "",
+    base_hourly_wage: "",
+    overtime_hourly_wage: "",
+    meal_ot_hourly_wage: "",
+    special_hourly_wage: "",
+    overnight_hourly_wage: "",
+    overnight_ot_hourly_wage: "",
+    isNew: true,
   };
 
+  setTempRates(prev => [...prev, newRow]);
+  setEditingId(newRow.rate_uuid);
+  setEditedValues(newRow);
+};
   /* ======================
-     삭제
+     삭제 (최소 1개 유지)
   ====================== */
-  const handleDeleteClick = async () => {
+const handleDeleteClick = async () => {
 
-    if (!selectedId) return;
+  if (!selectedId) return;
 
-    await handleDelete({
-      user,
+  const totalCount = user.rates.length + tempRates.length;
+
+  // 🔥 마지막 1개일 경우
+  if (totalCount <= 1) {
+
+    await handleUpdate({
       rate_uuid: selectedId,
+      work_place: "미지정",
+      base_hourly_wage: null,
+      overtime_hourly_wage: null,
+      meal_ot_hourly_wage: null,
+      special_hourly_wage: null,
+      overnight_hourly_wage: null,
+      overnight_ot_hourly_wage: null,
     });
 
-    toast({ title: "삭제 완료", status: "success" });
-    onRefresh?.();
-  };
+    toast({
+      title: "마지막 근무지는 미지정으로 초기화되었습니다.",
+      status: "info",
+    });
 
+    onSuccess?.();
+    onClose?.();
+    return;
+  }
+
+  // 🔥 2개 이상이면 정상 삭제
+  await handleDelete({
+    user,
+    rate_uuid: selectedId,
+  });
+
+  toast({ title: "삭제 완료", status: "success" });
+
+  onSuccess?.();
+};
   /* ======================
      저장 (add / update 자동 분기)
   ====================== */
@@ -82,33 +134,56 @@ const handleSaveClick = async () => {
 
   if (!editingId) return;
 
+  const tableData = [...user.rates, ...tempRates];
+
+  const hasUnassigned = tableData.some(row => {
+    const isEditingRow = row.rate_uuid === editingId;
+
+    if (isEditingRow) {
+      return !editedValues.work_place || editedValues.work_place === "미지정";
+    }
+
+    return !row.work_place || row.work_place === "미지정";
+  });
+
+  if (hasUnassigned) {
+    toast({
+      title: "미지정 근무지가 존재합니다.",
+      status: "warning",
+    });
+    return;
+  }
+
   const isNewRow = tempRates.some(
     r => r.rate_uuid === editingId
   );
 
-  if (isNewRow) {
+  try {
 
-    await handleAdd({
-      user_uuid: user.user_uuid,
-      ...editedValues,  // ⭐ row 말고 editedValues 사용
-    });
+    if (isNewRow) {
+      await handleAdd({
+        user_uuid: user.user_uuid,
+        ...editedValues,
+      });
+    } else {
+      await handleUpdate({
+        rate_uuid: editingId,
+        ...editedValues,
+      });
+    }
 
-  } else {
+    toast({ title: "저장 완료", status: "success" });
 
-    await handleUpdate({
-      rate_uuid: editingId,
-      ...editedValues,
+    onSuccess?.();   // 🔥 부모 fetchDailyPay 실행
+    onClose?.();     // 🔥 모달 닫기
+
+  } catch (err) {
+    toast({
+      title: "저장 중 오류 발생",
+      status: "error",
     });
   }
-
-  toast({ title: "저장 완료", status: "success" });
-
-  setTempRates([]);
-  setEditingId(null);
-  setEditedValues({});
-  onRefresh?.();
 };
-
   const tableData = [...user.rates, ...tempRates];
 
   const columns = useMemo(() =>

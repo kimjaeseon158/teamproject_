@@ -40,13 +40,16 @@ from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import Flow
 from google.oauth2 import credentials
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.db.models.functions import Coalesce
 from .auth_utils import (
     save_or_update_admin_refresh_token,
     save_or_update_user_refresh_token,
 )
 from .salary import (
     sync_salary_expense_for_workday,
-    group_rates_by_user
+    group_rates_by_user,
+    month_start_end,
+    add_months
 )
 import requests
 
@@ -596,6 +599,45 @@ class ExpenseDateFilteredAPIView(APIView):
 
         return Response({"success": True, "data": result})
 
+class Expense3MonthsTotalsAPIView(APIView):
+    authentication_classes = [AdminJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        month_str = request.query_params.get("month")  
+        if not month_str:
+            return Response({"success": False, "message": "month is required. ex) 2026-03"})
+
+        try:
+            year, month = map(int, month_str.split("-"))
+            if not (1 <= month <= 12):
+                raise ValueError
+        except ValueError:
+            return Response({"success": False, "message": "Invalid month format. Use YYYY-MM"})
+
+        data = {}
+
+        # 기준달(0), 지난달(-1), 지지난달(-2)
+        for idx, delta in enumerate([0, -1, -2], start=1):
+            y, m = add_months(year, month, delta)
+            start, next_start = month_start_end(y, m)
+
+            qs = (
+                Expense.objects
+                .filter(date__gte=start, date__lt=next_start)
+                .values("expense_name")
+                .annotate(total=Coalesce(Sum("amount"), 0))
+            )
+
+            totals = {row["expense_name"]: int(row["total"] or 0) for row in qs}
+
+            # idx=1 -> expense_totals_3 (기준달)
+            # idx=2 -> expense_totals_2 (지난달)
+            # idx=3 -> expense_totals_1 (지지난달)
+            key = f"expense_totals_{4 - idx}"
+            data[key] = totals
+
+        return Response({"success": True, "data": data})
 
 class ExpenseAddAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]

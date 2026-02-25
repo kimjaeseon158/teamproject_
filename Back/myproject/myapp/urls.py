@@ -29,6 +29,7 @@ from .views import (
     WorkPlaceRateListCreateAPIView,
     WorkPlaceRateUpdateDeleteAPIView,
     WorkPlaceRateListfilteringAPIView,
+    Expense3MonthsTotalsAPIView,
 )
 
 # fmt:off
@@ -60,15 +61,16 @@ urlpatterns = [
 
     
     # Dashboard-Total-sales
-    path('finance_total/',     FinanceTableDateFilteredAPIView.as_view(),  name='finance-total'),
-    path('income_filtered/',   IncomeDateFilteredAPIView.as_view(),        name='income-filtered'),
-    path('expense_filtered/',  ExpenseDateFilteredAPIView.as_view(),       name='expense-filtered'),  
-    path('income_add/',        IncomeAddAPIView.as_view(),                 name='income-add'),
-    path('expense_add/',       ExpenseAddAPIView.as_view(),                name='expense-add'),
-    path('income_update/',     IncomeUpdateAPIView.as_view(),              name='income-update'),
-    path('expense_update/',    ExpenseUpdateAPIView.as_view(),             name='expense_update'),
-    path('income_delete/',     IncomeDeleteAPIView.as_view(),              name='income-delete'),
-    path('expense_delete/',    ExpenseDeleteAPIView.as_view(),             name='expense-delete'),
+    path('finance_total/',           FinanceTableDateFilteredAPIView.as_view(),  name='finance-total'),
+    path('income_filtered/',         IncomeDateFilteredAPIView.as_view(),        name='income-filtered'),
+    path('expense_filtered/',        ExpenseDateFilteredAPIView.as_view(),       name='expense-filtered'),
+    path('expense_3months_totals/',  Expense3MonthsTotalsAPIView.as_view(),      name='expense-3months'),    
+    path('income_add/',              IncomeAddAPIView.as_view(),                 name='income-add'),
+    path('expense_add/',             ExpenseAddAPIView.as_view(),                name='expense-add'),
+    path('income_update/',           IncomeUpdateAPIView.as_view(),              name='income-update'),
+    path('expense_update/',          ExpenseUpdateAPIView.as_view(),             name='expense_update'),
+    path('income_delete/',           IncomeDeleteAPIView.as_view(),              name='income-delete'),
+    path('expense_delete/',          ExpenseDeleteAPIView.as_view(),             name='expense-delete'),
 
     # User-page
     path('user_work_info/',   UserWorkInfoAPIView.as_view(), name='user-work-info'),

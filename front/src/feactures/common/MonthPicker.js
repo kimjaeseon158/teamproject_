@@ -13,13 +13,13 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 export default function MonthPicker({
-  value,        // 반드시 "YYYY-MM"
+  value, // 반드시 "YYYY-MM"
   onChange,
 }) {
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
 
   const parseYearMonth = (val) => {
     if (!val || !val.includes("-")) {
@@ -37,14 +37,18 @@ export default function MonthPicker({
     };
   };
 
-  const parsed = parseYearMonth(value);
-
-  const [year, setYear] = useState(parsed.year);
-
-  useEffect(() => {
-    const { year: newYear } = parseYearMonth(value);
-    setYear(newYear);
+  // ✅ value가 바뀔 때만 다시 계산
+  const parsed = useMemo(() => {
+    return parseYearMonth(value);
   }, [value]);
+
+  // ✅ 초기값 안전 설정
+  const [year, setYear] = useState(() => parsed.year);
+
+  // ✅ value 변경 시 year 동기화
+  useEffect(() => {
+    setYear(parsed.year);
+  }, [parsed.year]);
 
   const displayLabel = `${parsed.year}년 ${parsed.month}월`;
 
@@ -90,7 +94,7 @@ export default function MonthPicker({
                       key={i}
                       size="sm"
                       onClick={() => {
-                        onChange(formatted); // 🔥 항상 YYYY-MM 반환
+                        onChange(formatted);
                         onClose();
                       }}
                     >

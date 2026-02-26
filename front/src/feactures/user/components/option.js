@@ -346,7 +346,7 @@ return (
     {cart.length > 0 && (
       <Box bg="gray.800" p={3} borderRadius="md">
         <Text fontSize="sm" fontWeight="600" mb={2}>
-          🧺 장바구니 ({cart.length})
+          추가 목록 ({cart.length})
         </Text>
 
         <Stack spacing={1}>

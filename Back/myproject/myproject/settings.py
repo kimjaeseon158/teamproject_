@@ -52,7 +52,7 @@ SIMPLE_JWT = {
 
 GOOGLE_CLIENT_ID     = env('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET')
-GOOGLE_REDIRECT_URI  = "http://localhost:8000/api/google_calendar_auth/callback/"
+GOOGLE_REDIRECT_URI  = "http://teamproject-v2qg.onrender.com/api/google_calendar_auth/callback/"
 
 GOOGLE_OAUTH2_CLIENT_CONFIG = {
     "web": {

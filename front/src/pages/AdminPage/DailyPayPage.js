@@ -14,44 +14,51 @@ export default function DailyPayPage() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  // ✅ 최초 1회 + 안전 dependency
+  /**
+   * ✅ 최초 1회만 실행됨
+   * fetchDailyPay가 고정되어 있으므로 무한루프 없음
+   */
   useEffect(() => {
     fetchDailyPay({}, toast);
   }, [fetchDailyPay, toast]);
 
-  const mergedData =
-    data?.map((user) => {
-      const rates = user.rates || [];
+  const mergedData = useMemo(() => {
+    return (
+      data?.map((user) => {
+        const rates = user.rates || [];
 
-      const workPlaces = rates
-        .map((r) => r.work_place)
-        .filter(Boolean);
+        const workPlaces = rates
+          .map((r) => r.work_place)
+          .filter(Boolean);
 
-      const average = (arr) => {
-        if (!arr.length) return null;
-        const valid = arr.filter((v) => v != null);
-        if (!valid.length) return null;
+        const average = (arr) => {
+          if (!arr.length) return null;
+          const valid = arr.filter((v) => v != null);
+          if (!valid.length) return null;
 
-        return Math.round(
-          valid.reduce((a, b) => a + Number(b), 0) / valid.length
-        );
-      };
+          return Math.round(
+            valid.reduce((a, b) => a + Number(b), 0) /
+              valid.length
+          );
+        };
 
-      return {
-        user_uuid: user.user_uuid,
-        user_name: user.user_name,
-        work_place: workPlaces.join(" / "),
-        base_hourly_wage: average(
-          rates.map((r) => r.base_hourly_wage)
-        ),
-        overtime_hourly_wage: average(
-          rates.map((r) => r.overtime_hourly_wage)
-        ),
-        overnight_hourly_wage: average(
-          rates.map((r) => r.overnight_hourly_wage)
-        ),
-      };
-    }) || [];
+        return {
+          user_uuid: user.user_uuid,
+          user_name: user.user_name,
+          work_place: workPlaces.join(" / "),
+          base_hourly_wage: average(
+            rates.map((r) => r.base_hourly_wage)
+          ),
+          overtime_hourly_wage: average(
+            rates.map((r) => r.overtime_hourly_wage)
+          ),
+          overnight_hourly_wage: average(
+            rates.map((r) => r.overnight_hourly_wage)
+          ),
+        };
+      }) || []
+    );
+  }, [data]);
 
   const columnsWithEdit = useMemo(
     () => [

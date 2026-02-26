@@ -54,7 +54,7 @@ export function useOptionHandlers({
       },
     ]);
 
-    toast({ title: "장바구니에 추가됨", status: "info", duration: 1200 });
+    toast({ title: "작업 목록 에 추가됨", status: "info", duration: 1200 });
     resetForm();
   };
 

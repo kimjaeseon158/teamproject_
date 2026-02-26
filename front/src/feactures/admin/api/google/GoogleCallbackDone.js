@@ -27,7 +27,7 @@ export default function GoogleCallbackDone() {
 
         navigate(to, { replace: true });
       } catch (err) {
-        console.error("Google OAuth revalidate 실패:", err);
+        console.error("Google OAuth revalidate 실패");
 
         sessionStorage.removeItem("oauthInFlight");
         sessionStorage.removeItem("oauthDone");

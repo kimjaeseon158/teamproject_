@@ -26,9 +26,6 @@ export default function TotalSalesPage() {
       totalExpense,
     } = useTotalFinance({ toast });
 
-
-    console.log("selectedMonth:", selectedDetailMonth);
-console.log("threeMonthData:", threeMonthData);
     return (
     <Box p={6} bg="gray.50" minH="100vh">
 

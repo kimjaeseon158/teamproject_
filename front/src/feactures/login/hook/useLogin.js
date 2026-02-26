@@ -98,7 +98,7 @@ export const useLogin = () => {
         response = await userLoginAPI(values.id, values.password);
       }
     } catch (err) {
-      console.error("🔴 로그인 API 에러:", err);
+      console.error("로그인 API 에러");
       setLoginError("서버 오류");
       return;
     }

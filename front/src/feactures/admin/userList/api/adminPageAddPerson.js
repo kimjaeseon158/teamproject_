@@ -26,7 +26,7 @@ export const AddUser_PostData = async (data, { toast } = {}) => {
     const result = await response.json();
     return result;
   } catch (error) {
-    console.error("서버 전송 오류:", error);
+    console.error("서버 전송 오류");
     return {
       success: false,
       error: error.message,

@@ -41,7 +41,7 @@ export const updateEmployee = async (employeeData, { toast } = {}) => {
     try {
       result = JSON.parse(text);
     } catch (err) {
-      console.error("업데이트 응답 JSON 파싱 실패:", err, text);
+      console.error("업데이트 응답 JSON 파싱 실패");
       return {
         success: false,
         error: "서버 응답 파싱 실패",
@@ -60,7 +60,7 @@ export const updateEmployee = async (employeeData, { toast } = {}) => {
       updated: result?.updated_user || employeeData,
     };
   } catch (error) {
-    console.error("업데이트 에러:", error);
+    console.error("업데이트 에러");
     return { success: false, error: error.message };
   }
 };

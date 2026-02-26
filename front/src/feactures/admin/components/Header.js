@@ -21,7 +21,7 @@ export default function Header() {
         },
       });
     } catch (err) {
-      console.error("logout error", err);
+      console.error("logout error");
     } finally {
       // 🔥 클라이언트 상태 정리
       clearAccessToken();

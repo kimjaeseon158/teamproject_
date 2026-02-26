@@ -39,7 +39,7 @@ export async function fetchFilteredPeople(queryParams, { toast } = {}) {
     }
 
     if (!res.ok) {
-      console.error("서버 응답 오류:", res.status);
+      console.error("서버 응답 오류");
       return [];
     }
 
@@ -48,11 +48,11 @@ export async function fetchFilteredPeople(queryParams, { toast } = {}) {
     if (Array.isArray(result?.data)) {
       return result.data;
     } else {
-      console.warn("예상하지 않은 응답 구조:", result);
+      console.warn("예상하지 않은 응답 구조");
       return [];
     }
   } catch (err) {
-    console.error("서버 요청 실패:", err);
+    console.error("서버 요청 실패");
     return [];
   }
 }

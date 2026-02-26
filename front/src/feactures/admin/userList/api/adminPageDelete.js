@@ -39,7 +39,7 @@ export const deleteEmployees = async (userUuids, { toast } = {}) => {
     try {
       parsed = JSON.parse(text);
     } catch (err) {
-      console.error("응답 JSON 파싱 실패:", err, text);
+      console.error("응답 JSON 파싱 실패");
       return {
         success: false,
         error: "서버 응답 파싱 실패",
@@ -58,7 +58,7 @@ export const deleteEmployees = async (userUuids, { toast } = {}) => {
       error: parsed?.message || "삭제 실패",
     };
   } catch (err) {
-    console.error("삭제 중 예외 발생:", err);
+    console.error("삭제 중 예외 발생");
     return { success: false, error: err.message };
   }
 };

@@ -34,7 +34,6 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log("✅ WS CONNECTED:", loginType);
         retryRef.current = 0;
         setConnected(true);
       };
@@ -46,19 +45,13 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
           // 🔥 메시지 순번 누적
           messageSeqRef.current += 1;
 
-          console.log(
-            `📥 WS RAW DATA #${messageSeqRef.current} @ ${new Date().toLocaleTimeString()}`,
-            data
-          );
-
           onMessageRef.current?.(data);
         } catch {
-          console.warn("❌ WS parse error:", e.data);
+          console.warn("WS parse error");
         }
       };
 
       ws.onclose = (e) => {
-        console.warn("⚠️ WS CLOSED:", e.code, e.reason);
         setConnected(false);
 
         if (closedByCleanup) return;
@@ -67,12 +60,11 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
         const delay = Math.min(1000 * 2 ** retryRef.current, 30000);
         retryRef.current += 1;
 
-        console.log(`🔁 WS RECONNECT IN ${delay}ms`);
         retryTimerRef.current = setTimeout(connect, delay);
       };
 
       ws.onerror = () => {
-        console.error("❌ WS ERROR");
+        console.error("WS ERROR");
       };
     };
 

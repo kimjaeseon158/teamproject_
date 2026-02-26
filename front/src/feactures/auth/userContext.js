@@ -27,7 +27,6 @@ export function UserProvider({ children, loginType }) {
      🔥 loginType 변경 시 초기화
   ========================= */
   useEffect(() => {
-    console.log("🔄 loginType 변경됨 → 알람 초기화:", loginType);
     setAlarms([]);
     setAlarmCount(0);
   }, [loginType]);
@@ -88,8 +87,6 @@ export function UserProvider({ children, loginType }) {
     uuid: userUuid,
     loginType,
     onMessage: (data) => {
-      console.log("📩 WS MESSAGE:", data);
-      console.log("🔥 현재 loginType:", loginType);
 
       /* =========================
          🔵 ADMIN 전용 처리
@@ -97,7 +94,6 @@ export function UserProvider({ children, loginType }) {
       if (loginType === "admin") {
         // 혹시 reject 와도 무시
         if (data?.rejects) {
-          console.log("🚫 admin은 reject 무시");
         }
 
         if (typeof data?.count === "number") {
@@ -116,7 +112,7 @@ export function UserProvider({ children, loginType }) {
       ========================= */
       if (loginType === "user") {
         if (Array.isArray(data?.rejects)) {
-          console.log("🟡 user rejects 수신");
+
 
           const mappedRejects = data.rejects.map((item, index) => ({
             id: `reject-${index}`,

@@ -23,7 +23,6 @@ export const Panel_PostData = async (data = {}, toast) => {
     );
 
     if (!res || !res.ok) {
-      console.error("Panel_PostData 실패:", res?.status);
 
       if (toast) {
         toast({
@@ -42,7 +41,7 @@ export const Panel_PostData = async (data = {}, toast) => {
     return result;
 
   } catch (error) {
-    console.error("Panel_PostData 네트워크 오류:", error);
+    console.error("Panel_PostData 네트워크 오류");
 
     if (toast) {
       toast({

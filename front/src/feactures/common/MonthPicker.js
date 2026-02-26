@@ -1,3 +1,5 @@
+// MonthPicker.js
+
 import {
   Popover,
   PopoverTrigger,
@@ -15,37 +17,47 @@ import {
 import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import { useState, useEffect, useMemo } from "react";
 
+/**
+ * 🔥 컴포넌트 밖에 둔다 (중요)
+ * 렌더마다 새로 생성되지 않음
+ */
+function parseYearMonth(val) {
+  const today = new Date();
+
+  if (!val || !val.includes("-")) {
+    return {
+      year: today.getFullYear(),
+      month: today.getMonth() + 1,
+    };
+  }
+
+  const [y, m] = val.split("-").map(Number);
+
+  return {
+    year: isNaN(y) ? today.getFullYear() : y,
+    month: isNaN(m) ? today.getMonth() + 1 : m,
+  };
+}
+
 export default function MonthPicker({
-  value, // 반드시 "YYYY-MM"
+  value,      // 반드시 "YYYY-MM"
   onChange,
 }) {
-  const today = useMemo(() => new Date(), []);
-
-  const parseYearMonth = (val) => {
-    if (!val || !val.includes("-")) {
-      return {
-        year: today.getFullYear(),
-        month: today.getMonth() + 1,
-      };
-    }
-
-    const [y, m] = val.split("-").map(Number);
-
-    return {
-      year: isNaN(y) ? today.getFullYear() : y,
-      month: isNaN(m) ? today.getMonth() + 1 : m,
-    };
-  };
-
-  // ✅ value가 바뀔 때만 다시 계산
+  /**
+   * ✅ value 바뀔 때만 재계산
+   */
   const parsed = useMemo(() => {
     return parseYearMonth(value);
   }, [value]);
 
-  // ✅ 초기값 안전 설정
+  /**
+   * ✅ 초기값 안전 설정 (함수형)
+   */
   const [year, setYear] = useState(() => parsed.year);
 
-  // ✅ value 변경 시 year 동기화
+  /**
+   * ✅ value 변경 시 year 동기화
+   */
   useEffect(() => {
     setYear(parsed.year);
   }, [parsed.year]);
@@ -74,13 +86,17 @@ export default function MonthPicker({
                 <IconButton
                   size="sm"
                   icon={<ChevronLeftIcon />}
-                  onClick={() => setYear((y) => y - 1)}
+                  onClick={() => setYear((prev) => prev - 1)}
+                  aria-label="이전 연도"
                 />
+
                 <Text fontWeight="800">{year}년</Text>
+
                 <IconButton
                   size="sm"
                   icon={<ChevronRightIcon />}
-                  onClick={() => setYear((y) => y + 1)}
+                  onClick={() => setYear((prev) => prev + 1)}
+                  aria-label="다음 연도"
                 />
               </HStack>
 
@@ -91,10 +107,16 @@ export default function MonthPicker({
 
                   return (
                     <Button
-                      key={i}
+                      key={month}
                       size="sm"
+                      variant={
+                        formatted === value ? "solid" : "outline"
+                      }
+                      colorScheme={
+                        formatted === value ? "blue" : "gray"
+                      }
                       onClick={() => {
-                        onChange(formatted);
+                        onChange(formatted); // 항상 YYYY-MM 반환
                         onClose();
                       }}
                     >

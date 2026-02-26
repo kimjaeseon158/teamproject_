@@ -52,20 +52,56 @@ class UserWorkDaySerializer(serializers.ModelSerializer):
     @transaction.atomic
     
     def create(self, validated_data):
-        details_data = validated_data.pop("details")  # details 무조건 온다
-
-        work_day = User_WorkDay.objects.create(**validated_data)
-
-        User_WorkDetail.objects.bulk_create([
-            User_WorkDetail(
-                work_date=work_day,            # FK 이름 맞추기
-                user_uuid=work_day.user_uuid_str,  # 반드시 필요
-                **d
+        details_data = validated_data.pop("details")
+    
+        user = validated_data["user_uuid"]
+        work_date = validated_data["work_date"]
+        work_shift = validated_data["work_shift"]
+    
+        with transaction.atomic():
+            rejected = (
+                User_WorkDay.objects
+                .select_for_update()
+                .filter(
+                    user_uuid=user,
+                    work_date=work_date,
+                    work_shift=work_shift,
+                    is_approved=False,   # 반려건
+                )
+                .order_by("-id")
+                .first()
             )
-            for d in details_data
-        ])
-        
-        return work_day
+    
+            if rejected:
+                # 반려건을 재제출로 덮어쓰기
+                for k, v in validated_data.items():
+                    setattr(rejected, k, v)
+                rejected.is_approved = None
+                rejected.reject_reason = None
+                rejected.save()
+    
+                User_WorkDetail.objects.filter(work_date=rejected).delete()
+                User_WorkDetail.objects.bulk_create([
+                    User_WorkDetail(
+                        work_date=rejected,
+                        user_uuid=rejected.user_uuid_id,
+                        **d
+                    )
+                    for d in details_data
+                ])
+                return rejected
+    
+            # 반려건이 없으면 새로 생성 (미처리/승인 중복은 DB 제약이 막아줌)
+            work_day = User_WorkDay.objects.create(**validated_data)
+            User_WorkDetail.objects.bulk_create([
+                User_WorkDetail(
+                    work_date=work_day,
+                    user_uuid=work_day.user_uuid_id,
+                    **d
+                )
+                for d in details_data
+            ])
+            return work_day
 
 
 class WorkPlaceRateSerializer(serializers.ModelSerializer):

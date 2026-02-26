@@ -1,7 +1,6 @@
 import { Box, Flex, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input, FormControl, FormLabel, useDisclosure } from "@chakra-ui/react";
 import { useState } from "react";
 import CalendarSection from "../../feactures/admin/overview/section/CalendarSection";
-import FinanceSection from "../../feactures/admin/total_pay/section/FinanceSection";
 import PendingApproveSection from "../../feactures/admin/overview/section/PendingApproveSection";
 
 export default function OverviewPage() {

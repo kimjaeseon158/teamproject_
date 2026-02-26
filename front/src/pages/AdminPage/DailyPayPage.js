@@ -9,7 +9,7 @@ import SearchRateModal from "../../feactures/admin/work_palce/components/SearchR
 
 export default function DailyPayPage() {
   const toast = useToast();
-  const { data, loading, fetchDailyPay } = useDailyPay();
+  const { data, fetchDailyPay } = useDailyPay();
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);

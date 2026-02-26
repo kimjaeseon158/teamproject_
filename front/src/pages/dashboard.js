@@ -8,8 +8,6 @@ import EmployeeList from "./AdminPage/EmployeeList";        // adminpage 연결
 import ApprovalPage from "./AdminPage/ApprovalPage";       // 승은 관련
 import DailyPayPage from "./AdminPage/DailyPayPage";       // 일급 관리
 import TotalSalesPage from "./AdminPage/TotalSalesPage";   // 총 매출액
-import CompanyPage from "./AdminPage/TotalEdit_company";
-import ExpensePage from "./AdminPage/TotalEdit_expense";
 
 export default function Dashboard() {
   return (

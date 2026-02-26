@@ -20,11 +20,8 @@ import {
 const AdminInformation = ({ person, onClose, onSave }) => {
   const {
     formData,
-    showPanel,
     handleChange,
     handleSubmit,
-    handleBackFromPanel,
-    locationsList,
   } = useAdminInformationLogic(person, onClose, onSave);
 
 

@@ -2,7 +2,6 @@ import {
   Box,
   Button,
   IconButton,
-  HStack,
   Text,
   useBreakpointValue,
 } from "@chakra-ui/react";

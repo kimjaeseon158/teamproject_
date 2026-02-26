@@ -1,6 +1,4 @@
-// useTotalFinance.js
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { three_month_totals } from "../api/expense3month";
 
 export function useTotalFinance({ toast }) {
@@ -47,52 +45,58 @@ export function useTotalFinance({ toast }) {
     return arr;
   };
 
-  const fetchAll = async (monthStr) => {
-    const res = await three_month_totals(
-      { month: monthStr },
-      toast
-    );
+  // ✅ fetchAll 정리 완료
+  const fetchAll = useCallback(
+    async (monthStr) => {
+      const res = await three_month_totals(
+        { month: monthStr },
+        toast
+      );
 
-    if (!res?.data) return;
+      if (!res?.data) return;
 
-    const d = res.data;
+      const d = res.data;
 
-    const [year, monthStrNum] = monthStr.split("-");
-    const monthNum = Number(monthStrNum);
+      const [year, monthStrNum] = monthStr.split("-");
+      const monthNum = Number(monthStrNum);
 
-    const monthKeys = getPrevMonths(Number(year), monthNum);
+      const monthKeys = getPrevMonths(Number(year), monthNum);
 
-    const monthMap = {};
+      const monthMap = {};
 
-    monthKeys.forEach((key) => {
-      monthMap[key] =
-        d[`expense_totals_${key}`] || {};
-    });
+      monthKeys.forEach((key) => {
+        monthMap[key] =
+          d[`expense_totals_${key}`] || {};
+      });
 
-    setRawMonthMap(monthMap);
+      setRawMonthMap(monthMap);
 
-  const parsedThree = monthKeys.map((key) => ({
-  key,
-  label: formatKoreanMonth(key),
-  total: sumMonth(monthMap[key]),
-}));
+      const parsedThree = monthKeys.map((key) => ({
+        key,
+        label: formatKoreanMonth(key),
+        total: sumMonth(monthMap[key]),
+      }));
 
-setThreeMonthData(parsedThree);
+      setThreeMonthData(parsedThree);
 
-// 🔥 핵심 수정
-setSelectedDetailMonth((prev) => {
-  if (!prev) return monthKeys[2];
+      setSelectedDetailMonth((prev) => {
+        if (!prev) return monthKeys[2];
+        return monthKeys.includes(prev)
+          ? prev
+          : monthKeys[2];
+      });
+    },
+    [toast]
+  );
 
-  return monthKeys.includes(prev)
-    ? prev
-    : monthKeys[2];
-});
-  };
-
+  // ✅ apiMonth 기준으로 실행
   useEffect(() => {
-    fetchAll(apiMonth);
-  }, [apiMonth]);
+    if (apiMonth) {
+      fetchAll(apiMonth);
+    }
+  }, [apiMonth, fetchAll]);
 
+  // ✅ 상세 데이터 계산
   useEffect(() => {
     if (!selectedDetailMonth) return;
 
@@ -108,7 +112,6 @@ setSelectedDetailMonth((prev) => {
 
     setDetailData(parsed);
     setTotalExpense(sumMonth(selectedData));
-    console.log("🔥 selectedDetailMonth 변경:", selectedDetailMonth);
   }, [selectedDetailMonth, rawMonthMap]);
 
   return {

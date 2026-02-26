@@ -42,7 +42,8 @@ export default function MonthPicker({
   const [year, setYear] = useState(parsed.year);
 
   useEffect(() => {
-    setYear(parsed.year);
+    const { year: newYear } = parseYearMonth(value);
+    setYear(newYear);
   }, [value]);
 
   const displayLabel = `${parsed.year}년 ${parsed.month}월`;

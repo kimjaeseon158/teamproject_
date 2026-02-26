@@ -14,68 +14,72 @@ export default function DailyPayPage() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
+  // ✅ 최초 1회 + 안전 dependency
   useEffect(() => {
     fetchDailyPay({}, toast);
-  }, []);
+  }, [fetchDailyPay, toast]);
 
-const mergedData = data?.map(user => {
+  const mergedData =
+    data?.map((user) => {
+      const rates = user.rates || [];
 
-  const rates = user.rates || [];
+      const workPlaces = rates
+        .map((r) => r.work_place)
+        .filter(Boolean);
 
-  const workPlaces = rates
-    .map(r => r.work_place)
-    .filter(Boolean);
+      const average = (arr) => {
+        if (!arr.length) return null;
+        const valid = arr.filter((v) => v != null);
+        if (!valid.length) return null;
 
-  const average = (arr) => {
-    if (!arr.length) return null;
-    const valid = arr.filter(v => v != null);
-    if (!valid.length) return null;
-    return Math.round(
-      valid.reduce((a, b) => a + Number(b), 0) / valid.length
-    );
-  };
+        return Math.round(
+          valid.reduce((a, b) => a + Number(b), 0) / valid.length
+        );
+      };
 
-  return {
-    user_uuid: user.user_uuid,
-    user_name: user.user_name,
-    work_place: workPlaces.join(" / "),
-    base_hourly_wage: average(
-      rates.map(r => r.base_hourly_wage)
-    ),
-    overtime_hourly_wage: average(
-      rates.map(r => r.overtime_hourly_wage)
-    ),
-    overnight_hourly_wage: average(
-      rates.map(r => r.overnight_hourly_wage)
-    ),
-  };
-}) || [];
+      return {
+        user_uuid: user.user_uuid,
+        user_name: user.user_name,
+        work_place: workPlaces.join(" / "),
+        base_hourly_wage: average(
+          rates.map((r) => r.base_hourly_wage)
+        ),
+        overtime_hourly_wage: average(
+          rates.map((r) => r.overtime_hourly_wage)
+        ),
+        overnight_hourly_wage: average(
+          rates.map((r) => r.overnight_hourly_wage)
+        ),
+      };
+    }) || [];
 
-  const columnsWithEdit = useMemo(() => [
-    ...userPlace_listColmns,
-    {
-      key: "edit",
-      label: "관리",
-      render: (_, row) => (
-        <Button
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            const user = data.find(
-              u => u.user_uuid === row.user_uuid
-            );
-            setSelectedUser(user);
-          }}
-        >
-          edit
-        </Button>
-      ),
-    },
-  ], [data]);
+  const columnsWithEdit = useMemo(
+    () => [
+      ...userPlace_listColmns,
+      {
+        key: "edit",
+        label: "관리",
+        render: (_, row) => (
+          <Button
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              const user = data.find(
+                (u) => u.user_uuid === row.user_uuid
+              );
+              setSelectedUser(user);
+            }}
+          >
+            edit
+          </Button>
+        ),
+      },
+    ],
+    [data]
+  );
 
   return (
     <div>
-
       <div style={{ display: "flex", gap: "10px" }}>
         <Button
           colorScheme="blue"
@@ -90,13 +94,13 @@ const mergedData = data?.map(user => {
           전체보기
         </Button>
       </div>
+
       <CommonTable
         columns={columnsWithEdit}
         data={mergedData}
         rowKey="user_uuid"
       />
 
-      {/* 🔥 수정 모달 */}
       {selectedUser && (
         <AddRateModal
           isOpen
@@ -104,19 +108,19 @@ const mergedData = data?.map(user => {
           user={selectedUser}
           onClose={() => setSelectedUser(null)}
           onSuccess={() => {
-            fetchDailyPay({}, toast);   // 🔥 데이터 재요청
-            setSelectedUser(null);      // 🔥 모달 닫기
+            fetchDailyPay({}, toast);
+            setSelectedUser(null);
           }}
         />
       )}
 
-      {/* 🔥 검색 모달 */}
       <SearchRateModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
-        onSearch={(params) => fetchDailyPay(params, toast)}
+        onSearch={(params) =>
+          fetchDailyPay(params, toast)
+        }
       />
-
     </div>
   );
 }

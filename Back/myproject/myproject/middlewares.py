@@ -7,27 +7,21 @@ from myapp.models import Admin_Login_Info, User_Login_Info  # 관리자 모델 �
 @database_sync_to_async
 def get_admin(token_key):
     try:
-        print(f"--- 미들웨어에 도달한 토큰: {token_key[:20]}... ---")  # 첫 부분 출력
         access_token = AccessToken(token_key)
         sub = access_token.get("sub")
-        print(f"--- 토큰 파싱 성공 (sub: {sub}) ---")
 
         return Admin_Login_Info.objects.get(admin_uuid=sub)
     except Exception as e:
-        print(f"❌ WS Auth Error 상세: {e}")  # 에러 원인 구체적으로 출력
         return AnonymousUser()
     
 @database_sync_to_async
 def get_user(token_key):
     try:
-        print(f"--- 미들웨어에 도달한 토큰: {token_key[:20]}... ---")  # 첫 부분 출력
         access_token = AccessToken(token_key)
         sub = access_token.get("sub")
-        print(f"--- 토큰 파싱 성공 (sub: {sub}) ---")
 
         return User_Login_Info.objects.get(user_uuid=sub)
     except Exception as e:
-        print(f"❌ WS Auth Error 상세: {e}")  # 에러 원인 구체적으로 출력
         return AnonymousUser()
 
 

@@ -20,6 +20,7 @@ psycopg2-binary>=2.9.0
 channels>=4.0.0
 channels-redis>=4.1.0
 daphne>=4.0.0
+uvicorn[standard]
 
 # Google OAuth
 google-auth-oauthlib>=1.0.0

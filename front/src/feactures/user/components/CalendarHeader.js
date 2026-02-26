@@ -43,11 +43,12 @@ export default function CalendarHeader({
     }
   };
 
+
   const handleMonthChange = (ym) => {
-    const [year, month] = ym.split("-");
-    goToDate({
-      formatted: `${year}-${month}-01`,
-    });
+    const api = window.calendarRef?.getApi();
+    if (api) {
+      api.gotoDate(`${ym}-01`);
+    }
   };
   const formatKoreanMonth = (title) => {
     if (!title) return "";

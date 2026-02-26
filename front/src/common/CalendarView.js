@@ -19,18 +19,11 @@ export default function CalendarView({
       plugins={[dayGridPlugin, interactionPlugin]}
       initialView="dayGridMonth"
       headerToolbar={false}
-
-      /* 🔥 모바일은 auto, PC는 고정 */
       height={isMobile ? "auto" : "calc(100vh - 140px)"}
       contentHeight={isMobile ? "auto" : undefined}
-
       events={events}
       dateClick={onDateClick}
-
-      /* 🔥 여기 추가 1 */
       dayMaxEventRows={3}
-
-      /* 🔥 여기 추가 2 */
       eventContent={(arg) => (
         <Box
           px="4px"
@@ -46,25 +39,19 @@ export default function CalendarView({
           {arg.event.title}
         </Box>
       )}
-
-      /* 외부 제어용 ref */
       ref={(fc) => (window.calendarRef = fc)}
 
-     datesSet={(arg) => {
-      // 🔥 기존 기능 유지
-      onTitleChange?.(arg.view.title);
+      /* 🔥 여기만 수정 */
+      datesSet={(arg) => {
+        const date = arg.view.currentStart;
 
-      // 🔥 추가: 현재 보고 있는 년-월 계산
-      const date = arg.view.currentStart;
+        const ym = `${date.getFullYear()}-${String(
+          date.getMonth() + 1
+        ).padStart(2, "0")}`;
 
-      const ym = `${date.getFullYear()}-${String(
-        date.getMonth() + 1
-      ).padStart(2, "0")}`;
+        onTitleChange?.(ym);
+      }}
 
-      // 🔥 부모에게 월 값도 같이 전달
-      onTitleChange?.(arg.view.title, ym);
-    }}
-            /* 선택 날짜 스타일 */
       dayCellClassNames={(arg) => {
         if (!selectedDate) return [];
 
@@ -81,7 +68,7 @@ export default function CalendarView({
         }
 
         return [];
-      }} 
+      }}
     />
   );
 }

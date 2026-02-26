@@ -13,6 +13,7 @@ export default function DailyPayPage() {
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  
 
   useEffect(() => {
     fetchDailyPay({}, toast);

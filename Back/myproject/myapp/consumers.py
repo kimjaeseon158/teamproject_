@@ -10,11 +10,8 @@ class RequestMonitorConsumer(AsyncWebsocketConsumer):
 
         # 2. 수정됨: Admin_Login_Info 객체에는 is_anonymous 속성이 없으므로 isinstance로 체크
         if self.user is None or isinstance(self.user, AnonymousUser):
-            print("WS 연결 거부: 인증되지 않은 사용자")
             await self.close()
             return
-
-        print(f"WS 연결 수락: 관리자({self.user.admin_id}) 접속")
 
         self.group_name = "admin_request_monitor"
         self.last_count = None  # 직전 카운트 상태 저장용
@@ -49,7 +46,6 @@ class RequestMonitorConsumer(AsyncWebsocketConsumer):
         # 그룹 탈퇴
         if hasattr(self, "group_name"):
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
-            print(f"WS 연결 종료: 코드 {close_code}")
 
     # 스케줄러(operator.py)로부터 메시지를 받았을 때 실행
     async def count_update_message(self, event):
@@ -71,7 +67,6 @@ class UserRejectMonitorConsumer(AsyncWebsocketConsumer):
         self.user = self.scope.get("user")
 
         if self.user is None or isinstance(self.user, AnonymousUser):
-            print("WS 연결 거부: 인증되지 않은 사용자")
             await self.close()
             return
 

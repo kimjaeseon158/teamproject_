@@ -1,6 +1,7 @@
 import uuid
 from django.db import models
 from django.contrib.auth.hashers import make_password
+from django.db.models import Q
 
 
 # fmt:off
@@ -62,7 +63,8 @@ class User_WorkDay(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["user_uuid", "work_date", "work_shift"],
-                name="uniq_user_date_shift"
+                condition=Q(is_approved__isnull=True) | Q(is_approved=True),
+                name="uniq_user_date_shift_not_rejected",
             )
         ]
 

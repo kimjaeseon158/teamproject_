@@ -11,6 +11,7 @@ from .serializers import (
     ExpenseSerializer,
     UserWorkDaySerializer,
     WorkPlaceRateSerializer,
+    WorkPlaceRateCreateSerializer
 )
 from .auth_utils import check_user_credentials, check_admin_credentials
 from .jwt_utils import (
@@ -30,6 +31,8 @@ from .models import (
     WorkPlaceRate
 )
 from django.db.models import Sum
+from django.db import transaction
+from django.db.utils import IntegrityError
 from datetime import datetime
 from django.conf import settings
 from django.shortcuts import redirect
@@ -37,12 +40,19 @@ from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import Flow
 from google.oauth2 import credentials
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.db.models.functions import Coalesce
 from .auth_utils import (
     save_or_update_admin_refresh_token,
     save_or_update_user_refresh_token,
 )
-
+from .salary import (
+    sync_salary_expense_for_workday,
+    group_rates_by_user,
+    month_start_end,
+    add_months
+)
 import requests
+
 
 
 # ------------------- Refresh API -------------------
@@ -442,7 +452,14 @@ class UserInfoAddAPIView(APIView):
         # 새로운 사용자 생성
         serializer = User_Login_InfoSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            # 유저 생성
+            user = serializer.save()
+
+            # 자동 Rate 생성
+            WorkPlaceRate.objects.create(
+                user=user,
+                work_place="미지정",   # 기본 근무지
+            )
             all_data = User_Login_Info.objects.all()
             user_data = User_InfoSerializer(all_data, many=True)
             result = user_data.data
@@ -582,6 +599,43 @@ class ExpenseDateFilteredAPIView(APIView):
 
         return Response({"success": True, "data": result})
 
+class Expense3MonthsTotalsAPIView(APIView):
+    authentication_classes = [AdminJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        month_str = request.query_params.get("month")  
+        if not month_str:
+            return Response({"success": False})
+
+        try:
+            year, month = map(int, month_str.split("-"))
+            if not (1 <= month <= 12):
+                raise ValueError
+        except ValueError:
+            return Response({"success": False})
+
+        data = {}
+
+        # 기준달(0), 지난달(1), 지지난달(2)
+        for delta in [0, 1, 2]:
+            y, m = add_months(year, month, delta)
+
+            month_key = f"expense_totals_{y}-{m:02d}"
+
+            start, next_start = month_start_end(y, m)
+
+            qs = (
+                Expense.objects
+                .filter(date__gte=start, date__lt=next_start)
+                .values("expense_name")
+                .annotate(total=Coalesce(Sum("amount"), 0))
+            )
+            data[month_key] = {
+                row["expense_name"]: int(row["total"] or 0)
+                for row in qs
+            }
+        return Response({"success": True, "data": data})
 
 class ExpenseAddAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
@@ -794,7 +848,7 @@ class AdminWorkDayStatusUpdateAPIView(APIView):
         status = request.data.get("status")  # True / False
         reject_reason = request.data.get("reject_reason")
 
-        if not user_uuid or not work_date_str or not status is None or not work_shift:
+        if not user_uuid or not work_date_str or status is None or not work_shift:
             return Response({"success": False})
 
         if status not in [True, False]:
@@ -817,19 +871,23 @@ class AdminWorkDayStatusUpdateAPIView(APIView):
                 {"success": False},
             )
 
-        # 완료(승인)
-        if status == True:
-            work_day.is_approved = True
-            work_day.reject_reason = None
+        with transaction.atomic():
+            # 완료(승인)
+            if status == True:
+                work_day.is_approved = True
+                work_day.reject_reason = None
 
         # 거절(반려)
-        elif status == False:
-            if not reject_reason:
-                return Response({"success": False})  # 반려 사유 반드시 기제
-            work_day.is_approved = False
-            work_day.reject_reason = reject_reason
+            elif status == False:
+                if not reject_reason:
+                    return Response({"success": False})  # 반려 사유 반드시 기제
+                work_day.is_approved = False
+                work_day.reject_reason = reject_reason
 
-        work_day.save()
+            work_day.save()
+
+            # 승인/반려/대기 상태에 따라 Expense 동기화
+            sync_salary_expense_for_workday(work_day)
 
         return Response({"success": True})
 
@@ -839,31 +897,34 @@ class WorkPlaceRateListCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user_uuid = request.query_params.get("user_uuid")      # optional
-        work_place = request.query_params.get("work_place")    # optional (검색)
 
-        WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
+        WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all()
 
-        if user_uuid:
-            WorkPlace_qs = WorkPlace_qs.filter(user_id=user_uuid)
+        grouped = group_rates_by_user(WorkPlace_qs)
 
-        if work_place:
-            WorkPlace_qs = WorkPlace_qs.filter(work_place__icontains=work_place)
+        return Response({"success": True, "users": grouped})
 
-        data = WorkPlaceRateSerializer(WorkPlace_qs, many=True).data
-        return Response({"success": True, "rates": data})
-
+    @transaction.atomic
     def post(self, request):
-        serializer = WorkPlaceRateSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response({"success": False})
+        create_ser = WorkPlaceRateCreateSerializer(data=request.data)
+        if not create_ser.is_valid():
+            return Response({"success": False, "errors": "입력 정보가 유효하지 않습니다."})
 
-        serializer.save()
+        user_uuid = create_ser.validated_data.pop("user_uuid")
 
-        # 생성 후 전체 목록 반환
+        try:
+            user = User_Login_Info.objects.get(user_uuid=user_uuid)
+        except User_Login_Info.DoesNotExist:
+            return Response({"success": False, "message": "존재하지 않는 user 입니다."})
+
+        try:
+            WorkPlaceRate.objects.create(user=user, **create_ser.validated_data)
+        except IntegrityError:
+            return Response({"success": False, "message": "이미 존재하는 근무지입니다."})
+
         WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
-        data = WorkPlaceRateSerializer(WorkPlace_qs, many=True).data
-        return Response({"success": True, "rates": data})
+        grouped = group_rates_by_user(WorkPlace_qs)
+        return Response({"success": True, "users": grouped})
     
 class WorkPlaceRateUpdateDeleteAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
@@ -887,8 +948,8 @@ class WorkPlaceRateUpdateDeleteAPIView(APIView):
 
         # 수정 후 전체 목록 반환
         WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
-        data = WorkPlaceRateSerializer(WorkPlace_qs, many=True).data
-        return Response({"success": True, "rates": data})
+        grouped = group_rates_by_user(WorkPlace_qs)
+        return Response({"success": True, "users": grouped})
 
     def delete(self, request):
         rate_uuid = request.data.get("rate_uuid")
@@ -904,8 +965,28 @@ class WorkPlaceRateUpdateDeleteAPIView(APIView):
 
         # 삭제 후 전체 목록 반환
         WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
-        data = WorkPlaceRateSerializer(WorkPlace_qs, many=True).data
-        return Response({"success": True, "rates": data})
+        grouped = group_rates_by_user(WorkPlace_qs)
+        return Response({"success": True, "users": grouped})
+    
+
+class WorkPlaceRateListfilteringAPIView(APIView):
+    authentication_classes = [AdminJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_name = request.query_params.get("user_name")   
+        work_place = request.query_params.get("work_place") 
+
+        WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all()
+
+        if user_name:
+            WorkPlace_qs = WorkPlace_qs.filter(user__user_name__icontains=user_name)
+
+        if work_place:
+            WorkPlace_qs = WorkPlace_qs.filter(work_place__icontains=work_place)
+
+        grouped = group_rates_by_user(WorkPlace_qs)
+        return Response({"success": True, "users": grouped})
 
 # ----------------------
 # 2 데이터 처리 뷰 - User

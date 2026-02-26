@@ -63,5 +63,5 @@
     "eslint": "^8.56.0",
     "nodemon": "^3.1.9"
   },
-  "proxy": "https://teamproject-v2qg.onrender.com/"
+  "proxy": "http://localhost:8000"
 }

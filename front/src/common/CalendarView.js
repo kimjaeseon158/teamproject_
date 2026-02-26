@@ -51,8 +51,19 @@ export default function CalendarView({
       ref={(fc) => (window.calendarRef = fc)}
 
      datesSet={(arg) => {
-        onTitleChange?.(arg.view.title);
-      }}
+      // 🔥 기존 기능 유지
+      onTitleChange?.(arg.view.title);
+
+      // 🔥 추가: 현재 보고 있는 년-월 계산
+      const date = arg.view.currentStart;
+
+      const ym = `${date.getFullYear()}-${String(
+        date.getMonth() + 1
+      ).padStart(2, "0")}`;
+
+      // 🔥 부모에게 월 값도 같이 전달
+      onTitleChange?.(arg.view.title, ym);
+    }}
             /* 선택 날짜 스타일 */
       dayCellClassNames={(arg) => {
         if (!selectedDate) return [];

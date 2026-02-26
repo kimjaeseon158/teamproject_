@@ -12,7 +12,7 @@ export function useTotalFinance({ toast }) {
 
   const [apiMonth, setApiMonth] = useState(initialMonth);
   const [selectedDetailMonth, setSelectedDetailMonth] =
-    useState(initialMonth);
+    useState(null);
 
   const [rawMonthMap, setRawMonthMap] = useState({});
   const [threeMonthData, setThreeMonthData] = useState([]);
@@ -25,11 +25,34 @@ export function useTotalFinance({ toast }) {
       0
     );
 
+  const formatKoreanMonth = (key) => {
+    const [year, month] = key.split("-");
+    return `${year}년 ${month}월`;
+  };
+
+  const getPrevMonths = (year, month) => {
+    const base = new Date(year, month - 1);
+    const arr = [];
+
+    for (let i = 2; i >= 0; i--) {
+      const d = new Date(base);
+      d.setMonth(base.getMonth() - i);
+
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+
+      arr.push(`${yyyy}-${mm}`);
+    }
+
+    return arr;
+  };
+
   const fetchAll = async (monthStr) => {
     const res = await three_month_totals(
       { month: monthStr },
       toast
     );
+
     if (!res?.data) return;
 
     const d = res.data;
@@ -37,45 +60,44 @@ export function useTotalFinance({ toast }) {
     const [year, monthStrNum] = monthStr.split("-");
     const monthNum = Number(monthStrNum);
 
-    const prev1 = monthNum === 1 ? 12 : monthNum - 1;
-    const prev2 = prev1 === 1 ? 12 : prev1 - 1;
+    const monthKeys = getPrevMonths(Number(year), monthNum);
 
-    const formatMonth = (m) =>
-      `${year}-${String(m).padStart(2, "0")}`;
+    const monthMap = {};
 
-    const monthMap = {
-      [formatMonth(prev2)]:
-        d[`expense_totals_${prev2}`] || {},
-      [formatMonth(prev1)]:
-        d[`expense_totals_${prev1}`] || {},
-      [formatMonth(monthNum)]:
-        d[`expense_totals_${monthNum}`] || {},
-    };
+    monthKeys.forEach((key) => {
+      monthMap[key] =
+        d[`expense_totals_${key}`] || {};
+    });
 
     setRawMonthMap(monthMap);
 
-    const parsedThree = Object.entries(monthMap).map(
-      ([label, value]) => ({
-        label,
-        total: sumMonth(value),
-      })
-    );
+  const parsedThree = monthKeys.map((key) => ({
+  key,
+  label: formatKoreanMonth(key),
+  total: sumMonth(monthMap[key]),
+}));
 
-    setThreeMonthData(parsedThree);
+setThreeMonthData(parsedThree);
 
-    // 기본 상세 = 선택월
-    setSelectedDetailMonth(formatMonth(monthNum));
+// 🔥 핵심 수정
+setSelectedDetailMonth((prev) => {
+  if (!prev) return monthKeys[2];
+
+  return monthKeys.includes(prev)
+    ? prev
+    : monthKeys[2];
+});
   };
 
-  /* API는 월 선택 시만 */
   useEffect(() => {
     fetchAll(apiMonth);
   }, [apiMonth]);
 
-  /* 상세는 rawMonthMap 기준으로 계산 */
   useEffect(() => {
+    if (!selectedDetailMonth) return;
+
     const selectedData =
-      rawMonthMap[selectedDetailMonth] || {};
+      rawMonthMap[String(selectedDetailMonth).trim()] || {};
 
     const parsed = Object.entries(selectedData).map(
       ([name, amount]) => ({
@@ -86,6 +108,7 @@ export function useTotalFinance({ toast }) {
 
     setDetailData(parsed);
     setTotalExpense(sumMonth(selectedData));
+    console.log("🔥 selectedDetailMonth 변경:", selectedDetailMonth);
   }, [selectedDetailMonth, rawMonthMap]);
 
   return {

@@ -10,7 +10,7 @@ import CalendarMobileLayout from "../../feactures/user/layout/CalendarMobileLayo
 export default function CalendarPage() {
   const { userName, userUuid } = useUser();
   const [calendarTitle, setCalendarTitle] = useState("");
-
+  const [currentMonth, setCurrentMonth] = useState("");
   const calendar = useCalendarState();
 
   const [isMobile] = useMediaQuery("(max-width: 1024px)");
@@ -36,7 +36,13 @@ export default function CalendarPage() {
   const goToDate = ({ formatted }) => {
     window.calendarRef?.getApi()?.gotoDate(formatted);
   };
+  const handleTitleChange = (title, ym) => {
+    setCalendarTitle(title);
 
+    if (ym) {
+      setCurrentMonth(ym); // 🔥 MonthPicker 동기화
+    }
+  };
   const layoutProps = {
     userName,
     userUuid,
@@ -46,8 +52,9 @@ export default function CalendarPage() {
     goToday,
     goToDate,
 
-    calendarTitle,        // 🔥 추가
-    setCalendarTitle, 
+    calendarTitle,
+    currentMonth,       // 🔥
+    handleTitleChange,  // 🔥
   };
 
   return isMobile ? (

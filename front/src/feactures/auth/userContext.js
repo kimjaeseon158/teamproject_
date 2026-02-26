@@ -17,18 +17,23 @@ const UserContext = createContext(null);
 export function UserProvider({ children, loginType }) {
   const [loading, setLoading] = useState(true);
 
-  // 🔐 인증 기준
   const [userUuid, setUserUuid] = useState(null);
-
-  // 👤 표시용 사용자 정보
   const [userName, setUserName] = useState(null);
 
-  // 🔔 알림 상태
   const [alarms, setAlarms] = useState([]);
   const [alarmCount, setAlarmCount] = useState(0);
 
   /* =========================
-     인증 동기화 (refresh)
+     🔥 loginType 변경 시 초기화
+  ========================= */
+  useEffect(() => {
+    console.log("🔄 loginType 변경됨 → 알람 초기화:", loginType);
+    setAlarms([]);
+    setAlarmCount(0);
+  }, [loginType]);
+
+  /* =========================
+     인증 동기화
   ========================= */
   const revalidate = useCallback(async () => {
     setLoading(true);
@@ -46,28 +51,24 @@ export function UserProvider({ children, loginType }) {
 
       setAccessToken(access);
 
-      // JWT payload → uuid만 복구
       const payload = JSON.parse(atob(access.split(".")[1]));
-            console.log(payload)
       setUserUuid(payload?.sub ?? null);
       setUserName(payload?.user_name ?? null);
 
-      // ❗ userName은 여기서 건드리지 않는다
       return true;
     } catch (err) {
       console.error("revalidate 실패:", err);
       clearAccessToken();
       setUserUuid(null);
       setUserName(null);
+      setAlarms([]);
       setAlarmCount(0);
       return false;
     } finally {
       setLoading(false);
     }
   }, []);
-  /* =========================
-     최초 진입 시 토큰 체크
-  ========================= */
+
   useEffect(() => {
     const token = getAccessToken();
     if (!token) {
@@ -88,15 +89,52 @@ export function UserProvider({ children, loginType }) {
     loginType,
     onMessage: (data) => {
       console.log("📩 WS MESSAGE:", data);
+      console.log("🔥 현재 loginType:", loginType);
 
-      // 서버에서 계산된 알람 카운트
-      if (typeof data?.count === "number") {
-        setAlarmCount(data.count);
+      /* =========================
+         🔵 ADMIN 전용 처리
+      ========================= */
+      if (loginType === "admin") {
+        // 혹시 reject 와도 무시
+        if (data?.rejects) {
+          console.log("🚫 admin은 reject 무시");
+        }
+
+        if (typeof data?.count === "number") {
+          setAlarmCount(data.count);
+        }
+
+        if (Array.isArray(data?.alarms)) {
+          setAlarms(data.alarms);
+        }
+
+        return;
       }
 
-      // 알람 목록이 오면 (확장용)
-      if (Array.isArray(data?.alarms)) {
-        setAlarms(data.alarms);
+      /* =========================
+         🟢 USER 전용 처리
+      ========================= */
+      if (loginType === "user") {
+        if (Array.isArray(data?.rejects)) {
+          console.log("🟡 user rejects 수신");
+
+          const mappedRejects = data.rejects.map((item, index) => ({
+            id: `reject-${index}`,
+            title: `${item.work_date} 근무 반려`,
+            description: item.reject_reason,
+            date: item.work_date,
+            time: "",
+            read: false,
+          }));
+
+          setAlarms(mappedRejects);
+        }
+
+        if (typeof data?.count === "number") {
+          setAlarmCount(data.count);
+        }
+
+        return;
       }
     },
   });
@@ -104,16 +142,14 @@ export function UserProvider({ children, loginType }) {
   return (
     <UserContext.Provider
       value={{
-        // 상태
         loading,
         userUuid,
         userName,
         alarms,
         alarmCount,
         wsConnected,
-
-        // 액션
-        setUserName,   // 🔥 로그인 성공 시 사용
+        loginType, // 🔥 Alarm에서 사용
+        setUserName,
         revalidate,
       }}
     >

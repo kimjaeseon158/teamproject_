@@ -21,6 +21,7 @@ export default function CalendarHeader({
   goToday,
   goToDate,
   calendarTitle, // "2026-03"
+  currentMonth,
 }) {
   const navigate = useNavigate();
 
@@ -48,7 +49,17 @@ export default function CalendarHeader({
       formatted: `${year}-${month}-01`,
     });
   };
+  const formatKoreanMonth = (title) => {
+    if (!title) return "";
 
+    const date = new Date(title);
+    if (isNaN(date)) return title; // 변환 실패 시 원본 유지
+
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+
+    return `${year}년 ${month}월`;
+  };
   return (
     <Box mb={4} w="100%">
 
@@ -124,7 +135,7 @@ export default function CalendarHeader({
             </Button>
 
             <Text fontSize="20px" fontWeight="700" minW="150px" textAlign="center">
-              {calendarTitle}
+              {formatKoreanMonth(calendarTitle)}
             </Text>
 
             <Button

@@ -25,6 +25,10 @@ export default function TotalSalesPage() {
       detailData,
       totalExpense,
     } = useTotalFinance({ toast });
+
+
+    console.log("selectedMonth:", selectedDetailMonth);
+console.log("threeMonthData:", threeMonthData);
     return (
     <Box p={6} bg="gray.50" minH="100vh">
 
@@ -44,39 +48,43 @@ export default function TotalSalesPage() {
         <Flex direction="column" flex="2" gap={6}>
 
           {/* 3개월 그래프 */}
-         <ThreeMonthBarSection
+          <ThreeMonthBarSection
             data={threeMonthData}
-            selectedMonth={selectedDetailMonth}   // 🔥 추가
-            onMonthClick={(month) =>
-              setSelectedDetailMonth(month)
-            }
+            selectedMonth={selectedDetailMonth}
+            onMonthClick={(month) => {
+              setSelectedDetailMonth(String(month).trim());
+            }}
           />
-
           {/* 선택월 상세 */}
-          <Card>
-            <CardBody>
-              <Heading size="sm" mb={3}>
-                {selectedDetailMonth}월 상세 급여
-              </Heading>
-              {detailData.length === 0 ? (
-                <Box textAlign="center" py={6} color="gray.400">
-                  급여 내역이 없습니다.
-                </Box>
-              ) : (
-                detailData.map((item, i) => (
-                  <Flex key={i} justify="space-between">
-                    <Box>{item.name}</Box>
-                    <Box>{item.amount.toLocaleString()} 원</Box>
-                  </Flex>
-                ))
-              )}
+         <Card>
+          <CardBody>
+            <Heading size="sm" mb={3}>
+              {selectedDetailMonth &&
+                selectedDetailMonth.replace(
+                  /^(\d{4})-(\d{2})$/,
+                  "$1년 $2월"
+                )} 상세 급여
+            </Heading>
 
-              <Flex justify="space-between" fontWeight="bold" mt={4}>
-                <Box>총 일급 지출</Box>
-                <Box>{(totalExpense ?? 0).toLocaleString()} 원</Box>
-              </Flex>
-            </CardBody>
-          </Card>
+            {detailData.length === 0 ? (
+              <Box textAlign="center" py={6} color="gray.400">
+                급여 내역이 없습니다.
+              </Box>
+            ) : (
+              detailData.map((item, i) => (
+                <Flex key={i} justify="space-between">
+                  <Box>{item.name}</Box>
+                  <Box>{item.amount.toLocaleString()} 원</Box>
+                </Flex>
+              ))
+            )}
+
+            <Flex justify="space-between" fontWeight="bold" mt={4}>
+              <Box>총 일급 지출</Box>
+              <Box>{(totalExpense ?? 0).toLocaleString()} 원</Box>
+            </Flex>
+          </CardBody>
+        </Card>
 
         </Flex>
 

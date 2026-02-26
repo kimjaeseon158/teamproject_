@@ -251,25 +251,50 @@ return (
         key={idx}
         p={3}
         borderRadius="md"
-        bg="gray.800"
+        bg="gray.800"          
         border="1px solid"
         borderColor="gray.600"
       >
         <HStack spacing={2} mb={2}>
-          <Select
-            size="sm"
-            placeholder="선택하세요"
-            value={row.type}
-            bg="gray.900"
-            color="gray.100"
-            borderColor="gray.600"
-            onChange={(e) =>
-              updateExtraWork(idx, { type: e.target.value })
-            }
-          >
-            <option value="overtime">잔업</option>
-            <option value="lunch">중식</option>
-          </Select>
+          <Menu>
+            <MenuButton
+              as={Button}
+              w="100%"
+              bg="gray.900"
+              color="gray.100"
+              border="1px solid"
+              borderColor="gray.600"
+              rightIcon={<ChevronDownIcon />}
+            >
+              {row.type === "overtime"
+                ? "잔업"
+                : row.type === "lunch"
+                ? "중식"
+                : "근무 선택"}
+            </MenuButton>
+
+            <MenuList bg="gray.800" borderColor="gray.600">
+              <MenuItem
+                bg="gray.800"
+                _hover={{ bg: "gray.700" }}
+                onClick={() =>
+                  updateExtraWork(idx, { type: "overtime" })
+                }
+              >
+                잔업
+              </MenuItem>
+
+              <MenuItem
+                bg="gray.800"
+                _hover={{ bg: "gray.700" }}
+                onClick={() =>
+                  updateExtraWork(idx, { type: "lunch" })
+                }
+              >
+                중식
+              </MenuItem>
+            </MenuList>
+          </Menu>
 
           <IconButton
             icon={<DeleteIcon />}
@@ -288,6 +313,8 @@ return (
             bg="gray.900"
             color="gray.100"
             borderColor="gray.600"
+            _focus={{ borderColor: "blue.400" }}
+            _hover={{ borderColor: "gray.500" }}
             onChange={(e) =>
               updateExtraWork(idx, {
                 start: formatTimeInput(e.target.value),
@@ -301,6 +328,8 @@ return (
             bg="gray.900"
             color="gray.100"
             borderColor="gray.600"
+            _focus={{ borderColor: "blue.400" }}
+            _hover={{ borderColor: "gray.500" }}
             onChange={(e) =>
               updateExtraWork(idx, {
                 finish: formatTimeInput(e.target.value),
@@ -313,7 +342,6 @@ return (
         </HStack>
       </Box>
     ))}
-
     {/* 장바구니 */}
     {cart.length > 0 && (
       <Box bg="gray.800" p={3} borderRadius="md">

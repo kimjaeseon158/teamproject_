@@ -15,6 +15,9 @@ export default function ThreeMonthBarSection({
   onMonthClick,
   selectedMonth,
 }) {
+  console.log("📊 렌더 data:", data);
+  console.log("📌 현재 selectedMonth:", selectedMonth);
+
   return (
     <Box bg="white" p={4} borderRadius="md">
       <Heading size="sm" mb={4}>
@@ -25,30 +28,39 @@ export default function ThreeMonthBarSection({
         <BarChart
           data={data}
           onClick={(state) => {
-            if (state?.activeLabel && onMonthClick) {
-              onMonthClick(state.activeLabel);
+
+            if (state && state.activeIndex != null) {
+              const index = Number(state.activeIndex);
+              const clicked = data[index];
+
+
+              if (clicked?.key && onMonthClick) {
+                onMonthClick(clicked.key);
+              }
             }
           }}
         >
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis
-            dataKey="label"
-            tickFormatter={(value) => value + "월"}
-        />
+          <XAxis dataKey="label" />
           <YAxis />
           <Tooltip />
-            <Bar dataKey="total" barSize={60}>
-            {data.map((entry, index) => (
+
+          <Bar dataKey="total" barSize={60}>
+            {data.map((entry, index) => {
+              const isSelected =
+                entry.key === selectedMonth
+              return (
                 <Cell
-                key={`cell-${index}`}
-                fill={
-                    entry.label === selectedMonth
-                    ? "#3182CE"   // 🔥 선택된 달 → 파란색
-                    : "#CBD5E0"   // 나머지 → 회색
-                }
+                  key={index}
+                  fill={
+                    isSelected
+                      ? "#3182CE"
+                      : "#CBD5E0"
+                  }
                 />
-            ))}
-            </Bar>
+              );
+            })}
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </Box>

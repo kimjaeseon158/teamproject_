@@ -14,6 +14,8 @@ export default function CalendarDesktopLayout({
   goToDate,
   calendarTitle,
   setCalendarTitle,
+  currentMonth,        // 🔥 추가
+  handleTitleChange,   // 🔥 추가
 }) {
   return (
     <Box display="flex" height="100vh" overflow="hidden">
@@ -37,6 +39,7 @@ export default function CalendarDesktopLayout({
           goToday={goToday}
           goToDate={goToDate}
           calendarTitle={calendarTitle}
+          currentMonth={currentMonth}   // 🔥 추가
         />
 
         {/* 캘린더 영역 */}
@@ -45,7 +48,7 @@ export default function CalendarDesktopLayout({
             events={[]}
             selectedDate={calendar.selectedDate}
             onDateClick={calendar.handleDateClick}
-            onTitleChange={setCalendarTitle}
+            onTitleChange={handleTitleChange}   // 🔥 변경
           />
         </Box>
 

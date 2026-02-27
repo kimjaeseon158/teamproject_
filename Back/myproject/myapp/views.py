@@ -281,7 +281,7 @@ class AdminLogoutAPIView(APIView):
         except Admin_Login_Info.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        deleted_count, _ = AdminRefreshToken.objects.filter(admin_uuid__admin_uuid=admin).delete()
+        deleted_count, _ = AdminRefreshToken.objects.filter(admin_uuid_id=admin).delete()
 
         return Response(
             {"success": True, "deleted_tokens": deleted_count},

@@ -17,7 +17,7 @@ REFRESH_TOKEN_HASH_SECRET = env('REFRESH_TOKEN_HASH_SECRET')
 DEBUG = env('DEBUG')
 
 DEBUG = True
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "teamproject-v2qg.onrender.com"]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
 INSTALLED_APPS = [
     "daphne",
@@ -29,8 +29,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "myapp",
-    "django_apscheduler",
-    "channels"
+    "django_apscheduler"
 ]
 
 # --------------------------
@@ -70,7 +69,7 @@ GOOGLE_OAUTH2_CLIENT_CONFIG = {
 # Middleware
 # --------------------------
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",  # ✅ 맨 위 유지
+    "corsheaders.middleware.CorsMiddleware",  #  맨 위 유지
     "django.middleware.security.SecurityMiddleware",
     # 'whitenoise.middleware.WhiteNoiseMiddleware', # 외부 배포 설정
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -88,14 +87,12 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://teamproject-git-dev-kimjaeseon158s-projects.vercel.app",
 ]
 
 # 프런트 도메인을 CSRF 신뢰 도메인으로 등록 (쿠키 기반 요청 허용)
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://teamproject-git-dev-kimjaeseon158s-projects.vercel.app",
 ]
 
 # (선택) 개발 편의용 쿠키 옵션 — 운영 배포 시 True/더 엄격하게 바꾸기

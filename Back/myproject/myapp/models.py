@@ -174,7 +174,7 @@ class AdminRefreshToken(models.Model):
     created_at   = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):    # 디버깅용 코드 차후 삭제 고려
-        return f"Admin Token for {self.admin.admin_name}"
+        return f"Admin Token for {self.admin_uuid.admin_name}"
 
 
 class UserRefreshToken(models.Model):

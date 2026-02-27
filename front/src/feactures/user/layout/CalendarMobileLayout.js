@@ -15,7 +15,6 @@ export default function CalendarMobileLayout({
   userUuid,
   calendar,
   goToday,
-  goToDate,
   calendarTitle,
   setCalendarTitle,
 }) {
@@ -23,6 +22,7 @@ export default function CalendarMobileLayout({
 
   return (
     <Box minH="100vh" bg="white" overflow="hidden">
+
       <Drawer
         isOpen={isOpen}
         placement="bottom"
@@ -46,11 +46,12 @@ export default function CalendarMobileLayout({
       </Drawer>
 
       <Box px={4} pt={4} display="flex" flexDirection="column">
+
         <CalendarHeader
           userUuid={userUuid}
           goToday={goToday}
-          goToDate={goToDate}
           calendarTitle={calendarTitle}
+          setCalendarTitle={setCalendarTitle}
         />
 
         <Box mt={4} width="100%">
@@ -64,6 +65,7 @@ export default function CalendarMobileLayout({
             onTitleChange={setCalendarTitle}
           />
         </Box>
+
       </Box>
     </Box>
   );

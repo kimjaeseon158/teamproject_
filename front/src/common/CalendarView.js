@@ -1,7 +1,7 @@
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { useBreakpointValue, Box } from "@chakra-ui/react";
+import { useBreakpointValue } from "@chakra-ui/react";
 
 export default function CalendarView({
   events,
@@ -24,31 +24,14 @@ export default function CalendarView({
       events={events}
       dateClick={onDateClick}
       dayMaxEventRows={3}
-      eventContent={(arg) => (
-        <Box
-          px="4px"
-          py="2px"
-          borderRadius="6px"
-          bg={arg.event.extendedProps.color || "blue.400"}
-          color="white"
-          fontSize="10px"
-          whiteSpace="nowrap"
-          overflow="hidden"
-          textOverflow="ellipsis"
-        >
-          {arg.event.title}
-        </Box>
-      )}
       ref={(fc) => (window.calendarRef = fc)}
 
-      /* 🔥 여기만 수정 */
+      /* 🔥 월 변경 동기화 */
       datesSet={(arg) => {
         const date = arg.view.currentStart;
-
-        const ym = `${date.getFullYear()}-${String(
-          date.getMonth() + 1
-        ).padStart(2, "0")}`;
-
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const ym = `${year}-${month}`;
         onTitleChange?.(ym);
       }}
 

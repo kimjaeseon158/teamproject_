@@ -14,10 +14,9 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = env('SECRET_KEY')
 REFRESH_TOKEN_HASH_SECRET = env('REFRESH_TOKEN_HASH_SECRET')
-DEBUG = env('DEBUG')
+DEBUG = env.bool('DEBUG', default=False)
 
-DEBUG = True
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=["127.0.0.1", "localhost"])
 
 INSTALLED_APPS = [
     "daphne",
@@ -51,7 +50,7 @@ SIMPLE_JWT = {
 
 GOOGLE_CLIENT_ID     = env('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET')
-GOOGLE_REDIRECT_URI  = "http://localhost:8000/api/google_calendar_auth/callback/"
+GOOGLE_REDIRECT_URI  = env('GOOGLE_REDIRECT_URI')
 
 GOOGLE_OAUTH2_CLIENT_CONFIG = {
     "web": {
@@ -68,38 +67,35 @@ GOOGLE_OAUTH2_CLIENT_CONFIG = {
 # --------------------------
 # Middleware
 # --------------------------
+    
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",  #  맨 위 유지
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    # 'whitenoise.middleware.WhiteNoiseMiddleware', # 외부 배포 설정
+]
+
+# [수정] 배포 환경(DEBUG=False)에서만 WhiteNoise 자동 활성화
+if not DEBUG:
+    MIDDLEWARE.append('whitenoise.middleware.WhiteNoiseMiddleware')
+
+MIDDLEWARE += [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    # "django.middleware.csrf.CsrfViewMiddleware",  # 쿠키 기반 CSRF를 쓰려면 추후 활성화 고려
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
+    
 # --------------------------
 # CORS
 # --------------------------
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=["http://localhost:3000"])
+CSRF_TRUSTED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=["http://localhost:3000"])
 
-# 프런트 도메인을 CSRF 신뢰 도메인으로 등록 (쿠키 기반 요청 허용)
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
-
-# (선택) 개발 편의용 쿠키 옵션 — 운영 배포 시 True/더 엄격하게 바꾸기
+# [수정] 보안 설정 자동화 (DEBUG 상태에 따라 연동)
 SESSION_COOKIE_SAMESITE = "Lax"
-SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = not DEBUG  # 배포 시 True
 CSRF_COOKIE_SAMESITE = "Lax"
-CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = not DEBUG     # 배포 시 True
 
 # --------------------------
 # Database
@@ -143,6 +139,8 @@ CHANNEL_LAYERS = {
 # --------------------------
 # Other
 # --------------------------
+FRONTEND_URL = env('FRONTEND_URL', default="http://localhost:3000") # 추가
+
 ROOT_URLCONF = "myproject.urls"
 WSGI_APPLICATION = "myproject.wsgi.application"
 ASGI_APPLICATION = "myproject.asgi.application"

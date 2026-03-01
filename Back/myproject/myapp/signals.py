@@ -23,7 +23,7 @@ def notify_count_change(sender, instance, **kwargs):
       )
   
       # user: 해당 유저의 반려(N) 카운트 + 사유 목록
-      user_uuid = str(instance.user_uuid_id)  # 네 FK 필드명에 맞게 (user_uuid_id 맞으면 그대로)
+      user_uuid = str(instance.user_uuid_id)  # FK 필드명에 맞게 (Ex.user_uuid_id)
       user_group_name = f"user_reject_monitor_{user_uuid}"
   
       qs = (

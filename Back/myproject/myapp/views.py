@@ -106,15 +106,17 @@ class GoogleCallbackAPIView(APIView):
     def get(self, request):
         code = request.GET.get("code")
         state = request.GET.get("state")
-
+        
+        base_url = settings.FRONTEND_URL  # .env에서 읽어온 http://localhost:3000
+    
         if not code:
-            return redirect("http://localhost:3000/dashboard?google_auth=failed")
+            return redirect(f"{base_url}/dashboard?google_auth=failed")
 
         # 쿠키에서 state 검증
         saved_state = request.session.get("state")
 
         if not saved_state or saved_state != state:
-            return redirect("http://localhost:3000/dashboard?google_auth=invalid_state")
+            return redirect(f"{base_url}/dashboard?google_auth=invalid_state")
 
         # 토큰 교환 요청
         token_url = "https://oauth2.googleapis.com/token"
@@ -133,18 +135,20 @@ class GoogleCallbackAPIView(APIView):
         refresh_token = token_json.get("refresh_token")
 
         if not access_token:
-            return redirect("http://localhost:3000/dashboard?google_auth=failed")
+            return redirect(f"{base_url}/dashboard?google_auth=failed")
 
         # ✅ 보안상 프론트엔드로 직접 토큰을 보내지 않음
         # 대신 Django HttpOnly 쿠키에 저장
-        response = redirect("http://localhost:3000/dashboard?google_auth=success")
+        response = redirect(f"{base_url}/dashboard?google_auth=success")
         response.delete_cookie("oauth_state")
+        
+        cookie_secure = not settings.DEBUG
 
         response.set_cookie(
             "google_access_token",
             access_token,
             httponly=True,
-            secure=False,
+            secure=cookie_secure,
             samesite="Lax",
         )
         if refresh_token:
@@ -152,7 +156,7 @@ class GoogleCallbackAPIView(APIView):
                 "google_refresh_token",
                 refresh_token,
                 httponly=True,
-                secure=False,
+                secure=cookie_secure,
                 samesite="Lax",
             )
 

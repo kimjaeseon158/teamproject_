@@ -2,10 +2,7 @@ import uuid
 from django.db import models
 from django.contrib.auth.hashers import make_password
 from django.db.models import Q
-<<<<<<< HEAD
-=======
 
->>>>>>> dev-confirm
 
 
 # fmt:off

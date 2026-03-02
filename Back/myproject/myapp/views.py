@@ -110,21 +110,13 @@ class GoogleCallbackAPIView(APIView):
         base_url = settings.FRONTEND_URL  # .env에서 읽어온 http://localhost:3000
     
         if not code:
-<<<<<<< HEAD
-            return redirect("https://teamproject-git-dev-kimjaeseon158s-projects.vercel.app/dashboard?google_auth=failed")
-=======
             return redirect(f"{base_url}/dashboard?google_auth=failed")
->>>>>>> dev-confirm
 
         # 쿠키에서 state 검증
         saved_state = request.session.get("state")
 
         if not saved_state or saved_state != state:
-<<<<<<< HEAD
-            return redirect("https://teamproject-git-dev-kimjaeseon158s-projects.vercel.app/dashboard?google_auth=invalid_state")
-=======
             return redirect(f"{base_url}/dashboard?google_auth=invalid_state")
->>>>>>> dev-confirm
 
         # 토큰 교환 요청
         token_url = "https://oauth2.googleapis.com/token"
@@ -143,19 +135,11 @@ class GoogleCallbackAPIView(APIView):
         refresh_token = token_json.get("refresh_token")
 
         if not access_token:
-<<<<<<< HEAD
-            return redirect("https://teamproject-git-dev-kimjaeseon158s-projects.vercel.app/dashboard?google_auth=failed")
-
-        # ✅ 보안상 프론트엔드로 직접 토큰을 보내지 않음
-        # 대신 Django HttpOnly 쿠키에 저장
-        response = redirect("https://teamproject-git-dev-kimjaeseon158s-projects.vercel.app/dashboard?google_auth=success")
-=======
             return redirect(f"{base_url}/dashboard?google_auth=failed")
 
         # ✅ 보안상 프론트엔드로 직접 토큰을 보내지 않음
         # 대신 Django HttpOnly 쿠키에 저장
         response = redirect(f"{base_url}/dashboard?google_auth=success")
->>>>>>> dev-confirm
         response.delete_cookie("oauth_state")
         
         cookie_secure = not settings.DEBUG

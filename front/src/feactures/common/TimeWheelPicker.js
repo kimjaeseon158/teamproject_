@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Box, HStack, Text } from "@chakra-ui/react";
 
 const ITEM_HEIGHT = 32;
@@ -47,7 +47,7 @@ export default function TimeWheelPicker({
 
     if (minuteRef.current)
       minuteRef.current.scrollTop = minuteIndex * ITEM_HEIGHT;
-  }, [value]);
+  }, [value, isUserScrolling, hours, minutes]);
 
   const Wheel = ({ data, refObj, type }) => (
     <Box

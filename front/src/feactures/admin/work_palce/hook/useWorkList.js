@@ -35,7 +35,7 @@ export function useDailyPay() {
 
         setData(result?.users || []);
       } catch (error) {
-        console.error("❌ fetchDailyPay error:", error);
+        console.error(" fetchDailyPay error");
       } finally {
         setLoading(false);
       }

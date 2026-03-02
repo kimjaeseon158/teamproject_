@@ -15,7 +15,6 @@ export function useTotalFinance({ toast }) {
   const [rawMonthMap, setRawMonthMap] = useState({});
   const [threeMonthData, setThreeMonthData] = useState([]);
   const [detailData, setDetailData] = useState([]);
-  const [totalExpense, setTotalExpense] = useState(0);
 
   const sumMonth = (obj) =>
     Object.values(obj || {}).reduce(
@@ -120,6 +119,5 @@ export function useTotalFinance({ toast }) {
     setSelectedDetailMonth,
     threeMonthData,
     detailData,
-    totalExpense,
   };
 }

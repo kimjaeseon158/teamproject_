@@ -9,10 +9,8 @@ const StatusTag = ({ status }) => (
   </Tag>
 );
 
-export default function ApproveTable({ rows, selectedIds, toggleAll, toggleOne, onRowClick }) {
-  const allChecked = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
-  const isIndeterminate =
-    rows.some((r) => selectedIds.has(r.id)) && !allChecked;
+export default function ApproveTable({ rows, selectedIds,  toggleOne, onRowClick }) {
+
 
   return (
     <Box border="1px solid black" borderRadius="12px" overflow="hidden">

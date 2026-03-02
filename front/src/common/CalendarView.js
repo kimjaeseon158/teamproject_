@@ -1,3 +1,4 @@
+import { useRef, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -10,15 +11,24 @@ export default function CalendarView({
   onDateClick,
   onTitleChange,
   selectedDate,
-  daySummaryMap,   // 🔥 optional
+  daySummaryMap,
 }) {
   const isMobile = useBreakpointValue({
     base: true,
     md: false,
   });
 
+  const calendarRef = useRef(null);
+  const lastYmRef = useRef(null);
+
+  // 🔥 FullCalendar API 연결
+  useEffect(() => {
+    window.calendarRef = calendarRef.current;
+  }, []);
+
   return (
     <FullCalendar
+      ref={calendarRef}
       plugins={[dayGridPlugin, interactionPlugin]}
       initialView="dayGridMonth"
       locale={koLocale}
@@ -26,19 +36,25 @@ export default function CalendarView({
       height={isMobile ? "auto" : "calc(100vh - 140px)"}
       events={events}
 
+      // 날짜 클릭
       dateClick={(arg) => {
         onDateClick?.(arg.dateStr);
       }}
 
+      // 🔥 월 변경 감지 (루프 방지)
       datesSet={(arg) => {
         const date = arg.view.currentStart;
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, "0");
         const ym = `${year}-${month}`;
-        onTitleChange?.(ym);
+
+        if (lastYmRef.current !== ym) {
+          lastYmRef.current = ym;
+          onTitleChange?.(ym);
+        }
       }}
 
-      /* 🔥 날짜 셀 커스터마이징 */
+      // 날짜 셀 커스터마이징
       dayCellContent={(arg) => {
         const d = arg.date;
 
@@ -47,15 +63,12 @@ export default function CalendarView({
         const day = String(d.getDate()).padStart(2, "0");
 
         const dateStr = `${y}-${m}-${day}`;
-
         const summary = daySummaryMap?.[dateStr];
 
         return (
           <div style={{ textAlign: "left" }}>
-            {/* 날짜 숫자 */}
             <div>{d.getDate()}</div>
 
-            {/* 집계 표시 (admin 전용) */}
             {summary && (
               <div style={{ fontSize: "10px", marginTop: "4px" }}>
                 {summary.day > 0 && (

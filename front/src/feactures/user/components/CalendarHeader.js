@@ -6,12 +6,10 @@ import {
   Text,
   useBreakpointValue,
 } from "@chakra-ui/react";
-
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "@chakra-ui/icons";
-
 import { useNavigate } from "react-router-dom";
 import { Alarm } from "../../alarm";
 import MonthPicker from "../../common/MonthPicker";
@@ -42,9 +40,7 @@ export default function CalendarHeader({
 
   const handleMonthChange = (ym) => {
     const api = window.calendarRef?.getApi();
-    if (api) {
-      api.gotoDate(`${ym}-01`);
-    }
+    if (api) api.gotoDate(`${ym}-01`);
 
     setCalendarTitle?.(ym);
   };
@@ -58,7 +54,6 @@ export default function CalendarHeader({
   return (
     <Box mb={4}>
       {isMobile ? (
-        /* ===================== 모바일 ===================== */
         <>
           <HStack justify="space-between" mb={2}>
             <Alarm />
@@ -75,7 +70,6 @@ export default function CalendarHeader({
               onClick={() => window.calendarRef?.getApi()?.prev()}
             />
 
-            {/* 모바일은 텍스트 자체가 MonthPicker */}
             <MonthPicker
               value={calendarTitle}
               onChange={handleMonthChange}
@@ -100,26 +94,21 @@ export default function CalendarHeader({
           </HStack>
         </>
       ) : (
-        /* ===================== 데스크톱 ===================== */
         <HStack justify="center" spacing={3} position="relative">
-
-          {/* 우측 상단 로그아웃 */}
-          <HStack position="absolute" right="0">
+          <HStack position="absolute" right="0" zIndex="9999">
             <Alarm />
             <Button size="sm" colorScheme="red" onClick={handleLogout}>
               로그아웃
             </Button>
           </HStack>
 
-          {/* 월 이동 */}
           <IconButton
-            size="sm"
+            size="lg"
             variant="ghost"
-            icon={<ChevronLeftIcon />}
+            icon={<ChevronLeftIcon  boxSize={6}/>}
             onClick={() => window.calendarRef?.getApi()?.prev()}
           />
 
-          {/* 가운데는 단순 월 표시 */}
           <Text
             fontSize="20px"
             fontWeight="700"
@@ -130,18 +119,16 @@ export default function CalendarHeader({
           </Text>
 
           <IconButton
-            size="sm"
+            size="lg"
             variant="ghost"
-            icon={<ChevronRightIcon />}
+            icon={<ChevronRightIcon boxSize={6} />}
             onClick={() => window.calendarRef?.getApi()?.next()}
           />
 
-          {/* Today 버튼 */}
           <Button size="sm" variant="outline" onClick={goToday}>
             Today
           </Button>
 
-          {/* 🔥 MonthPicker는 Today 옆 */}
           <MonthPicker
             value={calendarTitle}
             onChange={handleMonthChange}

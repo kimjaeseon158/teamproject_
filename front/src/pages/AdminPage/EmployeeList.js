@@ -9,9 +9,6 @@ import { useAdminData } from "../../feactures/admin/userList/hook/useAdminData.j
 import { useAdminHandlers } from "../../feactures/admin/userList/hook/useAdminHandlers.js";
 import { user_listColmns } from "../../feactures/admin/userList/constants/user_listColmns.js";
 
-import { Modal } from "@chakra-ui/react";
-
-
 export default function EmployeeList() {
     const state = useAdminState();
     const handlers = useAdminHandlers(state);

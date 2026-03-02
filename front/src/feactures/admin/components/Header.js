@@ -1,7 +1,7 @@
 import { Flex, Box, Button } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../auth/userContext";
-import { getAccessToken, clearAccessToken } from "../../../services/api/token";
+import { clearAccessToken } from "../../../services/api/token";
 import { Alarm } from "../../alarm";
 
 export default function Header() {

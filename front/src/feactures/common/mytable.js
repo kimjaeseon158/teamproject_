@@ -23,10 +23,6 @@ export default function CommonTable({
       <Table variant="simple" size="md">
         <Thead bg="gray.50" h="60px">
           <Tr>
-            {selectable && (
-              <Th w="60px" textAlign="center">선택</Th>
-            )}
-
             {columns.map(col => (
               <Th key={col.key}  w={col.width || "auto"}  textAlign={col.align || "center"}>{col.label}</Th>
             ))}

@@ -1,5 +1,6 @@
-import { Box } from "@chakra-ui/react";
+// src/feactures/user/layout/CalendarDesktopLayout.js
 
+import { Box } from "@chakra-ui/react";
 import CalendarSidebar from "../components/CalendarSidebar";
 import CalendarHeader from "../components/CalendarHeader";
 import CalendarView from "../../../common/CalendarView";
@@ -8,14 +9,10 @@ export default function CalendarDesktopLayout({
   userName,
   userUuid,
   calendar,
-  monthPickerYear,
-  setMonthPickerYear,
   goToday,
   goToDate,
   calendarTitle,
-  setCalendarTitle,
-  currentMonth,        // 🔥 추가
-  handleTitleChange,   // 🔥 추가
+  onTitleChange,   // 🔥 이름 통일
 }) {
   return (
     <Box display="flex" height="100vh" overflow="hidden">
@@ -34,12 +31,10 @@ export default function CalendarDesktopLayout({
         {/* 헤더 */}
         <CalendarHeader
           userUuid={userUuid}
-          monthPickerYear={monthPickerYear}
-          setMonthPickerYear={setMonthPickerYear}
           goToday={goToday}
           goToDate={goToDate}
           calendarTitle={calendarTitle}
-          currentMonth={currentMonth}   // 🔥 추가
+          setCalendarTitle={onTitleChange}  // 🔥 연결
         />
 
         {/* 캘린더 영역 */}
@@ -48,7 +43,7 @@ export default function CalendarDesktopLayout({
             events={[]}
             selectedDate={calendar.selectedDate}
             onDateClick={calendar.handleDateClick}
-            onTitleChange={handleTitleChange}   // 🔥 변경
+            onTitleChange={onTitleChange}   // 🔥 연결
           />
         </Box>
 

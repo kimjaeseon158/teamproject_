@@ -5,7 +5,6 @@ const AlarmContext = createContext(null);
 
 export function AlarmProvider({ children }) {
   const { alarmCount, alarms, wsConnected } = useUser();
-
   return (
     <AlarmContext.Provider
       value={{

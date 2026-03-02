@@ -20,11 +20,6 @@ export default function ApproveTable({ rows, selectedIds, toggleAll, toggleOne, 
         <Thead bg="gray.50">
           <Tr>
             <Th w="40px">
-              <Checkbox
-                isChecked={allChecked}
-                isIndeterminate={isIndeterminate}
-                onChange={(e) => toggleAll(e.target.checked)}
-              />
             </Th>
             <Th>이름</Th>
             <Th>근무구분</Th>

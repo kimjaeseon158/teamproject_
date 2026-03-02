@@ -5,12 +5,10 @@ import {
   Text,
   useBreakpointValue,
 } from "@chakra-ui/react";
-
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "@chakra-ui/icons";
-
 import { useNavigate } from "react-router-dom";
 import { Alarm } from "../../alarm";
 import MonthPicker from "../../common/MonthPicker";
@@ -18,9 +16,8 @@ import MonthPicker from "../../common/MonthPicker";
 export default function CalendarHeader({
   userUuid,
   goToday,
-  goToDate,
-  calendarTitle, // "2026-03"
-  currentMonth,
+  calendarTitle,
+  setCalendarTitle,
 }) {
   const navigate = useNavigate();
 
@@ -30,58 +27,41 @@ export default function CalendarHeader({
   });
 
   const handleLogout = async () => {
-    try {
-      await fetch("/api/user_logout/", {
-        method: "DELETE",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_uuid: userUuid }),
-      });
-    } finally {
-      navigate("/");
-    }
+    await fetch("/api/user_logout/", {
+      method: "DELETE",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_uuid: userUuid }),
+    });
+
+    navigate("/");
   };
 
   const handleMonthChange = (ym) => {
-    const [year, month] = ym.split("-");
-    goToDate({
-      formatted: `${year}-${month}-01`,
-    });
+    const api = window.calendarRef?.getApi();
+    if (api) api.gotoDate(`${ym}-01`);
+
+    setCalendarTitle?.(ym);
   };
+
   const formatKoreanMonth = (title) => {
     if (!title) return "";
-
-    const date = new Date(title);
-    if (isNaN(date)) return title; // 변환 실패 시 원본 유지
-
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-
-    return `${year}년 ${month}월`;
+    const [year, month] = title.split("-");
+    return `${year}년 ${Number(month)}월`;
   };
-  return (
-    <Box mb={4} w="100%">
 
+  return (
+    <Box mb={4}>
       {isMobile ? (
         <>
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            mb={3}
-          >
+          <HStack justify="space-between" mb={2}>
             <Alarm />
-            <Button size="sm" colorScheme="red" onClick={handleLogout}>
+            <Button size="xs" colorScheme="red" onClick={handleLogout}>
               로그아웃
             </Button>
-          </Box>
+          </HStack>
 
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            gap="12px"
-          >
+          <HStack justify="center" spacing={3}>
             <IconButton
               size="sm"
               variant="ghost"
@@ -92,6 +72,16 @@ export default function CalendarHeader({
             <MonthPicker
               value={calendarTitle}
               onChange={handleMonthChange}
+              renderTrigger={(open) => (
+                <Text
+                  fontSize="md"
+                  fontWeight="600"
+                  cursor="pointer"
+                  onClick={open}
+                >
+                  {formatKoreanMonth(calendarTitle)}
+                </Text>
+              )}
             />
 
             <IconButton
@@ -100,61 +90,49 @@ export default function CalendarHeader({
               icon={<ChevronRightIcon />}
               onClick={() => window.calendarRef?.getApi()?.next()}
             />
-          </Box>
+          </HStack>
         </>
       ) : (
-        <Box position="relative">
-
-          <Box
-            position="absolute"
-            right="0"
-            top="0"
-            display="flex"
-            alignItems="center"
-            gap="8px"
-          >
+        <HStack justify="center" spacing={3} position="relative">
+          <HStack position="absolute" right="0" zIndex="9999">
             <Alarm />
             <Button size="sm" colorScheme="red" onClick={handleLogout}>
               로그아웃
             </Button>
-          </Box>
+          </HStack>
 
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            gap="10px"
+          <IconButton
+            size="lg"
+            variant="ghost"
+            icon={<ChevronLeftIcon  boxSize={6}/>}
+            onClick={() => window.calendarRef?.getApi()?.prev()}
+          />
+
+          <Text
+            fontSize="20px"
+            fontWeight="700"
+            minW="150px"
+            textAlign="center"
           >
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => window.calendarRef?.getApi()?.prev()}
-            >
-              ◀
-            </Button>
+            {formatKoreanMonth(calendarTitle)}
+          </Text>
 
-            <Text fontSize="20px" fontWeight="700" minW="150px" textAlign="center">
-              {formatKoreanMonth(calendarTitle)}
-            </Text>
+          <IconButton
+            size="lg"
+            variant="ghost"
+            icon={<ChevronRightIcon boxSize={6} />}
+            onClick={() => window.calendarRef?.getApi()?.next()}
+          />
 
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => window.calendarRef?.getApi()?.next()}
-            >
-              ▶
-            </Button>
+          <Button size="sm" variant="outline" onClick={goToday}>
+            Today
+          </Button>
 
-            <Button size="sm" variant="outline" onClick={goToday}>
-              Today
-            </Button>
-
-            <MonthPicker
-              value={calendarTitle}
-              onChange={handleMonthChange}
-            />
-          </Box>
-        </Box>
+          <MonthPicker
+            value={calendarTitle}
+            onChange={handleMonthChange}
+          />
+        </HStack>
       )}
     </Box>
   );

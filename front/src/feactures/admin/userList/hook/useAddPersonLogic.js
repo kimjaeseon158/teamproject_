@@ -84,7 +84,6 @@ export function useAddPersonLogic(onSave, onClose) {
         alert("등록 실패");
       }
     } catch (err) {
-      console.error(err);
       alert("서버 오류");
     }
   };

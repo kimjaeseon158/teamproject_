@@ -13,6 +13,7 @@ export default function DailyPayPage() {
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  
 
   /**
    * ✅ 최초 1회만 실행됨

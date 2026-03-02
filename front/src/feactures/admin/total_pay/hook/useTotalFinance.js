@@ -111,7 +111,6 @@ export function useTotalFinance({ toast }) {
     );
 
     setDetailData(parsed);
-    setTotalExpense(sumMonth(selectedData));
   }, [selectedDetailMonth, rawMonthMap]);
 
   return {

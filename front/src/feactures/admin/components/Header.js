@@ -10,15 +10,12 @@ export default function Header() {
 
   const handleLogout = async () => {
     const token = getAccessToken();
-
     try {
       await fetch("/api/admin_logout/", {
         method: "DELETE",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ admin_uuid: userUuid }),
       });
     } catch (err) {
       console.error("logout error");

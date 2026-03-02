@@ -14,69 +14,52 @@ export default function CalendarMobileLayout({
   userName,
   userUuid,
   calendar,
-  monthPickerYear,
-  setMonthPickerYear,
   goToday,
-  goToDate,
-
-  calendarTitle,      // 🔥 추가
-  setCalendarTitle,   // 🔥 추가
+  calendarTitle,
+  onTitleChange, 
 }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
-   <Box minH="100vh" bg="white" overflow="hidden" >
+    <Box minH="100vh" bg="white" overflow="hidden">
 
-    <Drawer
-      isOpen={isOpen}
-      placement="bottom"
-      onClose={onClose}
-      blockScrollOnMount
-      autoFocus={false}
-      returnFocusOnClose={false}
-    >
-      <DrawerOverlay />
-      <DrawerContent
-        h="100dvh"
-        overflow="hidden"
-        borderTopRadius="20px"
+      <Drawer
+        isOpen={isOpen}
+        placement="bottom"
+        onClose={onClose}
       >
-        <CalendarSidebar
-          userName={userName}
-          selectedDate={calendar.selectedDate}
-          onClose={onClose}
-        />
-      </DrawerContent>
-    </Drawer>
+        <DrawerOverlay />
+        <DrawerContent h="100dvh" borderTopRadius="20px">
+          <CalendarSidebar
+            userName={userName}
+            selectedDate={calendar.selectedDate}
+            onClose={onClose}
+          />
+        </DrawerContent>
+      </Drawer>
 
-    <Box
-      px={4}
-      pt={4}
-      display="flex"
-      flexDirection="column"
-    >
-      <CalendarHeader
-        userUuid={userUuid}
-        monthPickerYear={monthPickerYear}
-        setMonthPickerYear={setMonthPickerYear}
-        goToday={goToday}
-        goToDate={goToDate}
-        calendarTitle={calendarTitle}
-      />
+      <Box px={4} pt={4}>
 
-      <Box mt={4} width="100%">
-        <CalendarView
-          events={[]}
-          onDateClick={(arg) => {
-            
-            calendar.handleDateClick(arg);
-            onOpen();
-          }}
-          selectedDate={calendar.selectedDate}
-          onTitleChange={setCalendarTitle}
+        <CalendarHeader
+          userUuid={userUuid}
+          goToday={goToday}
+          calendarTitle={calendarTitle}
+          setCalendarTitle={onTitleChange}
         />
+
+        <Box mt={4}>
+          <CalendarView
+            events={[]}
+            selectedDate={calendar.selectedDate}
+            onDateClick={(arg) => {
+              calendar.handleDateClick(arg);
+              onOpen();
+            }}
+            onTitleChange={onTitleChange}
+          />
+        </Box>
+
       </Box>
     </Box>
-  </Box>
   );
 }

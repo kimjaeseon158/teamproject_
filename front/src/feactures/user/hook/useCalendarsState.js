@@ -1,26 +1,34 @@
-// src/user_calender/hooks/useCalendarState.js
 import { useState } from "react";
 
 export function useCalendarState() {
   const today = new Date();
 
+  const formatLocal = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
   const initialDate = {
     year: today.getFullYear(),
     month: today.getMonth() + 1,
     day: today.getDate(),
-    formatted: today.toISOString().slice(0, 10),
+    formatted: formatLocal(today),
   };
 
   const [selectedDate, setSelectedDate] = useState(initialDate);
 
-  const handleDateClick = (info) => {
-    const d = info.date;
+  /* 🔥 dateStr 그대로 받음 */
+  const handleDateClick = (dateStr) => {
+
+    const d = new Date(dateStr);
 
     const next = {
       year: d.getFullYear(),
       month: d.getMonth() + 1,
       day: d.getDate(),
-      formatted: d.toISOString().slice(0, 10),
+      formatted: dateStr,
     };
 
     setSelectedDate(next);
@@ -33,11 +41,12 @@ export function useCalendarState() {
     api.today();
 
     const d = api.getDate();
+
     const next = {
       year: d.getFullYear(),
       month: d.getMonth() + 1,
       day: d.getDate(),
-      formatted: d.toISOString().slice(0, 10),
+      formatted: formatLocal(d),
     };
 
     setSelectedDate(next);

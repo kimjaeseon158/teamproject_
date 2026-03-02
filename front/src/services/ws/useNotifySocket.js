@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-const WS_BASE_URL = process.env.REACT_APP_WS_BASE_URL; 
+
 export function useNotifySocket({ token, uuid, loginType, onMessage }) {
   const wsRef = useRef(null);
   const onMessageRef = useRef(onMessage);
   const retryRef = useRef(0);
   const retryTimerRef = useRef(null);
   const messageSeqRef = useRef(0); // 🔥 여기
-
+  const WS_BASE_URL = process.env.REACT_APP_WS_BASE_URL;
   const [connected, setConnected] = useState(false);
 
   // 최신 onMessage 유지
@@ -27,8 +27,8 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
 
       const wsUrl =
         loginType === "admin"
-          ? `${WS_BASE_URL}/ws/admin/request-monitor/?admin_uuid=${uuid}`
-          : `${WS_BASE_URL}/ws/user/request-monitor/?user_uuid=${uuid}`;
+          ? `${WS_BASE_URL}/admin/request-monitor/?admin_uuid=${uuid}`
+          : `${WS_BASE_URL}/user/request-monitor/?user_uuid=${uuid}`;
       const ws = new WebSocket(wsUrl, [token]);
       wsRef.current = ws;
 

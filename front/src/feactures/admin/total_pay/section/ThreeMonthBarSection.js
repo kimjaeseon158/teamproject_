@@ -15,8 +15,6 @@ export default function ThreeMonthBarSection({
   onMonthClick,
   selectedMonth,
 }) {
-  console.log("📊 렌더 data:", data);
-  console.log("📌 현재 selectedMonth:", selectedMonth);
 
   return (
     <Box bg="white" p={4} borderRadius="md">

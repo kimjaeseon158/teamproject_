@@ -1,8 +1,8 @@
 import AdminInformation from "../../feactures/admin/userList/components/AdminInformation.js";
 import AddPersonModal from "../../feactures/admin/userList/components/AddPersonModal.js";
 import AddButton from "../../common/AddButton.js";
-import  CommonTable  from "../../feactures/common/mytable.js";
-
+import CommonTable  from "../../feactures/common/mytable.js";
+import SearchModal from "../../feactures/admin/userList/components/searchModal.js";
 
 import { useAdminState } from "../../feactures/admin/userList/hook/useAdminState.js";
 import { useAdminData } from "../../feactures/admin/userList/hook/useAdminData.js";
@@ -31,7 +31,6 @@ export default function EmployeeList() {
         <CommonTable
           data={state.peopleData}
           columns={user_listColmns}
-          selectable
           rowKey="user_uuid"
           checkedItems={state.checkedItems}
           onCheck={handlers.handleCheckboxChange}
@@ -57,11 +56,13 @@ export default function EmployeeList() {
           />
         )}
 
-        {state.showSearchModal && (
-          <Modal isOpen onClose={() => state.setShowSearchModal(false)}>
-            {/* 기존 검색 UI 그대로 */}
-          </Modal>
-        )}
+        <SearchModal
+          isOpen={state.showSearchModal}
+          onClose={() => state.setShowSearchModal(false)}
+          searchForm={state.searchForm}
+          onChange={handlers.handleSearchChange}
+          onSearch={handlers.applySearch}
+        />
       </div>
     );
 }

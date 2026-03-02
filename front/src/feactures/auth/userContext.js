@@ -56,7 +56,7 @@ export function UserProvider({ children, loginType }) {
 
       return true;
     } catch (err) {
-      console.error("revalidate 실패:", err);
+      console.error("revalidate 실패");
       clearAccessToken();
       setUserUuid(null);
       setUserName(null);

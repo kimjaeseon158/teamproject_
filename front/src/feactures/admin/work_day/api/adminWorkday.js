@@ -1,5 +1,5 @@
 // src/api/adminWorkday.js
-import { fetchWithAuth } from "./fetchWithAuth";
+import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
 
 export async function getAdminWorkDays(
   { status, start_date, end_date } = {},
@@ -26,5 +26,5 @@ export async function getAdminWorkDays(
   }
 
   const json = await res.json().catch(() => ({}));
-  return json?.work_days || [];
+  return json?.data || [];
 }

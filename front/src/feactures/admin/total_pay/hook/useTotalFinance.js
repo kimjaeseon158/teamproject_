@@ -107,8 +107,6 @@ setSelectedDetailMonth((prev) => {
     );
 
     setDetailData(parsed);
-    setTotalExpense(sumMonth(selectedData));
-    console.log("🔥 selectedDetailMonth 변경:", selectedDetailMonth);
   }, [selectedDetailMonth, rawMonthMap]);
 
   return {

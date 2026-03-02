@@ -8,6 +8,8 @@ import {
 import { ChevronDownIcon, DeleteIcon } from "@chakra-ui/icons";
 
 import { useUser } from "../../auth/userContext";
+import { useBreakpointValue } from "@chakra-ui/react";
+import TimeWheelPicker from "../../common/TimeWheelPicker";
 import locationsList from "../../common/work_placeCloums/locationsList";
 import workTimeList from "../data/workTimeList";
 import "./activity.css";
@@ -40,7 +42,7 @@ const Option = ({ selectedDate }) => {
 
   const [cart, setCart] = useState([]);
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
-
+  const isMobile = useBreakpointValue({ base: true, md: false });
   const filteredWorkTimeList = useMemo(
     () => workTimeList.filter((t) => t.shift === baseShift),
     [baseShift]
@@ -156,41 +158,62 @@ return (
     </HStack>
 
     {/* 작업 시간 */}
-    <Menu>
-      <MenuButton
-        as={Button}
-        variant="outline"
-        rightIcon={<ChevronDownIcon />}
-        width="100%"
-        justifyContent="space-between"
+    {isMobile ? (
+      <Box
         bg="gray.800"
-        borderColor="gray.600"
-        color={workTime ? "gray.100" : "gray.400"}
-        _hover={{ bg: "gray.700" }}
+        p={4}
+        borderRadius="xl"
+        boxShadow="lg"
       >
-        {workTime || "작업 시간 선택"}
-      </MenuButton>
+        <HStack spacing={4} justify="center">
+          <TimeWheelPicker
+            value={startTime}
+            onChange={setStartTime}
+          />
 
-      <MenuList
-        bg="gray.800"
-        borderColor="gray.600"
-        color="gray.100"
-        maxH="240px"
-        overflowY="auto"
-      >
-        {filteredWorkTimeList.map((t, i) => (
-          <MenuItem
-            key={i}
-            bg="gray.800"
-            _hover={{ bg: "gray.700" }}
-            onClick={() => handleSelectWorkTime(t.startTime, t.finishTime)}
-          >
-            {t.startTime} ~ {t.finishTime}
-          </MenuItem>
-        ))}
-      </MenuList>
-    </Menu>
+          <Text fontSize="2xl" fontWeight="bold">
+            ~
+          </Text>
 
+          <TimeWheelPicker
+            value={finishTime}
+            onChange={setFinishTime}
+          />
+        </HStack>
+      </Box>
+    ) : (
+      <Menu>
+        <MenuButton
+          as={Button}
+          variant="outline"
+          rightIcon={<ChevronDownIcon />}
+          width="100%"
+          justifyContent="space-between"
+          bg="gray.800"
+          borderColor="gray.600"
+          color={workTime ? "gray.100" : "gray.400"}
+        >
+          {workTime || "작업 시간 선택"}
+        </MenuButton>
+
+        <MenuList bg="gray.800" borderColor="gray.600">
+          {filteredWorkTimeList.map((t, i) => (
+            <MenuItem
+              key={i}
+              bg="gray.800"
+              color="gray.100"
+              _hover={{ bg: "gray.700" }}
+              _focus={{ bg: "gray.700" }}
+              onClick={() =>
+                handleSelectWorkTime(t.startTime, t.finishTime)
+              }
+            >
+              {t.startTime} ~ {t.finishTime}
+            </MenuItem>
+          ))}
+        </MenuList>
+      </Menu>
+    )}
     {/* 장소 */}
     <Menu>
       <MenuButton

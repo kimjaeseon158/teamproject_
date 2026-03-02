@@ -1,13 +1,16 @@
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import koLocale from "@fullcalendar/core/locales/ko";
 import { useBreakpointValue } from "@chakra-ui/react";
+import "./css/calendar.css";
 
 export default function CalendarView({
-  events,
+  events = [],
   onDateClick,
   onTitleChange,
-  selectedDate
+  selectedDate,
+  daySummaryMap,   // 🔥 optional
 }) {
   const isMobile = useBreakpointValue({
     base: true,
@@ -18,15 +21,15 @@ export default function CalendarView({
     <FullCalendar
       plugins={[dayGridPlugin, interactionPlugin]}
       initialView="dayGridMonth"
+      locale={koLocale}
       headerToolbar={false}
       height={isMobile ? "auto" : "calc(100vh - 140px)"}
-      contentHeight={isMobile ? "auto" : undefined}
       events={events}
-      dateClick={onDateClick}
-      dayMaxEventRows={3}
-      ref={(fc) => (window.calendarRef = fc)}
 
-      /* 🔥 월 변경 동기화 */
+      dateClick={(arg) => {
+        onDateClick?.(arg.dateStr);
+      }}
+
       datesSet={(arg) => {
         const date = arg.view.currentStart;
         const year = date.getFullYear();
@@ -35,22 +38,45 @@ export default function CalendarView({
         onTitleChange?.(ym);
       }}
 
-      dayCellClassNames={(arg) => {
-        if (!selectedDate) return [];
+      /* 🔥 날짜 셀 커스터마이징 */
+      dayCellContent={(arg) => {
+        const d = arg.date;
 
-        const y = arg.date.getFullYear();
-        const m = arg.date.getMonth() + 1;
-        const d = arg.date.getDate();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
 
-        if (
-          y === selectedDate.year &&
-          m === selectedDate.month &&
-          d === selectedDate.day
-        ) {
-          return ["fc-selected-day"];
-        }
+        const dateStr = `${y}-${m}-${day}`;
 
-        return [];
+        const summary = daySummaryMap?.[dateStr];
+
+        return (
+          <div style={{ textAlign: "left" }}>
+            {/* 날짜 숫자 */}
+            <div>{d.getDate()}</div>
+
+            {/* 집계 표시 (admin 전용) */}
+            {summary && (
+              <div style={{ fontSize: "10px", marginTop: "4px" }}>
+                {summary.day > 0 && (
+                  <div style={{ color: "#3182ce" }}>
+                    주간 {summary.day}
+                  </div>
+                )}
+                {summary.night > 0 && (
+                  <div style={{ color: "#805ad5" }}>
+                    야간 {summary.night}
+                  </div>
+                )}
+                {summary.special > 0 && (
+                  <div style={{ color: "#dd6b20" }}>
+                    특근 {summary.special}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
       }}
     />
   );

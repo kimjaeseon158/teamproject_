@@ -10,7 +10,6 @@ export default function Header() {
 
   const handleLogout = async () => {
     const token = getAccessToken();
-    console.log("로그아웃 adminUuid:", userUuid);
     try {
       await fetch("/api/admin_logout/", {
         method: "DELETE",

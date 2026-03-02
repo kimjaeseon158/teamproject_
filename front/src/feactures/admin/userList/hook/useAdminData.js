@@ -10,7 +10,7 @@ export function useAdminData(setPeopleData) {
           setPeopleData(res.users);
         }
       } catch (err) {
-        console.error("데이터 로딩 실패:", err);
+        console.error("데이터 로딩 실패");
       }
     };
     load();

@@ -12,10 +12,11 @@ export default function CalendarDesktopLayout({
   goToday,
   goToDate,
   calendarTitle,
-  handleTitleChange,
+  onTitleChange,   // 🔥 이름 통일
 }) {
   return (
     <Box display="flex" height="100vh" overflow="hidden">
+
       {/* 왼쪽 사이드바 */}
       <Box w="18%" minW="250px">
         <CalendarSidebar
@@ -26,12 +27,14 @@ export default function CalendarDesktopLayout({
 
       {/* 오른쪽 메인 영역 */}
       <Box flex="1" px="20px" pt="30px" display="flex" flexDirection="column">
+
         {/* 헤더 */}
         <CalendarHeader
           userUuid={userUuid}
           goToday={goToday}
           goToDate={goToDate}
           calendarTitle={calendarTitle}
+          setCalendarTitle={onTitleChange}  // 🔥 연결
         />
 
         {/* 캘린더 영역 */}
@@ -40,9 +43,10 @@ export default function CalendarDesktopLayout({
             events={[]}
             selectedDate={calendar.selectedDate}
             onDateClick={calendar.handleDateClick}
-            onTitleChange={handleTitleChange}
+            onTitleChange={onTitleChange}   // 🔥 연결
           />
         </Box>
+
       </Box>
     </Box>
   );

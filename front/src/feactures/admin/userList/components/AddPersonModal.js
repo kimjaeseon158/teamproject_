@@ -21,10 +21,10 @@ const AddPersonModal = ({ isOpen, onClose, onSave }) => {
     formData,
     handleChange,
     handleSubmitBase,
-    setFormData, // ✅ 주소 검색에서 필요
+    setFormData, 
   } = useAddPersonLogic(onSave, onClose);
 
-  // ✅ 주소 검색 (Daum Postcode, 라이브러리 ❌)
+
   const openAddressSearch = () => {
     if (!window.daum) {
       alert("주소 검색 스크립트가 로드되지 않았습니다.");
@@ -99,7 +99,7 @@ const AddPersonModal = ({ isOpen, onClose, onSave }) => {
                   size="sm"
                   mb={2}
                   onClick={openAddressSearch}
-                  type="button" // ✅ submit 방지
+                  type="button"
                 >
                   주소 검색
                 </Button>

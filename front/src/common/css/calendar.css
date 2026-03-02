@@ -1,0 +1,23 @@
+/* 일요일 */
+.fc-daygrid-day.fc-day-sun .fc-daygrid-day-number {
+  color: #e53e3e ;
+}
+
+/* 토요일 */
+.fc-daygrid-day.fc-day-sat .fc-daygrid-day-number {
+  color: #3182ce;
+}
+
+.selected-day .fc-daygrid-day-number {
+  background-color: #3182ce !important;
+  color: white !important;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.fc .fc-day-today {
+  background: transparent !important;
+}

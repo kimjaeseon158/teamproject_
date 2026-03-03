@@ -214,7 +214,7 @@ const Option = ({ selectedDate }) => {
               {loc}
             </MenuItem>
           ))}
-        </MenuList>
+        </MenuList> 
       </Menu>
 
       {/* 총 시간 */}

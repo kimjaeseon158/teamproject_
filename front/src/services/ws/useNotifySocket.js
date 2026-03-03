@@ -29,8 +29,8 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
 
       const wsUrl =
         loginType === "admin"
-          ? `${WS_BASE_URL}/admin/request-monitor/?admin_uuid=${uuid}`
-          : `${WS_BASE_URL}/user/request-monitor/?user_uuid=${uuid}`;
+          ? `${WS_BASE_URL}/ws/admin/request-monitor/?admin_uuid=${uuid}`
+          : `${WS_BASE_URL}/ws/user/request-monitor/?user_uuid=${uuid}`;
 
       const ws = new WebSocket(wsUrl, [token]);
       wsRef.current = ws;

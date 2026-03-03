@@ -29,6 +29,7 @@ export default function EmployeeList() {
           data={state.peopleData}
           columns={user_listColmns}
           rowKey="user_uuid"
+          selectable
           checkedItems={state.checkedItems}
           onCheck={handlers.handleCheckboxChange}
           onRowClick={state.setSelectedPerson}

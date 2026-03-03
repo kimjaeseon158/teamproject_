@@ -1,11 +1,17 @@
 import {
-  Table, Thead, Tbody, Tr, Th, Td,
-  Checkbox, Box,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  Checkbox,
+  Box,
 } from "@chakra-ui/react";
 
 export default function CommonTable({
-  columns,
-  data,
+  columns = [],
+  data = [],
   selectable = false,
   checkedItems = {},
   onCheck,
@@ -21,23 +27,16 @@ export default function CommonTable({
       overflowX="auto"
     >
       <Table variant="simple" size="md">
+        {/* ===== HEADER ===== */}
         <Thead bg="gray.50" h="60px">
           <Tr>
             {selectable && (
               <Th w="60px" textAlign="center">
-                <Checkbox
-                  size="sm"
-                  colorScheme="blue"
-                  isChecked={
-                    data.length > 0 &&
-                    data.every(row => checkedItems[row[rowKey]])
-                  }
-                  onChange={() => onCheck?.("all")}
-                />
+                선택
               </Th>
             )}
 
-            {columns.map(col => (
+            {columns.map((col) => (
               <Th
                 key={col.key}
                 w={col.width || "auto"}
@@ -49,6 +48,7 @@ export default function CommonTable({
           </Tr>
         </Thead>
 
+        {/* ===== BODY ===== */}
         <Tbody>
           {data.map((row) => (
             <Tr
@@ -66,14 +66,20 @@ export default function CommonTable({
                   <Checkbox
                     size="sm"
                     colorScheme="blue"
-                    isChecked={!!checkedItems[row[rowKey]]}
-                    onChange={() => onCheck?.(row[rowKey])}
+                    isChecked={!!checkedItems?.[row[rowKey]]}
+                    onChange={() =>
+                      onCheck?.(row[rowKey])
+                    }
                   />
                 </Td>
               )}
 
-              {columns.map(col => (
-                <Td key={col.key}  w={col.width || "auto"} textAlign={col.align || "center"}>
+              {columns.map((col) => (
+                <Td
+                  key={col.key}
+                  w={col.width || "auto"}
+                  textAlign={col.align || "center"}
+                >
                   {col.render
                     ? col.render(row[col.key], row)
                     : row[col.key]}

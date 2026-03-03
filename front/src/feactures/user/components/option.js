@@ -7,7 +7,10 @@ import {
   Text,
   Input,
   Checkbox,
-  Select,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
   useToast,
   AlertDialog,
   AlertDialogOverlay,
@@ -16,6 +19,7 @@ import {
   AlertDialogBody,
   AlertDialogFooter,
 } from "@chakra-ui/react";
+import { ChevronDownIcon } from "@chakra-ui/icons";
 
 import { useUser } from "../../auth/userContext";
 import locationsList from "../../common/work_placeCloums/locationsList";
@@ -105,16 +109,28 @@ const Option = ({ selectedDate }) => {
       <HStack>
         <Checkbox
           isChecked={baseShift === "주간"}
-          onChange={() => setBaseShift("주간")}
+          onChange={() => {
+            setBaseShift("주간");
+            setWorkTime("");
+            setStartTime("");
+            setFinishTime("");
+          }}
         >
           주간
         </Checkbox>
+
         <Checkbox
           isChecked={baseShift === "야간"}
-          onChange={() => setBaseShift("야간")}
+          onChange={() => {
+            setBaseShift("야간");
+            setWorkTime("");
+            setStartTime("");
+            setFinishTime("");
+          }}
         >
           야간
         </Checkbox>
+
         <Checkbox
           isChecked={isSpecial}
           onChange={(e) => setIsSpecial(e.target.checked)}
@@ -123,58 +139,81 @@ const Option = ({ selectedDate }) => {
         </Checkbox>
       </HStack>
 
-      {/* 작업 시간 (workTimeList 기반) */}
-      <Select
-        placeholder="작업 시간 선택"
-        value={workTime}
-        onChange={(e) => {
-          const selected = filteredWorkTimeList.find(
-            (t) =>
-              `${t.startTime}~${t.finishTime}` === e.target.value
-          );
-          if (!selected) return;
+      {/* 작업 시간 (Menu 기반) */}
+      <Menu>
+        <MenuButton
+          as={Button}
+          rightIcon={<ChevronDownIcon />}
+          bg="gray.800"
+          border="1px solid"
+          borderColor="gray.600"
+          color={workTime ? "white" : "gray.400"}
+          w="100%"
+          textAlign="left"
+        >
+          {workTime || "작업 시간 선택"}
+        </MenuButton>
 
-          setStartTime(selected.startTime);
-          setFinishTime(selected.finishTime);
-          setWorkTime(
-            `${selected.startTime}~${selected.finishTime}`
-          );
-        }}
-        bg="gray.800"
-      >
-        {filteredWorkTimeList.map((t, i) => {
-          const value = `${t.startTime}~${t.finishTime}`;
-          return (
-            <option key={i} value={value}>
-              {value}
-            </option>
-          );
-        })}
-      </Select>
+        <MenuList bg="gray.800" borderColor="gray.600">
+          {filteredWorkTimeList.map((t, i) => {
+            const value = `${t.startTime}~${t.finishTime}`;
+            return (
+              <MenuItem
+                key={i}
+                bg="gray.800"
+                _hover={{ bg: "gray.700" }}
+                onClick={() => {
+                  setStartTime(t.startTime);
+                  setFinishTime(t.finishTime);
+                  setWorkTime(value);
+                }}
+              >
+                {value}
+              </MenuItem>
+            );
+          })}
+        </MenuList>
+      </Menu>
 
-      {/* 장소 선택 */}
-      <Select
-        placeholder="업체 / 장소 선택"
-        value={location}
-        onChange={(e) => setLocation(e.target.value)}
-        bg="gray.800"
-      >
-        {locationsList.map((loc, idx) => (
-          <option key={idx} value={loc}>
-            {loc}
-          </option>
-        ))}
-      </Select>
+      {/* 장소 선택 (Menu 기반) */}
+      <Menu>
+        <MenuButton
+          as={Button}
+          rightIcon={<ChevronDownIcon />}
+          bg="gray.800"
+          border="1px solid"
+          borderColor="gray.600"
+          color={location ? "white" : "gray.400"}
+          w="100%"
+          textAlign="left"
+        >
+          {location || "업체 / 장소 선택"}
+        </MenuButton>
+
+        <MenuList bg="gray.800" borderColor="gray.600" maxH="240px" overflowY="auto">
+          {locationsList.map((loc, idx) => (
+            <MenuItem
+              key={idx}
+              bg="gray.800"
+              _hover={{ bg: "gray.700" }}
+              onClick={() => setLocation(loc)}
+            >
+              {loc}
+            </MenuItem>
+          ))}
+        </MenuList>
+      </Menu>
 
       {/* 총 시간 */}
       <Input
         value={totalWorkTime}
         isReadOnly
         bg="gray.800"
+        borderColor="gray.600"
         placeholder="총 작업 시간"
       />
 
-      {/* 액션 버튼 */}
+      {/* 버튼 */}
       <Button colorScheme="blue" onClick={handleAddToCart}>
         추가
       </Button>
@@ -187,7 +226,7 @@ const Option = ({ selectedDate }) => {
         전체 등록 ({cart.length})
       </Button>
 
-      {/* 등록 확인 다이얼로그 */}
+      {/* 등록 확인 */}
       <AlertDialog
         isOpen={isSubmitConfirmOpen}
         leastDestructiveRef={cancelRef}
@@ -196,9 +235,7 @@ const Option = ({ selectedDate }) => {
       >
         <AlertDialogOverlay>
           <AlertDialogContent bg="gray.800" color="white">
-            <AlertDialogHeader>
-              전체 등록 확인
-            </AlertDialogHeader>
+            <AlertDialogHeader>전체 등록 확인</AlertDialogHeader>
 
             <AlertDialogBody>
               {cart.map((c) => (
@@ -217,9 +254,7 @@ const Option = ({ selectedDate }) => {
             <AlertDialogFooter>
               <Button
                 ref={cancelRef}
-                onClick={() =>
-                  setIsSubmitConfirmOpen(false)
-                }
+                onClick={() => setIsSubmitConfirmOpen(false)}
               >
                 취소
               </Button>

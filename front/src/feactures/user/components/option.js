@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Box,
   Stack,
@@ -19,6 +19,7 @@ import {
 
 import { useUser } from "../../auth/userContext";
 import locationsList from "../../common/work_placeCloums/locationsList";
+import workTimeList from "../data/workTimeList";
 import { minutesToHM, diffMinutes } from "../utils/timeUtils";
 import { useOptionHandlers } from "../hook/useOptionHandlers";
 
@@ -28,15 +29,13 @@ const Option = ({ selectedDate }) => {
   const cancelRef = useRef();
 
   const [location, setLocation] = useState("");
+  const [workTime, setWorkTime] = useState("");
   const [startTime, setStartTime] = useState("");
   const [finishTime, setFinishTime] = useState("");
   const [totalWorkTime, setTotalWorkTime] = useState("");
 
   const [baseShift, setBaseShift] = useState("주간");
   const [isSpecial, setIsSpecial] = useState(false);
-
-  const [extraEnabled, setExtraEnabled] = useState(false);
-  const [extraWorks, setExtraWorks] = useState([]);
 
   const [cart, setCart] = useState([]);
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
@@ -48,6 +47,11 @@ const Option = ({ selectedDate }) => {
     day: today.getDate(),
   };
 
+  /* ===== shift 기반 시간 필터 ===== */
+  const filteredWorkTimeList = useMemo(
+    () => workTimeList.filter((t) => t.shift === baseShift),
+    [baseShift]
+  );
 
   /* ===== 총 시간 계산 ===== */
   useEffect(() => {
@@ -61,12 +65,11 @@ const Option = ({ selectedDate }) => {
   /* ===== 폼 리셋 ===== */
   const resetForm = () => {
     setLocation("");
+    setWorkTime("");
     setStartTime("");
     setFinishTime("");
     setTotalWorkTime("");
     setIsSpecial(false);
-    setExtraEnabled(false);
-    setExtraWorks([]);
   };
 
   const {
@@ -86,8 +89,6 @@ const Option = ({ selectedDate }) => {
     startTime,
     finishTime,
     location,
-    extraEnabled,
-    extraWorks,
     setIsSubmitConfirmOpen,
   });
 
@@ -122,33 +123,34 @@ const Option = ({ selectedDate }) => {
         </Checkbox>
       </HStack>
 
-      {/* 작업 시간 */}
-      <HStack spacing={3}>
-        <Select
-          placeholder="작업 시간 선택"
-          value={workTime}
-          onChange={(e) => {
-            const selected = filteredWorkTimeList.find(
-              (t) => `${t.startTime}~${t.finishTime}` === e.target.value
-            );
-            if (!selected) return;
+      {/* 작업 시간 (workTimeList 기반) */}
+      <Select
+        placeholder="작업 시간 선택"
+        value={workTime}
+        onChange={(e) => {
+          const selected = filteredWorkTimeList.find(
+            (t) =>
+              `${t.startTime}~${t.finishTime}` === e.target.value
+          );
+          if (!selected) return;
 
-            setStartTime(selected.startTime);
-            setFinishTime(selected.finishTime);
-            setWorkTime(`${selected.startTime}~${selected.finishTime}`);
-          }}
-          bg="gray.800"
-        >
-          {filteredWorkTimeList.map((t, i) => {
-            const value = `${t.startTime}~${t.finishTime}`;
-            return (
-              <option key={i} value={value}>
-                {value}
-              </option>
-            );
-          })}
-        </Select>
-      </HStack>
+          setStartTime(selected.startTime);
+          setFinishTime(selected.finishTime);
+          setWorkTime(
+            `${selected.startTime}~${selected.finishTime}`
+          );
+        }}
+        bg="gray.800"
+      >
+        {filteredWorkTimeList.map((t, i) => {
+          const value = `${t.startTime}~${t.finishTime}`;
+          return (
+            <option key={i} value={value}>
+              {value}
+            </option>
+          );
+        })}
+      </Select>
 
       {/* 장소 선택 */}
       <Select
@@ -185,7 +187,7 @@ const Option = ({ selectedDate }) => {
         전체 등록 ({cart.length})
       </Button>
 
-      {/* 확인 다이얼로그 */}
+      {/* 등록 확인 다이얼로그 */}
       <AlertDialog
         isOpen={isSubmitConfirmOpen}
         leastDestructiveRef={cancelRef}
@@ -194,7 +196,9 @@ const Option = ({ selectedDate }) => {
       >
         <AlertDialogOverlay>
           <AlertDialogContent bg="gray.800" color="white">
-            <AlertDialogHeader>전체 등록 확인</AlertDialogHeader>
+            <AlertDialogHeader>
+              전체 등록 확인
+            </AlertDialogHeader>
 
             <AlertDialogBody>
               {cart.map((c) => (
@@ -213,7 +217,9 @@ const Option = ({ selectedDate }) => {
             <AlertDialogFooter>
               <Button
                 ref={cancelRef}
-                onClick={() => setIsSubmitConfirmOpen(false)}
+                onClick={() =>
+                  setIsSubmitConfirmOpen(false)
+                }
               >
                 취소
               </Button>

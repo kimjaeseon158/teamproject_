@@ -30,7 +30,6 @@ import { useOptionHandlers } from "../hook/useOptionHandlers";
 const Option = ({ selectedDate }) => {
   const { userUuid, userName } = useUser();
   const toast = useToast();
-  const cancelRef = useRef();
 
   const [location, setLocation] = useState("");
   const [workTime, setWorkTime] = useState("");

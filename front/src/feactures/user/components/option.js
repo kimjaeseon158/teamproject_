@@ -139,7 +139,7 @@ const Option = ({ selectedDate }) => {
         </Checkbox>
       </HStack>
 
-      {/* 작업 시간 (Menu 기반) */}
+      {/* 작업 시간 */}
       <Menu>
         <MenuButton
           as={Button}
@@ -175,7 +175,7 @@ const Option = ({ selectedDate }) => {
         </MenuList>
       </Menu>
 
-      {/* 장소 선택 (Menu 기반) */}
+      {/* 장소 선택 */}
       <Menu>
         <MenuButton
           as={Button}
@@ -190,7 +190,12 @@ const Option = ({ selectedDate }) => {
           {location || "업체 / 장소 선택"}
         </MenuButton>
 
-        <MenuList bg="gray.800" borderColor="gray.600" maxH="240px" overflowY="auto">
+        <MenuList
+          bg="gray.800"
+          borderColor="gray.600"
+          maxH="240px"
+          overflowY="auto"
+        >
           {locationsList.map((loc, idx) => (
             <MenuItem
               key={idx}
@@ -212,6 +217,39 @@ const Option = ({ selectedDate }) => {
         borderColor="gray.600"
         placeholder="총 작업 시간"
       />
+
+      {/* 🔥 장바구니 미리보기 복구 */}
+      {cart.length > 0 && (
+        <Box bg="gray.800" p={3} borderRadius="md">
+          <Text fontSize="sm" fontWeight="600" mb={2}>
+            추가목록 ({cart.length})
+          </Text>
+
+          <Stack spacing={1}>
+            {cart.map((item) => (
+              <Box
+                key={item.id}
+                bg="gray.700"
+                px={3}
+                py={2}
+                borderRadius="md"
+                fontSize="sm"
+              >
+                <Text>
+                  📅 {item.work_date.year}.
+                  {item.work_date.month}.
+                  {item.work_date.day}
+                </Text>
+                <Text>
+                  🕘 {item.baseShift} · {item.startTime}~
+                  {item.finishTime}
+                </Text>
+                <Text>📍 {item.location}</Text>
+              </Box>
+            ))}
+          </Stack>
+        </Box>
+      )}
 
       {/* 버튼 */}
       <Button colorScheme="blue" onClick={handleAddToCart}>

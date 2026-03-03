@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Box,
   Stack,
@@ -48,18 +48,6 @@ const Option = ({ selectedDate }) => {
     day: today.getDate(),
   };
 
-  /* ===== 시간 옵션 생성 ===== */
-  const timeOptions = useMemo(() => {
-    const arr = [];
-    for (let h = 0; h < 24; h++) {
-      for (let m = 0; m < 60; m += 10) {
-        arr.push(
-          `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
-        );
-      }
-    }
-    return arr;
-  }, []);
 
   /* ===== 총 시간 계산 ===== */
   useEffect(() => {

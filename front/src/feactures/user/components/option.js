@@ -73,10 +73,11 @@ const Option = ({ selectedDate }) => {
     if (extraEnabled && extraWorks.length === 0) {
       setExtraWorks([{ type: "overtime", start: "", finish: "", duration: "" }]);
     }
-    if (!extraEnabled) {
+
+    if (!extraEnabled && extraWorks.length > 0) {
       setExtraWorks([]);
     }
-  }, [extraEnabled]);
+  }, [extraEnabled, extraWorks.length]);
 
   const updateExtra = (idx, patch) => {
     setExtraWorks((prev) =>

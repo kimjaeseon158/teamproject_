@@ -57,7 +57,6 @@ const Option = ({ selectedDate }) => {
     [baseShift]
   );
 
-  /* ===== 기본 근무 시간 계산 ===== */
   useEffect(() => {
     if (startTime && finishTime) {
       setTotalWorkTime(minutesToHM(diffMinutes(startTime, finishTime)));
@@ -66,7 +65,6 @@ const Option = ({ selectedDate }) => {
     }
   }, [startTime, finishTime]);
 
-  /* ===== 추가 근무 활성화 ===== */
   useEffect(() => {
     if (extraEnabled && extraWorks.length === 0) {
       setExtraWorks([{ type: "", start: "", finish: "", duration: "" }]);
@@ -128,27 +126,24 @@ const Option = ({ selectedDate }) => {
     extraWorks,
   });
 
-  const commonButtonStyle = {
+  const menuBtnStyle = {
     w: "100%",
     bg: "gray.800",
     border: "1px solid",
     borderColor: "gray.600",
     color: "white",
     _hover: { bg: "gray.700" },
-    _active: { bg: "gray.700" },
-    _focus: { bg: "gray.700" },
+    _expanded: { bg: "gray.700" },
   };
 
   return (
     <Stack spacing={4} color="white" w="100%">
-      {/* 날짜 */}
       <Box bg="gray.800" p={3} borderRadius="md">
         <Text fontSize="sm">
           {displayDate.year}년 {displayDate.month}월 {displayDate.day}일
         </Text>
       </Box>
 
-      {/* 근무 형태 */}
       <HStack>
         <Checkbox isChecked={baseShift === "주간"} onChange={() => setBaseShift("주간")}>주간</Checkbox>
         <Checkbox isChecked={baseShift === "야간"} onChange={() => setBaseShift("야간")}>야간</Checkbox>
@@ -157,13 +152,18 @@ const Option = ({ selectedDate }) => {
 
       {/* 작업 시간 */}
       <Menu>
-        <MenuButton as={Button} rightIcon={<ChevronDownIcon />} {...commonButtonStyle}>
+        <MenuButton as={Button} rightIcon={<ChevronDownIcon />} {...menuBtnStyle}>
           {workTime || "작업 시간 선택"}
         </MenuButton>
-        <MenuList bg="gray.800">
+        <MenuList bg="gray.800" color="white" borderColor="gray.600">
           {filteredWorkTimeList.map((t, i) => (
-            <MenuItem key={i} _hover={{ bg: "gray.700" }}
-              onClick={() => handleSelectWorkTime(t.startTime, t.finishTime)}>
+            <MenuItem
+              key={i}
+              bg="gray.800"
+              color="white"
+              _hover={{ bg: "gray.700" }}
+              onClick={() => handleSelectWorkTime(t.startTime, t.finishTime)}
+            >
               {t.startTime} ~ {t.finishTime}
             </MenuItem>
           ))}
@@ -172,42 +172,50 @@ const Option = ({ selectedDate }) => {
 
       {/* 장소 */}
       <Menu>
-        <MenuButton as={Button} rightIcon={<ChevronDownIcon />} {...commonButtonStyle}>
+        <MenuButton as={Button} rightIcon={<ChevronDownIcon />} {...menuBtnStyle}>
           {location || "업체 / 장소 선택"}
         </MenuButton>
-        <MenuList bg="gray.800">
+        <MenuList bg="gray.800" color="white" borderColor="gray.600">
           {locationsList.map((loc, idx) => (
-            <MenuItem key={idx} _hover={{ bg: "gray.700" }}
-              onClick={() => setLocation(loc)}>
+            <MenuItem
+              key={idx}
+              bg="gray.800"
+              color="white"
+              _hover={{ bg: "gray.700" }}
+              onClick={() => setLocation(loc)}
+            >
               {loc}
             </MenuItem>
           ))}
         </MenuList>
       </Menu>
 
-      {/* 총 시간 */}
       <Input value={totalWorkTime} isReadOnly bg="gray.800" borderColor="gray.600" />
 
-      {/* 추가 근무 */}
       <Switch isChecked={extraEnabled} onChange={(e) => setExtraEnabled(e.target.checked)}>
         추가 근무
       </Switch>
 
-      {/* 추가 근무 리스트 */}
       {extraWorks.map((row, idx) => (
         <Box key={idx} p={3} bg="gray.800" borderRadius="md" border="1px solid" borderColor="gray.600">
           <HStack mb={2}>
             <Menu>
-              <MenuButton as={Button} rightIcon={<ChevronDownIcon />} {...commonButtonStyle}>
+              <MenuButton as={Button} rightIcon={<ChevronDownIcon />} {...menuBtnStyle}>
                 {row.type === "overtime"
                   ? "잔업"
                   : row.type === "lunch"
                   ? "중식"
                   : "근무 선택"}
               </MenuButton>
-              <MenuList bg="gray.800">
-                <MenuItem onClick={() => updateExtraWork(idx, { type: "overtime" })}>잔업</MenuItem>
-                <MenuItem onClick={() => updateExtraWork(idx, { type: "lunch" })}>중식</MenuItem>
+              <MenuList bg="gray.800" color="white" borderColor="gray.600">
+                <MenuItem color="white" _hover={{ bg: "gray.700" }}
+                  onClick={() => updateExtraWork(idx, { type: "overtime" })}>
+                  잔업
+                </MenuItem>
+                <MenuItem color="white" _hover={{ bg: "gray.700" }}
+                  onClick={() => updateExtraWork(idx, { type: "lunch" })}>
+                  중식
+                </MenuItem>
               </MenuList>
             </Menu>
 
@@ -239,12 +247,11 @@ const Option = ({ selectedDate }) => {
                 updateExtraWork(idx, { finish: formatTimeInput(e.target.value) })
               }
             />
-            <Text fontSize="xs">{row.duration ? `총 ${row.duration}` : "-"}</Text>
+            <Text fontSize="xs">{row.duration || "-"}</Text>
           </HStack>
         </Box>
       ))}
 
-      {/* 🔥 미리보기 */}
       {cart.length > 0 && (
         <Box bg="gray.800" p={3} borderRadius="md">
           <Text fontSize="sm" fontWeight="600" mb={2}>

@@ -23,8 +23,28 @@ export default function CommonTable({
       <Table variant="simple" size="md">
         <Thead bg="gray.50" h="60px">
           <Tr>
+            {selectable && (
+              <Th w="60px" textAlign="center">
+                <Checkbox
+                  size="sm"
+                  colorScheme="blue"
+                  isChecked={
+                    data.length > 0 &&
+                    data.every(row => checkedItems[row[rowKey]])
+                  }
+                  onChange={() => onCheck?.("all")}
+                />
+              </Th>
+            )}
+
             {columns.map(col => (
-              <Th key={col.key}  w={col.width || "auto"}  textAlign={col.align || "center"}>{col.label}</Th>
+              <Th
+                key={col.key}
+                w={col.width || "auto"}
+                textAlign={col.align || "center"}
+              >
+                {col.label}
+              </Th>
             ))}
           </Tr>
         </Thead>

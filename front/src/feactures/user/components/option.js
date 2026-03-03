@@ -66,7 +66,7 @@ const Option = ({ selectedDate }) => {
     }
   }, [startTime, finishTime]);
 
-  /* ===== 추가 근무 관리 ===== */
+  /* ===== 추가 근무 활성화 ===== */
   useEffect(() => {
     if (extraEnabled && extraWorks.length === 0) {
       setExtraWorks([{ type: "", start: "", finish: "", duration: "" }]);
@@ -128,6 +128,17 @@ const Option = ({ selectedDate }) => {
     extraWorks,
   });
 
+  const commonButtonStyle = {
+    w: "100%",
+    bg: "gray.800",
+    border: "1px solid",
+    borderColor: "gray.600",
+    color: "white",
+    _hover: { bg: "gray.700" },
+    _active: { bg: "gray.700" },
+    _focus: { bg: "gray.700" },
+  };
+
   return (
     <Stack spacing={4} color="white" w="100%">
       {/* 날짜 */}
@@ -139,78 +150,35 @@ const Option = ({ selectedDate }) => {
 
       {/* 근무 형태 */}
       <HStack>
-        <Checkbox
-          isChecked={baseShift === "주간"}
-          onChange={() => setBaseShift("주간")}
-        >
-          주간
-        </Checkbox>
-        <Checkbox
-          isChecked={baseShift === "야간"}
-          onChange={() => setBaseShift("야간")}
-        >
-          야간
-        </Checkbox>
-        <Checkbox
-          isChecked={isSpecial}
-          onChange={(e) => setIsSpecial(e.target.checked)}
-        >
-          특근
-        </Checkbox>
+        <Checkbox isChecked={baseShift === "주간"} onChange={() => setBaseShift("주간")}>주간</Checkbox>
+        <Checkbox isChecked={baseShift === "야간"} onChange={() => setBaseShift("야간")}>야간</Checkbox>
+        <Checkbox isChecked={isSpecial} onChange={(e) => setIsSpecial(e.target.checked)}>특근</Checkbox>
       </HStack>
 
       {/* 작업 시간 */}
       <Menu>
-        <MenuButton
-          as={Button}
-          rightIcon={<ChevronDownIcon />}
-          w="100%"
-          bg="gray.800"
-          border="1px solid"
-          borderColor="gray.600"
-          color={workTime ? "gray.100" : "gray.400"}
-        >
+        <MenuButton as={Button} rightIcon={<ChevronDownIcon />} {...commonButtonStyle}>
           {workTime || "작업 시간 선택"}
         </MenuButton>
-
-        <MenuList bg="gray.800" borderColor="gray.600">
+        <MenuList bg="gray.800">
           {filteredWorkTimeList.map((t, i) => (
-            <MenuItem
-              key={i}
-              bg="gray.800"
-              _hover={{ bg: "gray.700" }}
-              onClick={() =>
-                handleSelectWorkTime(t.startTime, t.finishTime)
-              }
-            >
+            <MenuItem key={i} _hover={{ bg: "gray.700" }}
+              onClick={() => handleSelectWorkTime(t.startTime, t.finishTime)}>
               {t.startTime} ~ {t.finishTime}
             </MenuItem>
           ))}
         </MenuList>
       </Menu>
 
-      {/* 장소 선택 */}
+      {/* 장소 */}
       <Menu>
-        <MenuButton
-          as={Button}
-          rightIcon={<ChevronDownIcon />}
-          w="100%"
-          bg="gray.800"
-          border="1px solid"
-          borderColor="gray.600"
-          color={location ? "gray.100" : "gray.400"}
-        >
+        <MenuButton as={Button} rightIcon={<ChevronDownIcon />} {...commonButtonStyle}>
           {location || "업체 / 장소 선택"}
         </MenuButton>
-
-        <MenuList bg="gray.800" borderColor="gray.600">
+        <MenuList bg="gray.800">
           {locationsList.map((loc, idx) => (
-            <MenuItem
-              key={idx}
-              bg="gray.800"
-              _hover={{ bg: "gray.700" }}
-              onClick={() => setLocation(loc)}
-            >
+            <MenuItem key={idx} _hover={{ bg: "gray.700" }}
+              onClick={() => setLocation(loc)}>
               {loc}
             </MenuItem>
           ))}
@@ -218,69 +186,28 @@ const Option = ({ selectedDate }) => {
       </Menu>
 
       {/* 총 시간 */}
-      <Input
-        value={totalWorkTime}
-        isReadOnly
-        bg="gray.800"
-        borderColor="gray.600"
-      />
+      <Input value={totalWorkTime} isReadOnly bg="gray.800" borderColor="gray.600" />
 
       {/* 추가 근무 */}
-      <Switch
-        isChecked={extraEnabled}
-        onChange={(e) => setExtraEnabled(e.target.checked)}
-      >
+      <Switch isChecked={extraEnabled} onChange={(e) => setExtraEnabled(e.target.checked)}>
         추가 근무
       </Switch>
 
       {/* 추가 근무 리스트 */}
       {extraWorks.map((row, idx) => (
-        <Box
-          key={idx}
-          p={3}
-          bg="gray.800"
-          borderRadius="md"
-          border="1px solid"
-          borderColor="gray.600"
-        >
-          {/* 타입 선택 */}
-          <HStack spacing={2} mb={2}>
+        <Box key={idx} p={3} bg="gray.800" borderRadius="md" border="1px solid" borderColor="gray.600">
+          <HStack mb={2}>
             <Menu>
-              <MenuButton
-                as={Button}
-                w="100%"
-                bg="gray.900"
-                border="1px solid"
-                borderColor="gray.600"
-                rightIcon={<ChevronDownIcon />}
-              >
+              <MenuButton as={Button} rightIcon={<ChevronDownIcon />} {...commonButtonStyle}>
                 {row.type === "overtime"
                   ? "잔업"
                   : row.type === "lunch"
                   ? "중식"
                   : "근무 선택"}
               </MenuButton>
-
-              <MenuList bg="gray.800" borderColor="gray.600">
-                <MenuItem
-                  bg="gray.800"
-                  _hover={{ bg: "gray.700" }}
-                  onClick={() =>
-                    updateExtraWork(idx, { type: "overtime" })
-                  }
-                >
-                  잔업
-                </MenuItem>
-
-                <MenuItem
-                  bg="gray.800"
-                  _hover={{ bg: "gray.700" }}
-                  onClick={() =>
-                    updateExtraWork(idx, { type: "lunch" })
-                  }
-                >
-                  중식
-                </MenuItem>
+              <MenuList bg="gray.800">
+                <MenuItem onClick={() => updateExtraWork(idx, { type: "overtime" })}>잔업</MenuItem>
+                <MenuItem onClick={() => updateExtraWork(idx, { type: "lunch" })}>중식</MenuItem>
               </MenuList>
             </Menu>
 
@@ -294,16 +221,13 @@ const Option = ({ selectedDate }) => {
             />
           </HStack>
 
-          {/* 시간 입력 */}
-          <HStack spacing={3}>
+          <HStack>
             <Input
               placeholder="시작"
               value={row.start}
               bg="gray.900"
               onChange={(e) =>
-                updateExtraWork(idx, {
-                  start: formatTimeInput(e.target.value),
-                })
+                updateExtraWork(idx, { start: formatTimeInput(e.target.value) })
               }
             />
             <Text>~</Text>
@@ -312,19 +236,15 @@ const Option = ({ selectedDate }) => {
               value={row.finish}
               bg="gray.900"
               onChange={(e) =>
-                updateExtraWork(idx, {
-                  finish: formatTimeInput(e.target.value),
-                })
+                updateExtraWork(idx, { finish: formatTimeInput(e.target.value) })
               }
             />
-            <Text fontSize="xs">
-              {row.duration ? `총 ${row.duration}` : "총 시간 -"}
-            </Text>
+            <Text fontSize="xs">{row.duration ? `총 ${row.duration}` : "-"}</Text>
           </HStack>
         </Box>
       ))}
 
-      {/* 미리보기 */}
+      {/* 🔥 미리보기 */}
       {cart.length > 0 && (
         <Box bg="gray.800" p={3} borderRadius="md">
           <Text fontSize="sm" fontWeight="600" mb={2}>
@@ -343,9 +263,15 @@ const Option = ({ selectedDate }) => {
                 fontSize="sm"
               >
                 <Text>
-                  {item.work_date.year}.{item.work_date.month}.
-                  {item.work_date.day} · {item.baseShift} ·{" "}
+                  {item.work_date.year}.
+                  {String(item.work_date.month).padStart(2, "0")}.
+                  {String(item.work_date.day).padStart(2, "0")}
+                  {" · "}
+                  {item.baseShift}
+                  {" · "}
                   {item.startTime}~{item.finishTime}
+                  {" · "}
+                  {item.location}
                 </Text>
 
                 <IconButton

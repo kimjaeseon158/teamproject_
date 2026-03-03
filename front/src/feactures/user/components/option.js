@@ -137,31 +137,28 @@ const Option = ({ selectedDate }) => {
       {/* 작업 시간 */}
       <HStack spacing={3}>
         <Select
-          placeholder="시작 시간"
-          value={startTime}
-          onChange={(e) => setStartTime(e.target.value)}
+          placeholder="작업 시간 선택"
+          value={workTime}
+          onChange={(e) => {
+            const selected = filteredWorkTimeList.find(
+              (t) => `${t.startTime}~${t.finishTime}` === e.target.value
+            );
+            if (!selected) return;
+
+            setStartTime(selected.startTime);
+            setFinishTime(selected.finishTime);
+            setWorkTime(`${selected.startTime}~${selected.finishTime}`);
+          }}
           bg="gray.800"
         >
-          {timeOptions.map((time) => (
-            <option key={time} value={time}>
-              {time}
-            </option>
-          ))}
-        </Select>
-
-        <Text>~</Text>
-
-        <Select
-          placeholder="종료 시간"
-          value={finishTime}
-          onChange={(e) => setFinishTime(e.target.value)}
-          bg="gray.800"
-        >
-          {timeOptions.map((time) => (
-            <option key={time} value={time}>
-              {time}
-            </option>
-          ))}
+          {filteredWorkTimeList.map((t, i) => {
+            const value = `${t.startTime}~${t.finishTime}`;
+            return (
+              <option key={i} value={value}>
+                {value}
+              </option>
+            );
+          })}
         </Select>
       </HStack>
 

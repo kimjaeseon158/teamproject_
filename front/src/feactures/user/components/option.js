@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   Box,
   Stack,
@@ -6,9 +6,7 @@ import {
   HStack,
   Text,
   Input,
-  Switch,
   Checkbox,
-  IconButton,
   Select,
   useToast,
   AlertDialog,
@@ -18,15 +16,10 @@ import {
   AlertDialogBody,
   AlertDialogFooter,
 } from "@chakra-ui/react";
-import { DeleteIcon } from "@chakra-ui/icons";
 
 import { useUser } from "../../auth/userContext";
 import locationsList from "../../common/work_placeCloums/locationsList";
-import {
-  minutesToHM,
-  diffMinutes,
-  formatTimeInput,
-} from "../utils/timeUtils";
+import { minutesToHM, diffMinutes } from "../utils/timeUtils";
 import { useOptionHandlers } from "../hook/useOptionHandlers";
 
 const Option = ({ selectedDate }) => {
@@ -68,6 +61,7 @@ const Option = ({ selectedDate }) => {
     return arr;
   }, []);
 
+  /* ===== 총 시간 계산 ===== */
   useEffect(() => {
     if (startTime && finishTime) {
       setTotalWorkTime(minutesToHM(diffMinutes(startTime, finishTime)));
@@ -76,34 +70,7 @@ const Option = ({ selectedDate }) => {
     }
   }, [startTime, finishTime]);
 
-  useEffect(() => {
-    if (extraEnabled && extraWorks.length === 0) {
-      setExtraWorks([{ type: "", start: "", finish: "", duration: "" }]);
-    }
-
-    if (!extraEnabled && extraWorks.length > 0) {
-      setExtraWorks([]);
-    }
-  }, [extraEnabled, extraWorks.length]);
-
-  const updateExtraWork = (idx, patch) => {
-    setExtraWorks((prev) =>
-      prev.map((r, i) => {
-        if (i !== idx) return r;
-        const n = { ...r, ...patch };
-        n.duration =
-          n.start && n.finish
-            ? minutesToHM(diffMinutes(n.start, n.finish))
-            : "";
-        return n;
-      })
-    );
-  };
-
-  const handleRemoveExtraRow = (idx) => {
-    setExtraWorks((prev) => prev.filter((_, i) => i !== idx));
-  };
-
+  /* ===== 폼 리셋 ===== */
   const resetForm = () => {
     setLocation("");
     setStartTime("");
@@ -198,6 +165,20 @@ const Option = ({ selectedDate }) => {
         </Select>
       </HStack>
 
+      {/* 장소 선택 */}
+      <Select
+        placeholder="업체 / 장소 선택"
+        value={location}
+        onChange={(e) => setLocation(e.target.value)}
+        bg="gray.800"
+      >
+        {locationsList.map((loc, idx) => (
+          <option key={idx} value={loc}>
+            {loc}
+          </option>
+        ))}
+      </Select>
+
       {/* 총 시간 */}
       <Input
         value={totalWorkTime}
@@ -229,18 +210,21 @@ const Option = ({ selectedDate }) => {
         <AlertDialogOverlay>
           <AlertDialogContent bg="gray.800" color="white">
             <AlertDialogHeader>전체 등록 확인</AlertDialogHeader>
+
             <AlertDialogBody>
               {cart.map((c) => (
                 <Box key={c.id} bg="gray.700" p={2} borderRadius="md">
                   <Text>
-                    {c.work_date.year}-{c.work_date.month}-{c.work_date.day}
+                    📅 {c.work_date.year}-{c.work_date.month}-{c.work_date.day}
                   </Text>
                   <Text>
-                    {c.baseShift} · {c.startTime} ~ {c.finishTime}
+                    🕘 {c.baseShift} · {c.startTime} ~ {c.finishTime}
                   </Text>
+                  <Text>📍 {c.location}</Text>
                 </Box>
               ))}
             </AlertDialogBody>
+
             <AlertDialogFooter>
               <Button
                 ref={cancelRef}

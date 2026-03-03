@@ -1,4 +1,4 @@
-import  { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Stack,
@@ -44,7 +44,6 @@ const Option = ({ selectedDate }) => {
   const [extraWorks, setExtraWorks] = useState([]);
 
   const [cart, setCart] = useState([]);
-  const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
 
   const today = new Date();
   const displayDate = selectedDate ?? {
@@ -67,7 +66,7 @@ const Option = ({ selectedDate }) => {
     }
   }, [startTime, finishTime]);
 
-  /* ===== 추가 근무 활성화 관리 ===== */
+  /* ===== 추가 근무 관리 ===== */
   useEffect(() => {
     if (extraEnabled && extraWorks.length === 0) {
       setExtraWorks([{ type: "", start: "", finish: "", duration: "" }]);
@@ -112,11 +111,7 @@ const Option = ({ selectedDate }) => {
     setExtraWorks([]);
   };
 
-  const {
-    handleAddToCart,
-    handleSubmitAll,
-    handleConfirmSubmitAll,
-  } = useOptionHandlers({
+  const { handleAddToCart, handleSubmitAll } = useOptionHandlers({
     selectedDate,
     userUuid,
     userName,
@@ -131,7 +126,6 @@ const Option = ({ selectedDate }) => {
     location,
     extraEnabled,
     extraWorks,
-    setIsSubmitConfirmOpen,
   });
 
   return (
@@ -151,14 +145,12 @@ const Option = ({ selectedDate }) => {
         >
           주간
         </Checkbox>
-
         <Checkbox
           isChecked={baseShift === "야간"}
           onChange={() => setBaseShift("야간")}
         >
           야간
         </Checkbox>
-
         <Checkbox
           isChecked={isSpecial}
           onChange={(e) => setIsSpecial(e.target.checked)}
@@ -167,7 +159,7 @@ const Option = ({ selectedDate }) => {
         </Checkbox>
       </HStack>
 
-      {/* 작업 시간 (Menu 유지) */}
+      {/* 작업 시간 */}
       <Menu>
         <MenuButton
           as={Button}
@@ -177,7 +169,6 @@ const Option = ({ selectedDate }) => {
           border="1px solid"
           borderColor="gray.600"
           color={workTime ? "gray.100" : "gray.400"}
-          _hover={{ bg: "gray.700" }}
         >
           {workTime || "작업 시간 선택"}
         </MenuButton>
@@ -208,7 +199,6 @@ const Option = ({ selectedDate }) => {
           border="1px solid"
           borderColor="gray.600"
           color={location ? "gray.100" : "gray.400"}
-          _hover={{ bg: "gray.700" }}
         >
           {location || "업체 / 장소 선택"}
         </MenuButton>
@@ -227,14 +217,12 @@ const Option = ({ selectedDate }) => {
         </MenuList>
       </Menu>
 
-      {/* 총 작업 시간 */}
+      {/* 총 시간 */}
       <Input
         value={totalWorkTime}
         isReadOnly
         bg="gray.800"
         borderColor="gray.600"
-        color="gray.100"
-        placeholder="총 작업 시간"
       />
 
       {/* 추가 근무 */}
@@ -255,62 +243,11 @@ const Option = ({ selectedDate }) => {
           border="1px solid"
           borderColor="gray.600"
         >
-          <HStack spacing={2} mb={2}>
-            <Menu>
-              <MenuButton
-                as={Button}
-                w="100%"
-                bg="gray.900"
-                border="1px solid"
-                borderColor="gray.600"
-                rightIcon={<ChevronDownIcon />}
-              >
-                {row.type === "overtime"
-                  ? "잔업"
-                  : row.type === "lunch"
-                  ? "중식"
-                  : "근무 선택"}
-              </MenuButton>
-
-              <MenuList bg="gray.800" borderColor="gray.600">
-                <MenuItem
-                  bg="gray.800"
-                  _hover={{ bg: "gray.700" }}
-                  onClick={() =>
-                    updateExtraWork(idx, { type: "overtime" })
-                  }
-                >
-                  잔업
-                </MenuItem>
-
-                <MenuItem
-                  bg="gray.800"
-                  _hover={{ bg: "gray.700" }}
-                  onClick={() =>
-                    updateExtraWork(idx, { type: "lunch" })
-                  }
-                >
-                  중식
-                </MenuItem>
-              </MenuList>
-            </Menu>
-
-            <IconButton
-              icon={<DeleteIcon />}
-              size="sm"
-              variant="ghost"
-              colorScheme="red"
-              onClick={() => handleRemoveExtraRow(idx)}
-              aria-label="삭제"
-            />
-          </HStack>
-
           <HStack spacing={3}>
             <Input
               placeholder="시작"
               value={row.start}
               bg="gray.900"
-              borderColor="gray.600"
               onChange={(e) =>
                 updateExtraWork(idx, {
                   start: formatTimeInput(e.target.value),
@@ -322,7 +259,6 @@ const Option = ({ selectedDate }) => {
               placeholder="종료"
               value={row.finish}
               bg="gray.900"
-              borderColor="gray.600"
               onChange={(e) =>
                 updateExtraWork(idx, {
                   finish: formatTimeInput(e.target.value),
@@ -330,8 +266,16 @@ const Option = ({ selectedDate }) => {
               }
             />
             <Text fontSize="xs">
-              {row.duration ? `총 ${row.duration}` : "총 시간 -"}
+              {row.duration || "-"}
             </Text>
+            <IconButton
+              icon={<DeleteIcon />}
+              size="sm"
+              variant="ghost"
+              colorScheme="red"
+              onClick={() => handleRemoveExtraRow(idx)}
+              aria-label="삭제"
+            />
           </HStack>
         </Box>
       ))}

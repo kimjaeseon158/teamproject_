@@ -214,7 +214,7 @@ const Option = ({ selectedDate }) => {
               {loc}
             </MenuItem>
           ))}
-        </MenuList> 
+        </MenuList>
       </Menu>
 
       {/* 총 시간 */}
@@ -243,6 +243,58 @@ const Option = ({ selectedDate }) => {
           border="1px solid"
           borderColor="gray.600"
         >
+          {/* 타입 선택 */}
+          <HStack spacing={2} mb={2}>
+            <Menu>
+              <MenuButton
+                as={Button}
+                w="100%"
+                bg="gray.900"
+                border="1px solid"
+                borderColor="gray.600"
+                rightIcon={<ChevronDownIcon />}
+              >
+                {row.type === "overtime"
+                  ? "잔업"
+                  : row.type === "lunch"
+                  ? "중식"
+                  : "근무 선택"}
+              </MenuButton>
+
+              <MenuList bg="gray.800" borderColor="gray.600">
+                <MenuItem
+                  bg="gray.800"
+                  _hover={{ bg: "gray.700" }}
+                  onClick={() =>
+                    updateExtraWork(idx, { type: "overtime" })
+                  }
+                >
+                  잔업
+                </MenuItem>
+
+                <MenuItem
+                  bg="gray.800"
+                  _hover={{ bg: "gray.700" }}
+                  onClick={() =>
+                    updateExtraWork(idx, { type: "lunch" })
+                  }
+                >
+                  중식
+                </MenuItem>
+              </MenuList>
+            </Menu>
+
+            <IconButton
+              icon={<DeleteIcon />}
+              size="sm"
+              variant="ghost"
+              colorScheme="red"
+              onClick={() => handleRemoveExtraRow(idx)}
+              aria-label="삭제"
+            />
+          </HStack>
+
+          {/* 시간 입력 */}
           <HStack spacing={3}>
             <Input
               placeholder="시작"
@@ -266,19 +318,53 @@ const Option = ({ selectedDate }) => {
               }
             />
             <Text fontSize="xs">
-              {row.duration || "-"}
+              {row.duration ? `총 ${row.duration}` : "총 시간 -"}
             </Text>
-            <IconButton
-              icon={<DeleteIcon />}
-              size="sm"
-              variant="ghost"
-              colorScheme="red"
-              onClick={() => handleRemoveExtraRow(idx)}
-              aria-label="삭제"
-            />
           </HStack>
         </Box>
       ))}
+
+      {/* 미리보기 */}
+      {cart.length > 0 && (
+        <Box bg="gray.800" p={3} borderRadius="md">
+          <Text fontSize="sm" fontWeight="600" mb={2}>
+            추가목록 ({cart.length})
+          </Text>
+
+          <Stack spacing={1}>
+            {cart.map((item) => (
+              <HStack
+                key={item.id}
+                justify="space-between"
+                bg="gray.700"
+                px={3}
+                py={2}
+                borderRadius="md"
+                fontSize="sm"
+              >
+                <Text>
+                  {item.work_date.year}.{item.work_date.month}.
+                  {item.work_date.day} · {item.baseShift} ·{" "}
+                  {item.startTime}~{item.finishTime}
+                </Text>
+
+                <IconButton
+                  icon={<DeleteIcon />}
+                  size="xs"
+                  variant="ghost"
+                  colorScheme="red"
+                  onClick={() =>
+                    setCart((prev) =>
+                      prev.filter((c) => c.id !== item.id)
+                    )
+                  }
+                  aria-label="삭제"
+                />
+              </HStack>
+            ))}
+          </Stack>
+        </Box>
+      )}
 
       <Button colorScheme="blue" onClick={handleAddToCart}>
         추가

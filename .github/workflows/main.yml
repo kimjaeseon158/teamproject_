@@ -13,4 +13,4 @@ jobs:
     steps:
       - name: Ping Render Service
         run: |
-          curl -I https://your-app-name.onrender.com
+          curl -I https://teamproject-odpg.onrender.com

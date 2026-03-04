@@ -109,7 +109,10 @@ const Option = ({ selectedDate }) => {
     setExtraWorks([]);
   };
 
-  const { handleAddToCart, handleSubmitAll } = useOptionHandlers({
+   const {
+    handleAddToCart,
+    handleConfirmSubmitAll,
+  } = useOptionHandlers({
     selectedDate,
     userUuid,
     userName,
@@ -135,6 +138,7 @@ const Option = ({ selectedDate }) => {
     _hover: { bg: "gray.700" },
     _expanded: { bg: "gray.700" },
   };
+
 
   return (
     <Stack spacing={4} color="white" w="100%">
@@ -341,9 +345,10 @@ const Option = ({ selectedDate }) => {
         추가
       </Button>
 
+      {/* 🔥 여기 수정 (API 호출 버튼) */}
       <Button
         colorScheme="green"
-        onClick={handleSubmitAll}
+        onClick={handleConfirmSubmitAll}
         isDisabled={cart.length === 0}
       >
         전체 등록 ({cart.length})

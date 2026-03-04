@@ -200,38 +200,54 @@ const Option = ({ selectedDate }) => {
         <Box key={idx} p={3} bg="gray.800" borderRadius="md" border="1px solid" borderColor="gray.600">
           <HStack mb={2}>
             <Menu>
-  <MenuButton
-    as={Button}
-    rightIcon={<ChevronDownIcon />}
-    {...menuButtonStyle}
-  >
-    {row.type === "overtime"
-      ? "잔업"
-      : row.type === "lunch"
-      ? "중식"
-      : "근무 선택"}
-  </MenuButton>
+              <MenuButton
+                as={Button}
+                variant="outline"
+                rightIcon={<ChevronDownIcon />}
+                width="100%"
+                justifyContent="space-between"
+                bg="gray.800"
+                borderColor="gray.600"
+                color="gray.100"
+                _hover={{ bg: "gray.700" }}
+              >
+                {row.type === "overtime"
+                  ? "잔업"
+                  : row.type === "lunch"
+                  ? "중식"
+                  : "근무 선택"}
+              </MenuButton>
 
-  <MenuList {...menuListStyle} zIndex={9999}>
-    <MenuItem
-      {...menuItemStyle}
-      onClick={() =>
-        updateExtraWork(idx, { type: "overtime" })
-      }
-    >
-      잔업
-    </MenuItem>
+              <MenuList
+                bg="gray.800"
+                borderColor="gray.600"
+                color="gray.100"
+              >
+                <MenuItem
+                  bg="gray.800"
+                  color="gray.100"
+                  _hover={{ bg: "gray.700" }}
+                  _focus={{ bg: "gray.700" }}
+                  onClick={() =>
+                    updateExtraWork(idx, { type: "overtime" })
+                  }
+                >
+                  잔업
+                </MenuItem>
 
-    <MenuItem
-      {...menuItemStyle}
-      onClick={() =>
-        updateExtraWork(idx, { type: "lunch" })
-      }
-    >
-      중식
-    </MenuItem>
-  </MenuList>
-</Menu>
+                <MenuItem
+                  bg="gray.800"
+                  color="gray.100"
+                  _hover={{ bg: "gray.700" }}
+                  _focus={{ bg: "gray.700" }}
+                  onClick={() =>
+                    updateExtraWork(idx, { type: "lunch" })
+                  }
+                >
+                  중식
+                </MenuItem>
+              </MenuList>
+            </Menu>
 
             <IconButton
               icon={<DeleteIcon />}

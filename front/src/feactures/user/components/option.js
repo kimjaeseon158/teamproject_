@@ -190,7 +190,15 @@ const Option = ({ selectedDate }) => {
         </MenuList>
       </Menu>
 
-      <Input value={totalWorkTime} isReadOnly bg="gray.800" borderColor="gray.600" />
+     <Input
+        value={totalWorkTime || ""}
+        placeholder="총 근무 시간 (00:00)"
+        isReadOnly
+        bg="gray.800"
+        borderColor="gray.600"
+        color="white"
+        _placeholder={{ color: "gray.400" }}
+      />
 
       <Switch isChecked={extraEnabled} onChange={(e) => setExtraEnabled(e.target.checked)}>
         추가 근무

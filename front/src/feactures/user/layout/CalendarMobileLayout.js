@@ -16,20 +16,25 @@ export default function CalendarMobileLayout({
   calendar,
   goToday,
   calendarTitle,
-  onTitleChange, 
+  onTitleChange,
 }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
-    <Box minH="100vh" bg="white" overflow="hidden">
-
-      <Drawer
-        isOpen={isOpen}
-        placement="bottom"
-        onClose={onClose}
-      >
+    <Box
+      minH="100vh"
+      bg="white"
+      overflowX="hidden"
+      overflowY={{ base: "auto", md: "hidden" }}
+    >
+      <Drawer isOpen={isOpen} placement="bottom" onClose={onClose}>
         <DrawerOverlay />
-        <DrawerContent h="100dvh" borderTopRadius="20px">
+
+        <DrawerContent
+          h="100dvh"
+          borderTopRadius="20px"
+          overflowY="auto"
+        >
           <CalendarSidebar
             userName={userName}
             selectedDate={calendar.selectedDate}
@@ -39,7 +44,6 @@ export default function CalendarMobileLayout({
       </Drawer>
 
       <Box px={4} pt={4}>
-
         <CalendarHeader
           userUuid={userUuid}
           goToday={goToday}
@@ -58,7 +62,6 @@ export default function CalendarMobileLayout({
             onTitleChange={onTitleChange}
           />
         </Box>
-
       </Box>
     </Box>
   );

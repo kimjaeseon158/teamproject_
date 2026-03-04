@@ -1,0 +1,16 @@
+name: Ping Render Service
+
+on:
+  schedule:
+    # 10분마다 실행 (UTC 시간 기준)
+    - cron: "*/10 * * * *"
+  # 수동으로 실행 가능하게 함
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render Service
+        run: |
+          curl -I https://your-app-name.onrender.com

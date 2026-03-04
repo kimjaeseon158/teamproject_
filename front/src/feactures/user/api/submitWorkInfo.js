@@ -7,10 +7,13 @@ const toYYYYMMDD = (d) => {
   if (d && typeof d === "object" && d.year && d.month && d.day) {
     return `${d.year}-${String(d.month).padStart(2, "0")}-${String(d.day).padStart(2, "0")}`;
   }
+
   const date = new Date(d);
+
   if (!Number.isNaN(date.getTime())) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
   }
+
   return "";
 };
 
@@ -19,14 +22,17 @@ const toDateTime = (date, hm) => `${date} ${hm}:00`;
 /* =========================
    UUID 기준 근무 등록
 ========================= */
+
 const submitWorkInfo = async (input, { toast } = {}) => {
   let body;
 
-  // ✅ bulk
+  /* ===== bulk ===== */
+
   if (Array.isArray(input)) {
     body = {
-      data: input.map(item => {
+      data: input.map((item) => {
         const workDate = toYYYYMMDD(item.work_date);
+
         if (!workDate) throw new Error("날짜 변환 실패");
 
         return {
@@ -42,7 +48,9 @@ const submitWorkInfo = async (input, { toast } = {}) => {
       }),
     };
   }
-  // ✅ single
+
+  /* ===== single ===== */
+
   else {
     const {
       user_uuid,
@@ -59,6 +67,7 @@ const submitWorkInfo = async (input, { toast } = {}) => {
     if (!user_uuid) throw new Error("user_uuid가 없습니다.");
 
     const workDate = toYYYYMMDD(work_date ?? selectedDate);
+
     if (!workDate) throw new Error("날짜 변환 실패");
 
     body = {
@@ -75,26 +84,28 @@ const submitWorkInfo = async (input, { toast } = {}) => {
     };
   }
 
-  const res = await fetchWithAuth(
-    "/api/user_work_info/",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    },
-    { toast }
-  );
+  try {
+    const res = await fetchWithAuth(
+      "/api/user_work_info/",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+      { toast }
+    );
 
-  if (!res || !res.ok) {
-    let msg = "근무 정보 전송 실패";
-    try {
-      const err = await res.json();
-      msg = err.detail || err.message || msg;
-    } catch {}
-    throw new Error(msg);
+    /* fetchWithAuth가 response.json() 반환하는 경우 대응 */
+
+    if (!res) {
+      throw new Error("서버 응답 없음");
+    }
+
+    return res;
+  } catch (err) {
+    console.error("근무 등록 오류:", err);
+    throw err;
   }
-
-  return res.json();
 };
 
 export default submitWorkInfo;

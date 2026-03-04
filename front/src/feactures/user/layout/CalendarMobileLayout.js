@@ -31,7 +31,7 @@ export default function CalendarMobileLayout({
         <DrawerOverlay />
 
         <DrawerContent
-          h="100dvh"
+          maxH="100dvh"
           borderTopRadius="20px"
           overflowY="auto"
         >

@@ -1,4 +1,4 @@
-name: Ping Render Service
+name: Ping Render Service v2
 
 on:
   schedule:

@@ -12,5 +12,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping Render Service
-        run: |
-          curl -I https://teamproject-odpg.onrender.com
+        run: curl https://teamproject-odpg.onrender.com

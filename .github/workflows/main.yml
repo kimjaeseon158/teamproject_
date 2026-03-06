@@ -12,4 +12,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping Render Service
-        run: curl https://teamproject-odpg.onrender.com/api/check_admin_login/
+        run: curl https://teamproject-odpg.onrender.com/api/

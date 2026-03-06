@@ -1,4 +1,4 @@
-name: Ping Render Service v3
+name: Ping Render Service v4
 
 on:
   schedule:
@@ -12,4 +12,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping Render Service
-        run: curl https://teamproject-odpg.onrender.com/api/
+        run: curl https://teamproject-odpg.onrender.com/api/check_admin_login/

@@ -20,6 +20,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
+    "teamproject-v2qg.onrender.com",
     "teamproject-odpg.onrender.com",
 ]
 INSTALLED_APPS = [

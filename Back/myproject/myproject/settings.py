@@ -88,14 +88,14 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://teamproject-git-dev-kimjaeseon158s-projects.vercel.app",
+    "https://teamproject-va7u-git-dev-kimjaeseon158s-projects.vercel.app",
 ]
 
 # 프런트 도메인을 CSRF 신뢰 도메인으로 등록 (쿠키 기반 요청 허용)
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://teamproject-git-dev-kimjaeseon158s-projects.vercel.app",
+    "https://teamproject-va7u-git-dev-kimjaeseon158s-projects.vercel.app",
 ]
 
 # (선택) 개발 편의용 쿠키 옵션 — 운영 배포 시 True/더 엄격하게 바꾸기

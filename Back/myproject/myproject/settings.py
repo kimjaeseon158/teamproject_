@@ -17,8 +17,11 @@ REFRESH_TOKEN_HASH_SECRET = env('REFRESH_TOKEN_HASH_SECRET')
 DEBUG = env('DEBUG')
 
 DEBUG = True
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "teamproject-v2qg.onrender.com", "teamproject-odpg.onrender.com"]
-
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
+    "teamproject-odpg.onrender.com",
+]
 INSTALLED_APPS = [
     "daphne",
     "django.contrib.auth",
@@ -52,8 +55,7 @@ SIMPLE_JWT = {
 
 GOOGLE_CLIENT_ID     = env('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET')
-GOOGLE_REDIRECT_URI  = "https://teamproject-v2qg.onrender.com/api/google_calendar_auth/callback/"
-
+GOOGLE_REDIRECT_URI = "https://teamproject-odpg.onrender.com/api/google_calendar_auth/callback/"
 GOOGLE_OAUTH2_CLIENT_CONFIG = {
     "web": {
         "client_id": GOOGLE_CLIENT_ID,

@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function useNotifySocket({ token, uuid, loginType, onMessage }) {
   const wsRef = useRef(null);
@@ -14,7 +14,6 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
   useEffect(() => {
     onMessageRef.current = onMessage;
   }, [onMessage]);
-
   useEffect(() => {
     if (!token || !uuid || !loginType || !WS_BASE_URL) return;
 

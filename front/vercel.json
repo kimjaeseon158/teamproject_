@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://teamproject-v2qg.onrender.com/api/$1"
+      "destination": "$BACK_APP_API_BASE_URL/api/$1"
     }
   ]
 }

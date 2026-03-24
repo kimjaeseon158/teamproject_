@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 
 export function useNotifySocket({ token, uuid, loginType, onMessage }) {
   const wsRef = useRef(null);
@@ -37,7 +37,7 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
 
       ws.onopen = () => {
         retryRef.current = 0;
-        setConnected(true);
+        setConnected(true); 
       }; 
 
       ws.onmessage = (e) => {

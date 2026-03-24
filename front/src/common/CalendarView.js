@@ -86,7 +86,7 @@ export default function CalendarView({
                     특근 {summary.special}
                   </div>
                 )}
-              </div>
+              </div> 
             )}
           </div>
         );

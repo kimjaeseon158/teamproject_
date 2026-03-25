@@ -1,6 +1,6 @@
 // src/api/fetchWithAuth.js
 import { getAccessToken, setAccessToken, clearAccessToken } from "./token";
-import { API_BASE } from "../config/api";
+import { API_BASE } from "../../config/api/apiEnv";
 // ✅ 동시에 401이 여러 개 터질 때 refresh를 1번만 하도록 잠금
 let refreshPromise = null;
 

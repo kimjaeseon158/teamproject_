@@ -11,7 +11,7 @@ import {
   clearAccessToken,
 } from "../../services/api/token";
 import { useNotifySocket } from "../../services/ws/useNotifySocket";
-import { API_BASE } from "../config/api";
+import { API_BASE } from "../../config/api";
 const UserContext = createContext(null);
 
 export function UserProvider({ children, loginType }) {

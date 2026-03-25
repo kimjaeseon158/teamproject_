@@ -1,5 +1,5 @@
 import { fetchWithAuth } from "../../../services/api/fetchWithAuth";
-import { API_BASE } from "../../../../config/api/apiEnv";
+import { API_BASE } from "../../../config/api/apiEnv";
 
 /* =========================
    날짜 유틸

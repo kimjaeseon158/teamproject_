@@ -263,8 +263,8 @@ class CheckAdminLoginAPIView(APIView):
             key="refresh_token",
             value=raw_refresh_token,
             httponly=True,
-            secure=False,  # 로컬 개발: False / 배포: True
-            samesite="Lax",
+            secure=True,  # 로컬 개발: False / 배포: True
+            samesite="None",
             path="/",
             max_age=60 * 60 * 24 * 7,  # 7일
         )
@@ -340,8 +340,8 @@ class CheckUserLoginAPIView(APIView):
             "refresh_token",
             raw_refresh_token,
             httponly=True,
-            secure=False,  # 배포 시 True 권장
-            samesite="Lax",
+            secure=True,  # 배포 시 True 권장
+            samesite="None",
             path="/",
             max_age=60 * 60 * 24 * 7,
         )

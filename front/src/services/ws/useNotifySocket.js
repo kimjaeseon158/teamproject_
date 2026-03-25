@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { WS_BASE_URL } from "../config/api/apiEnv";
+import { WS_BASE_URL } from "../../config/api/apiEnv";
 
 export function useNotifySocket({ token, uuid, loginType, onMessage }) {
   const wsRef = useRef(null);

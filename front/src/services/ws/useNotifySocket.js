@@ -79,7 +79,7 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
       wsRef.current = null;
       setConnected(false);
     };
-  }, [token, uuid, loginType, WS_BASE]); // 🔥 여기 추가
+  }, [token, uuid, loginType]); // 🔥 여기 추가
 
   return { connected };
 }

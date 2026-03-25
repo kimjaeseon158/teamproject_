@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { WS_BASE_URL } from "../../config/api/apiEnv";
+import { WS_BASE } from "../../config/api/apiEnv";
 
 export function useNotifySocket({ token, uuid, loginType, onMessage }) {
   const wsRef = useRef(null);
@@ -15,7 +15,7 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
     onMessageRef.current = onMessage;
   }, [onMessage]);
   useEffect(() => {
-    if (!token || !uuid || !loginType || !WS_BASE_URL) return;
+    if (!token || !uuid || !loginType || !WS_BASE) return;
 
     let closedByCleanup = false;
 
@@ -28,8 +28,8 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
 
       const wsUrl =
         loginType === "admin"
-          ? `${WS_BASE_URL}/ws/admin/request-monitor/?admin_uuid=${uuid}`
-          : `${WS_BASE_URL}/ws/user/request-monitor/?user_uuid=${uuid}`;
+          ? `${WS_BASE}/ws/admin/request-monitor/?admin_uuid=${uuid}`
+          : `${WS_BASE}/ws/user/request-monitor/?user_uuid=${uuid}`;
 
       const ws = new WebSocket(wsUrl, [token]);
       wsRef.current = ws;
@@ -79,7 +79,7 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
       wsRef.current = null;
       setConnected(false);
     };
-  }, [token, uuid, loginType, WS_BASE_URL]); // 🔥 여기 추가
+  }, [token, uuid, loginType, WS_BASE]); // 🔥 여기 추가
 
   return { connected };
 }

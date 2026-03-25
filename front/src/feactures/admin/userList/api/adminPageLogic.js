@@ -1,4 +1,6 @@
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { API_BASE } from "../config/api";
+
 export async function fetchFilteredPeople(queryParams, { toast } = {}) {
   try {
     const filters = queryParams.filters || {};
@@ -14,7 +16,7 @@ export async function fetchFilteredPeople(queryParams, { toast } = {}) {
     const query = new URLSearchParams(params).toString();
 
     const res = await fetchWithAuth(
-      `/api/user_info_filtering/?${query}`,
+      `${API_BASE}/api/user_info_filtering/?${query}`,
       { method: "GET" },
       { toast }
     );

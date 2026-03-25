@@ -11,7 +11,7 @@ import {
   clearAccessToken,
 } from "../../services/api/token";
 import { useNotifySocket } from "../../services/ws/useNotifySocket";
-
+import { API_BASE } from "../config/api";
 const UserContext = createContext(null);
 
 export function UserProvider({ children, loginType }) {
@@ -37,7 +37,7 @@ export function UserProvider({ children, loginType }) {
   const revalidate = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/refresh_token/", {
+      const res = await fetch(`${API_BASE}/api/refresh_token/`, {
         method: "POST",
         credentials: "include",
       });

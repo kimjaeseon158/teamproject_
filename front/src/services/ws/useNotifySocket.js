@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { WS_BASE_URL } from "../config/api/apiEnv";
 
 export function useNotifySocket({ token, uuid, loginType, onMessage }) {
   const wsRef = useRef(null);
@@ -7,7 +8,6 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
   const retryTimerRef = useRef(null);
   const messageSeqRef = useRef(0);
 
-  const WS_BASE_URL = process.env.REACT_APP_WS_BASE_URL;
   const [connected, setConnected] = useState(false);
 
   // 최신 onMessage 유지

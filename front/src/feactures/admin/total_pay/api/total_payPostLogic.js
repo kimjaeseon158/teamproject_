@@ -1,5 +1,6 @@
 // src/js/total_payPost.js
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { API_BASE } from "../config/api";
 
 export async function total_payPost(payload, toast) {
   try {
@@ -7,7 +8,7 @@ export async function total_payPost(payload, toast) {
     const query = payload ? `?${new URLSearchParams(payload).toString()}` : "";
 
     const res = await fetchWithAuth(
-      `/api/finance_total/${query}`,
+      `${API_BASE}/api/finance_total/${query}`,
       {
         method: "GET",
         headers: { "Content-Type": "application/json" },

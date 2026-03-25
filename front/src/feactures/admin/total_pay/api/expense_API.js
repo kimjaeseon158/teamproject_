@@ -1,11 +1,12 @@
 // src/js/total_payPost.js
 import { fetchWithAuth } from "../../api/fetchWithAuth";
+import { API_BASE } from "../config/api";
 
 export async function expense_Data(payload, toast) {
   try {
     // fetchWithAuth 호출
     const res = await fetchWithAuth(
-      " /api/expense_add/",
+      `${API_BASE}/api/expense_add/`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -1,5 +1,6 @@
 // src/admin/js/adminPageUpdate.js
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { API_BASE } from "../config/api";
 
 /**
  * 사원 정보 수정 (UUID 기준)
@@ -16,7 +17,7 @@ export const updateEmployee = async (employeeData, { toast } = {}) => {
     }
 
     const response = await fetchWithAuth(
-      "/api/user_info_update/",
+      `${API_BASE}/api/user_info_update/`,
       {
         method: "PATCH",
         headers: {

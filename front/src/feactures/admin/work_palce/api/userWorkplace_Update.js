@@ -1,9 +1,10 @@
 // src/api/adminWorkdayStatusUpdate.js
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { API_BASE } from "../config/api";
 
 export async function getWorkPlaceList_Update(payload, { toast } = {}) {
   const res = await fetchWithAuth(
-    "/api/work_place_rate_update_delete/",
+    `${API_BASE}/api/work_place_rate_update_delete/`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

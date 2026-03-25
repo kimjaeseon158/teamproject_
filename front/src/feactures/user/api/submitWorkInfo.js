@@ -1,4 +1,5 @@
 import { fetchWithAuth } from "../../../services/api/fetchWithAuth";
+import { API_BASE } from "../config/api";
 
 /* =========================
    날짜 유틸
@@ -86,7 +87,7 @@ const submitWorkInfo = async (input, { toast } = {}) => {
 
   try {
     const res = await fetchWithAuth(
-      "/api/user_work_info/",
+      `${API_BASE}/api/user_work_info/`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

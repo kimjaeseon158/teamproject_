@@ -1,6 +1,6 @@
 // src/js/total_payPost.js
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
-
+import { API_BASE } from "../config/api";
 /**
  * 회사 매출(수입) 등록 API
  * POST /api/income_add/
@@ -23,7 +23,7 @@ import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
 export async function income_Data(payload, toast) {
   try {
     const res = await fetchWithAuth(
-      "/api/income_add/",
+      `${ API_BASE }/api/income_add/`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

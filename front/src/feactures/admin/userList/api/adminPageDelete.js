@@ -1,6 +1,6 @@
 // src/admin/js/adminPageDelete.js
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
-
+import { API_BASE } from "../config/api";
 /**
  * 사원 삭제 (UUID 기준)
  * @param {string[]} userUuids - 삭제할 user_uuid 배열
@@ -15,7 +15,7 @@ export const deleteEmployees = async (userUuids, { toast } = {}) => {
 
     for (const uuid of userUuids) {
       const response = await fetchWithAuth(
-        "/api/user_info_delete/",
+        `${API_BASE}/api/user_info_delete/`,
         {
           method: "DELETE",
           headers: {

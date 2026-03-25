@@ -1,5 +1,5 @@
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
-
+import { API_BASE } from "../config/api";
 /**
  * GET 방식으로 사용자 리스트 조회
  * -> data는 쿼리스트링으로 변환해서 전달
@@ -12,7 +12,7 @@ export const Panel_PostData = async (data = {}, toast) => {
 
     // ② GET + fetchWithAuth 사용
     const res = await fetchWithAuth(
-      `/api/user_info_list/?${query}`,  // GET 방식으로 data 전달
+      `${API_BASE}/api/user_info_list/?${query}`,  // GET 방식으로 data 전달
       {
         method: "GET",
         headers: {

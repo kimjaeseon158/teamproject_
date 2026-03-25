@@ -1,10 +1,11 @@
 // 경로는 네 프로젝트에 맞게!
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { API_BASE } from "../config/api";
 
 export const AddUser_PostData = async (data, { toast } = {}) => {
   try {
     const response = await fetchWithAuth(
-      "/api/user_info_add/",
+      `${API_BASE}/api/user_info_add/`,
       {
         method: "PATCH", // 백엔드가 PATCH로 받게 되어 있으면 그대로
         headers: {

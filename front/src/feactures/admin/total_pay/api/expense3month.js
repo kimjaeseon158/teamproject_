@@ -1,5 +1,6 @@
 // src/js/total_payPost.js
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { API_BASE } from "../config/api";
 
 export async function three_month_totals(payload, toast) {
   try {
@@ -8,7 +9,7 @@ export async function three_month_totals(payload, toast) {
       : "";
 
     const res = await fetchWithAuth(
-      `/api/expense_3months_totals/${query}`, // 🔥 슬래시 제거
+      `${API_BASE}/api/expense_3months_totals/${query}`, // 🔥 슬래시 제거
       {
         method: "GET",
         headers: { "Content-Type": "application/json" },

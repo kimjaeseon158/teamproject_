@@ -1,4 +1,5 @@
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { API_BASE } from "../config/api";
 
 export async function getWorkPlaceFiltering({ user_name, work_place }, toast) {
   try {
@@ -8,7 +9,7 @@ export async function getWorkPlaceFiltering({ user_name, work_place }, toast) {
     }).toString();
 
     const res = await fetchWithAuth(
-      `/api/work_place_rate_list_filtering/?${query}`,
+      `${API_BASE}/api/work_place_rate_list_filtering/?${query}`,
       { method: "GET" },
       { toast }
     );

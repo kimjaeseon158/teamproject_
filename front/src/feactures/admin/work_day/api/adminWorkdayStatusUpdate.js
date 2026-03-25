@@ -1,6 +1,6 @@
 // src/api/adminWorkdayStatusUpdate.js
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
-
+import { API_BASE } from "../config/api";
 /**
  * 어드민 근무 승인 / 반려 상태 업데이트
  * PATCH /api/admin_workday_status_update/
@@ -16,7 +16,7 @@ import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
  */
 export async function adminWorkdayStatusUpdate(payload, { toast } = {}) {
   const res = await fetchWithAuth(
-    "/api/admin_workday_status_update/",
+    `${API_BASE}/api/admin_workday_status_update/`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

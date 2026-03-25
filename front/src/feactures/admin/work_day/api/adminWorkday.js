@@ -1,5 +1,6 @@
 // src/api/adminWorkday.js
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { API_BASE } from "../config/api";
 
 export async function getAdminWorkDays(
   { status, start_date, end_date } = {},
@@ -11,8 +12,8 @@ export async function getAdminWorkDays(
   if (end_date) qs.set("end_date", end_date);
 
   const url = qs.toString()
-    ? `/api/admin_page_workday/?${qs.toString()}`
-    : "/api/admin_page_workday/";
+    ? `${API_BASE}/api/admin_page_workday/?${qs.toString()}`
+    : `${API_BASE}/api/admin_page_workday/`;
 
   const res = await fetchWithAuth(url, { method: "GET" }, { toast });
 

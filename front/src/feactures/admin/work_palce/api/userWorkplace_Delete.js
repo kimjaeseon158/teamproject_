@@ -1,11 +1,12 @@
 // src/js/total_payPost.js
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { API_BASE } from "../config/api";
 
 export async function getWorkplaceList_Delete(payload, toast) {
   try {
     // fetchWithAuth 호출
     const res = await fetchWithAuth(
-      "/api/work_place_rate_update_delete/",
+      `${API_BASE}/api/work_place_rate_update_delete/`,
       {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },

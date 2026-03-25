@@ -1,4 +1,5 @@
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { API_BASE } from "../config/api";
 
 export async function getWorkPlaceList(params = {}, toast) {
   try {
@@ -6,8 +7,8 @@ export async function getWorkPlaceList(params = {}, toast) {
     const query = new URLSearchParams(params).toString();
     const baseUrl =
       params.user_name || params.work_place
-        ? "/api/work_place_rate_list_filtering/"
-        : "/api/work_place_rate_list_create/";
+        ? `${API_BASE}/api/work_place_rate_list_filtering/`
+        : `${API_BASE}/api/work_place_rate_list_create/`;
 
     const res = await fetchWithAuth(
       `${baseUrl}${query ? `?${query}` : ""}`,

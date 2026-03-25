@@ -1,6 +1,6 @@
 // src/js/total_payPost.js
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
-import { API_BASE } from "../config/api";
+import { API_BASE } from "../../../../config/api/apiEnv";
 
 export async function three_month_totals(payload, toast) {
   try {

@@ -1,6 +1,6 @@
 // src/admin/js/adminPageDelete.js
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
-import { API_BASE } from "../config/api";
+import { API_BASE } from "../../../../config/api/apiEnv";
 /**
  * 사원 삭제 (UUID 기준)
  * @param {string[]} userUuids - 삭제할 user_uuid 배열

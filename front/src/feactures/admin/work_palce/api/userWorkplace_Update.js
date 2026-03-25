@@ -1,6 +1,6 @@
 // src/api/adminWorkdayStatusUpdate.js
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
-import { API_BASE } from "../config/api";
+import { API_BASE } from "../../../../config/api/apiEnv";
 
 export async function getWorkPlaceList_Update(payload, { toast } = {}) {
   const res = await fetchWithAuth(

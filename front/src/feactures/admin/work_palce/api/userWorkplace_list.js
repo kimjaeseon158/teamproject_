@@ -1,5 +1,5 @@
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
-import { API_BASE } from "../config/api";
+import { API_BASE } from "../../../../config/api/apiEnv";
 
 export async function getWorkPlaceList(params = {}, toast) {
   try {

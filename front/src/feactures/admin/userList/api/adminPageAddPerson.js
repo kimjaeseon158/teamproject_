@@ -1,6 +1,6 @@
 // 경로는 네 프로젝트에 맞게!
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
-import { API_BASE } from "../config/api";
+import { API_BASE } from "../../../../config/api/apiEnv";
 
 export const AddUser_PostData = async (data, { toast } = {}) => {
   try {

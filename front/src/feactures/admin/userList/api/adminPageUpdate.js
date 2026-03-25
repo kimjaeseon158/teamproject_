@@ -1,6 +1,6 @@
 // src/admin/js/adminPageUpdate.js
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
-import { API_BASE } from "../config/api";
+import { API_BASE } from "../../../../config/api/apiEnv";
 
 /**
  * 사원 정보 수정 (UUID 기준)

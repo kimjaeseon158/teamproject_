@@ -1,6 +1,6 @@
 // src/api/adminWorkdayStatusUpdate.js
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
-import { API_BASE } from "../config/api";
+import { API_BASE } from "../../../../config/api/apiEnv";
 /**
  * 어드민 근무 승인 / 반려 상태 업데이트
  * PATCH /api/admin_workday_status_update/

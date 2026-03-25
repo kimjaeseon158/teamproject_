@@ -1,6 +1,6 @@
 // src/api/adminWorkday.js
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
-import { API_BASE } from "../config/api";
+import { API_BASE } from "../../../../config/api/apiEnv";
 
 export async function getAdminWorkDays(
   { status, start_date, end_date } = {},

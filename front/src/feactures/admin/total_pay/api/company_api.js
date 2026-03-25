@@ -1,6 +1,6 @@
 // src/js/total_payPost.js
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
-import { API_BASE } from "../config/api";
+import { API_BASE } from "../../../../config/api/apiEnv";
 /**
  * 회사 매출(수입) 등록 API
  * POST /api/income_add/

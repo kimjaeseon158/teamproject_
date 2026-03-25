@@ -1,5 +1,5 @@
 // src/login/api/loginApi.js
-import { API_BASE } from "../config/api";
+import { API_BASE } from "../../../config/api/apiEnv";
 export const adminLoginAPI = async (id, password, admin_code) => {
   const response = await fetch(`${API_BASE}/api/check_admin_login/`, {
     method: "POST",

@@ -1,5 +1,5 @@
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
-import { API_BASE } from "../config/api";
+import { API_BASE } from "../../../../config/api/apiEnv";
 /**
  * GET 방식으로 사용자 리스트 조회
  * -> data는 쿼리스트링으로 변환해서 전달

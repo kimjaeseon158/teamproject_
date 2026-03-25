@@ -1,6 +1,6 @@
 // src/js/expense_filter.js
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
-import { API_BASE } from "../config/api";
+import { API_BASE } from "../../../../config/api/apiEnv";
 
 export async function expense_filter_Data({ start, end }, toast) {
   try {

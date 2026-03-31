@@ -1,10 +1,11 @@
 import { Box, Flex, Button, Text, Spinner } from "@chakra-ui/react";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import CalendarView from "../../../../common/CalendarView";
 import useApproveCalendar from "../hook/useApproveCalendar";
 
 export default function CalendarSection({
   onUpdatePendingList,
+  onSelectEvent,
 }) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -15,31 +16,6 @@ export default function CalendarSection({
   useEffect(() => {
     onUpdatePendingList?.(rawData || []);
   }, [rawData, onUpdatePendingList]);
-
-  /* 🔥 rawData 기준 날짜별 집계 생성 */
-  const daySummaryMap = useMemo(() => {
-    const map = {};
-
-    (rawData || []).forEach((item) => {
-      if (!item.work_date) return;
-
-      const date = item.work_date; // 🔥 반드시 work_date 그대로 사용
-
-      if (!map[date]) {
-        map[date] = {
-          day: 0,
-          night: 0,
-          special: 0,
-        };
-      }
-
-      if (item.work_shift === "주간") map[date].day += 1;
-      if (item.work_shift === "야간") map[date].night += 1;
-      if (item.work_shift === "특근") map[date].special += 1;
-    });
-
-    return map;
-  }, [rawData]);
 
   /* 🔥 월 이동 */
   const handlePrev = () => {
@@ -87,7 +63,7 @@ export default function CalendarSection({
 
       <CalendarView
         events={events}
-        daySummaryMap={daySummaryMap}   
+        onEventClick={onSelectEvent}
       />
     </Box>
   );

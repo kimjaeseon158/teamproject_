@@ -9,6 +9,7 @@ import "./css/calendar.css";
 export default function CalendarView({
   events = [],
   onDateClick,
+  onEventClick,
   onTitleChange,
   selectedDate,
   daySummaryMap,
@@ -35,10 +36,17 @@ export default function CalendarView({
       headerToolbar={false}
       height={isMobile ? "auto" : "calc(100vh - 140px)"}
       events={events}
+      dayMaxEvents={2} // 🔥 2명 이상이면 +N 표시
+      moreLinkClick="popover" // 🔥 클릭 시 팝오버로 전체 표시
 
       // 날짜 클릭
       dateClick={(arg) => {
         onDateClick?.(arg.dateStr);
+      }}
+
+      // 이벤트 클릭
+      eventClick={(arg) => {
+        onEventClick?.(arg.event);
       }}
 
       // 🔥 월 변경 감지 (루프 방지)
@@ -54,40 +62,11 @@ export default function CalendarView({
         }
       }}
 
-      // 날짜 셀 커스터마이징
+      // 날짜 셀 커스터마이징 (숫자만 표시하여 높이 고정)
       dayCellContent={(arg) => {
-        const d = arg.date;
-
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, "0");
-        const day = String(d.getDate()).padStart(2, "0");
-
-        const dateStr = `${y}-${m}-${day}`;
-        const summary = daySummaryMap?.[dateStr];
-
         return (
-          <div style={{ textAlign: "left" }}>
-            <div>{d.getDate()}</div>
-
-            {summary && (
-              <div style={{ fontSize: "10px", marginTop: "4px" }}>
-                {summary.day > 0 && (
-                  <div style={{ color: "#3182ce" }}>
-                    주간 {summary.day}
-                  </div>
-                )}
-                {summary.night > 0 && (
-                  <div style={{ color: "#805ad5" }}>
-                    야간 {summary.night}
-                  </div>
-                )}
-                {summary.special > 0 && (
-                  <div style={{ color: "#dd6b20" }}>
-                    특근 {summary.special}
-                  </div>
-                )}
-              </div>
-            )}
+          <div style={{ textAlign: "left", padding: "2px" }}>
+            <div>{arg.dayNumberText.replace('일', '')}</div>
           </div>
         );
       }}

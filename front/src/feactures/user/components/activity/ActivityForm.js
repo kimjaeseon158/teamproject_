@@ -102,8 +102,13 @@ export default function ActivityForm({
         <Box key={idx} p={3} bg="gray.800">
           <HStack mb={2}>
             <Select value={row.type} onChange={(e) => updateExtraWork(idx, { type: e.target.value })}>
-              <option value="overtime">잔업</option>
-              <option value="lunch">중식</option>
+              <option value="overtime">평일 잔업</option>
+              <option value="lunch">휴일 특근</option>
+              <option value="lunch">휴일 잔업</option>
+              <option value="lunch">철야</option>
+              <option value="lunch">철야 잔업</option>
+              <option value="lunch">조기 출근</option> 
+              <option value="lunch">중식 연장</option> 
             </Select>
             <IconButton icon={<DeleteIcon />} onClick={() => handleRemoveExtraRow(idx)} />
           </HStack>

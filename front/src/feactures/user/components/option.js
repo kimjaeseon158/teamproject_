@@ -17,6 +17,7 @@ import "./activity.css";
 import {
   minutesToHM,
   diffMinutes,
+  calculateNetMinutes,
   formatTimeInput,
 } from "../utils/timeUtils";
 
@@ -56,7 +57,7 @@ const Option = ({ selectedDate }) => {
   };
   useEffect(() => {
     if (startTime && finishTime) {
-      setTotalWorkTime(minutesToHM(diffMinutes(startTime, finishTime)));
+      setTotalWorkTime(minutesToHM(calculateNetMinutes(startTime, finishTime)));
     } else {
       setTotalWorkTime("");
     }
@@ -289,33 +290,24 @@ return (
               borderColor="gray.600"
               rightIcon={<ChevronDownIcon />}
             >
-              {row.type === "overtime"
-                ? "잔업"
-                : row.type === "lunch"
-                ? "중식"
-                : "근무 선택"}
+              {row.type === "weekday_ot" ? "평일 잔업" :
+               row.type === "holiday_special" ? "휴일 특근" :
+               row.type === "holiday_ot" ? "휴일 잔업" :
+               row.type === "night_shift" ? "철야" :
+               row.type === "night_ot" ? "철야 잔업" :
+               row.type === "early_arrival" ? "조기 출근" :
+               row.type === "lunch_ext" ? "중식 연장" :
+               "근무 선택"}
             </MenuButton>
 
             <MenuList bg="gray.800" borderColor="gray.600">
-              <MenuItem
-                bg="gray.800"
-                _hover={{ bg: "gray.700" }}
-                onClick={() =>
-                  updateExtraWork(idx, { type: "overtime" })
-                }
-              >
-                잔업
-              </MenuItem>
-
-              <MenuItem
-                bg="gray.800"
-                _hover={{ bg: "gray.700" }}
-                onClick={() =>
-                  updateExtraWork(idx, { type: "lunch" })
-                }
-              >
-                중식
-              </MenuItem>
+              <MenuItem bg="gray.800" _hover={{ bg: "gray.700" }} onClick={() => updateExtraWork(idx, { type: "weekday_ot" })}>평일 잔업</MenuItem>
+              <MenuItem bg="gray.800" _hover={{ bg: "gray.700" }} onClick={() => updateExtraWork(idx, { type: "holiday_special" })}>휴일 특근</MenuItem>
+              <MenuItem bg="gray.800" _hover={{ bg: "gray.700" }} onClick={() => updateExtraWork(idx, { type: "holiday_ot" })}>휴일 잔업</MenuItem>
+              <MenuItem bg="gray.800" _hover={{ bg: "gray.700" }} onClick={() => updateExtraWork(idx, { type: "night_shift" })}>철야</MenuItem>
+              <MenuItem bg="gray.800" _hover={{ bg: "gray.700" }} onClick={() => updateExtraWork(idx, { type: "night_ot" })}>철야 잔업</MenuItem>
+              <MenuItem bg="gray.800" _hover={{ bg: "gray.700" }} onClick={() => updateExtraWork(idx, { type: "early_arrival" })}>조기 출근</MenuItem>
+              <MenuItem bg="gray.800" _hover={{ bg: "gray.700" }} onClick={() => updateExtraWork(idx, { type: "lunch_ext" })}>중식 연장</MenuItem>
             </MenuList>
           </Menu>
 

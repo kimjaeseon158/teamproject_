@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import {
   diffMinutes,
+  calculateNetMinutes,
   minutesToHM,
 } from "../utils/timeUtils";
-import workTimeList from "../js/workTimeList";
+import workTimeList from "../data/workTimeList";
 
 export function useActivityForm() {
   const [location, setLocation] = useState("");
@@ -26,7 +27,7 @@ export function useActivityForm() {
 
   useEffect(() => {
     if (startTime && finishTime) {
-      setTotalWorkTime(minutesToHM(diffMinutes(startTime, finishTime)));
+      setTotalWorkTime(minutesToHM(calculateNetMinutes(startTime, finishTime)));
     } else {
       setTotalWorkTime("");
     }

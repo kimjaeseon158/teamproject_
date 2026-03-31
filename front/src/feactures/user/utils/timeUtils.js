@@ -38,6 +38,17 @@ export const diffMinutes = (s, f) => {
   return Math.max((end < start ? end + 1440 : end) - start, 0);
 };
 
+// 실근무 시간 계산 (휴게시간/점심시간 차감)
+export const calculateNetMinutes = (s, f) => {
+  const total = diffMinutes(s, f);
+  // 5시간(300분) 이상 근무 시 1시간(60분) 점심/휴게 시간 차감
+  // 9시간(540분) 근무 -> 8시간(480분) 실근무
+  if (total >= 300) {
+    return total - 60;
+  }
+  return total;
+};
+
 /* =========================
    calculate (hours / HM)
 ========================= */

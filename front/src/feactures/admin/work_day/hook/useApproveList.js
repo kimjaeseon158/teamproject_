@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { API_BASE } from "../../../../config/api/apiEnv";
 import {
   minutesToHM,
   getMinutesByType,
@@ -22,7 +23,7 @@ export function useApproveList(toast) {
         end_date: endDate,
       }).toString();
 
-      const res = await fetchWithAuth(`/api/admin_page_workday/?${qs}`, {}, { toast });
+      const res = await fetchWithAuth(`${API_BASE}/api/admin_page_workday/?${qs}`, {}, { toast });
       const json = await res.json();
 
       const mapped = (json.data || []).map((w, idx) => {

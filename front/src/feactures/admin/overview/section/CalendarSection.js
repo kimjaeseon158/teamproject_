@@ -7,7 +7,11 @@ export default function CalendarSection({
   onUpdatePendingList,
   onSelectEvent,
 }) {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  // 🔥 월 이동 시 일자 오버플로우 방지를 위해 항상 1일로 설정
+  const [currentDate, setCurrentDate] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
 
   const { events, loading, rawData } =
     useApproveCalendar(currentDate);
@@ -20,17 +24,16 @@ export default function CalendarSection({
   /* 🔥 월 이동 */
   const handlePrev = () => {
     setCurrentDate((prev) => {
-      const newDate = new Date(prev);
-      newDate.setMonth(prev.getMonth() - 1);
-      return newDate;
+      // 이전 달의 1일로 설정
+      return new Date(prev.getFullYear(), prev.getMonth() - 1, 1);
     });
   };
 
   const handleNext = () => {
     setCurrentDate((prev) => {
-      const newDate = new Date(prev);
-      newDate.setMonth(prev.getMonth() + 1);
-      return newDate;
+      // 다음 달의 1일로 설정
+      
+      return new Date(prev.getFullYear(), prev.getMonth() + 1, 1);
     });
   };
 
@@ -63,6 +66,7 @@ export default function CalendarSection({
 
       <CalendarView
         events={events}
+        selectedDate={currentDate} // 🔥 추가: 캘린더 월 이동 동기화
         onEventClick={onSelectEvent}
       />
     </Box>

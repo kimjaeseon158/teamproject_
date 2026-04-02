@@ -6,10 +6,18 @@ function getMonthRange(date) {
   const year = date.getFullYear();
   const month = date.getMonth();
 
-  const start = new Date(year, month, 1+1);
-  const end = new Date(year, month + 1, 0+1);
+  // 해당 월의 1일
+  const start = new Date(year, month, 1);
+  // 해당 월의 마지막 날 (다음달의 0일 = 이번달 마지막 날)
+  const end = new Date(year, month + 1, 0);
 
-  const toYMD = (d) => d.toISOString().split("T")[0];
+  // 로컬 날짜 기준으로 YYYY-MM-DD 포맷팅 (ISO 사용 시 시차 발생 가능성 제거)
+  const toYMD = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
 
   return {
     startDate: toYMD(start),

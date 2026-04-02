@@ -11,7 +11,7 @@ export default function CalendarView({
   onDateClick,
   onEventClick,
   onTitleChange,
-  selectedDate,
+  selectedDate, // 🔥 외부에서 관리하는 날짜 (월 이동 동기화용)
   daySummaryMap,
 }) {
   const isMobile = useBreakpointValue({
@@ -22,16 +22,29 @@ export default function CalendarView({
   const calendarRef = useRef(null);
   const lastYmRef = useRef(null);
 
-  // 🔥 FullCalendar API 연결
+  // 🔥 FullCalendar API 연결 및 외부 날짜와 동기화
   useEffect(() => {
     window.calendarRef = calendarRef.current;
-  }, []);
+    
+    if (calendarRef.current && selectedDate) {
+      const calendarApi = calendarRef.current.getApi();
+      if (calendarApi) {
+        // selectedDate가 객체 { formatted } 인지 Date 객체인지 판별
+        const targetDate = selectedDate.formatted || selectedDate;
+        calendarApi.gotoDate(targetDate); // 🔥 Prop으로 받은 날짜로 캘린더 이동
+      }
+    }
+  }, [selectedDate]);
+
+  // FullCalendar가 이해할 수 있는 날짜 값 추출 (초기값용)
+  const initialDateValue = selectedDate?.formatted || selectedDate || new Date();
 
   return (
     <FullCalendar
       ref={calendarRef}
       plugins={[dayGridPlugin, interactionPlugin]}
       initialView="dayGridMonth"
+      initialDate={initialDateValue} // 🔥 초기 날짜 설정 (Date 객체 또는 ISO 문자열)
       locale={koLocale}
       headerToolbar={false}
       height={isMobile ? "auto" : "calc(100vh - 140px)"}

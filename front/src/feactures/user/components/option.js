@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Box, Stack, Button, Menu, MenuButton, MenuList, MenuItem,
-  HStack, Text, Input, Select, Switch, Checkbox, IconButton,
+  HStack, Text, Input, Switch, Checkbox, IconButton,
   useToast, AlertDialog, AlertDialogOverlay, AlertDialogContent,
   AlertDialogHeader, AlertDialogBody, AlertDialogFooter,
 } from "@chakra-ui/react";

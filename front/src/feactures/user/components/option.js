@@ -89,7 +89,7 @@ const Option = ({ selectedDate }) => {
     if (!extraEnabled && extraWorks.length > 0) {
       setExtraWorks([]);
     }
-  }, [extraEnabled]);
+  }, [extraEnabled,extraWorks.length]);
 
   const updateExtraWork = (idx, patch) => {
     setExtraWorks((prev) =>

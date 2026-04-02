@@ -48,9 +48,8 @@ from .auth_utils import (
 from .salary import (
     sync_salary_expense_for_workday,
     group_rates_by_user,
-    month_start_end,
-    add_months
 )
+from .date_utils import month_start_end, add_months
 import requests
 
 

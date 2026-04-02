@@ -1,5 +1,5 @@
 import submitWorkInfo from "../api/submitWorkInfo";
-import { diffMinutes } from "../utils/timeUtils";
+import { diffMinutes, calculateNetMinutes } from "../utils/timeUtils";
 
 export function useOptionHandlers({
   selectedDate,
@@ -28,14 +28,27 @@ export function useOptionHandlers({
       ? extraWorks.filter((r) => r.type && r.start && r.finish)
       : [];
 
+    const getExtraWorkTypeLabel = (type) => {
+      const labels = {
+        weekday_ot: "평일 잔업",
+        holiday_special: "휴일 특근",
+        holiday_ot: "휴일 잔업",
+        night_shift: "철야",
+        night_ot: "철야 잔업",
+        early_arrival: "조기 출근",
+        lunch_ext: "중식 연장",
+      };
+      return labels[type] || "기타";
+    };
+
     const details = [
       {
         work_type: baseShift,
-        minutes: diffMinutes(startTime, finishTime),
+        minutes: calculateNetMinutes(startTime, finishTime),
         is_overtime_approved: isSpecial,
       },
       ...extraRows.map((r) => ({
-        work_type: r.type === "overtime" ? "잔업" : "중식",
+        work_type: getExtraWorkTypeLabel(r.type),
         minutes: diffMinutes(r.start, r.finish),
         is_overtime_approved: true,
       })),

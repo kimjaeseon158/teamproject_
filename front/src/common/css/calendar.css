@@ -1,3 +1,43 @@
+/* 캘린더 테이블 레이아웃 고정 및 높이 조절 */
+.fc .fc-view-harness {
+  flex-grow: 1;
+  height: 100% !important;
+}
+
+.fc .fc-daygrid-body {
+  width: 100% !important;
+}
+
+.fc-daygrid-day-frame {
+  min-height: 100px !important;
+  height: 100% !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.fc .fc-daygrid-day-top {
+  flex-direction: row;
+  justify-content: flex-start;
+  padding: 4px 8px;
+}
+
+.fc-daygrid-day-events {
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.fc-daygrid-event {
+  font-size: 0.8rem !important;
+  margin: 1px 2px !important;
+}
+
+/* 요일 헤더 폰트 크기 조절 */
+.fc-col-header-cell-cushion {
+  font-size: 0.9rem;
+  color: #4a5568;
+  padding: 8px 0 !important;
+}
+
 /* 일요일 */
 .fc-daygrid-day.fc-day-sun .fc-daygrid-day-number {
   color: #e53e3e ;

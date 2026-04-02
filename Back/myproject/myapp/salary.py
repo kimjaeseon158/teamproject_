@@ -133,31 +133,3 @@ def group_rates_by_user(qs):
         grouped[user_uuid]["rates"].append(rate_item)
 
     return list(grouped.values())
-    """
-def month_start_end(year: int, month: int):
-    start = date(year, month, 1)
-    if month == 12:
-        end = date(year + 1, 1, 1)
-    else:
-        end = date(year, month + 1, 1)
-    return start, end  # end는 "다음달 1일(미포함)" 용
-    """
-
-
-def month_start_end(year: int, month: int):
-    start = date(year, month, 1)
-    if month == 12:
-        end = date(year + 1, 1, 1)
-    else:
-        end = date(year, month + 1, 1)
-    return start, end  # end는 "다음달 1일(미포함)" 용
-
-def add_months(year: int, month: int, delta: int):
-    m = month - delta
-    y = year
-
-    if m <= 0:
-        m += 12
-        y -= 1
-
-    return y, m

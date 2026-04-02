@@ -22,11 +22,16 @@ export default function CalendarPage() {
     api.today();
 
     const d = api.getDate();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const formatted = `${y}-${m}-${day}`;
+
     calendar.setSelectedDate({
-      year: d.getFullYear(),
+      year: y,
       month: d.getMonth() + 1,
       day: d.getDate(),
-      formatted: d.toISOString().slice(0, 10),
+      formatted: formatted,
     });
   };
 

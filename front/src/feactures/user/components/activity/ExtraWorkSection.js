@@ -25,8 +25,8 @@ export default function ExtraWorkSection({
                 updateExtraWork(idx, { type: e.target.value })
               }
             >
-              <option value="overtime">잔업</option>
-              <option value="lunch">중식</option>
+              <option value="overtime">평일 잔업</option>
+              <option value="lunch">휴일 특근</option>
             </Select>
 
             <IconButton

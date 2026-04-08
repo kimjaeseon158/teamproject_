@@ -68,9 +68,12 @@ class TokenRefreshAPIView(APIView):
 
         try:
             refresh_obj = RefreshToken(refresh_token)
+
+            #Token Claim 추출
+            role = refresh_obj.get("role", "")
             new_access = refresh_obj.access_token
 
-            response = Response({"success": True, "access": str(new_access)})
+            response = Response({"success": True, "access": str(new_access), "Role" : role})
             return response
         except Exception:
             return Response(

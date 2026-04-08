@@ -34,6 +34,7 @@ from django.db.models import Sum
 from django.db import transaction
 from django.db.utils import IntegrityError
 from datetime import datetime
+from django.utils import timezone
 from django.conf import settings
 from django.shortcuts import redirect
 from google.auth.transport.requests import Request
@@ -1011,3 +1012,54 @@ class UserWorkInfoAPIView(APIView):
         serializer.save()
 
         return Response({"success": True})
+
+class UserMonthlyWorkSummaryAPIView(APIView):
+    authentication_classes = [UserJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user        = request.user
+        date_str    = request.query_params.get("date")
+        year, month = map(int, date_str.split("-"))
+
+        work_days = User_WorkDay.objects.filter(
+            user_uuid=user,
+            work_date__year=year,
+            work_date__month=month
+        ).prefetch_related("details").order_by('work_date')
+
+        daily_list      = []
+        total_amount    = 0
+        approved_amount = 0
+        pending_amount  = 0
+
+        for wd in work_days:
+            day_details = wd.details.all()
+
+            day_amount = sum(
+                getattr(detail, "total_pay", 0) for detail in day_details
+            )
+
+            is_approved = wd.is_approved
+
+            daily_list.append({
+                "date": wd.work_date,
+                "work_place": wd.work_place if wd.work_place else "Unknown",
+                "amount": day_amount,
+                "is_approved": is_approved
+            })
+
+            total_amount += day_amount
+
+            if is_approved is True:
+                approved_amount += day_amount
+            elif is_approved is None:
+                pending_amount += day_amount
+
+        return Response({
+            "date": f"{year}-{month:02d}",  #2026-04
+            "total_amount": total_amount,
+            "approved_amount": approved_amount,
+            "pending_amount": pending_amount,
+            "daily_list": daily_list
+        })

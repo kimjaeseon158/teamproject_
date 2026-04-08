@@ -30,6 +30,7 @@ from .views import (
     WorkPlaceRateUpdateDeleteAPIView,
     WorkPlaceRateListfilteringAPIView,
     Expense3MonthsTotalsAPIView,
+    UserMonthlyWorkSummaryAPIView
 )
 
 # fmt:off
@@ -73,7 +74,9 @@ urlpatterns = [
     path('expense_delete/',          ExpenseDeleteAPIView.as_view(),             name='expense-delete'),
 
     # User-page
-    path('user_work_info/',   UserWorkInfoAPIView.as_view(), name='user-work-info'),
+    path('user_work_info/',              UserWorkInfoAPIView.as_view(),           name='user-work-info'),
+    path('user_monthly_work_summary/',   UserMonthlyWorkSummaryAPIView.as_view(), name='user-work-info'),
+
 
     # Refersh-Token
     path('refresh_token/',   TokenRefreshAPIView.as_view(), name='refresh-token')

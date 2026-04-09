@@ -203,7 +203,7 @@ export const useLogin = () => {
 
       // 🔥 7️⃣ 이동 (한 번만!)
       setFadeOut(true);
-      
+      //브라우저 종류 후 재접속 시도시 자동 라우팅 안됨
       if (userRole === "admin") {
         navigate("/dashboard");
       } else {

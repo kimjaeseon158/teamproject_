@@ -14,9 +14,11 @@ import { useNotifySocket } from "../../services/ws/useNotifySocket";
 
 const UserContext = createContext(null);
 
-export function UserProvider({ children, loginType }) {
+export function UserProvider({ children, loginType: initialLoginType }) {
   const [loading, setLoading] = useState(true);
 
+
+  const [loginType, setLoginType] = useState(initialLoginType);
   const [userUuid, setUserUuid] = useState(null);
   const [userName, setUserName] = useState(null);
 
@@ -31,6 +33,11 @@ export function UserProvider({ children, loginType }) {
     setAlarmCount(0);
   }, [loginType]);
 
+  useEffect(() => {
+    if (initialLoginType) {
+      setLoginType(initialLoginType);
+    }
+  }, [initialLoginType])
   /* =========================
      인증 동기화
   ========================= */
@@ -46,10 +53,13 @@ export function UserProvider({ children, loginType }) {
 
       const json = await res.json();
       const access = json?.access;
+      const serverRole = json?.role;
+
       if (!access) throw new Error("access token 없음");
-
+      
       setAccessToken(access);
-
+       if (serverRole) setLoginType(serverRole);
+      
       const payload = JSON.parse(atob(access.split(".")[1]));
       setUserUuid(payload?.sub ?? null);
       setUserName(payload?.user_name ?? null);
@@ -134,7 +144,7 @@ export function UserProvider({ children, loginType }) {
       }
     },
   });
-
+  console.log(loginType);
   return (
     <UserContext.Provider
       value={{
@@ -146,6 +156,7 @@ export function UserProvider({ children, loginType }) {
         wsConnected,
         loginType, // 🔥 Alarm에서 사용
         setUserName,
+        setLoginType,
         revalidate,
       }}
     >

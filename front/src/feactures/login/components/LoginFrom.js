@@ -10,10 +10,11 @@ import {
   InputGroup,
   InputLeftElement,
   Icon,
+  Checkbox,
 } from "@chakra-ui/react";
 import { FiUser, FiLock, FiShield } from "react-icons/fi";
 
-const LoginForm = ({ role, values, errors, onChange, onSubmit, isLoading }) => {
+const LoginForm = ({ role, values, errors, onChange, onSubmit, isLoading, rememberId, onRememberIdChange }) => {
   return (
     <Flex
       as="form"
@@ -99,6 +100,15 @@ const LoginForm = ({ role, values, errors, onChange, onSubmit, isLoading }) => {
             <FormErrorMessage>{errors.admin_codeError}</FormErrorMessage>
           </FormControl>
         )}
+
+        {/* 아이디 기억하기 */}
+        <Checkbox
+          colorScheme="blue"
+          isChecked={rememberId}
+          onChange={onRememberIdChange}
+        >
+          <Text fontSize="sm" color="gray.600">아이디 기억하기</Text>
+        </Checkbox>
       </Flex>
 
       {/* ================= 하단 버튼 영역 ================= */}

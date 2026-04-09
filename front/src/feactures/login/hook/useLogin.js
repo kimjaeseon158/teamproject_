@@ -1,5 +1,5 @@
 // src/login/hook/useLogin.js
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@chakra-ui/react";
 
@@ -11,13 +11,19 @@ import { setAccessToken } from "../../../services/api/token";
 export const useLogin = () => {
   const navigate = useNavigate();
   const toast = useToast();
-  const { revalidate, setUserName } = useUser();
+  const { loading, userUuid, loginType, revalidate, setUserName, setLoginType } =
+      useUser();
 
-  /* ================= 상태 ================= */
 
-  const [role, setRoleState] = useState("admin"); // "admin" | "user"
+
+
+  const [role, setRoleState] = useState("user"); // "admin" | "user"
   const [fadeOut, setFadeOut] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberId, setRememberId] = useState(false);
+  
+  // 세션 동안 역할별 입력값을 기억하기 위한 상태
+  const [sessionIds, setSessionIds] = useState({ user: "", admin: "" });
 
   const [values, setValues] = useState({
     id: "",
@@ -33,11 +39,27 @@ export const useLogin = () => {
 
   const [loginError, setLoginError] = useState("");
 
-  /* ================= reset ================= */
+  // 현재 역할에 따른 스토리지 키 결정
+  const storageKey = role === "admin" ? "rememberedAdminId" : "rememberedUserId";
+
+  /* ================= 역할 전환 및 초기 로드 ================= */
+
+  useEffect(() => {
+    const savedId = localStorage.getItem(storageKey);
+    if (savedId) {
+      setValues((prev) => ({ ...prev, id: savedId }));
+      setRememberId(true);
+    } else {
+      // 로컬 스토리지에 없으면 해당 역할의 세션 저장값(입력했던 값)을 불러옴
+      setValues((prev) => ({ ...prev, id: sessionIds[role] }));
+      setRememberId(false);
+    }
+  }, [role, storageKey, sessionIds]);
 
   const resetValues = () => {
+    const savedId = localStorage.getItem(storageKey);
     setValues({
-      id: "",
+      id: savedId || "",
       password: "",
       admin_code: "",
     });
@@ -47,14 +69,30 @@ export const useLogin = () => {
       admin_codeError: "",
     });
     setLoginError("");
+    setRememberId(!!savedId);
   };
 
   /* ================= role 변경 ================= */
 
   const setRole = (nextRole) => {
     if (nextRole === role) return;
+
+    // 현재 입력된 ID를 현재 역할의 세션 상태에 저장
+    setSessionIds((prev) => ({ ...prev, [role]: values.id }));
+    
     setRoleState(nextRole);
-    resetValues();
+    // Clear password and admin_code when switching roles.
+    setValues((prev) => ({
+      ...prev,
+      password: "",
+      admin_code: "",
+    }));
+    setErrors({
+      idError: "",
+      passwordError: "",
+      admin_codeError: "",
+    });
+    setLoginError("");
   };
 
   /* ================= handlers ================= */
@@ -66,10 +104,20 @@ export const useLogin = () => {
     }));
   };
 
+  const onRememberIdChange = (e) => {
+    const isChecked = e.target.checked;
+    setRememberId(isChecked);
+    
+    // 체크 해제 시 즉시 로컬스토리지에서 삭제 
+    if (!isChecked) {
+      localStorage.removeItem(storageKey);
+    }
+  };
+
   const preventSpace = (e) => {
     if (e.key === " ") e.preventDefault();
   };
-
+  console.log(loginType)
   /* ================= 로그인 ================= */
 
   const handleSubmit = async (e) => {
@@ -126,15 +174,43 @@ export const useLogin = () => {
 
       setAccessToken(response.access);
 
-      // 🔥 4️⃣ userName 세팅
+      // 4️⃣ 아이디 기억하기 처리 (성공 시 다시 한 번 확인)
+      if (rememberId) {
+        localStorage.setItem(storageKey, values.id);
+      } else {
+        localStorage.removeItem(storageKey);
+      }
+
+      // 🔥 5️⃣ userName 세팅
+      setUserName(
+        response?.user_name ??
+        response?.admin_name ??
+        ""
+      );
+      // 🔥 5️⃣ userName + role 세팅
+      const userRole = response.role || role;
+
       setUserName(
         response?.user_name ??
         response?.admin_name ??
         ""
       );
 
-      // 5️⃣ Context 동기화 (uuid 복구)
+      setLoginType(userRole);
+
+      // 🔥 6️⃣ 상태 안정화 (중요)
       await revalidate();
+
+      // 🔥 7️⃣ 이동 (한 번만!)
+      setFadeOut(true);
+      
+      if (userRole === "admin") {
+        navigate("/dashboard");
+      } else {
+        navigate("/data");
+      }
+
+
 
       toast({
         title: "로그인 성공",
@@ -144,14 +220,6 @@ export const useLogin = () => {
         isClosable: true,
         position: "top",
       });
-
-      // 6️⃣ 이동
-      setFadeOut(true);
-      if (role === "admin") {
-        navigate("/dashboard");
-      } else {
-        navigate("/data");
-      }
     } catch (err) {
       console.error("로그인 API 에러", err);
       setLoginError("서버와의 연결이 원활하지 않습니다.");
@@ -179,8 +247,10 @@ export const useLogin = () => {
     loginError,
     fadeOut,
     isLoading,
+    rememberId,
 
     onChange,
+    onRememberIdChange,
     preventSpace,
     handleSubmit,
   };

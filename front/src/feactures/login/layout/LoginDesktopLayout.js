@@ -107,6 +107,8 @@ const LoginDesktopLayout = ({ login }) => {
                 onChange={login.onChange}
                 onSubmit={login.handleSubmit}
                 isLoading={login.isLoading}
+                rememberId={login.rememberId}
+                onRememberIdChange={login.onRememberIdChange}
             />
           </Box>
         </Box>

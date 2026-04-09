@@ -288,12 +288,23 @@ class AdminLogoutAPIView(APIView):
         except Admin_Login_Info.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        deleted_count, _ = AdminRefreshToken.objects.filter(admin_uuid_id=admin).delete()
+        try:
+            # 1. 시도: 개수 정보만 받고 상세내역(_)은 무시
+            deleted_count, _ = AdminRefreshToken.objects.filter(admin_uuid_id=admin).delete()
+            
+            # 삭제 개수와 상관없이(0개여도) 로그아웃 절차 진행
+            success = True
+        except Exception as e:
+            # 2. 예외 처리: DB 에러 등 예상치 못한 상황
+            print(f"Logout Error: {e}")
+            return Response({"success": False})
+   
+        # 3. 마무리: 성공 응답과 함께 쿠키 삭제
+        response = Response({"success": success})
+        response.delete_cookie("refresh_token", path="/")
+        return response
 
-        return Response(
-            {"success": True, "deleted_tokens": deleted_count},
-            status=status.HTTP_200_OK,
-        )
+
 
 
 # ----------------------
@@ -364,13 +375,23 @@ class UserLogoutAPIView(APIView):
             user = User_Login_Info.objects.get(user_uuid=user_uuid)
         except User_Login_Info.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+            
+        try:
+            # 1. 시도: 개수 정보만 받고 상세내역(_)은 무시
+            deleted_count, _ = UserRefreshToken.objects.filter(user_uuid=user).delete()
+            
+            # 삭제 개수와 상관없이(0개여도) 로그아웃 절차 진행
+            success = True
+        except Exception as e:
+            # 2. 예외 처리: DB 에러 등 예상치 못한 상황
+            print(f"Logout Error: {e}")
+            return Response({"success": False})
+   
+        # 3. 마무리: 성공 응답과 함께 쿠키 삭제
+        response = Response({"success": success})
+        response.delete_cookie("refresh_token", path="/")
 
-        deleted_count = UserRefreshToken.objects.filter(user_uuid=user).delete()
-
-        return Response(
-            {"success": True, "deleted_tokens": deleted_count},
-            status=status.HTTP_200_OK,
-        )
+        return response
 
 
 # ----------------------

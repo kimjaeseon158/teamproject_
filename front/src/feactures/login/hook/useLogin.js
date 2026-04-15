@@ -39,6 +39,24 @@ export const useLogin = () => {
 
   const [loginError, setLoginError] = useState("");
 
+  /* ================= 자동 로그인 처리 ================= */
+  useEffect(() => {
+    console.log("[useLogin] 자동 로그인 체크 중:", { loading, userUuid, loginType });
+
+    // 로딩이 완료되었고, 유효한 userUuid와 loginType이 있다면 이미 로그인된 상태
+    if (!loading && userUuid && loginType) {
+      console.log("[useLogin] 자동 로그인 조건 충족, 리다이렉트 시도:", loginType);
+      
+      if (loginType === "admin") {
+        navigate("/dashboard", { replace: true });
+      } else if (loginType === "user") {
+        navigate("/data", { replace: true });
+      }
+    } else {
+      console.log("[useLogin] 자동 로그인 대기 중 또는 인증 필요");
+    }
+  }, [loading, userUuid, loginType, navigate]);
+
   // 현재 역할에 따른 스토리지 키 결정
   const storageKey = role === "admin" ? "rememberedAdminId" : "rememberedUserId";
 
@@ -247,6 +265,7 @@ export const useLogin = () => {
     loginError,
     fadeOut,
     isLoading,
+    loading, // 전역 로딩 상태 추가 (refresh token 확인 중인지 여부)
     rememberId,
 
     onChange,

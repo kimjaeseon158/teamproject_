@@ -40,10 +40,11 @@ export default function CalendarDesktopLayout({
         {/* 캘린더 영역 */}
         <Box flex="1" mt={2} overflow="hidden">
           <CalendarView
-            events={[]}
+            events={calendar.events} // 🔥 백엔드에서 가져온 이벤트 적용
             selectedDate={calendar.selectedDate}
             onDateClick={calendar.handleDateClick}
-            onTitleChange={onTitleChange}   // 🔥 연결
+            onTitleChange={onTitleChange}
+            summary={calendar.summary} // 요약 정보가 필요할 경우 대비
           />
         </Box>
 

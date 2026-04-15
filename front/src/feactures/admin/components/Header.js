@@ -6,7 +6,7 @@ import { Alarm } from "../../alarm";
 
 export default function Header() {
   const navigate = useNavigate();
-  const { userUuid } = useUser();
+  const { userUuid, logout } = useUser();
 
   const handleLogout = async () => {
     const token = getAccessToken();
@@ -20,9 +20,9 @@ export default function Header() {
     } catch (err) {
       console.error("logout error");
     } finally {
-      // 🔥 클라이언트 상태 정리
-      clearAccessToken();
-      navigate("/");
+      // 🔥 클라이언트 상태 정리 (전역 상태 및 토큰)
+      logout();
+      navigate("/", { replace: true });
     }
   };
 

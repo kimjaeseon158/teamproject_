@@ -11,6 +11,7 @@ import {
   ChevronRightIcon,
 } from "@chakra-ui/icons";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "../../auth/userContext";
 import { Alarm } from "../../alarm";
 import MonthPicker from "../../common/MonthPicker";
 
@@ -21,6 +22,7 @@ export default function CalendarHeader({
   setCalendarTitle,
 }) {
   const navigate = useNavigate();
+  const { logout } = useUser();
 
   const isMobile = useBreakpointValue({
     base: true,
@@ -28,14 +30,19 @@ export default function CalendarHeader({
   });
 
   const handleLogout = async () => {
-    await fetch("/api/user_logout/", {
-      method: "DELETE",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_uuid: userUuid }),
-    });
-
-    navigate("/");
+    try {
+      await fetch("/api/user_logout/", {
+        method: "DELETE",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_uuid: userUuid }),
+      });
+    } catch (err) {
+      console.error("Logout failed", err);
+    } finally {
+      logout();
+      navigate("/", { replace: true });
+    }
   };
 
   const handleMonthChange = (ym) => {

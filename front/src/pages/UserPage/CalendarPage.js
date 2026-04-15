@@ -41,6 +41,7 @@ export default function CalendarPage() {
 
   const handleTitleChange = (ym) => {
     setCalendarTitle(ym);
+    calendar.loadMonthlyData(ym); // 🔥 월 변경 시 백엔드 데이터 요청
   };
 
   const layoutProps = {

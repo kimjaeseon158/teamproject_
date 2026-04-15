@@ -43,30 +43,37 @@ export function UserProvider({ children, loginType: initialLoginType }) {
   ========================= */
   const revalidate = useCallback(async () => {
     setLoading(true);
+    console.log("[UserContext] Revalidate 시작...");
     try {
       const res = await fetch("/api/refresh_token/", {
         method: "POST",
         credentials: "include",
       });
 
+      console.log("[UserContext] Refresh 응답 상태:", res.status);
+
       if (!res.ok) throw new Error("refresh 실패");
 
       const json = await res.json();
       const access = json?.access;
-      const serverRole = json?.role;
+      const serverRole = json?.Role || json?.role; // 대문자 Role과 소문자 role 모두 대응
+
+      console.log("[UserContext] 데이터 로드 성공:", { hasAccess: !!access, serverRole });
 
       if (!access) throw new Error("access token 없음");
       
       setAccessToken(access);
-       if (serverRole) setLoginType(serverRole);
+      if (serverRole) setLoginType(serverRole);
       
       const payload = JSON.parse(atob(access.split(".")[1]));
       setUserUuid(payload?.sub ?? null);
       setUserName(payload?.user_name ?? null);
 
+      console.log("[UserContext] 상태 업데이트 완료:", { userUuid: payload?.sub, loginType: serverRole });
+
       return true;
     } catch (err) {
-      console.error("revalidate 실패");
+      console.error("[UserContext] Revalidate 실패:", err.message);
       clearAccessToken();
       setUserUuid(null);
       setUserName(null);
@@ -75,6 +82,7 @@ export function UserProvider({ children, loginType: initialLoginType }) {
       return false;
     } finally {
       setLoading(false);
+      console.log("[UserContext] Loading 종료");
     }
   }, []);
 
@@ -158,6 +166,14 @@ export function UserProvider({ children, loginType: initialLoginType }) {
         setUserName,
         setLoginType,
         revalidate,
+        logout: () => {
+          clearAccessToken();
+          setUserUuid(null);
+          setUserName(null);
+          setLoginType(null);
+          setAlarms([]);
+          setAlarmCount(0);
+        },
       }}
     >
       {children}

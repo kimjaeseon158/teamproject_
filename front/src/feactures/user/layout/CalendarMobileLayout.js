@@ -49,7 +49,7 @@ export default function CalendarMobileLayout({
 
         <Box mt={4}>
           <CalendarView
-            events={[]}
+            events={calendar.events} // 🔥 백엔드 이벤트 적용
             selectedDate={calendar.selectedDate}
             onDateClick={(arg) => {
               calendar.handleDateClick(arg);

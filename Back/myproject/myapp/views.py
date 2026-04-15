@@ -49,6 +49,9 @@ from .auth_utils import (
 from .salary import (
     sync_salary_expense_for_workday,
     group_rates_by_user,
+    calculate_daily_salary,
+    get_rates_for_workday
+
 )
 from .date_utils import month_start_end, add_months
 import requests
@@ -1016,6 +1019,7 @@ class WorkPlaceRateListfilteringAPIView(APIView):
         grouped = group_rates_by_user(WorkPlace_qs)
         return Response({"success": True, "users": grouped})
 
+
 # ----------------------
 # 2 데이터 처리 뷰 - User
 # ----------------------
@@ -1050,7 +1054,7 @@ class UserMonthlyWorkSummaryAPIView(APIView):
             user_uuid=user,
             work_date__year=year,
             work_date__month=month
-        ).prefetch_related("details").order_by('work_date')
+        ).prefetch_related("details", "salary_expense").order_by('work_date')
 
         daily_list      = []
         total_amount    = 0
@@ -1058,14 +1062,24 @@ class UserMonthlyWorkSummaryAPIView(APIView):
         pending_amount  = 0
 
         for wd in work_days:
-            day_details = wd.details.all()
-
-            day_amount = sum(
-                getattr(detail, "total_pay", 0) for detail in day_details
-            )
-
+            
+            day_amount = 0
             is_approved = wd.is_approved
 
+            if is_approved is True: # 승인된 경우: Expense에서 급여 가져오기
+                # wd.salary_expense는 OneToOneField로 연결된 Expense 객체
+                if hasattr(wd, 'salary_expense') and wd.salary_expense:
+                    day_amount = wd.salary_expense.amount
+                else:
+                    # 승인되었으나 Expense가 없는 경우는 로직상 발생하지 않음을 가정하고,
+                    # 해당 경우 발생 시 ValueError를 그대로 발생시킴.
+                    rates = get_rates_for_workday(wd) # WorkPlaceRate가 있을 것으로 가정
+                    day_amount = calculate_daily_salary(wd.details.all(), rates)
+            elif is_approved is None: # 대기 중인 경우: 실시간으로 급여 계산 (WorkPlaceRate가 있을 것으로 가정)
+                # WorkPlaceRate가 없을 경우 ValueError 발생
+                rates = get_rates_for_workday(wd)
+                day_amount = calculate_daily_salary(wd.details.all(), rates)
+            # is_approved가 False (반려됨)인 경우 day_amount는 기본값 0으로 유지됨
             daily_list.append({
                 "date": wd.work_date,
                 "work_place": wd.work_place if wd.work_place else "Unknown",

@@ -1060,11 +1060,19 @@ class UserMonthlyWorkSummaryAPIView(APIView):
         total_amount    = 0
         approved_amount = 0
         pending_amount  = 0
+        day_shift_count   = 0
+        night_shift_count = 0
 
         for wd in work_days:
             
             day_amount = 0
             is_approved = wd.is_approved
+
+            # 근무 형태 카운트 (주간/야간)
+            if wd.work_shift == "주간":
+                day_shift_count += 1
+            elif wd.work_shift == "야간":
+                night_shift_count += 1
 
             if is_approved is True: # 승인된 경우: Expense에서 급여 가져오기
                 # wd.salary_expense는 OneToOneField로 연결된 Expense 객체
@@ -1083,6 +1091,7 @@ class UserMonthlyWorkSummaryAPIView(APIView):
             daily_list.append({
                 "date": wd.work_date,
                 "work_place": wd.work_place if wd.work_place else "Unknown",
+                "work_shift": wd.work_shift,
                 "amount": day_amount,
                 "is_approved": is_approved
             })
@@ -1099,5 +1108,7 @@ class UserMonthlyWorkSummaryAPIView(APIView):
             "total_amount": total_amount,
             "approved_amount": approved_amount,
             "pending_amount": pending_amount,
+            "day_shift_count": day_shift_count,
+            "night_shift_count": night_shift_count,
             "daily_list": daily_list
         })

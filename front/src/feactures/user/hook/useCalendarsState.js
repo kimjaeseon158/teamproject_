@@ -41,7 +41,7 @@ export function useCalendarState() {
         const color = getStatusColor(item.is_approved);
         return {
           id: `${item.date}-${item.work_place}`,
-          title: `${item.work_place} (${item.amount.toLocaleString()}원)`,
+          title: `근무지 - ${item.work_place}\n${item.work_shift} - ${item.amount.toLocaleString()}원`,
           start: item.date,
           backgroundColor: color,
           borderColor: color,

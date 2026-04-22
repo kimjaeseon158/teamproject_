@@ -1,4 +1,5 @@
 import { useAdminInformationLogic } from "../hook/useAdminInformationLogic";
+import { CARRIER_OPTIONS } from "../constants/carrierConstants";
 
 import {
   Modal,
@@ -83,10 +84,11 @@ const AdminInformation = ({ person, onClose, onSave }) => {
                     w="120px"
                   >
                     <option value="">통신사 선택</option>
-                    <option value="SKT">SKT</option>
-                    <option value="KT">KT</option>
-                    <option value="LGU">LG U+</option>
-                    <option value="알뜰폰">알뜰폰</option>
+                    {CARRIER_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
                   </Select>
                   <Input
                     name="phone_number"

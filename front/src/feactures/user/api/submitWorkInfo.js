@@ -94,7 +94,12 @@ const submitWorkInfo = async (input, { toast } = {}) => {
     throw new Error(msg);
   }
 
-  return res.json();
+  // ✅ 여기만 수정
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
 };
 
 export default submitWorkInfo;

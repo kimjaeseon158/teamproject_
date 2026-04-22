@@ -35,6 +35,7 @@ export default function CalendarDesktopLayout({
           goToDate={goToDate}
           calendarTitle={calendarTitle}
           setCalendarTitle={onTitleChange}  // 🔥 연결
+          summary={calendar.summary}
         />
 
         {/* 캘린더 영역 */}

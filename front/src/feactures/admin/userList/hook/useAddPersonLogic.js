@@ -7,35 +7,38 @@ import {
 
 export function useAddPersonLogic(onSave, onClose) {
   const [formData, setFormData] = useState({
-    people: "",
-    resident_Number: "",
-    masked_Resident_Number: "",
-    phone_Number: "010-",
-    id: "",
-    pw: "",
-    carrier: "",
+    user_name: "",
+    resident_number: "",
+    phone_number: "010-",
+    user_id: "",
+    password: "",
+    mobile_carrier: "",
     address: "",
-    address_Detail: "",
+    address_detail: "",
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    if (name === "resident_Number") {
+    if (name === "resident_number") {
       const formatted = formatResidentNumber(value);
       setFormData((prev) => ({
         ...prev,
-        resident_Number: formatted,
-        masked_Resident_Number: formatted,
+        resident_number: formatted,
       }));
       return;
     }
 
-    if (name === "phone_Number") {
-      const formatted = formatPhoneNumber(value);
+    if (name === "phone_number") {
+      let numeric = value.replace(/[^0-9]/g, "");
+      // "010"으로 시작하도록 강제 (지우려 해도 010 유지)
+      if (!numeric.startsWith("010")) {
+        numeric = "010";
+      }
+      const formatted = formatPhoneNumber(numeric);
       setFormData((prev) => ({
         ...prev,
-        phone_Number: formatted,
+        phone_number: formatted,
       }));
       return;
     }
@@ -50,29 +53,29 @@ export function useAddPersonLogic(onSave, onClose) {
     e.preventDefault();
 
     const {
-      people,
-      resident_Number,
-      phone_Number,
-      id,
-      pw,
-      carrier,
+      user_name,
+      resident_number,
+      phone_number,
+      user_id,
+      password,
+      mobile_carrier,
       address,
-      address_Detail,
+      address_detail,
     } = formData;
 
-    if (!people || !resident_Number || !phone_Number) {
+    if (!user_name || !resident_number || !phone_number) {
       alert("필수 항목을 입력하세요.");
       return;
     }
 
     const payload = {
-      user_name: people,
-      user_id: id,
-      password: pw,
-      phone_number: phone_Number,
-      mobile_carrier: carrier,
-      resident_number: resident_Number,
-      address: `${address} ${address_Detail}`,
+      user_name,
+      user_id,
+      password,
+      phone_number,
+      mobile_carrier,
+      resident_number,
+      address: address_detail ? `${address} ${address_detail}` : address,
     };
 
     try {

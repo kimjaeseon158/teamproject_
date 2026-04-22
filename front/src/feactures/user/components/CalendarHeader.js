@@ -14,12 +14,15 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "../../auth/userContext";
 import { Alarm } from "../../alarm";
 import MonthPicker from "../../common/MonthPicker";
+import StatusLegend from "./StatusLegend";
 
 export default function CalendarHeader({
   userUuid,
   goToday,
   calendarTitle,
   setCalendarTitle,
+  summary,
+  hideSummaryOnMobile = false,
 }) {
   const navigate = useNavigate();
   const { logout } = useUser();
@@ -63,15 +66,18 @@ export default function CalendarHeader({
       {isMobile ? (
         <>
           <HStack justify="space-between" mb={2}>
-            <Alarm />
-            <Button size="xs" colorScheme="red" onClick={handleLogout}>
-              로그아웃
-            </Button>
+            {!hideSummaryOnMobile && <StatusLegend summary={summary} />}
+            <HStack flex={hideSummaryOnMobile ? 1 : undefined} justify={hideSummaryOnMobile ? "flex-end" : undefined}>
+              <Alarm />
+              <Button size="xs" colorScheme="red" onClick={handleLogout}>
+                로그아웃
+              </Button>
+            </HStack>
           </HStack>
 
           <HStack justify="center" spacing={3}>
             <IconButton
-              size="sm"
+              size="sm" 
               variant="ghost"
               icon={<ChevronLeftIcon />}
               onClick={() => window.calendarRef?.getApi()?.prev()}
@@ -102,6 +108,10 @@ export default function CalendarHeader({
         </>
       ) : (
         <HStack justify="center" spacing={3} position="relative">
+          <Box position="absolute" left="0">
+            <StatusLegend summary={summary} />
+          </Box>
+
           <HStack position="absolute" right="0" zIndex="9999">
             <Alarm />
             <Button size="sm" colorScheme="red" onClick={handleLogout}>

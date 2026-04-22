@@ -52,6 +52,19 @@ export default function CalendarView({
       dayMaxEvents={2} // 🔥 2명 이상이면 +N 표시
       moreLinkClick="popover" // 🔥 클릭 시 팝오버로 전체 표시
 
+      // 날짜별 클래스 지정
+      dayCellClassNames={(arg) => {
+        const d = arg.date;
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        const dateStr = `${year}-${month}-${day}`;
+
+        const target = selectedDate?.formatted || selectedDate;
+        if (dateStr === target) return ["selected-day"];
+        return [];
+      }}
+
       // 날짜 클릭
       dateClick={(arg) => {
         onDateClick?.(arg.dateStr);

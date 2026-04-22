@@ -24,6 +24,21 @@ export default function OverviewPage() {
   // 🔥 승인 대기 원본 데이터 (건별 리스트)
   const [pendingList, setPendingList] = useState([]);
 
+  // 🔥 시간 포맷 함수 (오전/오후 - HH:mm)
+  const formatTimeWithAMPM = (date) => {
+    if (!date) return "-";
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return "-";
+    
+    const hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    const ampm = hours >= 12 ? "오후" : "오전";
+    // 12시간제로 변환 (0시는 12시로 표시)
+    const displayHours = String(hours % 12 || 12).padStart(2, "0");
+    
+    return `${ampm} - ${displayHours}:${minutes}`;
+  };
+
   return (
     <Box p={6} height="100vh" display="flex" flexDirection="column">
       <Flex flex="1" gap={4} overflow="hidden">
@@ -67,12 +82,12 @@ export default function OverviewPage() {
 
               <FormControl mb={3}>
                 <FormLabel>시작</FormLabel>
-                <Input value={modalEvent.start} isReadOnly />
+                <Input value={formatTimeWithAMPM(modalEvent.start)} isReadOnly />
               </FormControl>
 
               <FormControl mb={3}>
                 <FormLabel>종료</FormLabel>
-                <Input value={modalEvent.end} isReadOnly />
+                <Input value={formatTimeWithAMPM(modalEvent.end)} isReadOnly />
               </FormControl>
             </ModalBody>
 

@@ -101,8 +101,14 @@ export function useOptionHandlers({
     }
   };
 
+  const handleDeleteFromCart = (id) => {
+    setCart((prev) => prev.filter((item) => item.id !== id));
+    toast({ title: "삭제되었습니다.", status: "info", duration: 1200 });
+  };
+
   return {
     handleAddToCart,
+    handleDeleteFromCart,
     handleSubmitAll,
     handleConfirmSubmitAll,
   };

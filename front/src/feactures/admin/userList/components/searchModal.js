@@ -1,3 +1,4 @@
+import { CARRIER_OPTIONS } from "../constants/carrierConstants";
 import {
   Modal,
   ModalOverlay,
@@ -66,9 +67,11 @@ export default function SearchModal({
                   maxW="120px"
                 >
                   <option value="">통신사</option>
-                  <option value="SKT">SKT</option>
-                  <option value="KT">KT</option>
-                  <option value="LG">LG</option>
+                  {CARRIER_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </Select>
                 <Input
                   name="phone_number"

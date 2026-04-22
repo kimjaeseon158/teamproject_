@@ -1,5 +1,5 @@
 import { Box, Text, useDisclosure, useToast } from "@chakra-ui/react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useApproveList } from "../../feactures/admin/work_day/hook/useApproveList";
 import ApproveFilterBar from "../../feactures/admin/work_day/section/ApproveFilterBar";
 import ApproveTable from "../../feactures/admin/work_day/section/ApproveTable";
@@ -16,11 +16,27 @@ export default function ApprovePage() {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
-  // 🔥 range 초기값을 undefined로
-  const [range, setRange] = useState({
-    from: undefined,
-    to: undefined,
-  });
+  // 🔥 현재 달의 시작일~종료일로 초기화
+  const initialRange = useMemo(() => {
+    const today = new Date();
+    const from = new Date(today.getFullYear(), today.getMonth(), 1);
+    const to = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    return { from, to };
+  }, []);
+
+  const [range, setRange] = useState(initialRange);
+
+  // 🔥 페이지 진입 시 자동 조회
+  useEffect(() => {
+    if (range.from && range.to) {
+      fetchList({
+        status: "대기",
+        startDate: toYMD(range.from),
+        endDate: toYMD(range.to),
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 🔥 rangeLabel 정상 처리
   const rangeLabel = useMemo(() => {

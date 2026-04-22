@@ -15,6 +15,7 @@ import {
 } from "@chakra-ui/react";
 
 import { useAddPersonLogic } from "../hook/useAddPersonLogic";
+import { CARRIER_OPTIONS } from "../constants/carrierConstants";
 
 const AddPersonModal = ({ isOpen, onClose, onSave }) => {
   const {
@@ -51,29 +52,30 @@ const AddPersonModal = ({ isOpen, onClose, onSave }) => {
         <form onSubmit={handleSubmitBase}>
           <ModalBody>
             <VStack spacing={4}>
-              <FormControl>
+              <FormControl isRequired>
                 <FormLabel>이름</FormLabel>
                 <Input
-                  name="people"
-                  value={formData.people}
+                  name="user_name"
+                  value={formData.user_name}
                   onChange={handleChange}
                 />
               </FormControl>
 
-              <FormControl>
+              <FormControl isRequired>
                 <FormLabel>주민등록번호</FormLabel>
                 <Input
-                  name="resident_Number"
-                  value={formData.resident_Number}
+                  name="resident_number"
+                  value={formData.resident_number}
                   onChange={handleChange}
+                  placeholder="000000-0000000"
                 />
               </FormControl>
 
-              <FormControl>
+              <FormControl isRequired>
                 <FormLabel>전화번호</FormLabel>
                 <Input
-                  name="phone_Number"
-                  value={formData.phone_Number}
+                  name="phone_number"
+                  value={formData.phone_number}
                   onChange={handleChange}
                 />
               </FormControl>
@@ -81,14 +83,16 @@ const AddPersonModal = ({ isOpen, onClose, onSave }) => {
               <FormControl>
                 <FormLabel>통신사</FormLabel>
                 <Select
-                  name="carrier"
-                  value={formData.carrier}
+                  name="mobile_carrier"
+                  value={formData.mobile_carrier}
                   onChange={handleChange}
                 >
                   <option value="">선택</option>
-                  <option value="SKT">SKT</option>
-                  <option value="KT">KT</option>
-                  <option value="LGU">LG U+</option>
+                  {CARRIER_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </Select>
               </FormControl>
 
@@ -114,8 +118,8 @@ const AddPersonModal = ({ isOpen, onClose, onSave }) => {
               <FormControl>
                 <FormLabel>상세주소</FormLabel>
                 <Input
-                  name="address_Detail"
-                  value={formData.address_Detail}
+                  name="address_detail"
+                  value={formData.address_detail}
                   onChange={handleChange}
                 />
               </FormControl>
@@ -123,8 +127,8 @@ const AddPersonModal = ({ isOpen, onClose, onSave }) => {
               <FormControl>
                 <FormLabel>아이디</FormLabel>
                 <Input
-                  name="id"
-                  value={formData.id}
+                  name="user_id"
+                  value={formData.user_id}
                   onChange={handleChange}
                 />
               </FormControl>
@@ -133,8 +137,8 @@ const AddPersonModal = ({ isOpen, onClose, onSave }) => {
                 <FormLabel>비밀번호</FormLabel>
                 <Input
                   type="password"
-                  name="pw"
-                  value={formData.pw}
+                  name="password"
+                  value={formData.password}
                   onChange={handleChange}
                 />
               </FormControl>

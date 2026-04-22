@@ -167,21 +167,29 @@ export default function RateEditModal({
     );
 
     try {
+      let result;
       if (isNewRow) {
-        await handleAdd({
+        result = await handleAdd({
           user_uuid: user.user_uuid,
           ...editedValues,
         });
       } else {
-        await handleUpdate({
+        result = await handleUpdate({
           rate_uuid: editingId,
           ...editedValues,
         });
       }
 
+    if(result && result.success){
       toast({ title: "저장 완료", status: "success" });
       onSuccess?.();
       onClose?.();
+      } else {
+        toast({
+          title: "저장 중 오류 발생",
+          status: "error",
+        });
+      }
 
     } catch {
       toast({

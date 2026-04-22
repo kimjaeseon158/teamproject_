@@ -32,9 +32,13 @@ export function useAdminInformationLogic(person, onClose, onSave) {
     }
 
     if (name === "phone_number") {
+      let numeric = value.replace(/[^0-9]/g, "");
+      if (!numeric.startsWith("010")) {
+        numeric = "010";
+      }
       setFormData((prev) => ({
         ...prev,
-        phone_number: formatPhoneNumber(value),
+        phone_number: formatPhoneNumber(numeric),
       }));
       return;
     }

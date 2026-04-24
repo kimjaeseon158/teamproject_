@@ -12,12 +12,15 @@ export default function CalendarView({
   onEventClick,
   onTitleChange,
   selectedDate, // 🔥 외부에서 관리하는 날짜 (월 이동 동기화용)
+  isMobile: isMobileProp, // 🔥 추가
   daySummaryMap,
 }) {
-  const isMobile = useBreakpointValue({
+  // 🔥 상위에서 전달받은 isMobile이 있으면 그것을 쓰고, 없으면 useBreakpointValue 사용
+  const isMobileValue = useBreakpointValue({
     base: true,
-    md: false,
+    lg: false,
   });
+  const isMobile = isMobileProp !== undefined ? isMobileProp : isMobileValue;
 
   const calendarRef = useRef(null);
   const lastYmRef = useRef(null);
@@ -51,6 +54,41 @@ export default function CalendarView({
       events={events}
       dayMaxEvents={2} // 🔥 2명 이상이면 +N 표시
       moreLinkClick="popover" // 🔥 클릭 시 팝오버로 전체 표시
+
+      // 이벤트 렌더링 커스텀
+      eventContent={(arg) => {
+        const { amount, work_place, work_shift } = arg.event.extendedProps;
+
+        if (isMobile) {
+          // 모바일: 금액만 심플하게 표시
+          return (
+            <div style={{ 
+              fontSize: "0.7rem", 
+              padding: "2px",
+              textAlign: "center",
+              width: "100%",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              fontWeight: "bold"
+            }}>
+              {amount !== undefined ? `${amount.toLocaleString()}` : arg.event.title}
+            </div>
+          );
+        }
+
+        // 🔥 데스크톱: 기존의 "근무지 - 주간 - 금액" 멀티라인 형식 복구
+        return (
+          <div style={{ 
+            padding: "2px", 
+            fontSize: "0.8rem", 
+            lineHeight: "1.3",
+            whiteSpace: "pre-wrap" 
+          }}>
+            <div style={{ fontWeight: "bold" }}>근무지 - {work_place}</div>
+            <div>{work_shift} - {amount?.toLocaleString()}원</div>
+          </div>
+        );
+      }}
 
       // 날짜별 클래스 지정
       dayCellClassNames={(arg) => {

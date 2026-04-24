@@ -19,9 +19,11 @@ const StatusLegend = ({ summary }) => (
     </HStack>
     
     {summary?.total_amount !== undefined && (
-      <Box fontSize="md" fontWeight="800" color="black.600">
+      <Box fontSize="sm" fontWeight="800" color="gray.700" mt={2}>
         <Text>총 금액 : {summary.total_amount.toLocaleString()}원</Text>
-        <Text>총 근무일수  : 주간 - {summary.day_shift_count} / 야간 - {summary.night_shift_count} </Text>
+        <Text fontSize="g" color="black.500" mt={0.5}>
+          총 근무일수 : 주간 {summary.day_shift_count}회 / 야간 {summary.night_shift_count}회
+        </Text>
       </Box>
     )}
   </Box>

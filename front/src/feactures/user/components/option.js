@@ -23,7 +23,7 @@ import {
 
 import { useOptionHandlers } from "../hook/useOptionHandlers";
 
-const Option = ({ selectedDate }) => {
+const Option = ({ selectedDate, onRefresh, onClose }) => {
   const { userUuid, userName } = useUser();
   const toast = useToast();
   const cancelRef = useRef();
@@ -112,6 +112,8 @@ const Option = ({ selectedDate }) => {
     selectedDate, userUuid, userName, cart, setCart, toast, resetForm,
     baseShift, isSpecial, startTime, finishTime, location, extraEnabled, extraWorks,
     setIsSubmitConfirmOpen,
+    onRefresh,
+    onClose, // 🔥 추가
   });
 
   useEffect(() => {

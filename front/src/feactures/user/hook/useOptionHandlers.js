@@ -17,6 +17,8 @@ export function useOptionHandlers({
   extraEnabled,
   extraWorks,
   setIsSubmitConfirmOpen,
+  onRefresh, // 🔥 추가
+  onClose,   // 🔥 추가
 }) {
   const handleAddToCart = () => {
     if (!location || !startTime || !finishTime) {
@@ -96,6 +98,17 @@ export function useOptionHandlers({
       setCart([]);
       setIsSubmitConfirmOpen(false);
       toast({ title: "전체 등록 완료", status: "success" });
+
+      // 🔥 등록 후 캘린더 데이터 새로고침
+      if (onRefresh && selectedDate) {
+        const ym = `${selectedDate.year}-${String(selectedDate.month).padStart(2, "0")}`;
+        onRefresh(ym);
+      }
+
+      // 🔥 모바일에서 등록 후 창 닫기
+      if (onClose) {
+        onClose();
+      }
     } catch (e) {
       toast({ title: "등록 실패", status: "error" });
     }

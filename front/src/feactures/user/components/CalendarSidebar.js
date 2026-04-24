@@ -6,6 +6,7 @@ export default function CalendarSidebar({
   userName,
   selectedDate,
   onClose,
+  onRefresh, // 🔥 추가
 }) {
   return (
     <Box
@@ -40,7 +41,7 @@ export default function CalendarSidebar({
 
       {/* 🔥 날짜 상세 */}
       <Box bg="#2c2c2e" p="14px" borderRadius="12px">
-        <Option selectedDate={selectedDate} />
+        <Option selectedDate={selectedDate} onRefresh={onRefresh} onClose={onClose} />
       </Box>
     </Box>
   );

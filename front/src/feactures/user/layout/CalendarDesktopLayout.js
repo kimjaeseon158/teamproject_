@@ -13,6 +13,7 @@ export default function CalendarDesktopLayout({
   goToDate,
   calendarTitle,
   onTitleChange,   // 🔥 이름 통일
+  isMobile,         // 🔥 추가
 }) {
   return (
     <Box display="flex" height="100vh" overflow="hidden">
@@ -22,6 +23,7 @@ export default function CalendarDesktopLayout({
         <CalendarSidebar
           userName={userName}
           selectedDate={calendar.selectedDate}
+          onRefresh={calendar.loadMonthlyData} // 🔥 추가
         />
       </Box>
 
@@ -45,6 +47,7 @@ export default function CalendarDesktopLayout({
             selectedDate={calendar.selectedDate}
             onDateClick={calendar.handleDateClick}
             onTitleChange={onTitleChange}
+            isMobile={isMobile} // 🔥 전달
             summary={calendar.summary} // 요약 정보가 필요할 경우 대비
           />
         </Box>

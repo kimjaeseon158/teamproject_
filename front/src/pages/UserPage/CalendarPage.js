@@ -51,6 +51,7 @@ export default function CalendarPage() {
     goToday,
     goToDate,
     calendarTitle,
+    isMobile, // 🔥 추가
     onTitleChange: handleTitleChange,
   };
 

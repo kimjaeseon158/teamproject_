@@ -15,6 +15,21 @@
   flex-direction: column;
 }
 
+/* 모바일 캘린더 높이 조정 */
+@media (max-width: 768px) {
+  .fc-daygrid-day-frame {
+    min-height: 65px !important;
+  }
+  
+  .fc .fc-daygrid-day-top {
+    padding: 2px 4px;
+  }
+
+  .fc-daygrid-event {
+    margin: 0px 1px !important;
+  }
+}
+
 .fc .fc-daygrid-day-top {
   flex-direction: row;
   justify-content: flex-start;

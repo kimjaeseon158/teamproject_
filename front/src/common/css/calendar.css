@@ -15,18 +15,34 @@
   flex-direction: column;
 }
 
-/* 모바일 캘린더 높이 조정 */
+/* 모바일 캘린더 높이 및 부드러운 디자인 조정 */
 @media (max-width: 768px) {
   .fc-daygrid-day-frame {
-    min-height: 65px !important;
+    min-height: 52px !important; /* 높이 더 축소 */
   }
   
   .fc .fc-daygrid-day-top {
-    padding: 2px 4px;
+    padding: 1px 4px;
+    justify-content: center; /* 날짜 중앙 정렬 */
+  }
+
+  .fc-daygrid-day-number {
+    font-size: 0.75rem;
+    font-weight: 500;
   }
 
   .fc-daygrid-event {
     margin: 0px 1px !important;
+    border-radius: 4px !important;
+  }
+
+  /* 격자 선을 아주 연하게 처리 */
+  .fc-theme-standard td, .fc-theme-standard th {
+    border-color: #f7fafc !important; 
+  }
+  
+  .fc-theme-standard .fc-scrollgrid {
+    border: none !important;
   }
 }
 
@@ -51,33 +67,47 @@
   white-space: pre-wrap !important;
 }
 
-/* 요일 헤더 폰트 크기 조절 */
+/* 요일 헤더 디자인 */
 .fc-col-header-cell-cushion {
-  font-size: 0.9rem;
-  color: #4a5568;
-  padding: 8px 0 !important;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #a0aec0; /* 연한 회색 */
+  padding: 10px 0 !important;
+  text-decoration: none !important;
 }
 
 /* 일요일 */
 .fc-daygrid-day.fc-day-sun .fc-daygrid-day-number {
-  color: #e53e3e ;
+  color: #feb2b2 ;
 }
 
 /* 토요일 */
 .fc-daygrid-day.fc-day-sat .fc-daygrid-day-number {
-  color: #3182ce;
+  color: #90cdf4;
+}
+
+/* 선택된 날짜 디자인 개선 */
+.selected-day {
+  background-color: rgba(49, 130, 206, 0.05) !important;
 }
 
 .selected-day .fc-daygrid-day-number {
   background-color: #3182ce !important;
   color: white !important;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
+  border-radius: 8px; /* 둥근 사각형 느낌 */
+  min-width: 24px;
+  height: 24px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  font-size: 0.7rem;
 }
+
 .fc .fc-day-today {
   background: transparent !important;
+}
+
+/* 오늘 날짜 표시 강조 지우기 (선택 날짜와 혼동 방지) */
+.fc .fc-daygrid-day.fc-day-today {
+  background-color: transparent !important;
 }

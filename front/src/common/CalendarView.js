@@ -58,23 +58,25 @@ export default function CalendarView({
       // 이벤트 렌더링 커스텀
       eventContent={(arg) => {
         const { amount, work_place, work_shift } = arg.event.extendedProps;
-
-        if (isMobile) {
-          // 모바일: 금액만 심플하게 표시
-          return (
-            <div style={{ 
-              fontSize: "0.7rem", 
-              padding: "2px",
-              textAlign: "center",
-              width: "100%",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              fontWeight: "bold"
-            }}>
-              {amount !== undefined ? `${amount.toLocaleString()}` : arg.event.title}
-            </div>
-          );
-        }
+if (isMobile) {
+  // 모바일: 금액만 심플하게 표시 (테두리 없이 텍스트 중심)
+  const amount = arg.event.extendedProps.amount;
+  return (
+    <div style={{ 
+      fontSize: "0.65rem", 
+      padding: "1px 0",
+      textAlign: "center",
+      width: "100%",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      fontWeight: "700",
+      color: "black", // 배경색과 동일한 글자색으로 더 부드럽게
+      background: "transparent" // 배경 투명하게
+    }}>
+      {amount !== undefined ? `${amount.toLocaleString()}` : arg.event.title}
+    </div>
+  );
+}
 
         // 🔥 데스크톱: 기존의 "근무지 - 주간 - 금액" 멀티라인 형식 복구
         return (

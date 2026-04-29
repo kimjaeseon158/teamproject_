@@ -22,6 +22,7 @@ from .views import (
     GoogleLoginAPIView,
     GoogleCallbackAPIView,
     GoogleCalendarEventsAPIView,
+    GoogleDriveWorkplaceExcelExportAPIView,
     AdminLogoutAPIView,
     UserLogoutAPIView,
     AdminPageWorkDayListAPIView,
@@ -56,9 +57,10 @@ urlpatterns = [
 
 
     # Dashboard-google-calendar
-    path('google_calendar_auth/',          GoogleLoginAPIView.as_view(),          name='google-calendar-auth'),
-    path('google_calendar_auth/callback/', GoogleCallbackAPIView.as_view(),       name='google-calendar-auth-back'),
-    path('google_calendar_auth/events/',   GoogleCalendarEventsAPIView.as_view(), name='google-calendar-auth-events'),
+    path('google_calendar_auth/',          GoogleLoginAPIView.as_view(),                     name='google-calendar-auth'),
+    path('google_calendar_auth/callback/', GoogleCallbackAPIView.as_view(),                  name='google-calendar-auth-back'),
+    path('google_calendar_auth/events/',   GoogleCalendarEventsAPIView.as_view(),            name='google-calendar-auth-events'),
+    path('google_drive_excel_export/',     GoogleDriveWorkplaceExcelExportAPIView.as_view(), name='google-drive-excel-export'),
 
     
     # Dashboard-Total-sales

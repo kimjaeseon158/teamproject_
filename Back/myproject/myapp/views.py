@@ -33,19 +33,27 @@ from .models import (
 from django.db.models import Sum
 from django.db import transaction
 from django.db.utils import IntegrityError
-from datetime import datetime
+from django.db.models.functions import Coalesce
+from django.http import HttpResponse
 from django.utils import timezone
 from django.conf import settings
 from django.shortcuts import redirect
+from datetime import datetime
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import Flow
 from google.oauth2 import credentials
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.db.models.functions import Coalesce
 from .auth_utils import (
     save_or_update_admin_refresh_token,
     save_or_update_user_refresh_token,
 )
+from .excel_utils import (
+    generate_workplace_excel,
+    generate_user_pay_excel,
+    generate_user_record_excel
+)
+from .google_drive_utils import GoogleDriveService
+
 from .salary import (
     sync_salary_expense_for_workday,
     group_rates_by_user,
@@ -55,6 +63,10 @@ from .salary import (
 )
 from .date_utils import month_start_end, add_months
 import requests
+import os
+import json
+import io
+import urllib.parse
 
 
 
@@ -94,9 +106,12 @@ class GoogleLoginAPIView(APIView):
     def get(self, request):
         flow = Flow.from_client_config(
             settings.GOOGLE_OAUTH2_CLIENT_CONFIG,
-            scopes=["https://www.googleapis.com/auth/calendar"],
+            scopes=[
+                "https://www.googleapis.com/auth/calendar",
+                "https://www.googleapis.com/auth/drive",
+            ],
         )
-        flow.redirect_uri = settings.GOOGLE_REDIRECT_URI  # ✅ 꼭 이 줄 있어야 함
+        flow.redirect_uri = settings.GOOGLE_REDIRECT_URI  # 꼭 이 줄 있어야 함
 
         authorization_url, state = flow.authorization_url(
             access_type="offline", include_granted_scopes="true", prompt="consent"
@@ -210,6 +225,7 @@ class GoogleCalendarEventsAPIView(APIView):
             "timeMax": next_month.isoformat() + "Z",
         }
 
+
         res = requests.get(events_url, headers=headers, params=params)
 
         if res.status_code != 200:
@@ -220,6 +236,55 @@ class GoogleCalendarEventsAPIView(APIView):
 
         events = res.json().get("items", [])
         return Response({"events": events})
+    
+class GoogleDriveWorkplaceExcelExportAPIView(APIView):
+    """
+    구글 드라이브와 연동하여 특정 근무지의 해당 월 전체 근무 현황을 엑셀로 생성 및 업로드합니다.
+    """
+    def get(self, request):
+        access_token = request.COOKIES.get("google_access_token")
+
+        # 프론트에서 받는 파라미터
+        date_str = request.query_params.get("date")          # 예: 2026-04
+        work_place = request.query_params.get("work_place")  # 출력 대상 근무지 (예: 강남점)
+        
+        try:
+            year, month = map(int, date_str.split("-"))
+        except (ValueError, AttributeError):
+            pass
+
+        drive = GoogleDriveService(access_token)
+        workload_id = drive.get_or_create_folder("workload")
+        
+        # 1. 근무지별 전체 현황 엑셀 생성
+        # 템플릿 탐색 및 다운로드 (근무지명과 일치하는 xlsx 파일 탐색)
+        template_id = drive.find_file(f"{work_place}.xlsx", workload_id)
+        template_io = drive.download_file(template_id) if template_id else None
+        
+        # 엑셀 생성 (해당 근무지의 해당 월 모든 인원 데이터 포함)
+        wb = generate_workplace_excel(work_place, year, month, template_file=template_io)
+        
+        # 2. 구글 드라이브 업로드 경로 설정
+        # 경로: workload -> {근무지}_load -> {YYYY-MM}
+        target_folder_id = drive.get_folder_path_id(["workload", f"{work_place}_load", date_str])
+        save_filename = f"{work_place}_{year}_{month}.xlsx"
+
+        # 3. 엑셀 메모리 저장 및 구글 드라이브 업로드
+        output = io.BytesIO()
+        wb.save(output)
+        drive.upload_or_update_file(output, save_filename, target_folder_id)
+
+        # 4. 브라우저 즉시 다운로드 응답 생성
+        output.seek(0)
+        response = HttpResponse(
+            output.read(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        
+        encoded_filename = urllib.parse.quote(save_filename)
+        response["Content-Disposition"] = f"attachment; filename*=UTF-8''{encoded_filename}"
+        
+        return response
 
 
 class CheckAdminLoginAPIView(APIView):

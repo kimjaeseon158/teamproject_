@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useMemo } from "react";
 import { Box, HStack, Text } from "@chakra-ui/react";
 
 const ITEM_HEIGHT = 40;
@@ -7,6 +7,9 @@ const VISIBLE_COUNT = 3;
 const generateRange = (length, formatter = (v) => v) =>
   Array.from({ length }, (_, i) => formatter(i));
 
+const BASE_HOURS = generateRange(24, (h) => String(h).padStart(2, "0"));
+const HOURS_DATA = [...BASE_HOURS, ...BASE_HOURS, ...BASE_HOURS];
+
 export default function TimeWheelPicker({
   value = "00:00",
   onChange,
@@ -14,21 +17,22 @@ export default function TimeWheelPicker({
 }) {
   const hourRef = useRef(null);
   const minuteRef = useRef(null);
+  
   const isInteracting = useRef(false);
-  const lastEmittedValue = useRef(value); // 중복 업데이트 방지
+  const isProgrammaticScroll = useRef(false);
+  const interactTimer = useRef(null);
+  const lastEmittedValue = useRef(value);
 
-  const baseHours = generateRange(25, (h) => String(h).padStart(2, "0"));
-  const baseMinutes = generateRange(
-    60 / minuteStep,
-    (i) => String(i * minuteStep).padStart(2, "0")
+  const baseMinutes = useMemo(() => 
+    generateRange(60 / minuteStep, (i) => String(i * minuteStep).padStart(2, "0")),
+    [minuteStep]
   );
-
-  const hours = [...baseHours, ...baseHours, ...baseHours];
-  const minutes = [...baseMinutes, ...baseMinutes, ...baseMinutes];
+  const minutesData = useMemo(() => [...baseMinutes, ...baseMinutes, ...baseMinutes], [baseMinutes]);
 
   const [h, m] = (value || "00:00").split(":");
 
   useEffect(() => {
+    // 사용자가 조작 중일 때는 외부 value 변화에 의한 동기화를 차단
     if (isInteracting.current) return;
 
     const sync = (ref, data, val) => {
@@ -36,48 +40,65 @@ export default function TimeWheelPicker({
       const baseLen = data.length / 3;
       const indexInBase = data.slice(baseLen, baseLen * 2).indexOf(val);
       if (indexInBase !== -1) {
-        ref.current.scrollTop = (indexInBase + baseLen) * ITEM_HEIGHT;
+        const targetScrollTop = (indexInBase + baseLen - 1) * ITEM_HEIGHT;
+        if (Math.abs(ref.current.scrollTop - targetScrollTop) > 1) {
+          isProgrammaticScroll.current = true;
+          ref.current.scrollTop = targetScrollTop;
+          // 스크롤 이벤트가 발생한 후 플래그를 해제하기 위해 약간의 지연
+          setTimeout(() => { isProgrammaticScroll.current = false; }, 100);
+        }
       }
     };
 
-    sync(hourRef, hours, h);
-    sync(minuteRef, minutes, m);
+    sync(hourRef, HOURS_DATA, h);
+    sync(minuteRef, minutesData, m);
     lastEmittedValue.current = value;
-  }, [value, h, m]);
+  }, [value, h, m, minutesData]);
 
   const handleScroll = (type) => {
+    // 프로그램에 의한 강제 이동(sync)일 때는 무시
+    if (isProgrammaticScroll.current) return;
+
     const ref = type === "hour" ? hourRef : minuteRef;
-    const baseData = type === "hour" ? baseHours : baseMinutes;
+    const baseData = type === "hour" ? BASE_HOURS : baseMinutes;
     if (!ref.current) return;
 
-    let scrollTop = ref.current.scrollTop;
-    const index = Math.round(scrollTop / ITEM_HEIGHT);
-    
-    // 무한 루프 경계 보정
-    if (index < baseData.length * 0.5) {
-      ref.current.scrollTop += baseData.length * ITEM_HEIGHT;
-    } else if (index > baseData.length * 2.5) {
-      ref.current.scrollTop -= baseData.length * ITEM_HEIGHT;
+    // 조작 중임을 표시하고, 스크롤이 멈춘 후 200ms까지 유지 (관성 스크롤 대응)
+    isInteracting.current = true;
+    clearTimeout(interactTimer.current);
+    interactTimer.current = setTimeout(() => {
+      isInteracting.current = false;
+    }, 200);
+
+    const scrollTop = ref.current.scrollTop;
+    const baseLen = baseData.length;
+    const baseHeight = baseLen * ITEM_HEIGHT;
+
+    // 무한 루프 워프
+    if (scrollTop < baseHeight * 0.5) {
+      isProgrammaticScroll.current = true;
+      ref.current.scrollTop += baseHeight;
+      setTimeout(() => { isProgrammaticScroll.current = false; }, 50);
+      return;
+    } else if (scrollTop > baseHeight * 2.5) {
+      isProgrammaticScroll.current = true;
+      ref.current.scrollTop -= baseHeight;
+      setTimeout(() => { isProgrammaticScroll.current = false; }, 50);
+      return;
     }
 
-    const finalIndex = Math.round(ref.current.scrollTop / ITEM_HEIGHT) % baseData.length;
-    const newValue = baseData[finalIndex];
+    const centerIndex = Math.round(scrollTop / ITEM_HEIGHT) + 1;
+    const index = centerIndex % baseLen;
+    const newValue = baseData[index];
 
-    if (isInteracting.current) {
-      const [currH, currM] = lastEmittedValue.current.split(":");
-      let nextH = currH;
-      let nextM = currM;
+    const [currH, currM] = lastEmittedValue.current.split(":");
+    const nextH = type === "hour" ? newValue : currH;
+    const nextM = type === "minute" ? newValue : currM;
+    const nextValue = `${nextH}:${nextM}`;
 
-      if (type === "hour") nextH = newValue;
-      else nextM = newValue;
-
-      const nextValue = `${nextH}:${nextM}`;
-      
-      // 값이 실제로 변했을 때만 즉시 부모에게 알림
-      if (nextValue !== lastEmittedValue.current) {
-        lastEmittedValue.current = nextValue;
-        onChange(nextValue);
-      }
+    if (nextValue !== lastEmittedValue.current) {
+      lastEmittedValue.current = nextValue;
+      onChange(nextValue);
     }
   };
 
@@ -88,18 +109,9 @@ export default function TimeWheelPicker({
       w="50px"
       overflowY="auto"
       onScroll={() => handleScroll(type)}
-      onTouchStart={() => { isInteracting.current = true; }}
-      onTouchEnd={() => { 
-        isInteracting.current = false; 
-        handleScroll(type); 
-      }}
-      onMouseDown={() => { isInteracting.current = true; }}
-      onMouseUp={() => { 
-        isInteracting.current = false; 
-        handleScroll(type); 
-      }}
       sx={{
         scrollSnapType: "y mandatory",
+        overscrollBehavior: "contain",
         "&::-webkit-scrollbar": { display: "none" },
         WebkitOverflowScrolling: "touch",
       }}
@@ -129,11 +141,18 @@ export default function TimeWheelPicker({
     <Box
       bg="#2c2c2e"
       borderRadius="10px"
-      p={0.5}
+      p={1}
       border="1px solid"
-      borderColor="whiteAlpha.200"
+      borderColor="whiteAlpha.300"
       w="fit-content"
     >
+      {/* 🔥 실시간 캡처 값 확인용 디버그 텍스트 */}
+      <Box textAlign="center" mb={1}>
+        <Text fontSize="10px" fontWeight="bold" color="blue.300">
+          SELECTED: {value}
+        </Text>
+      </Box>
+
       <HStack spacing={0} position="relative">
         <Box
           position="absolute"
@@ -148,9 +167,9 @@ export default function TimeWheelPicker({
           borderY="1px solid"
           borderColor="blue.400"
         />
-        <Wheel data={hours} refObj={hourRef} type="hour" currentValue={h} />
+        <Wheel data={HOURS_DATA} refObj={hourRef} type="hour" currentValue={h} />
         <Text color="blue.400" fontWeight="bold" fontSize="xs">:</Text>
-        <Wheel data={minutes} refObj={minuteRef} type="minute" currentValue={m} />
+        <Wheel data={minutesData} refObj={minuteRef} type="minute" currentValue={m} />
       </HStack>
     </Box>
   );

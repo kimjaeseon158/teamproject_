@@ -55,13 +55,30 @@ const Option = ({ selectedDate, onRefresh, onClose }) => {
     day: today.getDate(),
   };
 
-  // 🔥 실시간 자동 계산 (Error Fix: setTotalWorkTime 제거 대응)
-  const totalWorkTime = useMemo(() => {
+  // 🔥 실시간 자동 계산 (메인 근무 + 추가 근무 합계)
+  const totalWorkTimeHM = useMemo(() => {
+    let totalMins = 0;
+    
+    // 1. 메인 근무 시간 (휴게시간 차감)
     if (startTime && finishTime) {
-      return minutesToHM(calculateNetMinutes(startTime, finishTime));
+      totalMins += calculateNetMinutes(startTime, finishTime);
     }
-    return "";
-  }, [startTime, finishTime]);
+    
+    // 2. 추가 근무 시간들 합계
+    if (extraEnabled) {
+      extraWorks.forEach(ex => {
+        if (ex.start && ex.finish) {
+          totalMins += diffMinutes(ex.start, ex.finish);
+        }
+      });
+    }
+
+    const result = totalMins > 0 ? minutesToHM(totalMins) : "";
+    if (result) {
+      console.log("📊 Real-time Total Work Duration:", result, `(${totalMins} mins)`);
+    }
+    return result;
+  }, [startTime, finishTime, extraEnabled, extraWorks]);
 
   useEffect(() => {
     if (extraEnabled && extraWorks.length === 0) {
@@ -182,45 +199,86 @@ const Option = ({ selectedDate, onRefresh, onClose }) => {
 
       <VStack align="stretch" spacing={2}>
         <Text fontSize="xs" fontWeight="bold" color="gray.500" ml={1}>근무 시간</Text>
-        <Menu>
-          <MenuButton 
-            as={Button} 
-            variant="unstyled" 
-            w="100%" 
-            h="56px"
+        
+        {isMobile ? (
+          /* 📱 모바일: 휠 선택기 */
+          <HStack 
+            justify="center" 
+            spacing={6} 
+            p={4} 
             bg="whiteAlpha.100" 
-            borderRadius="16px"
-            px={4}
-            textAlign="left"
+            borderRadius="24px"
+            border="1px solid"
+            borderColor="whiteAlpha.100"
           >
-            <HStack justify="space-between" w="100%">
-              <Text color={workTime ? "white" : "gray.500"} fontSize="md" fontWeight="600" isTruncated>
-                {workTime || "근무 시간을 선택하세요"}
-              </Text>
-              <ChevronDownIcon color="gray.500" />
-            </HStack>
-          </MenuButton>
-          <MenuList bg="#2c2c2e" borderColor="whiteAlpha.200" color="white" maxH="300px" overflowY="auto" borderRadius="16px">
-            {filteredWorkTimeList.map((t, i) => (
-              <MenuItem 
-                key={i} 
-                bg="transparent" 
-                _hover={{ bg: "whiteAlpha.100" }} 
-                onClick={() => handleSelectWorkTime(t.startTime, t.finishTime)} 
-                py={3}
-              >
-                <HStack justify="space-between" w="100%">
-                  <Text fontSize="md" fontWeight="600">{t.startTime} ~ {t.finishTime}</Text>
-                  <Text fontSize="xs" color="gray.500">
-                    ({minutesToHM(calculateNetMinutes(t.startTime, t.finishTime))})
-                  </Text>
-                </HStack>
-              </MenuItem>
-            ))}
-          </MenuList>
-        </Menu>
+            <VStack spacing={1}>
+              <Text fontSize="10px" color="gray.500" fontWeight="bold">시작 시간</Text>
+              <TimeWheelPicker 
+                value={startTime || "08:00"} 
+                onChange={(v) => {
+                  setStartTime(v);
+                  setWorkTime(`${v}~${finishTime || "17:00"}`);
+                }} 
+              />
+            </VStack>
 
-        {totalWorkTime && (
+            <Box mt={6}>
+              <Text fontSize="xl" fontWeight="bold" color="blue.400">~</Text>
+            </Box>
+
+            <VStack spacing={1}>
+              <Text fontSize="10px" color="gray.500" fontWeight="bold">종료 시간</Text>
+              <TimeWheelPicker 
+                value={finishTime || "17:00"} 
+                onChange={(v) => {
+                  setFinishTime(v);
+                  setWorkTime(`${startTime || "08:00"}~${v}`);
+                }} 
+              />
+            </VStack>
+          </HStack>
+        ) : (
+          /* 💻 데스크톱: 기존 드롭다운 메뉴 */
+          <Menu>
+            <MenuButton 
+              as={Button} 
+              variant="unstyled" 
+              w="100%" 
+              h="56px"
+              bg="whiteAlpha.100" 
+              borderRadius="16px"
+              px={4}
+              textAlign="left"
+            >
+              <HStack justify="space-between" w="100%">
+                <Text color={workTime ? "white" : "gray.500"} fontSize="md" fontWeight="600" isTruncated>
+                  {workTime || "근무 시간을 선택하세요"}
+                </Text>
+                <ChevronDownIcon color="gray.500" />
+              </HStack>
+            </MenuButton>
+            <MenuList bg="#2c2c2e" borderColor="whiteAlpha.200" color="white" maxH="300px" overflowY="auto" borderRadius="16px">
+              {filteredWorkTimeList.map((t, i) => (
+                <MenuItem 
+                  key={i} 
+                  bg="transparent" 
+                  _hover={{ bg: "whiteAlpha.100" }} 
+                  onClick={() => handleSelectWorkTime(t.startTime, t.finishTime)} 
+                  py={3}
+                >
+                  <HStack justify="space-between" w="100%">
+                    <Text fontSize="md" fontWeight="600">{t.startTime} ~ {t.finishTime}</Text>
+                    <Text fontSize="xs" color="gray.500">
+                      ({minutesToHM(calculateNetMinutes(t.startTime, t.finishTime))})
+                    </Text>
+                  </HStack>
+                </MenuItem>
+              ))}
+            </MenuList>
+          </Menu>
+        )}
+
+        {totalWorkTimeHM && (
           <Center 
             py={2} 
             px={4} 
@@ -233,7 +291,7 @@ const Option = ({ selectedDate, onRefresh, onClose }) => {
             <HStack spacing={2}>
               <TimeIcon color="blue.300" w={3} h={3} />
               <Text fontSize="sm" fontWeight="bold" color="blue.300">
-                총 근무 시간: <Text as="span" color="white">{totalWorkTime}</Text>
+                총 근무 시간: <Text as="span" color="white">{totalWorkTimeHM}</Text>
               </Text>
             </HStack>
           </Center>

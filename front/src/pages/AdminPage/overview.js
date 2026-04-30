@@ -12,14 +12,22 @@ import {
   FormControl,
   FormLabel,
   useDisclosure,
+  Text,
+  Spinner,
 } from "@chakra-ui/react";
 import { useState } from "react";
+import { FcGoogle } from "react-icons/fc";
 import CalendarSection from "../../feactures/admin/overview/section/CalendarSection";
 import PendingApproveSection from "../../feactures/admin/overview/section/PendingApproveSection";
+import useGoogleLinkStatus from "../../feactures/admin/api/google/useGoogleLinkStatus";
+import { login as googleLogin } from "../../feactures/admin/api/google/googleAuth";
 
 export default function OverviewPage() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [modalEvent, setModalEvent] = useState(null);
+
+  // 🔥 구글 연동 상태 확인
+  const { linked, loading: statusLoading } = useGoogleLinkStatus();
 
   // 🔥 승인 대기 원본 데이터 (건별 리스트)
   const [pendingList, setPendingList] = useState([]);
@@ -41,6 +49,29 @@ export default function OverviewPage() {
 
   return (
     <Box p={6} height="100vh" display="flex" flexDirection="column">
+      
+      {/* 🔗 구글 연동 상태 및 버튼 */}
+      <Flex justify="flex-end" mb={4} align="center">
+        {statusLoading ? (
+          <Spinner size="sm" color="blue.500" />
+        ) : linked ? (
+          <Flex align="center" gap={2} px={3} py={1} bg="green.50" borderRadius="md" border="1px solid" borderColor="green.200">
+            <FcGoogle />
+            <Text fontSize="sm" color="green.700" fontWeight="bold">구글 연동 완료</Text>
+          </Flex>
+        ) : (
+          <Button
+            leftIcon={<FcGoogle />}
+            variant="outline"
+            size="sm"
+            colorScheme="blue"
+            onClick={googleLogin}
+          >
+            구글 계정 연결
+          </Button>
+        )}
+      </Flex>
+
       <Flex flex="1" gap={4} overflow="hidden">
         
         {/* 📅 왼쪽 캘린더 */}

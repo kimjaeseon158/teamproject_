@@ -241,6 +241,9 @@ class GoogleDriveWorkplaceExcelExportAPIView(APIView):
     """
     구글 드라이브와 연동하여 특정 근무지의 해당 월 전체 근무 현황을 엑셀로 생성 및 업로드합니다.
     """
+    authentication_classes = []
+    permission_classes = [AllowAny] 
+
     def get(self, request):
         access_token = request.COOKIES.get("google_access_token")
 
@@ -258,7 +261,7 @@ class GoogleDriveWorkplaceExcelExportAPIView(APIView):
         
         # 1. 근무지별 전체 현황 엑셀 생성
         # 템플릿 탐색 및 다운로드 (근무지명과 일치하는 xlsx 파일 탐색)
-        template_id = drive.find_file(f"{work_place}.xlsx", workload_id)
+        template_id = drive.find_file("template.xlsx", workload_id)
         template_io = drive.download_file(template_id) if template_id else None
         
         # 엑셀 생성 (해당 근무지의 해당 월 모든 인원 데이터 포함)
@@ -272,7 +275,8 @@ class GoogleDriveWorkplaceExcelExportAPIView(APIView):
         # 3. 엑셀 메모리 저장 및 구글 드라이브 업로드
         output = io.BytesIO()
         wb.save(output)
-        drive.upload_or_update_file(output, save_filename, target_folder_id)
+        upload_result = drive.upload_or_update_file(output, save_filename, target_folder_id)
+        print("upload_result:", upload_result, flush=True)
 
         # 4. 브라우저 즉시 다운로드 응답 생성
         output.seek(0)

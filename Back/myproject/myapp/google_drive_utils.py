@@ -81,7 +81,11 @@ class GoogleDriveService:
                 "metadata": ("metadata", json.dumps({"name": filename}), "application/json; charset=UTF-8"),
                 "file": (filename, file_io.getvalue(), mime_type)
             }
-            res = requests.patch(self.headers_without_content_type(), url=update_url, files=files_data)
+            res = requests.post(
+                url=upload_url,
+                headers=self.headers_without_content_type(),
+                files=files_data
+            )
         else:
             # 3. 파일 신규 생성 (POST)
             upload_url = f"{self.UPLOAD_URL}?uploadType=multipart"
@@ -90,7 +94,21 @@ class GoogleDriveService:
                 "metadata": ("metadata", json.dumps(metadata), "application/json; charset=UTF-8"),
                 "file": (filename, file_io.getvalue(), mime_type)
             }
-            res = requests.post(self.headers_without_content_type(), url=upload_url, files=files_data)
+            res = requests.post(
+                url=upload_url,
+                headers=self.headers_without_content_type(),
+                files=files_data
+            )
+
+        print("Drive upload status:", res.status_code, flush=True)
+        print("Drive upload response:", res.text, flush=True)
+
+        if res.status_code >= 400:
+            return {
+            "success": False,
+            "status_code": res.status_code,
+            "response": res.text,
+        }
             
         return res.json()
 

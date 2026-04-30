@@ -18,6 +18,9 @@ import { useState, useEffect } from "react";
 export default function MonthPicker({
   value,        // 반드시 "YYYY-MM"
   onChange,
+  variant = "outline",
+  width = "auto",
+  height = "auto",
 }) {
   const today = new Date();
 
@@ -38,7 +41,6 @@ export default function MonthPicker({
   };
 
   const parsed = parseYearMonth(value);
-
   const [year, setYear] = useState(parsed.year);
 
   useEffect(() => {
@@ -52,46 +54,61 @@ export default function MonthPicker({
       {({ onClose }) => (
         <>
           <PopoverTrigger>
-            <Button size="sm" variant="outline">
+            <Button 
+              variant={variant} 
+              w={width} 
+              h={height} 
+              fontWeight="600"
+              borderRadius="xl"
+            >
               {displayLabel}
             </Button>
           </PopoverTrigger>
 
-          <PopoverContent w="280px">
+          <PopoverContent w="280px" borderRadius="xl" boxShadow="2xl" zIndex={2000}>
             <PopoverArrow />
             <PopoverCloseButton />
-            <PopoverHeader fontWeight="700">
+            <PopoverHeader fontWeight="700" borderBottom="1px solid" borderColor="gray.100">
               월 선택
             </PopoverHeader>
 
-            <PopoverBody>
-              <HStack justify="space-between" mb={3}>
+            <PopoverBody py={4}>
+              <HStack justify="space-between" mb={4}>
                 <IconButton
                   size="sm"
+                  variant="ghost"
                   icon={<ChevronLeftIcon />}
                   onClick={() => setYear((y) => y - 1)}
+                  aria-label="Previous Year"
                 />
-                <Text fontWeight="800">{year}년</Text>
+                <Text fontWeight="800" fontSize="md">{year}년</Text>
                 <IconButton
                   size="sm"
+                  variant="ghost"
                   icon={<ChevronRightIcon />}
                   onClick={() => setYear((y) => y + 1)}
+                  aria-label="Next Year"
                 />
               </HStack>
 
               <SimpleGrid columns={4} spacing={2}>
                 {Array.from({ length: 12 }).map((_, i) => {
                   const month = i + 1;
-                  const formatted = `${year}-${String(month).padStart(2, "0")}`;
+                  const formattedMonth = String(month).padStart(2, "0");
+                  const formatted = `${year}-${formattedMonth}`;
+                  const isSelected = value === formatted;
 
                   return (
                     <Button
                       key={i}
                       size="sm"
+                      variant={isSelected ? "solid" : "ghost"}
+                      colorScheme={isSelected ? "green" : "gray"}
                       onClick={() => {
-                        onChange(formatted); // 🔥 항상 YYYY-MM 반환
+                        onChange(formatted);
                         onClose();
                       }}
+                      borderRadius="lg"
                     >
                       {month}월
                     </Button>

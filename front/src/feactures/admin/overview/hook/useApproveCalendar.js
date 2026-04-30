@@ -52,9 +52,12 @@ export default function useApproveCalendar(currentDate) {
         const mapped = pendingOnly.map((item) => ({
           id: `${item.user_uuid}-${item.work_date}`,
           title: `${item.user_name} (${item.work_shift || ""})`,
-          start: new Date(item.work_start),
-          end: new Date(item.work_end),
-          resource: item,
+          start: item.work_start, // 실제 시작 시간 (ISO string)
+          end: item.work_end,     // 실제 종료 시간 (ISO string)
+          backgroundColor: "#ffc107",
+          borderColor: "#ffc107",
+          textColor: "black",
+          extendedProps: { ...item },
         }));
 
         setEvents(mapped);

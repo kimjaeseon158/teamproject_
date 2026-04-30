@@ -1,4 +1,4 @@
-import {
+﻿import {
   Box,
   Flex,
   Modal,
@@ -46,6 +46,7 @@ export default function OverviewPage() {
     
     return `${ampm} - ${displayHours}:${minutes}`;
   };
+  console.log(setModalEvent)
 
   return (
     <Box p={6} height="100vh" display="flex" flexDirection="column">

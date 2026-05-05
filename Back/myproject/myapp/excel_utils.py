@@ -1,8 +1,12 @@
 import os
 from openpyxl import load_workbook, Workbook
 from django.conf import settings
-from .models import User_WorkDay, WorkPlaceRate
+from .models import User_WorkDay
 from datetime import date
+from copy import copy
+from openpyxl.cell.cell import MergedCell
+from openpyxl.utils import get_column_letter
+from openpyxl.formula.translate import Translator
 import calendar
 
 
@@ -29,63 +33,247 @@ def _get_workbook(template_file, workplace_name=None, default_template="default.
         
     return Workbook()
 
+def safe_set(ws, row, col, value):
+    cell = ws.cell(row=row, column=col)
+    if isinstance(cell, MergedCell):
+        return
+    cell.value = value
+
+
+def hour_value(minutes):
+    if not minutes:
+        return None
+    value = minutes / 60
+    return int(value) if value.is_integer() else value
+
+
+WORK_TYPE_ROW = {
+    "주간": 0,
+    "잔업": 1,
+    "중식연장": 2,
+    "특근": 3,
+    "철야": 4,
+    "철야연장": 5,
+    "조기출근": 6,
+}
+
+
+def copy_cell(src, dst):
+    """셀 값, 스타일, 수식, 서식 복사"""
+    if src.has_style:
+        dst._style = copy(src._style)
+
+    dst.font = copy(src.font)
+    dst.fill = copy(src.fill)
+    dst.border = copy(src.border)
+    dst.alignment = copy(src.alignment)
+    dst.number_format = src.number_format
+    dst.protection = copy(src.protection)
+
+    if src.data_type == "f":
+        dst.value = Translator(
+            src.value,
+            origin=src.coordinate
+        ).translate_formula(dst.coordinate)
+    else:
+        dst.value = src.value
+
+
+def copy_row_block(ws, source_start, source_end, target_start, start_col=1, end_col=60):
+    """행 블록 복사: 글, 스타일, 수식 포함"""
+    row_gap = target_start - source_start
+
+    for source_row in range(source_start, source_end + 1):
+        target_row = source_row + row_gap
+
+        ws.row_dimensions[target_row].height = ws.row_dimensions[source_row].height
+
+        for col in range(start_col, end_col + 1):
+            src = ws.cell(source_row, col)
+            dst = ws.cell(target_row, col)
+
+            if isinstance(dst, MergedCell):
+                continue
+
+            if isinstance(src, MergedCell):
+                continue
+
+            copy_cell(src, dst)
+
+
+def copy_merged_cells(ws, source_start, source_end, target_start):
+    """기준 블록 안의 병합셀을 새 블록에도 동일하게 생성"""
+    row_gap = target_start - source_start
+
+    source_ranges = list(ws.merged_cells.ranges)
+
+    for merged_range in source_ranges:
+        min_row = merged_range.min_row
+        max_row = merged_range.max_row
+        min_col = merged_range.min_col
+        max_col = merged_range.max_col
+
+        # 기준 블록 안에 있는 병합셀만 복사
+        if source_start <= min_row and max_row <= source_end:
+            new_min_row = min_row + row_gap
+            new_max_row = max_row + row_gap
+
+            new_range = (
+                f"{get_column_letter(min_col)}{new_min_row}:"
+                f"{get_column_letter(max_col)}{new_max_row}"
+            )
+
+            if new_range not in ws.merged_cells:
+                ws.merge_cells(new_range)
+
+
+def ensure_worker_blocks(ws, worker_count):
+    """
+    템플릿에 2명까지 있음:
+    1번 사람: 5~13행
+    2번 사람: 14~22행
+
+    3명 이상이면 23행 위에 9줄씩 추가
+    """
+
+    block_size = 9
+
+    # 복사 기준: 2번째 사람 블록
+    source_start = 14
+    source_end = 22
+
+    # 합계 또는 다음 영역 시작 행
+    insert_at_row = 23
+
+    extra_count = max(0, worker_count - 2)
+
+    if extra_count <= 0:
+        return
+
+    # 필요한 줄 한 번에 추가
+    ws.insert_rows(insert_at_row, amount=extra_count * block_size)
+
+    # 추가된 각 사람 블록에 2번째 사람 블록 복사
+    for i in range(extra_count):
+        target_start = insert_at_row + (i * block_size)
+
+        copy_row_block(
+            ws,
+            source_start=source_start,
+            source_end=source_end,
+            target_start=target_start,
+            start_col=1,
+            end_col=60,
+        )
+
+        copy_merged_cells(
+            ws,
+            source_start=source_start,
+            source_end=source_end,
+            target_start=target_start,
+        )
+
+
 def generate_workplace_excel(work_place, year, month, template_file=None):
-    """특정 근무지의 전체 근무 데이터를 기반으로 매트릭스 형태의 엑셀 생성"""
     wb = _get_workbook(template_file, workplace_name=work_place)
     ws = wb.active
 
-    # 1. 데이터 조회 (승인된 데이터만)
     work_days = User_WorkDay.objects.filter(
         work_place=work_place,
         work_date__year=year,
         work_date__month=month,
         is_approved=True
-    ).values('user_name', 'work_date')
+    ).prefetch_related("details")
 
-    # 2. 유저별로 일한 날짜(day)를 집합(set)으로 정리
     user_work_map = {}
+
     for wd in work_days:
-        name = wd['user_name']
-        day = wd['work_date'].day
+        name = wd.user_name
+        day = wd.work_date.day
+
         if name not in user_work_map:
-            user_work_map[name] = set()
-        user_work_map[name].add(day)
+            user_work_map[name] = {}
 
-    # 3. 해당 월의 총 일수 및 날짜 헤더 정보 설정
+        if day not in user_work_map[name]:
+            user_work_map[name][day] = {}
+
+        for detail in wd.details.all():
+            work_type = detail.work_type
+
+            if work_type not in WORK_TYPE_ROW:
+                continue
+
+            row_offset = WORK_TYPE_ROW[work_type]
+
+            if work_type in ["주간", "특근", "철야"]:
+                value = 1
+            else:
+                value = hour_value(detail.minutes)
+
+            if value is None:
+                continue
+
+            user_work_map[name][day][row_offset] = (
+                user_work_map[name][day].get(row_offset, 0) + value
+            )
+
+    sorted_names = sorted(user_work_map.keys())
+
+    # 핵심: 사람 수만큼 블록 확보
+    ensure_worker_blocks(ws, len(sorted_names))
+
     _, last_day = calendar.monthrange(year, month)
-    days_kr = ['월', '화', '수', '목', '금', '토', '일']
+    days_kr = ["월", "화", "수", "목", "금", "토", "일"]
 
-    # 작성 위치 설정
-    header_row_day = 4
-    header_row_date = 5
-    data_start_row = 6
-    name_col = 1
-    date_start_col = 2
+    title_row = 2
+    title_col = 4        # D2
 
-    # 제목 및 기본 정보 (템플릿에 따라 위치 조정 가능)
-    ws.cell(row=2, column=2, value=f"{year}년 {month}월 {work_place} 근무 현황")
+    header_row_day = 3   # P3
+    header_row_date = 4  # P4
 
-    # 4. 가로 날짜 및 요일 헤더 생성
+    data_start_row = 5
+    name_col = 4         # D열
+    date_start_col = 16  # P열
+
+    block_size = 9
+
+    safe_set(ws, title_row, title_col, f"{year}년 {month}월 {work_place} 근무 현황")
+
+    # 요일 / 날짜
     for day in range(1, last_day + 1):
         col = date_start_col + day - 1
-        d = date(year, month, day)
-        ws.cell(row=header_row_day, column=col, value=days_kr[d.weekday()])
-        ws.cell(row=header_row_date, column=col, value=day)
+        current_date = date(year, month, day)
 
-    # 5. 유저별 데이터 작성
-    current_row = data_start_row
-    sorted_names = sorted(user_work_map.keys())
-    
-    for name in sorted_names:
-        # 이름은 세로로 한 번만 작성 (각 행의 첫 번째 컬럼)
-        ws.cell(row=current_row, column=name_col, value=name)
-        
-        worked_days = user_work_map[name]
-        for day in range(1, last_day + 1):
-            if day in worked_days:
-                # 일한 날짜 칸에 "1" 입력
-                ws.cell(row=current_row, column=date_start_col + day - 1, value=1)
-        current_row += 1
+        safe_set(ws, header_row_day, col, days_kr[current_date.weekday()])
+        safe_set(ws, header_row_date, col, current_date.strftime("%m/%d"))
+
+    # 사람별 데이터 입력
+    for idx, name in enumerate(sorted_names):
+        current_row = data_start_row + (idx * block_size)
+
+        safe_set(ws, current_row, name_col, name)
+
+        # 날짜 영역 초기화
+        for row_offset in range(block_size):
+            row = current_row + row_offset
+
+            for day in range(1, last_day + 1):
+                col = date_start_col + day - 1
+                safe_set(ws, row, col, None)
+
+        # 실제 근무 데이터 입력
+        day_map = user_work_map[name]
+
+        for day, type_map in day_map.items():
+            col = date_start_col + day - 1
+
+            for row_offset, value in type_map.items():
+                safe_set(
+                    ws,
+                    current_row + row_offset,
+                    col,
+                    value
+                )
 
     return wb
 

@@ -902,6 +902,8 @@ class AdminPageWorkDayListAPIView(APIView):
 
     def get(self, request):
         status = request.query_params.get("status")  # 대기, 승인, 거절, 전체
+        work_shift = request.query_params.get("work_shift")
+        work_place = request.query_params.get("work_place")
         start_date_str = request.query_params.get("start_date")  # YYYY-MM-DD
         end_date_str = request.query_params.get("end_date")  # YYYY-MM-DD
 
@@ -920,6 +922,13 @@ class AdminPageWorkDayListAPIView(APIView):
             pass
         else:
             return Response({"success": False})
+
+        # 근무 형태 / 근무지 필터 (선택)
+        if work_shift:
+            user_work_day = user_work_day.filter(work_shift=work_shift)
+
+        if work_place:
+            user_work_day = user_work_day.filter(work_place=work_place)
 
         # 날짜 필터 (선택)
         if start_date_str and end_date_str:

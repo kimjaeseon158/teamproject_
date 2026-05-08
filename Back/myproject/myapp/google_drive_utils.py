@@ -2,6 +2,11 @@ import requests
 import json
 import io
 
+
+# ----------------------
+# 공통 Google Drive API 클라이언트
+# ----------------------
+
 class GoogleDriveService:
     """
     구글 드라이브 API 연동을 위한 유틸리티 클래스입니다.
@@ -12,6 +17,11 @@ class GoogleDriveService:
 
     def __init__(self, access_token):
         self.headers = {"Authorization": f"Bearer {access_token}"}
+
+
+    # ----------------------
+    # 폴더 로직
+    # ----------------------
 
     def get_or_create_folder(self, folder_name, parent_id=None):
         """특정 폴더를 찾고, 없으면 생성하여 ID를 반환합니다."""
@@ -48,6 +58,11 @@ class GoogleDriveService:
             current_parent = self.get_or_create_folder(folder_name, current_parent)
         return current_parent
 
+
+    # ----------------------
+    # 파일 탐색/다운로드 로직
+    # ----------------------
+
     def find_file(self, filename, parent_id):
         """특정 폴더 내에서 파일을 찾아 ID를 반환합니다."""
         query = f"name = '{filename}' and '{parent_id}' in parents and trashed = false"
@@ -63,6 +78,11 @@ class GoogleDriveService:
         if res.status_code == 200:
             return io.BytesIO(res.content)
         return None
+
+
+    # ----------------------
+    # 파일 업로드/수정 로직
+    # ----------------------
 
     def upload_or_update_file(self, file_io, filename, folder_id):
         """
@@ -82,7 +102,7 @@ class GoogleDriveService:
                 "file": (filename, file_io.getvalue(), mime_type)
             }
             res = requests.post(
-                url=upload_url,
+                url=update_url,
                 headers=self.headers_without_content_type(),
                 files=files_data
             )
@@ -111,6 +131,11 @@ class GoogleDriveService:
         }
             
         return res.json()
+
+
+    # ----------------------
+    # 요청 헤더 헬퍼
+    # ----------------------
 
     def headers_without_content_type(self):
         """Multipart 요청 시 requests가 Content-Type을 직접 설정하도록 헤더에서 제거합니다."""

@@ -10,83 +10,137 @@ import {
   FormLabel,
   Select,
   VStack,
+  HStack,
   Text,
+  Icon,
+  Box,
+  SimpleGrid,
+  Badge,
 } from "@chakra-ui/react";
 import { useState } from "react";
+import { DownloadIcon } from "@chakra-ui/icons";
+// 경로 재검증: section -> total_pay -> admin -> feactures -> common
+import locationsList from "../../../common/work_placeCloums/locationsList";
 
 export default function ExcelExportModal({ isOpen, onClose, onConfirm, loading }) {
-  // ⚠️ 경로 문제를 방지하기 위해 데이터를 내부에 직접 선언
-  const LOCATIONS = [
-    "삼성전자(평택)", "삼성전자(기흥)", "삼성전자(아산)", 
-    "삼성전자(서울)", "삼성디스플레이(온양)"
-  ];
-  
   const today = new Date();
   const [workPlace, setWorkPlace] = useState("");
-  const [date, setDate] = useState(() => {
-    const y = today.getFullYear();
-    const m = String(today.getMonth() + 1).padStart(2, "0");
-    return `${y}-${m}`;
-  });
+  const [year, setYear] = useState(today.getFullYear().toString());
+  const [month, setMonth] = useState(String(today.getMonth() + 1).padStart(2, "0"));
 
   const handleConfirm = () => {
-    if (!workPlace || !date) {
+    if (!workPlace || !year || !month) {
       alert("근무지와 날짜를 모두 선택해주세요.");
       return;
     }
-    onConfirm(workPlace, date);
+    onConfirm(workPlace, `${year}-${month}`);
   };
 
+  const years = Array.from({ length: 5 }, (_, i) => (today.getFullYear() - i).toString());
+  const months = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0"));
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isCentered>
-      <ModalOverlay backdropFilter="blur(2px)" />
-      <ModalContent>
-        <ModalHeader borderBottom="1px solid #eee">엑셀 파일 생성</ModalHeader>
-        
-        <ModalBody py={6}>
-          <VStack spacing={4} align="stretch">
-            <FormControl isRequired>
-              <FormLabel>근무지 선택</FormLabel>
+    <Modal isOpen={isOpen} onClose={onClose} isCentered size="sm">
+      <ModalOverlay backdropFilter="blur(10px) saturate(180%)" />
+      <ModalContent 
+        borderRadius="30px" 
+        overflow="hidden" 
+        boxShadow="0 25px 50px -12px rgba(0, 0, 0, 0.25)" 
+        bg="white"
+        mx={4}
+      >
+        <ModalHeader p={0}>
+          <Box bgGradient="linear(to-r, green.400, teal.500)" px={6} py={8} textAlign="center">
+            <Icon as={DownloadIcon} w={10} h={10} color="white" mb={3} />
+            <Text color="white" fontSize="xl" fontWeight="900" letterSpacing="-0.5px">EXCEL EXPORT</Text>
+            <Text color="whiteAlpha.800" fontSize="xs" mt={1}>구글 드라이브로 엑셀 파일을 업로드합니다</Text>
+          </Box>
+        </ModalHeader>
+
+        <ModalBody px={8} py={10}>
+          <VStack spacing={8} align="stretch">
+            {/* 근무지 선택 */}
+            <FormControl>
+              <HStack mb={2} justify="space-between">
+                <FormLabel fontSize="xs" fontWeight="900" color="gray.400" m={0} textTransform="uppercase">근무지</FormLabel>
+                {workPlace && <Badge colorScheme="green" variant="subtle" borderRadius="full" px={2}>Selected</Badge>}
+              </HStack>
               <Select
-                placeholder="근무지를 선택하세요"
+                placeholder="근무지를 선택해주세요"
                 value={workPlace}
                 onChange={(e) => setWorkPlace(e.target.value)}
+                h="56px"
+                borderRadius="20px"
+                bg="gray.50"
+                border="none"
+                fontWeight="700"
+                fontSize="md"
+                cursor="pointer"
+                _focus={{ bg: "white", boxShadow: "0 0 0 2px #48BB78" }}
               >
-                {LOCATIONS.map((loc) => (
+                {locationsList.map((loc) => (
                   <option key={loc} value={loc}>{loc}</option>
                 ))}
               </Select>
             </FormControl>
 
-            <FormControl isRequired>
-              <FormLabel>기준 월 선택</FormLabel>
-              <input
-                type="month"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                style={{
-                  width: "100%",
-                  height: "40px",
-                  padding: "0 12px",
-                  borderRadius: "6px",
-                  border: "1px solid #E2E8F0",
-                  fontSize: "16px"
-                }}
-              />
+            {/* 날짜 선택 */}
+            <FormControl>
+              <FormLabel fontSize="xs" fontWeight="900" color="gray.400" mb={2} ml={1} textTransform="uppercase">년 & 월 선택</FormLabel>
+              <SimpleGrid columns={2} spacing={4}>
+                <Select
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                  h="56px"
+                  borderRadius="20px"
+                  bg="gray.50"
+                  border="none"
+                  fontWeight="700"
+                  cursor="pointer"
+                  _focus={{ bg: "white", boxShadow: "0 0 0 2px #48BB78" }}
+                >
+                  {years.map(y => <option key={y} value={y}>{y}년</option>)}
+                </Select>
+                <Select
+                  value={month}
+                  onChange={(e) => setMonth(e.target.value)}
+                  h="56px"
+                  borderRadius="20px"
+                  bg="gray.50"
+                  border="none"
+                  fontWeight="700"
+                  cursor="pointer"
+                  _focus={{ bg: "white", boxShadow: "0 0 0 2px #48BB78" }}
+                >
+                  {months.map(m => <option key={m} value={m}>{parseInt(m)}월</option>)}
+                </Select>
+              </SimpleGrid>
             </FormControl>
-            <Text fontSize="xs" color="gray.500">
-              * 선택한 월의 전체 데이터를 엑셀로 추출합니다.
-            </Text>
           </VStack>
         </ModalBody>
 
-        <ModalFooter bg="gray.50">
-          <Button variant="ghost" mr={3} onClick={onClose} isDisabled={loading}>
-            취소
-          </Button>
-          <Button colorScheme="blue" onClick={handleConfirm} isLoading={loading}>
-            파일 생성 및 업로드
-          </Button>
+        <ModalFooter p={8} pt={0}>
+          <VStack w="100%" spacing={3}>
+            <Button
+              colorScheme="green"
+              w="100%"
+              h="60px"
+              borderRadius="20px"
+              fontSize="md"
+              fontWeight="900"
+              onClick={handleConfirm}
+              isLoading={loading}
+              loadingText="업로드 중..."
+              boxShadow="0 10px 15px -3px rgba(72, 187, 120, 0.4)"
+              _hover={{ transform: "translateY(-2px)", boxShadow: "0 20px 25px -5px rgba(72, 187, 120, 0.4)" }}
+              _active={{ transform: "translateY(0)" }}
+            >
+              업로드 시작하기
+            </Button>
+            <Button variant="ghost" color="gray.400" size="sm" onClick={onClose} isDisabled={loading} _hover={{ color: "gray.600" }}>
+              나중에 하기
+            </Button>
+          </VStack>
         </ModalFooter>
       </ModalContent>
     </Modal>

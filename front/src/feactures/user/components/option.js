@@ -23,6 +23,52 @@ import {
 
 import { useOptionHandlers } from "../hook/useOptionHandlers";
 
+const EXTRA_WORK_TYPES = [
+  { value: "weekday_ot", label: "평일 잔업" },
+  { value: "holiday_special", label: "휴일 특근" },
+  { value: "holiday_ot", label: "휴일 잔업" },
+  { value: "night_shift", label: "철야" },
+  { value: "night_ot", label: "철야 잔업" },
+  { value: "early_arrival", label: "조기 출근" },
+  { value: "lunch_ext", label: "중식 연장" },
+];
+
+const addMinutesToTime = (time, minutes) => {
+  if (!time || !time.includes(":")) return "";
+  const [h, m] = time.split(":").map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return "";
+
+  const total = (h * 60 + m + minutes + 1440) % 1440;
+  const nextH = Math.floor(total / 60);
+  const nextM = total % 60;
+  return `${String(nextH).padStart(2, "0")}:${String(nextM).padStart(2, "0")}`;
+};
+
+const getExtraWorkTimes = (type, startTime, finishTime) => {
+  if (type === "lunch_ext") {
+    return { start: "12:00", finish: "13:00" };
+  }
+
+  if (type === "early_arrival" && startTime) {
+    return { start: addMinutesToTime(startTime, -120), finish: startTime };
+  }
+
+  const start = finishTime || "17:00";
+  return { start, finish: addMinutesToTime(start, 120) || "19:00" };
+};
+
+const getExtraWorkTypeLabel = (type) =>
+  EXTRA_WORK_TYPES.find((item) => item.value === type)?.label || type || "종류 선택";
+
+const createExtraWorkRow = (type = "weekday_ot", startTime = "", finishTime = "") => {
+  const times = getExtraWorkTimes(type, startTime, finishTime);
+  return {
+    type,
+    ...times,
+    duration: minutesToHM(diffMinutes(times.start, times.finish)),
+  };
+};
+
 const Option = ({ selectedDate, onRefresh, onClose }) => {
   const { userUuid, userName } = useUser();
   const toast = useToast();
@@ -82,18 +128,40 @@ const Option = ({ selectedDate, onRefresh, onClose }) => {
 
   useEffect(() => {
     if (extraEnabled && extraWorks.length === 0) {
-      setExtraWorks([{ type: "", start: "17:00", finish: "19:00", duration: "" }]);
+      setExtraWorks([createExtraWorkRow("weekday_ot", startTime, finishTime)]);
     }
     if (!extraEnabled && extraWorks.length > 0) {
       setExtraWorks([]);
     }
-  }, [extraEnabled, extraWorks.length]);
+  }, [extraEnabled, extraWorks.length, startTime, finishTime]);
+
+  useEffect(() => {
+    if (!extraEnabled || extraWorks.length === 0) return;
+
+    setExtraWorks((prev) =>
+      prev.map((row) => {
+        const type = row.type || "weekday_ot";
+        const times = getExtraWorkTimes(type, startTime, finishTime);
+        return {
+          ...row,
+          type,
+          ...times,
+          duration: minutesToHM(diffMinutes(times.start, times.finish)),
+        };
+      })
+    );
+  }, [startTime, finishTime, extraEnabled]);
 
   const updateExtraWork = (idx, patch) => {
     setExtraWorks((prev) =>
       prev.map((r, i) => {
         if (i !== idx) return r;
         const n = { ...r, ...patch };
+        if (patch.type) {
+          const times = getExtraWorkTimes(patch.type, startTime, finishTime);
+          n.start = times.start;
+          n.finish = times.finish;
+        }
         n.duration = (n.start && n.finish) ? minutesToHM(diffMinutes(n.start, n.finish)) : "";
         return n;
       })
@@ -342,11 +410,11 @@ const Option = ({ selectedDate, onRefresh, onClose }) => {
             <HStack justify="space-between" mb={3}>
               <Menu>
                 <MenuButton as={Button} size="xs" variant="solid" colorScheme="orange" borderRadius="full" rightIcon={<ChevronDownIcon />}>
-                  {row.type || "종류 선택"}
+                  {getExtraWorkTypeLabel(row.type)}
                 </MenuButton>
                 <MenuList bg="#2c2c2e" borderColor="whiteAlpha.200">
-                  {["평일 잔업", "휴일 특근", "휴일 잔업", "철야", "철야 잔업", "조기 출근", "중식 연장"].map(t => (
-                    <MenuItem key={t} bg="transparent" onClick={() => updateExtraWork(idx, { type: t })}>{t}</MenuItem>
+                  {EXTRA_WORK_TYPES.map(({ value, label }) => (
+                    <MenuItem key={value} bg="transparent" onClick={() => updateExtraWork(idx, { type: value })}>{label}</MenuItem>
                   ))}
                 </MenuList>
               </Menu>
@@ -391,25 +459,43 @@ const Option = ({ selectedDate, onRefresh, onClose }) => {
             <AlertDialogHeader fontSize="lg" fontWeight="bold">최종 등록 확인</AlertDialogHeader>
             <AlertDialogBody>
               <VStack spacing={3} align="stretch" maxH="300px" overflowY="auto" py={2}>
-                {cart.map((c) => (
-                  <Box key={c.id} bg="whiteAlpha.100" p={3} borderRadius="16px">
-                    <HStack justify="space-between">
-                      <HStack spacing={2}>
-                        <Text fontWeight="bold">{c.work_date.month}/{c.work_date.day}</Text>
-                        <Badge colorScheme="blue">{c.baseShift}</Badge>
+                {cart.map((c) => {
+                  const extraDetails = c.details.slice(1);
+
+                  return (
+                    <Box key={c.id} bg="whiteAlpha.100" p={3} borderRadius="16px">
+                      <HStack justify="space-between">
+                        <HStack spacing={2}>
+                          <Text fontWeight="bold">{c.work_date.month}/{c.work_date.day}</Text>
+                          <Badge colorScheme="blue">{c.baseShift}</Badge>
+                          <Badge colorScheme={extraDetails.length > 0 ? "orange" : "gray"}>
+                            {extraDetails.length > 0 ? `잔업 ${extraDetails.length}건` : "잔업 없음"}
+                          </Badge>
+                        </HStack>
+                        <IconButton
+                          icon={<DeleteIcon />}
+                          size="xs"
+                          variant="ghost"
+                          colorScheme="red"
+                          onClick={() => handleDeleteFromCart(c.id)}
+                          aria-label="Remove item"
+                        />
                       </HStack>
-                      <IconButton
-                        icon={<DeleteIcon />}
-                        size="xs"
-                        variant="ghost"
-                        colorScheme="red"
-                        onClick={() => handleDeleteFromCart(c.id)}
-                        aria-label="Remove item"
-                      />
-                    </HStack>
-                    <Text fontSize="sm" color="gray.400">{c.startTime} ~ {c.finishTime} | {c.location}</Text>
-                  </Box>
-                ))}
+                      <Text fontSize="sm" color="gray.400">{c.startTime} ~ {c.finishTime} | {c.location}</Text>
+
+                      {extraDetails.length > 0 && (
+                        <VStack align="stretch" spacing={1} mt={2}>
+                          {extraDetails.map((detail, detailIdx) => (
+                            <HStack key={`${c.id}-${detailIdx}`} justify="space-between" fontSize="xs" color="orange.200">
+                              <Text>{detail.work_type}</Text>
+                              <Text fontWeight="bold">{minutesToHM(detail.minutes)}</Text>
+                            </HStack>
+                          ))}
+                        </VStack>
+                      )}
+                    </Box>
+                  );
+                })}
               </VStack>
             </AlertDialogBody>
             <AlertDialogFooter gap={3}>

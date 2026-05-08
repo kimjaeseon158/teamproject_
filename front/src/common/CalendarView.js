@@ -64,20 +64,41 @@ export default function CalendarView({
 
         const backgroundColor = arg.event.backgroundColor;
         const textColor = arg.event.textColor || "white";
+        const { amount } = arg.event.extendedProps;
 
-        // 2. 제목만 심플하게 표시
+        // 2. 모바일: 금액만 심플하게 표시
+        if (isMobile) {
+          return (
+            <div style={{ 
+              fontSize: "0.6rem", 
+              textAlign: "center",
+              fontWeight: "900",
+              backgroundColor: backgroundColor,
+              color: textColor,
+              borderRadius: "2px",
+              width: "100%",
+              padding: "1px 0"
+            }}>
+              {amount !== undefined ? `${amount.toLocaleString()}원` : arg.event.title}
+            </div>
+          );
+        }
+
+        // 3. 데스크톱: 제목(줄바꿈 포함) 표시
         return (
           <div style={{ 
-            fontSize: "0.75rem", 
+            fontSize: "0.72rem", 
             padding: "2px 4px", 
             overflow: "hidden", 
-            textOverflow: "ellipsis", 
-            whiteSpace: "nowrap",
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-all",
+            lineHeight: "1.2",
             fontWeight: "bold",
             backgroundColor: backgroundColor,
             color: textColor,
             borderRadius: "4px",
-            width: "100%"
+            width: "100%",
+            height: "100%"
           }}>
             {arg.event.title}
           </div>

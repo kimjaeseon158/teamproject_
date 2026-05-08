@@ -58,7 +58,7 @@ export default function CalendarMobileLayout({
         </DrawerContent>
       </Drawer>
 
-      <VStack spacing={4} align="stretch" p={4}>
+      <VStack spacing={3} align="stretch" p={4}>
         {/* 상단 헤더 영역 */}
         <Box>
           <CalendarHeader
@@ -69,6 +69,19 @@ export default function CalendarMobileLayout({
             summary={calendar.summary}
             hideSummaryOnMobile={true}
           />
+        </Box>
+
+        {/* 이번 달 요약 정보 */}
+        <Box
+          bg="white"
+          borderRadius="xl"
+          px={4}
+          py={3}
+          shadow="sm"
+          border="1px solid"
+          borderColor="gray.100"
+        >
+          <StatusLegend summary={calendar.summary} variant="compact" />
         </Box>
 
         {/* 메인 캘린더 카드 */}
@@ -91,19 +104,6 @@ export default function CalendarMobileLayout({
             onTitleChange={onTitleChange}
             isMobile={isMobile}
           />
-        </Box>
-
-        {/* 하단 요약 정보 카드 */}
-        <Box 
-          bg="white" 
-          borderRadius="2xl" 
-          p={5} 
-          shadow="sm" 
-          border="1px solid" 
-          borderColor="gray.100"
-          mb={4}
-        >
-          <StatusLegend summary={calendar.summary} />
         </Box>
       </VStack>
     </Box>

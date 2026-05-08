@@ -15,10 +15,41 @@ export const exportToGoogleExcel = async (work_place, date) => {
       method: "GET",
     });
 
-    if (!res) return null;
+    if (!res) {
+      return {
+        success: false,
+        message: "서버 응답을 받지 못했습니다.",
+      };
+    }
 
-    // 성공 시 JSON 데이터 반환
-    return await res.json();
+    const contentType = res.headers.get("content-type") || "";
+
+    if (!res.ok) {
+      if (contentType.includes("application/json")) {
+        const errorData = await res.json();
+        return {
+          success: false,
+          message:
+            errorData.message ||
+            errorData.error ||
+            "엑셀 생성 중 오류가 발생했습니다.",
+        };
+      }
+
+      return {
+        success: false,
+        message: "엑셀 생성 중 오류가 발생했습니다.",
+      };
+    }
+
+    if (contentType.includes("application/json")) {
+      return await res.json();
+    }
+
+    return {
+      success: true,
+      message: "구글 드라이브에 파일이 생성되었습니다.",
+    };
   } catch (err) {
     console.error("Google Drive Export Error (GET):", err);
     throw err;

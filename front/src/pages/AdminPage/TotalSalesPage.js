@@ -42,18 +42,18 @@ export default function TotalSalesPage() {
       if (result.success) {
         toast({
           title: "엑셀 생성 완료",
-          description: "구글 드라이브에 파일이 생성되었습니다.",
+          description: result.message || "구글 드라이브에 파일이 생성되었습니다.",
           status: "success",
           duration: 3000,
         });
         onClose();
       } else {
-        throw new Error("Export failed");
+        throw new Error(result.message || "Export failed");
       }
     } catch (err) {
       toast({
         title: "엑셀 생성 실패",
-        description: "잠시 후 다시 시도해주세요.",
+        description: err.message || "잠시 후 다시 시도해주세요.",
         status: "error",
         duration: 3000,
       });

@@ -13,6 +13,8 @@ export default function ApprovePage() {
   const { rows, loading, fetchList } = useApproveList(toast);
 
   const [status, setStatus] = useState("대기");
+  const [workPlace, setWorkPlace] = useState("");
+  const [workType, setWorkType] = useState("");
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
@@ -31,6 +33,8 @@ export default function ApprovePage() {
     if (range.from && range.to) {
       fetchList({
         status: "대기",
+        workPlace: "",
+        workType: "",
         startDate: toYMD(range.from),
         endDate: toYMD(range.to),
       });
@@ -57,6 +61,8 @@ export default function ApprovePage() {
 
     fetchList({
       status,
+      workPlace,
+      workType,
       startDate: toYMD(range.from),
       endDate: toYMD(range.to ?? range.from),
     });
@@ -71,6 +77,10 @@ export default function ApprovePage() {
       <ApproveFilterBar
         status={status}
         setStatus={setStatus}
+        workPlace={workPlace}
+        setWorkPlace={setWorkPlace}
+        workType={workType}
+        setWorkType={setWorkType}
         range={range}
         setRange={setRange}
         rangeLabel={rangeLabel}

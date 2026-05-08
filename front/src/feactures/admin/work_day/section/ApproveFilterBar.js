@@ -13,10 +13,15 @@ import {
 } from "@chakra-ui/react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
+import locationsList from "../../../common/work_placeCloums/locationsList";
 
 export default function ApproveFilterBar({
   status,
   setStatus,
+  workPlace,
+  setWorkPlace,
+  workType,
+  setWorkType,
   range,
   setRange,
   rangeLabel,
@@ -36,6 +41,36 @@ export default function ApproveFilterBar({
         <option value="승인">승인</option>
         <option value="대기">대기</option>
         <option value="거절">거절</option>
+      </Select>
+
+      <Select
+        size="sm"
+        w="220px"
+        value={workPlace}
+        onChange={(e) => setWorkPlace(e.target.value)}
+        isDisabled={loading}
+      >
+        <option value="">근무지 전체</option>
+        <option value="__NULL__">근무지 미지정</option>
+        {locationsList.map((loc) => (
+          <option key={loc} value={loc}>
+            {loc}
+          </option>
+        ))}
+      </Select>
+
+      <Select
+        size="sm"
+        w="160px"
+        value={workType}
+        onChange={(e) => setWorkType(e.target.value)}
+        isDisabled={loading}
+      >
+        <option value="">근무구분 전체</option>
+        <option value="주간">주간</option>
+        <option value="야간">야간</option>
+        <option value="특근">특근</option>
+        <option value="__NULL__">근무구분 미지정</option>
       </Select>
 
       <Button

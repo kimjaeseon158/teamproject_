@@ -12,17 +12,37 @@ export function useApproveList(toast) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchList = async ({ status, startDate, endDate }) => {
+  const fetchList = async ({
+    status,
+    startDate,
+    endDate,
+    workPlace = "",
+    workType = "",
+  }) => {
     try {
       setLoading(true);
 
-      const qs = new URLSearchParams({
-        status,
-        start_date: startDate,
-        end_date: endDate,
-      }).toString();
+      const qs = new URLSearchParams();
 
-      const res = await fetchWithAuth(`/api/admin_page_workday/?${qs}`, {}, { toast });
+      if (status) qs.set("status", status);
+      if (startDate) qs.set("start_date", startDate);
+      if (endDate) qs.set("end_date", endDate);
+      if (workPlace === "__NULL__") {
+        qs.set("work_place_isnull", "true");
+      } else if (workPlace) {
+        qs.set("work_place", workPlace);
+      }
+      if (workType === "__NULL__") {
+        qs.set("work_shift_isnull", "true");
+      } else if (workType) {
+        qs.set("work_shift", workType);
+      }
+
+      const res = await fetchWithAuth(
+        `/api/admin_page_workday/?${qs.toString()}`,
+        {},
+        { toast }
+      );
       const json = await res.json();
 
       const mapped = (json.data || []).map((w, idx) => {

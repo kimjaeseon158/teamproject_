@@ -18,9 +18,13 @@ import { useState, useEffect } from "react";
 export default function MonthPicker({
   value,        // 반드시 "YYYY-MM"
   onChange,
+  onToday,
+  showToday = false,
+  size = "md",
   variant = "outline",
   width = "auto",
-  height = "auto",
+  height,
+  borderRadius = "xl",
 }) {
   const today = new Date();
 
@@ -42,6 +46,7 @@ export default function MonthPicker({
 
   const parsed = parseYearMonth(value);
   const [year, setYear] = useState(parsed.year);
+  const todayValue = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
 
   useEffect(() => {
     setYear(parsed.year);
@@ -55,11 +60,12 @@ export default function MonthPicker({
         <>
           <PopoverTrigger>
             <Button 
+              size={size}
               variant={variant} 
               w={width} 
               h={height} 
               fontWeight="600"
-              borderRadius="xl"
+              borderRadius={borderRadius}
             >
               {displayLabel}
             </Button>
@@ -73,6 +79,24 @@ export default function MonthPicker({
             </PopoverHeader>
 
             <PopoverBody py={4}>
+              {showToday && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  colorScheme="green"
+                  w="100%"
+                  mb={3}
+                  borderRadius="lg"
+                  onClick={() => {
+                    onChange(todayValue);
+                    onToday?.();
+                    onClose();
+                  }}
+                >
+                  Today
+                </Button>
+              )}
+
               <HStack justify="space-between" mb={4}>
                 <IconButton
                   size="sm"

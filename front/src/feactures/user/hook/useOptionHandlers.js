@@ -17,8 +17,10 @@ export function useOptionHandlers({
   extraEnabled,
   extraWorks,
   setIsSubmitConfirmOpen,
-  onRefresh, // 🔥 추가
-  onClose,   // 🔥 추가
+  isSubmitting,
+  setIsSubmitting,
+  onRefresh,
+  onClose,
 }) {
   const handleAddToCart = () => {
     if (!location || !startTime || !finishTime) {
@@ -74,6 +76,8 @@ export function useOptionHandlers({
   };
 
   const handleSubmitAll = () => {
+    if (isSubmitting) return;
+
     if (cart.length === 0) {
       toast({ title: "등록할 항목이 없습니다", status: "info" });
       return;
@@ -82,7 +86,11 @@ export function useOptionHandlers({
   };
 
   const handleConfirmSubmitAll = async () => {
+    if (isSubmitting) return;
+
     try {
+      setIsSubmitting?.(true);
+
       const payload = cart.map((item) => ({
         user_uuid: userUuid,
         user_name: userName,
@@ -95,23 +103,37 @@ export function useOptionHandlers({
       }));
 
       await submitWorkInfo(payload);
+    } catch (e) {
+      console.error("등록 실패 원인:", e);
+      toast({
+        title: "등록 실패",
+        description: e?.message || "서버 응답을 확인해주세요.",
+        status: "error",
+      });
       setCart([]);
       setIsSubmitConfirmOpen(false);
-      toast({ title: "전체 등록 완료", status: "success" });
-
-      // 🔥 등록 후 캘린더 데이터 새로고침
-      if (onRefresh && selectedDate) {
-        const ym = `${selectedDate.year}-${String(selectedDate.month).padStart(2, "0")}`;
-        onRefresh(ym);
-      }
-
-      // 🔥 모바일에서 등록 후 창 닫기
-      if (onClose) {
-        onClose();
-      }
-    } catch (e) {
-      toast({ title: "등록 실패", status: "error" });
+      setIsSubmitting?.(false);
+      return;
     }
+
+    setCart([]);
+    setIsSubmitConfirmOpen(false);
+    toast({ title: "전체 등록 완료", status: "success" });
+
+    if (onRefresh && selectedDate) {
+      const ym = `${selectedDate.year}-${String(selectedDate.month).padStart(2, "0")}`;
+      Promise.resolve(onRefresh(ym)).catch((e) => {
+        console.error("등록 후 캘린더 새로고침 실패:", e);
+      });
+    }
+
+    try {
+      onClose?.();
+    } catch (e) {
+      console.error("등록 후 닫기 처리 실패:", e);
+    }
+
+    setIsSubmitting?.(false);
   };
 
   const handleDeleteFromCart = (id) => {

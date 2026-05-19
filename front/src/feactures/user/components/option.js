@@ -33,6 +33,10 @@ const EXTRA_WORK_TYPES = [
   { value: "lunch_ext", label: "중식 연장" },
 ];
 
+const DEFAULT_MOBILE_START_TIME = "08:00";
+const DEFAULT_MOBILE_FINISH_TIME = "17:00";
+const DEFAULT_MOBILE_WORK_TIME = `${DEFAULT_MOBILE_START_TIME}~${DEFAULT_MOBILE_FINISH_TIME}`;
+
 const addMinutesToTime = (time, minutes) => {
   if (!time || !time.includes(":")) return "";
   const [h, m] = time.split(":").map(Number);
@@ -87,6 +91,7 @@ const Option = ({ selectedDate, onRefresh, onClose }) => {
 
   const [cart, setCart] = useState([]);
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isMobile = useBreakpointValue({ base: true, md: false });
 
   const filteredWorkTimeList = useMemo(
@@ -100,6 +105,14 @@ const Option = ({ selectedDate, onRefresh, onClose }) => {
     month: today.getMonth() + 1,
     day: today.getDate(),
   };
+
+  useEffect(() => {
+    if (!isMobile) return;
+
+    setStartTime((prev) => prev || DEFAULT_MOBILE_START_TIME);
+    setFinishTime((prev) => prev || DEFAULT_MOBILE_FINISH_TIME);
+    setWorkTime((prev) => prev || DEFAULT_MOBILE_WORK_TIME);
+  }, [isMobile]);
 
   // 🔥 실시간 자동 계산 (메인 근무 + 추가 근무 합계)
   const totalWorkTimeHM = useMemo(() => {
@@ -174,9 +187,9 @@ const Option = ({ selectedDate, onRefresh, onClose }) => {
 
   const resetForm = () => {
     setLocation("");
-    setWorkTime("");
-    setStartTime("");
-    setFinishTime("");
+    setWorkTime(isMobile ? DEFAULT_MOBILE_WORK_TIME : "");
+    setStartTime(isMobile ? DEFAULT_MOBILE_START_TIME : "");
+    setFinishTime(isMobile ? DEFAULT_MOBILE_FINISH_TIME : "");
     setIsSpecial(false);
     setExtraEnabled(false);
     setExtraWorks([]);
@@ -197,6 +210,8 @@ const Option = ({ selectedDate, onRefresh, onClose }) => {
     selectedDate, userUuid, userName, cart, setCart, toast, resetForm,
     baseShift, isSpecial, startTime, finishTime, location, extraEnabled, extraWorks,
     setIsSubmitConfirmOpen,
+    isSubmitting,
+    setIsSubmitting,
     onRefresh,
     onClose, // 🔥 추가
   });

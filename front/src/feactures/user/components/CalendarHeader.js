@@ -75,7 +75,7 @@ export default function CalendarHeader({
             </HStack>
           </HStack>
 
-          <HStack justify="center" spacing={3}>
+          <HStack justify="center" spacing={2} w="100%">
             <IconButton
               size="sm" 
               variant="ghost"
@@ -86,16 +86,11 @@ export default function CalendarHeader({
             <MonthPicker
               value={calendarTitle}
               onChange={handleMonthChange}
-              renderTrigger={(open) => (
-                <Text
-                  fontSize="md"
-                  fontWeight="600"
-                  cursor="pointer"
-                  onClick={open}
-                >
-                  {formatKoreanMonth(calendarTitle)}
-                </Text>
-              )}
+              onToday={goToday}
+              showToday
+              size="sm"
+              variant="outline"
+              borderRadius="xl"
             />
 
             <IconButton
@@ -142,13 +137,16 @@ export default function CalendarHeader({
             onClick={() => window.calendarRef?.getApi()?.next()}
           />
 
-          <Button size="sm" variant="outline" onClick={goToday}>
+          <Button size="sm" variant="outline" borderRadius="xl" onClick={goToday}>
             Today
           </Button>
 
           <MonthPicker
             value={calendarTitle}
             onChange={handleMonthChange}
+            size="sm"
+            variant="outline"
+            borderRadius="xl"
           />
         </HStack>
       )}

@@ -54,6 +54,7 @@ export default function CalendarMobileLayout({
             onRefresh={calendar.loadMonthlyData}
             onDateChange={calendar.handleDateClick}
             events={calendar.events} // 🔥 추가
+            isMobileLayout={isMobile}
           />
         </DrawerContent>
       </Drawer>

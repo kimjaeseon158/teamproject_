@@ -9,7 +9,6 @@ import {
 import { ChevronDownIcon, DeleteIcon, TimeIcon, InfoOutlineIcon } from "@chakra-ui/icons";
 
 import { useUser } from "../../auth/userContext";
-import { useBreakpointValue } from "@chakra-ui/react";
 import TimeWheelPicker from "../../common/TimeWheelPicker";
 import locationsList from "../../common/work_placeCloums/locationsList";
 import workTimeList from "../data/workTimeList";
@@ -57,8 +56,11 @@ const getExtraWorkTimes = (type, startTime, finishTime) => {
     return { start: addMinutesToTime(startTime, -120), finish: startTime };
   }
 
-  const start = finishTime || "17:00";
-  return { start, finish: addMinutesToTime(start, 120) || "19:00" };
+  if (!finishTime) {
+    return { start: "", finish: "" };
+  }
+
+  return { start: finishTime, finish: addMinutesToTime(finishTime, 120) };
 };
 
 const getExtraWorkTypeLabel = (type) =>
@@ -73,7 +75,7 @@ const createExtraWorkRow = (type = "weekday_ot", startTime = "", finishTime = ""
   };
 };
 
-const Option = ({ selectedDate, onRefresh, onClose }) => {
+const Option = ({ selectedDate, onRefresh, onClose, isMobile = false }) => {
   const { userUuid, userName } = useUser();
   const toast = useToast();
   const cancelRef = useRef();
@@ -92,8 +94,6 @@ const Option = ({ selectedDate, onRefresh, onClose }) => {
   const [cart, setCart] = useState([]);
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const isMobile = useBreakpointValue({ base: true, md: false });
-
   const filteredWorkTimeList = useMemo(
     () => workTimeList.filter((t) => t.shift === baseShift),
     [baseShift]
@@ -368,8 +368,7 @@ const Option = ({ selectedDate, onRefresh, onClose }) => {
             borderRadius="12px" 
             border="1px dashed" 
             borderColor="blue.500" 
-            bg="blue.900" 
-            bgOpacity="0.1"
+            bg="rgba(43, 108, 176, 0.1)"
           >
             <HStack spacing={2}>
               <TimeIcon color="blue.300" w={3} h={3} />
@@ -421,7 +420,7 @@ const Option = ({ selectedDate, onRefresh, onClose }) => {
         </HStack>
 
         {extraEnabled && extraWorks.map((row, idx) => (
-          <Box key={idx} p={3} borderRadius="20px" bg="orange.900" bgOpacity="0.1" border="1px solid" borderColor="orange.900">
+          <Box key={idx} p={3} borderRadius="20px" bg="rgba(124, 45, 18, 0.1)" border="1px solid" borderColor="orange.900">
             <HStack justify="space-between" mb={3}>
               <Menu>
                 <MenuButton as={Button} size="xs" variant="solid" colorScheme="orange" borderRadius="full" rightIcon={<ChevronDownIcon />}>

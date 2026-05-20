@@ -30,12 +30,14 @@ export default function CalendarView({
     window.calendarRef = calendarRef.current;
     
     if (calendarRef.current && selectedDate) {
-      const calendarApi = calendarRef.current.getApi();
-      if (calendarApi) {
-        // selectedDate가 객체 { formatted } 인지 Date 객체인지 판별
-        const targetDate = selectedDate.formatted || selectedDate;
-        calendarApi.gotoDate(targetDate); // 🔥 Prop으로 받은 날짜로 캘린더 이동
-      }
+      // selectedDate가 객체 { formatted } 인지 Date 객체인지 판별
+      const targetDate = selectedDate.formatted || selectedDate;
+      const timerId = window.setTimeout(() => {
+        const calendarApi = calendarRef.current?.getApi();
+        calendarApi?.gotoDate(targetDate); // 🔥 Prop으로 받은 날짜로 캘린더 이동
+      }, 0);
+
+      return () => window.clearTimeout(timerId);
     }
   }, [selectedDate]);
 

@@ -11,18 +11,32 @@ const BASE_HOURS = generateRange(24, (h) => String(h).padStart(2, "0"));
 const HOURS_DATA = [...BASE_HOURS, ...BASE_HOURS, ...BASE_HOURS];
 
 // 휠 컴포넌트를 외부로 분리 (중요: 리렌더링 시 스크롤 초기화 방지)
-const Wheel = React.memo(({ data, refObj, type, currentValue, onScroll }) => (
+const Wheel = React.memo(({
+  data,
+  refObj,
+  type,
+  currentValue,
+  onScroll,
+  onWheel,
+  onTouchStart,
+  onTouchEnd,
+}) => (
   <Box
     ref={refObj}
     h={`${ITEM_HEIGHT * VISIBLE_COUNT}px`}
     w="50px"
-    overflowY="auto"
+    overflowY="hidden"
     onScroll={() => onScroll(type)}
+    onWheel={(e) => onWheel(type, e)}
+    onTouchStart={(e) => onTouchStart(type, e)}
+    onTouchEnd={(e) => onTouchEnd(type, e)}
     sx={{
       scrollSnapType: "y mandatory",
       overscrollBehavior: "contain",
       "&::-webkit-scrollbar": { display: "none" },
       WebkitOverflowScrolling: "touch",
+      touchAction: "none",
+      userSelect: "none",
     }}
   >
     {data.map((item, i) => (
@@ -55,6 +69,9 @@ export default function TimeWheelPicker({
   const minuteRef = useRef(null);
   const isProgrammaticScroll = useRef(false);
   const lastEmittedValue = useRef(value);
+  const scrollTimers = useRef({});
+  const wheelLocked = useRef(false);
+  const touchStartY = useRef({});
 
   const baseMinutes = useMemo(() => 
     generateRange(60 / minuteStep, (i) => String(i * minuteStep).padStart(2, "0")),
@@ -93,7 +110,7 @@ export default function TimeWheelPicker({
     lastEmittedValue.current = value;
   }, [value, h, m, minutesData, getSelectedValueFromScroll]);
 
-  const handleScroll = useCallback((type) => {
+  const emitValueFromScroll = useCallback((type) => {
     if (isProgrammaticScroll.current) return;
 
     const ref = type === "hour" ? hourRef : minuteRef;
@@ -131,6 +148,56 @@ export default function TimeWheelPicker({
     }
   }, [baseMinutes, minutesData, onChange, getSelectedValueFromScroll]);
 
+  const handleScroll = useCallback((type) => {
+    window.clearTimeout(scrollTimers.current[type]);
+    scrollTimers.current[type] = window.setTimeout(() => {
+      emitValueFromScroll(type);
+    }, 120);
+  }, [emitValueFromScroll]);
+
+  const stepValue = useCallback((type, direction) => {
+    const baseData = type === "hour" ? BASE_HOURS : baseMinutes;
+    const [currH, currM] = lastEmittedValue.current.split(":");
+    const current = type === "hour" ? currH : currM;
+    const currentIndex = baseData.indexOf(current);
+    if (currentIndex === -1) return;
+
+    const nextIndex = (currentIndex + direction + baseData.length) % baseData.length;
+    const nextValuePart = baseData[nextIndex];
+    const nextValue = type === "hour" ? `${nextValuePart}:${currM}` : `${currH}:${nextValuePart}`;
+
+    lastEmittedValue.current = nextValue;
+    onChange(nextValue);
+  }, [baseMinutes, onChange]);
+
+  const handleWheel = useCallback((type, event) => {
+    event.preventDefault();
+    if (wheelLocked.current) return;
+
+    const direction = event.deltaY > 0 ? 1 : -1;
+    wheelLocked.current = true;
+    stepValue(type, direction);
+
+    window.setTimeout(() => {
+      wheelLocked.current = false;
+    }, 140);
+  }, [stepValue]);
+
+  const handleTouchStart = useCallback((type, event) => {
+    touchStartY.current[type] = event.touches[0]?.clientY;
+  }, []);
+
+  const handleTouchEnd = useCallback((type, event) => {
+    const startY = touchStartY.current[type];
+    const endY = event.changedTouches[0]?.clientY;
+    if (startY == null || endY == null) return;
+
+    const diff = startY - endY;
+    if (Math.abs(diff) < 12) return;
+
+    stepValue(type, diff > 0 ? 1 : -1);
+  }, [stepValue]);
+
   return (
     <Box
       bg="#2c2c2e"
@@ -166,6 +233,9 @@ export default function TimeWheelPicker({
           type="hour" 
           currentValue={h} 
           onScroll={handleScroll} 
+          onWheel={handleWheel}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         />
         <Text color="blue.400" fontWeight="bold" fontSize="xs">:</Text>
         <Wheel 
@@ -174,6 +244,9 @@ export default function TimeWheelPicker({
           type="minute" 
           currentValue={m} 
           onScroll={handleScroll} 
+          onWheel={handleWheel}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         />
       </HStack>
     </Box>

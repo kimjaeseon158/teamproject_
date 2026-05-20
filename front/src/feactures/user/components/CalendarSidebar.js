@@ -10,9 +10,11 @@ export default function CalendarSidebar({
   onRefresh,
   onDateChange,
   events = [],
+  isMobileLayout,
 }) {
   const scrollRef = useRef(null);
-  const isMobile = useBreakpointValue({ base: true, lg: false });
+  const responsiveIsMobile = useBreakpointValue({ base: true, lg: false });
+  const isMobile = isMobileLayout ?? responsiveIsMobile;
 
   // 현재 선택된 날짜에 이미 등록된 이벤트가 있는지 확인
   const existingEvent = events.find(e => e.start === selectedDate.formatted);
@@ -69,7 +71,7 @@ export default function CalendarSidebar({
         </HStack>
 
         {data.is_approved === false && data.rejection_reason && (
-          <Box bg="red.900" bgOpacity="0.2" p={4} borderRadius="24px" border="1px solid" borderColor="red.900">
+          <Box bg="rgba(116, 42, 42, 0.2)" p={4} borderRadius="24px" border="1px solid" borderColor="red.900">
             <HStack mb={1}>
               <InfoIcon w={3} h={3} color="red.300" />
               <Text fontSize="xs" fontWeight="800" color="red.300">반려 사유</Text>
@@ -98,15 +100,17 @@ export default function CalendarSidebar({
             {userName}님
           </Text>
         </VStack>
-        <IconButton
-          icon={<CloseIcon w={3} h={3} />}
-          size="md"
-          variant="ghost"
-          bg="whiteAlpha.100"
-          borderRadius="full"
-          color="white"
-          onClick={onClose}
-        />
+        {isMobile && (
+          <IconButton
+            icon={<CloseIcon w={3} h={3} />}
+            size="md"
+            variant="ghost"
+            bg="whiteAlpha.100"
+            borderRadius="full"
+            color="white"
+            onClick={onClose}
+          />
+        )}
       </HStack>
 
       {isMobile && (
@@ -175,7 +179,7 @@ export default function CalendarSidebar({
           {existingEvent ? (
             <DetailView event={existingEvent} />
           ) : (
-            <Option selectedDate={selectedDate} onRefresh={onRefresh} onClose={onClose} />
+            <Option selectedDate={selectedDate} onRefresh={onRefresh} onClose={onClose} isMobile={isMobile} />
           )}
         </Box>
       </Box>

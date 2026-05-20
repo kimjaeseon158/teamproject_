@@ -25,6 +25,7 @@ export default function MonthPicker({
   width = "auto",
   height,
   borderRadius = "xl",
+  placement = "bottom-start",
 }) {
   const today = new Date();
 
@@ -55,7 +56,7 @@ export default function MonthPicker({
   const displayLabel = `${parsed.year}년 ${parsed.month}월`;
 
   return (
-    <Popover placement="bottom-start">
+    <Popover placement={placement}>
       {({ onClose }) => (
         <>
           <PopoverTrigger>

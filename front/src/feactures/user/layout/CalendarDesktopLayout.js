@@ -24,6 +24,7 @@ export default function CalendarDesktopLayout({
           userName={userName}
           selectedDate={calendar.selectedDate}
           onRefresh={calendar.loadMonthlyData} // 🔥 추가
+          isMobileLayout={isMobile}
         />
       </Box>
 

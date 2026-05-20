@@ -81,6 +81,7 @@ export default function CalendarHeader({
               variant="ghost"
               icon={<ChevronLeftIcon />}
               onClick={() => window.calendarRef?.getApi()?.prev()}
+              minW="32px"
             />
 
             <MonthPicker
@@ -91,6 +92,8 @@ export default function CalendarHeader({
               size="sm"
               variant="outline"
               borderRadius="xl"
+              width="128px"
+              placement="bottom"
             />
 
             <IconButton
@@ -98,6 +101,7 @@ export default function CalendarHeader({
               variant="ghost"
               icon={<ChevronRightIcon />}
               onClick={() => window.calendarRef?.getApi()?.next()}
+              minW="32px"
             />
           </HStack>
         </>

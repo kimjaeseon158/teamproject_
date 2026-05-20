@@ -35,7 +35,8 @@ export default function CommonTable({
             <Tr
               key={row[rowKey]}
               onClick={() => onRowClick?.(row)}
-              _hover={{ bg: "gray.50" }}
+              bg={selectable && checkedItems[row[rowKey]] ? "green.50" : "transparent"}
+              _hover={{ bg: selectable && checkedItems[row[rowKey]] ? "green.50" : "gray.50" }}
               cursor={onRowClick ? "pointer" : "default"}
             >
               {selectable && (

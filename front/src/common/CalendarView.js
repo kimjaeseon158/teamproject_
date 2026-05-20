@@ -14,6 +14,7 @@ export default function CalendarView({
   selectedDate, // 🔥 외부에서 관리하는 날짜 (월 이동 동기화용)
   isMobile: isMobileProp, // 🔥 추가
   renderEventContent, // 🔥 커스텀 렌더러 주입 허용
+  height: calendarHeight,
 }) {
   // 🔥 상위에서 전달받은 isMobile이 있으면 그것을 쓰고, 없으면 useBreakpointValue 사용
   const isMobileValue = useBreakpointValue({
@@ -52,7 +53,7 @@ export default function CalendarView({
       initialDate={initialDateValue} // 🔥 초기 날짜 설정 (Date 객체 또는 ISO 문자열)
       locale={koLocale}
       headerToolbar={false}
-      height={isMobile ? "auto" : "calc(100vh - 140px)"}
+      height={calendarHeight ?? (isMobile ? "auto" : "calc(100vh - 140px)")}
       events={events}
       dayMaxEvents={2} // 🔥 2명 이상이면 +N 표시
       moreLinkClick="popover" // 🔥 클릭 시 팝오버로 전체 표시

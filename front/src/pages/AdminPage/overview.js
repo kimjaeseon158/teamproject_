@@ -61,6 +61,7 @@ const formatMonth = (date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 
 const formatWon = (value) => `${Number(value || 0).toLocaleString()}원`;
+const formatNumber = (value) => Number(value || 0).toLocaleString();
 
 const average = (values) => {
   const valid = values.filter((value) => value != null && value !== "");
@@ -171,15 +172,23 @@ export default function OverviewPage() {
     () => threeMonthData.reduce((sum, item) => sum + Number(item.total || 0), 0),
     [threeMonthData]
   );
+  const currentMonthPay = useMemo(() => {
+    const currentMonth = formatMonth(currentDate);
+    return (
+      threeMonthData.find((item) => item.key === currentMonth)?.total ??
+      threeMonthData[threeMonthData.length - 1]?.total ??
+      0
+    );
+  }, [currentDate, threeMonthData]);
 
   const pendingPreview = useMemo(() => pendingList.slice(0, 5), [pendingList]);
   const kpis = [
-    { label: "전체 직원", value: `${peopleData.length.toLocaleString()}명`, color: "blue.400" },
-    { label: "승인 대기", value: `${approvalSummary.total.toLocaleString()}건`, color: "orange.400" },
-    { label: "오늘 근무", value: `${events.length.toLocaleString()}건`, color: "green.400" },
-    { label: "근무지", value: `${dailyPaySummary.places.toLocaleString()}곳`, color: "teal.400" },
-    { label: "평균 기본일급", value: formatWon(dailyPaySummary.averageBasePay), color: "purple.400" },
-    { label: "3개월 지급 합계", value: formatWon(financeTotal), color: "red.400" },
+    { label: "전체 직원", value: formatNumber(peopleData.length), color: "blue.400", path: "/dashboard/admin" },
+    { label: "승인 대기", value: formatNumber(approvalSummary.total), color: "orange.400", path: "/dashboard/approval" },
+    { label: "오늘 근무", value: formatNumber(events.length), color: "green.400", path: "/dashboard/approval" },
+    { label: "근무지", value: formatNumber(dailyPaySummary.places), color: "teal.400", path: "/dashboard/daily-pay" },
+    { label: "평균 기본일급", value: formatWon(dailyPaySummary.averageBasePay), color: "purple.400", path: "/dashboard/daily-pay" },
+    { label: "이번달 지급", value: formatWon(currentMonthPay), color: "red.400", path: "/dashboard/total-sales" },
   ];
 
   const handleMonthChange = (ym) => {
@@ -284,27 +293,34 @@ export default function OverviewPage() {
         )}
 
         {widgets.kpis && (
-          <Box position="relative">
-            <IconButton
-              aria-label="상단 요약 카드 숨기기"
-              icon={<MinusIcon />}
-              size="xs"
-              variant="ghost"
-              position="absolute"
-              top="4px"
-              right="4px"
-              zIndex={1}
-              onClick={() => hideWidget("kpis")}
-            />
+          <Box>
+            <HStack justify="flex-end" mb={1}>
+              <IconButton
+                aria-label="상단 요약 카드 숨기기"
+                icon={<MinusIcon />}
+                size="xs"
+                variant="ghost"
+                onClick={() => hideWidget("kpis")}
+              />
+            </HStack>
             <SimpleGrid columns={{ base: 2, lg: 3, xl: 6 }} spacing={3}>
               {kpis.map((item) => (
-                <DashboardCard key={item.label} p={3}>
+                <DashboardCard
+                  key={item.label}
+                  p={3}
+                  cursor="pointer"
+                  role="button"
+                  aria-label={`${item.label} 페이지로 이동`}
+                  _hover={{ borderColor: item.color, transform: "translateY(-1px)" }}
+                  transition="all 0.15s"
+                  onClick={() => navigate(item.path)}
+                >
                   <HStack justify="space-between" align="start">
                     <Box minW={0}>
                       <Text fontSize="xs" fontWeight="800" color="gray.500" mb={1}>
                         {item.label}
                       </Text>
-                      <Text fontSize="xl" fontWeight="900" color="gray.900" noOfLines={1}>
+                      <Text fontSize="2xl" fontWeight="900" color="gray.900" noOfLines={1}>
                         {item.value}
                       </Text>
                     </Box>
@@ -342,7 +358,23 @@ export default function OverviewPage() {
               />
 
               {approvalLoading && <Spinner size="sm" mb={2} />}
-              <Box flex="1" minH={0} sx={{ ".fc": { height: "100%", fontSize: "12px" } }}>
+              <Box
+                flex="1"
+                minH={0}
+                overflow="hidden"
+                sx={{
+                  ".fc": { height: "100%", fontSize: "12px" },
+                  ".fc-view-harness": { height: "100% !important" },
+                  ".fc-scroller": { overflow: "hidden !important" },
+                  ".fc-daygrid-body": { width: "100% !important" },
+                  ".fc-daygrid-day-frame": { minHeight: "0", height: "100%" },
+                  ".fc-daygrid-day-top": { lineHeight: 1, minHeight: "18px" },
+                  ".fc-daygrid-day-number": { padding: "2px 4px", fontSize: "11px" },
+                  ".fc-daygrid-day-events": { minHeight: "16px", marginTop: "0" },
+                  ".fc-daygrid-event": { marginTop: "1px" },
+                  ".fc-event-main": { minHeight: "0" },
+                }}
+              >
                 <CalendarView
                   events={events}
                   selectedDate={currentDate}

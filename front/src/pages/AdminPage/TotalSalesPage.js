@@ -1,16 +1,21 @@
 import {
+  Badge,
   Box,
-  Flex,
-  Heading,
+  Button,
   Card,
   CardBody,
-  useToast,
-  IconButton,
+  Flex,
+  Heading,
+  HStack,
   Image,
+  SimpleGrid,
+  Text,
   Tooltip,
   useDisclosure,
+  useToast,
 } from "@chakra-ui/react";
-import { useState } from "react";
+import { DownloadIcon } from "@chakra-ui/icons";
+import { useMemo, useState } from "react";
 
 import MonthPicker from "../../feactures/common/MonthPicker";
 import { useTotalFinance } from "../../feactures/admin/total_pay/hook/useTotalFinance";
@@ -18,6 +23,8 @@ import ThreeMonthBarSection from "../../feactures/admin/total_pay/section/ThreeM
 import ExcelExportModal from "../../feactures/admin/total_pay/section/ExcelExportModal";
 import { exportToGoogleExcel } from "../../feactures/admin/api/google/GoogleDrive";
 import excelIcon from "../../assets/img/excel.png";
+
+const formatWon = (value) => `${Number(value || 0).toLocaleString()}원`;
 
 export default function TotalSalesPage() {
   const toast = useToast();
@@ -34,15 +41,25 @@ export default function TotalSalesPage() {
     totalExpense,
   } = useTotalFinance({ toast });
 
+  const threeMonthTotal = useMemo(
+    () => threeMonthData.reduce((sum, item) => sum + Number(item.total || 0), 0),
+    [threeMonthData]
+  );
+
+  const selectedMonthTotal = useMemo(
+    () => detailData.reduce((sum, item) => sum + Number(item.amount || 0), 0),
+    [detailData]
+  );
+
   const handleConfirmExcel = async (workPlace, date) => {
     try {
       setExportLoading(true);
       const result = await exportToGoogleExcel(workPlace, date);
-      
+
       if (result.success) {
         toast({
           title: "엑셀 생성 완료",
-          description: result.message || "구글 드라이브에 파일이 생성되었습니다.",
+          description: result.message || "Google Drive에 파일을 생성했습니다.",
           status: "success",
           duration: 3000,
         });
@@ -63,96 +80,136 @@ export default function TotalSalesPage() {
   };
 
   return (
-    <Box p={6} bg="gray.50" minH="100vh">
-      {/* 상단 */}
-      <Flex justify="space-between" mb={6} align="center">
-        <Flex align="center" gap={3}>
-          <Heading>일급 현황</Heading>
-          <Tooltip label="엑셀 다운로드" hasArrow>
-            <IconButton
-              aria-label="Export to Excel"
-              icon={<Image src={excelIcon} w="60px" h="40px" alt="excel" />}
-              variant="ghost"
-              size="lg"
-              p={1}
-              onClick={onOpen}
-              _hover={{ bg: "green.50", transform: "scale(1.1)" }}
-              transition="all 0.2s"
-            />
-          </Tooltip>
-        </Flex>
+    <Box h="calc(100vh - 92px)" bg="gray.50" p={{ base: 4, md: 5 }} display="flex" flexDirection="column" overflow="hidden">
+      <Flex
+        justify="space-between"
+        align={{ base: "stretch", md: "center" }}
+        direction={{ base: "column", md: "row" }}
+        gap={4}
+        mb={3}
+      >
+        <Box>
+          <HStack spacing={3} mb={2}>
+            <Heading size="lg" color="gray.900">
+              급여 현황
+            </Heading>
+            <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
+              {apiMonth}
+            </Badge>
+          </HStack>
+          <Text color="gray.500" fontSize="sm">
+            최근 3개월 지급 흐름과 선택 월 상세 급여를 확인합니다.
+          </Text>
+        </Box>
 
-        <MonthPicker
-          value={apiMonth}
-          onChange={(ym) => setApiMonth(ym)}
-        />
+        <HStack spacing={2}>
+          <MonthPicker value={apiMonth} onChange={(ym) => setApiMonth(ym)} size="sm" />
+          <Tooltip label="Google Sheets / Excel 내보내기" hasArrow>
+            <Button
+              leftIcon={<DownloadIcon />}
+              rightIcon={<Image src={excelIcon} w="22px" h="22px" alt="excel" />}
+              colorScheme="green"
+              variant="outline"
+              size="sm"
+              onClick={onOpen}
+            >
+              내보내기
+            </Button>
+          </Tooltip>
+        </HStack>
       </Flex>
 
-      <Flex gap={8}>
-        {/* 왼쪽 영역 */}
-        <Flex direction="column" flex="2" gap={6}>
-          {/* 3개월 그래프 */}
+      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={3} mb={3} flexShrink={0}>
+        <Card border="1px solid" borderColor="gray.100" boxShadow="sm">
+          <CardBody py={4}>
+            <Text fontSize="xs" color="gray.500" fontWeight="800" mb={1}>
+              선택 월 지급
+            </Text>
+            <Text fontSize="2xl" fontWeight="900">
+              {formatWon(selectedMonthTotal)}
+            </Text>
+          </CardBody>
+        </Card>
+        <Card border="1px solid" borderColor="gray.100" boxShadow="sm">
+          <CardBody py={4}>
+            <Text fontSize="xs" color="gray.500" fontWeight="800" mb={1}>
+              3개월 합계
+            </Text>
+            <Text fontSize="2xl" fontWeight="900">
+              {formatWon(threeMonthTotal)}
+            </Text>
+          </CardBody>
+        </Card>
+        <Card border="1px solid" borderColor="gray.100" boxShadow="sm">
+          <CardBody py={4}>
+            <Text fontSize="xs" color="gray.500" fontWeight="800" mb={1}>
+              상세 항목
+            </Text>
+            <Text fontSize="2xl" fontWeight="900">
+              {detailData.length.toLocaleString()}건
+            </Text>
+          </CardBody>
+        </Card>
+      </SimpleGrid>
+
+      <Flex
+        gap={5}
+        align="stretch"
+        direction={{ base: "column", xl: "row" }}
+        flex="1"
+        minH={0}
+        overflow="hidden"
+      >
+        <Box flex="1.6" minW={0} minH={0}>
           <ThreeMonthBarSection
             data={threeMonthData}
             selectedMonth={selectedDetailMonth}
+            height="100%"
             onMonthClick={(month) => {
               setSelectedDetailMonth(String(month).trim());
             }}
           />
-          {/* 선택월 상세 */}
-          <Card>
-            <CardBody>
-              <Heading size="sm" mb={3}>
-                {selectedDetailMonth &&
-                  selectedDetailMonth.replace(
-                    /^(\d{4})-(\d{2})$/,
-                    "$1년 $2월"
-                  )} 상세 급여
-              </Heading>
+        </Box>
 
-              {detailData.length === 0 ? (
-                <Box textAlign="center" py={6} color="gray.400">
-                  급여 내역이 없습니다.
-                </Box>
-              ) : (
-                detailData.map((item, i) => (
-                  <Flex key={i} justify="space-between">
-                    <Box>{item.name}</Box>
-                    <Box>{item.amount.toLocaleString()} 원</Box>
-                  </Flex>
-                ))
-              )}
-
-              <Flex justify="space-between" fontWeight="bold" mt={4}>
-                <Box>총 일급 지출</Box>
-                <Box>{(totalExpense ?? 0).toLocaleString()} 원</Box>
-              </Flex>
-            </CardBody>
-          </Card>
-        </Flex>
-
-        {/* 오른쪽 요약 */}
-        <Card flex="1" border="1px dashed gray">
-          <CardBody>
-            <Heading size="sm" mb={3}>
-              최근 3개월 요약
-            </Heading>
-
-            {threeMonthData.map((item, i) => (
-              <Flex key={i} justify="space-between">
-                <Box>{item.label}</Box>
-                <Box>{item.total.toLocaleString()} 원</Box>
-              </Flex>
-            ))}
-
-            <Flex justify="space-between" fontWeight="bold" mt={4}>
-              <Box>3개월 총 합계</Box>
+        <Card flex="1" border="1px solid" borderColor="gray.100" boxShadow="sm" minH={0} overflow="hidden">
+          <CardBody display="flex" flexDirection="column">
+            <Flex justify="space-between" align="center" mb={4}>
               <Box>
-                {threeMonthData
-                  .reduce((sum, m) => sum + m.total, 0)
-                  .toLocaleString()} 원
+                <Heading size="sm" color="gray.800">
+                  선택 월 상세
+                </Heading>
+                <Text fontSize="sm" color="gray.500" mt={1}>
+                  {selectedDetailMonth || apiMonth}
+                </Text>
               </Box>
+              <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
+                {formatWon(totalExpense || selectedMonthTotal)}
+              </Badge>
             </Flex>
+
+            {detailData.length === 0 ? (
+              <Box flex="1" display="flex" alignItems="center" justifyContent="center" color="gray.400" bg="gray.50" borderRadius="md">
+                급여 내역이 없습니다.
+              </Box>
+            ) : (
+              <Box flex="1" overflowY="auto">
+                {detailData.map((item, i) => (
+                  <Flex
+                    key={`${item.name}-${i}`}
+                    justify="space-between"
+                    align="center"
+                    py={3}
+                    borderBottom="1px solid"
+                    borderColor="gray.100"
+                  >
+                    <Text fontWeight="700" color="gray.700">
+                      {item.name}
+                    </Text>
+                    <Text fontWeight="900">{formatWon(item.amount)}</Text>
+                  </Flex>
+                ))}
+              </Box>
+            )}
           </CardBody>
         </Card>
       </Flex>

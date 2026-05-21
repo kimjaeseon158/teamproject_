@@ -1,4 +1,4 @@
-import { Box, Heading } from "@chakra-ui/react";
+import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import {
   BarChart,
   Bar,
@@ -14,17 +14,25 @@ export default function ThreeMonthBarSection({
   data = [],
   onMonthClick,
   selectedMonth,
+  height = 420,
 }) {
 
   return (
-    <Box bg="white" p={4} borderRadius="md">
-      <Heading size="sm" mb={4}>
-        최근 3개월 일급 그래프
-      </Heading>
+    <Flex h="100%" direction="column" bg="white" p={4} borderRadius="lg" border="1px solid" borderColor="gray.100" boxShadow="sm" overflow="hidden">
+      <Box flexShrink={0}>
+        <Heading size="sm" color="gray.800">
+          최근 3개월 지급 그래프
+        </Heading>
+        <Text fontSize="sm" color="gray.500" mt={1} mb={2}>
+          막대를 클릭하면 오른쪽 상세 내역이 바뀝니다.
+        </Text>
+      </Box>
 
-      <ResponsiveContainer width="100%" height={300}>
+      <Box flex="1" minH="260px">
+        <ResponsiveContainer width="100%" height={height}>
         <BarChart
           data={data}
+          margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
           onClick={(state) => {
 
             if (state && state.activeIndex != null) {
@@ -38,12 +46,12 @@ export default function ThreeMonthBarSection({
             }
           }}
         >
-          <CartesianGrid strokeDasharray="3 3" />
+          <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="label" />
-          <YAxis />
+          <YAxis width={72} />
           <Tooltip />
 
-          <Bar dataKey="total" barSize={60}>
+          <Bar dataKey="total" barSize={82} radius={[8, 8, 0, 0]}>
             {data.map((entry, index) => {
               const isSelected =
                 entry.key === selectedMonth
@@ -61,6 +69,7 @@ export default function ThreeMonthBarSection({
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-    </Box>
+      </Box>
+    </Flex>
   );
 }

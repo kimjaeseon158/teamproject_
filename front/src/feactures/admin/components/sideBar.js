@@ -1,32 +1,40 @@
-// src/dashboard/components/Sidebar.jsx
-import { Box, VStack, Link, useToast } from "@chakra-ui/react";
-import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import {
+  Box,
+  Divider,
+  HStack,
+  Icon,
+  Text,
+  VStack,
+  useToast,
+} from "@chakra-ui/react";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+  FiBarChart2,
+  FiCalendar,
+  FiDollarSign,
+  FiHome,
+  FiUsers,
+} from "react-icons/fi";
 import { useUser } from "../../auth/userContext";
+
+const navItems = [
+  { label: "Overview", path: "/dashboard", icon: FiHome, exact: true },
+  { label: "직원 관리", path: "/dashboard/admin", icon: FiUsers },
+  { label: "승인 관리", path: "/dashboard/approval", icon: FiCalendar },
+  { label: "일급 관리", path: "/dashboard/daily-pay", icon: FiDollarSign },
+  { label: "급여 현황", path: "/dashboard/total-sales", icon: FiBarChart2 },
+];
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
-
-  // 🔑 인증 기준: userUuid
   const { userUuid, loading } = useUser();
 
-  // Total Sales 하위 메뉴 열림 여부
-  const isTotalSalesActive = location.pathname.startsWith(
-    "/dashboard/total-sales"
-  );
-
-  const activeStyle = (isActive) => ({
-    fontWeight: isActive ? "bold" : "normal",
-    color: isActive ? "teal" : "white",
-  });
-
-  // ✅ 보호된 이동 처리 (최종 정답)
   const handleProtectedNav = (path) => {
-    // 1️⃣ 아직 부트스트랩 중
     if (loading) {
       toast({
-        title: "로그인 정보 확인 중입니다.",
+        title: "로그인 정보를 확인 중입니다.",
         status: "info",
         duration: 2000,
         isClosable: true,
@@ -34,7 +42,6 @@ export default function Sidebar() {
       return;
     }
 
-    // 2️⃣ 인증 안 됨
     if (!userUuid) {
       toast({
         title: "로그인이 필요합니다.",
@@ -46,137 +53,87 @@ export default function Sidebar() {
       return;
     }
 
-    // 3️⃣ 통과
     navigate(path);
   };
+
+  const isActive = (item) =>
+    item.exact ? location.pathname === item.path : location.pathname.startsWith(item.path);
 
   return (
     <Box
       w="250px"
-      bg="gray.800"
+      bg="#111827"
       color="white"
-      p="4"
+      px={4}
+      py={5}
       display="flex"
       flexDirection="column"
+      borderRight="1px solid"
+      borderColor="blackAlpha.300"
     >
-      {/* 로고 */}
-      <Box
-        cursor="pointer"
-        fontSize="2xl"
-        fontWeight="bold"
-        mb="8"
-        onClick={() => handleProtectedNav("/dashboard")}
-      >
-        Dashboard
+      <Box mb={6} cursor="pointer" onClick={() => handleProtectedNav("/dashboard")}>
+        <Text fontSize="xl" fontWeight="900" letterSpacing="-0.3px">
+          Dashboard
+        </Text>
+        <Text fontSize="xs" color="gray.400" mt={1}>
+          Admin workspace
+        </Text>
       </Box>
 
-      <VStack align="stretch" spacing={4}>
-        {/* Home */}
-        <Link
-          as={NavLink}
-          to="/dashboard"
-          end
-          onClick={(e) => {
-            e.preventDefault();
-            handleProtectedNav("/dashboard");
-          }}
-          style={({ isActive }) => activeStyle(isActive)}
-        >
-          Home
-        </Link>
+      <VStack align="stretch" spacing={1}>
+        {navItems.map((item) => {
+          const active = isActive(item);
 
-        {/* Admin Page */}
-        <Link
-          as={NavLink}
-          to="/dashboard/admin"
-          onClick={(e) => {
-            e.preventDefault();
-            handleProtectedNav("/dashboard/admin");
-          }}
-          style={({ isActive }) => activeStyle(isActive)}
-        >
-          Admin Page
-        </Link>
-
-        {/* Approval */}
-        <Link
-          as={NavLink}
-          to="/dashboard/approval"
-          onClick={(e) => {
-            e.preventDefault();
-            handleProtectedNav("/dashboard/approval");
-          }}
-          style={({ isActive }) => activeStyle(isActive)}
-        >
-          Approval
-        </Link>
-
-        {/* Daily Pay */}
-        <Link
-          as={NavLink}
-          to="/dashboard/daily-pay"
-          onClick={(e) => {
-            e.preventDefault();
-            handleProtectedNav("/dashboard/daily-pay");
-          }}
-          style={({ isActive }) => activeStyle(isActive)}
-        >
-          Daily Pay
-        </Link>
-
-        {/* Total Sales */}
-        <Box>
-          <Box
-            cursor="pointer"
-            fontWeight={isTotalSalesActive ? "bold" : "normal"}
-            color={isTotalSalesActive ? "teal" : "white"}
-            onClick={() => handleProtectedNav("/dashboard/total-sales")}
-          >
-            Total Sales
-          </Box>
-
-          {/* {isTotalSalesActive && (
-            <VStack pl={4} align="stretch" spacing={2} mt={2}>
-              <Link
-                as={NavLink}
-                to="/dashboard/total-sales"
-                end
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleProtectedNav("/dashboard/total-sales");
-                }}
-                style={({ isActive }) => activeStyle(isActive)}
-              >
-                Total page
-              </Link>
-
-              <Link
-                as={NavLink}
-                to="/dashboard/total-sales/company"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleProtectedNav("/dashboard/total-sales/company");
-                }}
-                style={({ isActive }) => activeStyle(isActive)}
-              >
-                total_company
-              </Link>
-
-              <Link
-                as={NavLink}
-                to="/dashboard/total-sales/expense"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleProtectedNav("/dashboard/total-sales/expense");
-                }}
-                style={({ isActive }) => activeStyle(isActive)}
-              >
-                total_expense
-              </Link>
-            </VStack>
-          )} */}
-        </Box>
+          return (
+            <HStack
+              key={item.path}
+              as="button"
+              type="button"
+              spacing={3}
+              w="100%"
+              px={3}
+              py={3}
+              borderRadius="md"
+              textAlign="left"
+              position="relative"
+              bg={active ? "whiteAlpha.100" : "transparent"}
+              color={active ? "white" : "gray.300"}
+              fontWeight={active ? "800" : "600"}
+              _hover={{ bg: "whiteAlpha.100", color: "white" }}
+              onClick={() => handleProtectedNav(item.path)}
+            >
+              {active && (
+                <Box
+                  position="absolute"
+                  left={0}
+                  top="10px"
+                  bottom="10px"
+                  w="3px"
+                  bg="blue.400"
+                  borderRightRadius="full"
+                />
+              )}
+              <Icon as={item.icon} boxSize={4} color={active ? "blue.300" : "gray.400"} />
+              <Text fontSize="sm">{item.label}</Text>
+            </HStack>
+          );
+        })}
       </VStack>
+
+      <Box mt="auto">
+        <Divider borderColor="whiteAlpha.200" mb={4} />
+        <HStack px={3} py={2} borderRadius="md" bg="whiteAlpha.50">
+          <Box w="8px" h="8px" borderRadius="full" bg={userUuid ? "green.400" : "gray.500"} />
+          <Box minW={0}>
+            <Text fontSize="sm" fontWeight="800">
+              관리자
+            </Text>
+            <Text fontSize="xs" color="gray.400" noOfLines={1}>
+              {userUuid ? "접속 중" : "로그인 필요"}
+            </Text>
+          </Box>
+        </HStack>
+      </Box>
     </Box>
   );
 }

@@ -29,10 +29,10 @@ export default function ApproveFilterBar({
   loading,
 }) {
   return (
-    <Flex mt={4} gap={3} align="center">
+    <Flex gap={3} align="center" wrap="wrap">
       <Select
         size="sm"
-        w="160px"
+        w={{ base: "100%", md: "150px" }}
         value={status}
         onChange={(e) => setStatus(e.target.value)}
         isDisabled={loading}
@@ -45,7 +45,7 @@ export default function ApproveFilterBar({
 
       <Select
         size="sm"
-        w="220px"
+        w={{ base: "100%", md: "220px" }}
         value={workPlace}
         onChange={(e) => setWorkPlace(e.target.value)}
         isDisabled={loading}
@@ -61,7 +61,7 @@ export default function ApproveFilterBar({
 
       <Select
         size="sm"
-        w="160px"
+        w={{ base: "100%", md: "160px" }}
         value={workType}
         onChange={(e) => setWorkType(e.target.value)}
         isDisabled={loading}
@@ -82,10 +82,10 @@ export default function ApproveFilterBar({
         조회
       </Button>
 
-      <Box ml="auto">
+      <Box ml={{ base: 0, md: "auto" }} w={{ base: "100%", md: "auto" }}>
         <Popover placement="bottom-end">
           <PopoverTrigger>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" w={{ base: "100%", md: "auto" }}>
               {rangeLabel}
             </Button>
           </PopoverTrigger>

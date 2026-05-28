@@ -1219,14 +1219,14 @@ class UserMonthlyWorkSummaryAPIView(APIView):
                     # 승인되었으나 Expense가 없는 경우는 로직상 발생하지 않음을 가정하고,
                     # 해당 경우 발생 시 ValueError를 그대로 발생시킴.
                     rates = get_rates_for_workday(wd) # WorkPlaceRate가 있을 것으로 가정
-                    breakdown = calculate_daily_salary_breakdown(details, rates)
+                    breakdown = calculate_daily_salary_breakdown(details, rates, wd.work_shift)
                     day_amount = breakdown["total_amount"]
                     amount_breakdown = breakdown["by_work_type"]
                     detail_amounts = breakdown["detail_amounts"]
             elif is_approved is None: # 대기 중인 경우: 실시간으로 급여 계산 (WorkPlaceRate가 있을 것으로 가정)
                 # WorkPlaceRate가 없을 경우 ValueError 발생
                 rates = get_rates_for_workday(wd)
-                breakdown = calculate_daily_salary_breakdown(details, rates)
+                breakdown = calculate_daily_salary_breakdown(details, rates, wd.work_shift)
                 day_amount = breakdown["total_amount"]
                 amount_breakdown = breakdown["by_work_type"]
                 detail_amounts = breakdown["detail_amounts"]
@@ -1235,7 +1235,7 @@ class UserMonthlyWorkSummaryAPIView(APIView):
             if amount_breakdown is None and details and is_approved is not False:
                 try:
                     rates = get_rates_for_workday(wd)
-                    breakdown = calculate_daily_salary_breakdown(details, rates)
+                    breakdown = calculate_daily_salary_breakdown(details, rates, wd.work_shift)
                     amount_breakdown = breakdown["by_work_type"]
                     detail_amounts = breakdown["detail_amounts"]
                 except ValueError:

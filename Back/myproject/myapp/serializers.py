@@ -54,12 +54,12 @@ class UserWorkDaySerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         details_data = validated_data.pop("details")
+        work_shift = validated_data["work_shift"]
         for detail in details_data:
-            detail["work_type"] = normalize_work_type(detail.get("work_type"))
+            detail["work_type"] = normalize_work_type(detail.get("work_type"), work_shift)
     
         user = validated_data["user_uuid"]
         work_date = validated_data["work_date"]
-        work_shift = validated_data["work_shift"]
     
         with transaction.atomic():
             rejected = (
@@ -128,6 +128,8 @@ class WorkPlaceRateCreateSerializer(serializers.ModelSerializer):
             "overtime_hourly_wage",
             "meal_ot_hourly_wage",
             "special_hourly_wage",
+            "day_special_hourly_wage",
+            "night_special_hourly_wage",
             "overnight_hourly_wage",
             "overnight_ot_hourly_wage",
         ]

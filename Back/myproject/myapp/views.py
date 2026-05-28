@@ -58,7 +58,7 @@ from .google_drive_utils import GoogleDriveService
 from .salary import (
     sync_salary_expense_for_workday,
     group_rates_by_user,
-    calculate_daily_salary,
+    calculate_daily_salary_breakdown,
     get_rates_for_workday
 
 )
@@ -303,14 +303,9 @@ class GoogleDriveSalaryExcelExportAPIView(APIView):
     def get(self, request):
         # 0. Google Drive 접근 토큰 확인
         access_token = request.COOKIES.get("google_access_token")
-        if not access_token:
-            return Response(
-                {"error": "No access token found. Please re-authenticate with Google."},
-                status=401,
-            )
 
         # 프론트엔드에서 받는 대상 월: YYYY-MM
-        date_str = request.query_params.get("date")
+        date_str = request.query_params.get("date") # 예: 2026-04
 
         try:
             year, month = map(int, date_str.split("-"))
@@ -1205,7 +1200,10 @@ class UserMonthlyWorkSummaryAPIView(APIView):
         for wd in work_days:
             
             day_amount = 0
+            amount_breakdown = None
+            detail_amounts = []
             is_approved = wd.is_approved
+            details = list(wd.details.all())
 
             # 근무 형태 카운트 (주간/야간)
             if wd.work_shift == "주간":
@@ -1221,17 +1219,35 @@ class UserMonthlyWorkSummaryAPIView(APIView):
                     # 승인되었으나 Expense가 없는 경우는 로직상 발생하지 않음을 가정하고,
                     # 해당 경우 발생 시 ValueError를 그대로 발생시킴.
                     rates = get_rates_for_workday(wd) # WorkPlaceRate가 있을 것으로 가정
-                    day_amount = calculate_daily_salary(wd.details.all(), rates)
+                    breakdown = calculate_daily_salary_breakdown(details, rates)
+                    day_amount = breakdown["total_amount"]
+                    amount_breakdown = breakdown["by_work_type"]
+                    detail_amounts = breakdown["detail_amounts"]
             elif is_approved is None: # 대기 중인 경우: 실시간으로 급여 계산 (WorkPlaceRate가 있을 것으로 가정)
                 # WorkPlaceRate가 없을 경우 ValueError 발생
                 rates = get_rates_for_workday(wd)
-                day_amount = calculate_daily_salary(wd.details.all(), rates)
+                breakdown = calculate_daily_salary_breakdown(details, rates)
+                day_amount = breakdown["total_amount"]
+                amount_breakdown = breakdown["by_work_type"]
+                detail_amounts = breakdown["detail_amounts"]
             # is_approved가 False (반려됨)인 경우 day_amount는 기본값 0으로 유지됨
+
+            if amount_breakdown is None and details and is_approved is not False:
+                try:
+                    rates = get_rates_for_workday(wd)
+                    breakdown = calculate_daily_salary_breakdown(details, rates)
+                    amount_breakdown = breakdown["by_work_type"]
+                    detail_amounts = breakdown["detail_amounts"]
+                except ValueError:
+                    pass
+
             daily_list.append({
                 "date": wd.work_date,
                 "work_place": wd.work_place if wd.work_place else "Unknown",
                 "work_shift": wd.work_shift,
                 "amount": day_amount,
+                "amount_breakdown": amount_breakdown or {},
+                "detail_amounts": detail_amounts,
                 "is_approved": is_approved
             })
 

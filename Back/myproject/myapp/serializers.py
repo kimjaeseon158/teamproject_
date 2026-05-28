@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.db import transaction
 from .models import User_Login_Info, Expense, Income, User_WorkDay, User_WorkDetail, WorkPlaceRate
+from .work_types import normalize_work_type
 
 class User_Login_InfoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -53,6 +54,8 @@ class UserWorkDaySerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         details_data = validated_data.pop("details")
+        for detail in details_data:
+            detail["work_type"] = normalize_work_type(detail.get("work_type"))
     
         user = validated_data["user_uuid"]
         work_date = validated_data["work_date"]

@@ -9,6 +9,7 @@ from openpyxl.cell.cell import MergedCell
 from openpyxl.utils import get_column_letter
 from openpyxl.formula.translate import Translator
 import calendar
+from .work_types import normalize_work_type
 
 
 # ----------------------
@@ -110,11 +111,11 @@ def hour_value(minutes):
 
 WORK_TYPE_ROW = {
     "주간": 0,
-    "잔업": 1,
+    "평일 잔업": 1,
     "중식연장": 2,
     "특근": 3,
     "철야": 4,
-    "철야연장": 5,
+    "철야 잔업": 5,
     "조기출근": 6,
 }
 
@@ -216,7 +217,7 @@ def generate_workplace_excel(work_place, year, month, template_file=None):
             user_work_map[name][day] = {}
 
         for detail in wd.details.all():
-            work_type = detail.work_type
+            work_type = normalize_work_type(detail.work_type)
 
             if work_type not in WORK_TYPE_ROW:
                 continue

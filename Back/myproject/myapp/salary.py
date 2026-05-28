@@ -6,6 +6,7 @@ from myapp.serializers import WorkPlaceRateSerializer
 from collections import OrderedDict
 from django.core.exceptions import ObjectDoesNotExist
 from datetime import date
+from .work_types import normalize_work_type
 
 
 FULL_DAY_MINUTES = 480
@@ -32,37 +33,75 @@ def minutes_to_amount(daily_wage_8h: int, minutes: int) -> int:
     return (daily_wage_8h * minutes) // FULL_DAY_MINUTES
     # 예) 일급 100,000원, 240분 근무 (100000 * 240 + 240) // 480 = 50,000원 (정상)
 
-def calculate_daily_salary(details, rates: WageRates) -> int:
+def get_detail_salary_amount(work_type: str, minutes: int, rates: WageRates) -> int:
+    wt = normalize_work_type(work_type).upper()
+    mins = int(minutes or 0)
 
+    if wt in ["주간"]:
+        return minutes_to_amount(rates.base_hourly_wage, mins)
+
+    if wt in ["평일 잔업"]:
+        return minutes_to_amount(rates.overtime_hourly_wage, mins)
+
+    if wt in ["중식연장"]:
+        return minutes_to_amount(rates.meal_ot_hourly_wage, mins)
+
+    if wt in ["특근"]:
+        return minutes_to_amount(rates.special_hourly_wage, mins)
+
+    if wt in ["철야"]:
+        return minutes_to_amount(rates.overnight_hourly_wage, mins)
+
+    if wt in ["철야 잔업"]:
+        return minutes_to_amount(rates.overnight_ot_hourly_wage, mins)
+
+    return 0
+
+
+def calculate_daily_salary(details, rates: WageRates) -> int:
     total = 0
 
     for d in details:
-        wt = (d.work_type or "").upper()
-        mins = int(d.minutes or 0)
-
-        if wt in ["주간"]:
-            total += minutes_to_amount(rates.base_hourly_wage, mins)
-
-        elif wt in ["잔업"]:
-            total += minutes_to_amount(rates.overtime_hourly_wage, mins)
-
-        elif wt in ["중식연장"]:
-            total += minutes_to_amount(rates.meal_ot_hourly_wage, mins)
-
-        elif wt in ["특근"]:
-            total += minutes_to_amount(rates.special_hourly_wage, mins)
-
-        elif wt in ["철야"]:
-            total += minutes_to_amount(rates.overnight_hourly_wage, mins)
-
-        elif wt in ["철야연장"]:
-            total += minutes_to_amount(rates.overnight_ot_hourly_wage, mins)
-
-        else:
-            # 정의 안 된 work_type은 일단 무시, 예외 처리
-            continue
+        total += get_detail_salary_amount(d.work_type, d.minutes, rates)
 
     return max(total, 0)
+
+
+def calculate_daily_salary_breakdown(details, rates: WageRates) -> dict:
+    by_work_type = {
+        "주간": 0,
+        "평일 잔업": 0,
+        "중식연장": 0,
+        "특근": 0,
+        "철야": 0,
+        "철야 잔업": 0,
+    }
+    detail_amounts = []
+
+    for d in details:
+        work_type = d.work_type or ""
+        amount_type = normalize_work_type(work_type)
+        minutes = int(d.minutes or 0)
+        amount = get_detail_salary_amount(work_type, minutes, rates)
+
+        if amount_type in by_work_type:
+            by_work_type[amount_type] += amount
+
+        detail_amounts.append({
+            "work_type": amount_type,
+            "minutes": minutes,
+            "amount": amount,
+            "is_overtime_approved": d.is_overtime_approved,
+        })
+
+    total_amount = sum(by_work_type.values())
+    by_work_type["합계"] = total_amount
+
+    return {
+        "by_work_type": by_work_type,
+        "detail_amounts": detail_amounts,
+        "total_amount": total_amount,
+    }
 
 
 

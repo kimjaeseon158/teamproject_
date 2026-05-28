@@ -55,6 +55,7 @@ export default function DailyPayPage() {
         work_place: workPlaces.join(" / "),
         base_hourly_wage: average(rates.map((r) => r.base_hourly_wage)),
         overtime_hourly_wage: average(rates.map((r) => r.overtime_hourly_wage)),
+        special_hourly_wage: average(rates.map((r) => r.special_hourly_wage)),
         overnight_hourly_wage: average(rates.map((r) => r.overnight_hourly_wage)),
       };
     }) || [];

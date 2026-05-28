@@ -101,7 +101,7 @@ const getRateColumns = ({
 
     {
       key: "special_hourly_wage",
-      label: "특수수당",
+      label: "주간 특근",
       width: "120px",
       render: (value, row) =>
         editingId === row.rate_uuid
@@ -111,7 +111,7 @@ const getRateColumns = ({
 
     {
       key: "overnight_hourly_wage",
-      label: "야간일당",
+      label: "야간 특근",
       width: "120px",
       render: (value, row) =>
         editingId === row.rate_uuid

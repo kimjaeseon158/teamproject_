@@ -1,17 +1,22 @@
 import { useState, useEffect } from "react";
 import locationsList from "../../../common/work_placeCloums/locationsList";
-import {
-  formatPhoneNumber,
-  formatResidentNumber,
-} from "../utils/format";
+import { formatPhoneNumber, formatResidentNumber } from "../utils/format";
 
-export function useAdminInformationLogic(person, onClose, onSave) {
+export function useAdminInformationLogic(person, onClose, onSave, toast) {
   const [formData, setFormData] = useState({
     ...person,
     phone_number: person?.phone_number || "010-",
   });
 
   const [showPanel, setShowPanel] = useState(false);
+
+  const notify = (options) => {
+    toast?.({
+      duration: 2500,
+      isClosable: true,
+      ...options,
+    });
+  };
 
   useEffect(() => {
     setFormData({
@@ -49,28 +54,40 @@ export function useAdminInformationLogic(person, onClose, onSave) {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const { user_name, resident_number, address, phone_number } = formData;
 
     if (!user_name || !resident_number || !address || !phone_number) {
-      alert("모든 필드를 입력해주세요.");
+      notify({
+        title: "필수 항목 누락",
+        description: "모든 필드를 입력해주세요.",
+        status: "warning",
+      });
       return;
     }
 
     if (!/^\d{6}-?\d{7}$/.test(resident_number)) {
-      alert("주민등록번호 형식이 올바르지 않습니다.");
+      notify({
+        title: "입력 형식 오류",
+        description: "주민등록번호 형식이 올바르지 않습니다.",
+        status: "warning",
+      });
       return;
     }
 
     if (!/^01[016789]-\d{3,4}-\d{4}$/.test(phone_number)) {
-      alert("전화번호 형식이 올바르지 않습니다.");
+      notify({
+        title: "입력 형식 오류",
+        description: "전화번호 형식이 올바르지 않습니다.",
+        status: "warning",
+      });
       return;
     }
 
-    onSave(formData);
-    onClose();
+    const saved = await onSave(formData);
+    if (saved !== false) onClose();
   };
 
   const handleBackFromPanel = () => {

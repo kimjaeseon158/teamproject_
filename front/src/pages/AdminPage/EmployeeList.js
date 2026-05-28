@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import {
   AddIcon,
   DeleteIcon,
+  RepeatIcon,
   SearchIcon,
 } from "@chakra-ui/icons";
 import {
@@ -13,6 +14,7 @@ import {
   HStack,
   SimpleGrid,
   Text,
+  useToast,
 } from "@chakra-ui/react";
 
 import AdminInformation from "../../feactures/admin/userList/components/AdminInformation.js";
@@ -26,8 +28,9 @@ import { useAdminHandlers } from "../../feactures/admin/userList/hook/useAdminHa
 import { user_listColmns } from "../../feactures/admin/userList/constants/user_listColmns.js";
 
 export default function EmployeeList() {
+  const toast = useToast();
   const state = useAdminState();
-  const handlers = useAdminHandlers(state);
+  const handlers = useAdminHandlers(state, toast);
   useAdminData(state.setPeopleData);
 
   const selectedCount = useMemo(
@@ -43,8 +46,8 @@ export default function EmployeeList() {
   }, [state.peopleData]);
 
   const hasSearchFilter = useMemo(() => {
-    return Object.values(state.searchForm).some((value) => String(value || "").trim());
-  }, [state.searchForm]);
+    return state.isSearchActive || Object.values(state.searchForm).some((value) => String(value || "").trim());
+  }, [state.isSearchActive, state.searchForm]);
 
   const statCards = [
     { label: "전체 직원", value: `${state.peopleData.length.toLocaleString()}명` },
@@ -95,6 +98,14 @@ export default function EmployeeList() {
             onClick={() => state.setShowSearchModal(true)}
           >
             직원 검색
+          </Button>
+          <Button
+            leftIcon={<RepeatIcon />}
+            colorScheme="gray"
+            variant="outline"
+            onClick={handlers.handleShowAll}
+          >
+            전체 보기
           </Button>
           <Button
             leftIcon={<DeleteIcon />}
@@ -186,6 +197,7 @@ export default function EmployeeList() {
           person={state.selectedPerson}
           onClose={() => state.setSelectedPerson(null)}
           onSave={handlers.handleSave}
+          toast={toast}
         />
       )}
 
@@ -197,6 +209,7 @@ export default function EmployeeList() {
             state.setShowAddModal(false);
           }}
           onClose={() => state.setShowAddModal(false)}
+          toast={toast}
         />
       )}
 

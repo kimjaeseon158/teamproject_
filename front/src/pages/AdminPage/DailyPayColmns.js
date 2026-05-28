@@ -18,8 +18,13 @@ export const userPlace_listColmns = [
     render: (value) => value ?? "-"
   },
   {
+    key: "special_hourly_wage",
+    label: "주간 특근(평균)",
+    render: (value) => value ?? "-"
+  },
+  {
     key: "overnight_hourly_wage",
-    label: "야간일급(평균)",
+    label: "야간 특근(평균)",
     render: (value) => value ?? "-"
   },
 ];

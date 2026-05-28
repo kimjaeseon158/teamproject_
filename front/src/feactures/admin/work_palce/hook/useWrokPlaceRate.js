@@ -31,7 +31,7 @@ const handleAdd = async (payload) => {
      UPDATE (flat)
   ====================== */
   const handleUpdate = async (payload) => {
-    return await getWorkPlaceList_Update(payload, toast);
+    return await getWorkPlaceList_Update(payload, { toast });
   };
 
   /* ======================
@@ -54,7 +54,7 @@ const handleAdd = async (payload) => {
         special_hourly_wage: null,
         overnight_hourly_wage: null,
         overnight_ot_hourly_wage: null,
-      }, toast);
+      }, { toast });
     }
 
     return await getWorkplaceList_Delete(

@@ -6,6 +6,44 @@ import koLocale from "@fullcalendar/core/locales/ko";
 import { useBreakpointValue } from "@chakra-ui/react";
 import "./css/calendar.css";
 
+const formatWon = (value) => {
+  if (value == null || Number.isNaN(Number(value))) return "-";
+  return `${Number(value).toLocaleString()}원`;
+};
+
+const getDesktopPayLines = (props = {}) => {
+  const breakdown = props.amount_breakdown || {};
+  const detailAmounts = props.detail_amounts || [];
+  const workType = props.work_type || props.work_shift;
+
+  const baseDetail =
+    detailAmounts.find((detail) => detail.work_type === workType) ||
+    detailAmounts.find((detail) => !String(detail.work_type || "").includes("잔업"));
+
+  const baseLabel = baseDetail?.work_type || workType || "근무";
+  const baseAmount =
+    baseDetail?.amount ??
+    breakdown[baseLabel] ??
+    breakdown[workType] ??
+    0;
+
+  const overtimeAmount =
+    detailAmounts
+      .filter((detail) => String(detail.work_type || "").includes("잔업"))
+      .reduce((sum, detail) => sum + (Number(detail.amount) || 0), 0) ||
+    Object.entries(breakdown)
+      .filter(([key]) => key.includes("잔업"))
+      .reduce((sum, [, value]) => sum + (Number(value) || 0), 0);
+
+  return {
+    baseLabel,
+    baseAmount,
+    overtimeAmount,
+    totalAmount: props.amount,
+    workPlace: props.work_place,
+  };
+};
+
 export default function CalendarView({
   events = [],
   onDateClick,
@@ -67,7 +105,7 @@ export default function CalendarView({
 
         const backgroundColor = arg.event.backgroundColor;
         const textColor = arg.event.textColor || "white";
-        const { amount } = arg.event.extendedProps;
+        const { amount, calendar_amount } = arg.event.extendedProps;
 
         // 2. 모바일: 금액만 심플하게 표시
         if (isMobile) {
@@ -82,12 +120,62 @@ export default function CalendarView({
               width: "100%",
               padding: "1px 0"
             }}>
-              {amount !== undefined ? `${amount.toLocaleString()}원` : arg.event.title}
+              {(calendar_amount ?? amount) !== undefined
+                ? `${(calendar_amount ?? amount).toLocaleString()}원`
+                : arg.event.title}
             </div>
           );
         }
 
         // 3. 데스크톱: 제목(줄바꿈 포함) 표시
+        const pay = getDesktopPayLines(arg.event.extendedProps);
+        const extraCount = arg.event.extendedProps.extra_count || 0;
+
+        if (pay.workPlace && pay.totalAmount !== undefined) {
+          return (
+            <div style={{
+              fontSize: "0.62rem",
+              padding: "3px 5px",
+              overflow: "hidden",
+              lineHeight: "1.14",
+              fontWeight: "700",
+              backgroundColor: backgroundColor,
+              color: textColor,
+              borderRadius: "6px",
+              width: "100%",
+              boxSizing: "border-box"
+            }}>
+              <div style={{
+                fontWeight: "900",
+                marginBottom: "2px",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap"
+              }}>
+                {pay.workPlace}
+              </div>
+              <div style={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap"
+              }}>
+                {pay.baseLabel} - {formatWon(pay.baseAmount)}
+                {pay.overtimeAmount > 0 && ` / 잔업 - ${formatWon(pay.overtimeAmount)}`}
+              </div>
+              <div style={{
+                marginTop: "2px",
+                fontWeight: "900",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap"
+              }}>
+                총금액 - {formatWon(pay.totalAmount)}
+                {extraCount > 0 && `  +${extraCount}건 더보기`}
+              </div>
+            </div>
+          );
+        }
+
         return (
           <div style={{ 
             fontSize: "0.72rem", 
@@ -128,7 +216,11 @@ export default function CalendarView({
 
       // 이벤트 클릭
       eventClick={(arg) => {
-        onEventClick?.(arg.event);
+        if (onEventClick) {
+          onEventClick(arg.event);
+          return;
+        }
+        onDateClick?.(arg.event.startStr);
       }}
 
       // 🔥 월 변경 감지 (루프 방지)

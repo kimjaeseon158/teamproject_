@@ -13,6 +13,7 @@ import TimeWheelPicker from "../../common/TimeWheelPicker";
 import locationsList from "../../common/work_placeCloums/locationsList";
 import workTimeList from "../data/workTimeList";
 import "./activity.css";
+import { getExtraWorkTimes } from "../../common/workTimeUtils";
 
 import {
   minutesToHM,
@@ -35,33 +36,6 @@ const EXTRA_WORK_TYPES = [
 const DEFAULT_MOBILE_START_TIME = "08:00";
 const DEFAULT_MOBILE_FINISH_TIME = "17:00";
 const DEFAULT_MOBILE_WORK_TIME = `${DEFAULT_MOBILE_START_TIME}~${DEFAULT_MOBILE_FINISH_TIME}`;
-
-const addMinutesToTime = (time, minutes) => {
-  if (!time || !time.includes(":")) return "";
-  const [h, m] = time.split(":").map(Number);
-  if (Number.isNaN(h) || Number.isNaN(m)) return "";
-
-  const total = (h * 60 + m + minutes + 1440) % 1440;
-  const nextH = Math.floor(total / 60);
-  const nextM = total % 60;
-  return `${String(nextH).padStart(2, "0")}:${String(nextM).padStart(2, "0")}`;
-};
-
-const getExtraWorkTimes = (type, startTime, finishTime) => {
-  if (type === "lunch_ext") {
-    return { start: "12:00", finish: "13:00" };
-  }
-
-  if (type === "early_arrival" && startTime) {
-    return { start: addMinutesToTime(startTime, -120), finish: startTime };
-  }
-
-  if (!finishTime) {
-    return { start: "", finish: "" };
-  }
-
-  return { start: finishTime, finish: addMinutesToTime(finishTime, 120) };
-};
 
 const getExtraWorkTypeLabel = (type) =>
   EXTRA_WORK_TYPES.find((item) => item.value === type)?.label || type || "종류 선택";
@@ -481,7 +455,9 @@ const Option = ({ selectedDate, onRefresh, onClose, isMobile = false }) => {
                       <HStack justify="space-between">
                         <HStack spacing={2}>
                           <Text fontWeight="bold">{c.work_date.month}/{c.work_date.day}</Text>
-                          <Badge colorScheme="blue">{c.baseShift}</Badge>
+                          <Badge colorScheme={c.baseWorkType?.includes("특근") ? "orange" : "blue"}>
+                            {c.baseWorkType || c.baseShift}
+                          </Badge>
                           <Badge colorScheme={extraDetails.length > 0 ? "orange" : "gray"}>
                             {extraDetails.length > 0 ? `잔업 ${extraDetails.length}건` : "잔업 없음"}
                           </Badge>

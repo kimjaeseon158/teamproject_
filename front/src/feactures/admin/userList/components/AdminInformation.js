@@ -18,7 +18,7 @@ import {
   HStack,
 } from "@chakra-ui/react";
 
-const AdminInformation = ({ person, onClose, onSave }) => {
+const AdminInformation = ({ person, onClose, onSave, toast }) => {
   const {
     formData,
     showPanel,
@@ -26,7 +26,7 @@ const AdminInformation = ({ person, onClose, onSave }) => {
     handleSubmit,
     handleBackFromPanel,
     locationsList,
-  } = useAdminInformationLogic(person, onClose, onSave);
+  } = useAdminInformationLogic(person, onClose, onSave, toast);
 
 
   /* =========================

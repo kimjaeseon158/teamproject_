@@ -41,11 +41,131 @@ export default function CalendarSidebar({
   const days = getDaysInMonth(selectedDate.year, selectedDate.month);
   const weekDays = ["일", "월", "화", "수", "목", "금", "토"];
 
+  const formatWon = (value) => {
+    if (value == null || Number.isNaN(Number(value))) return "-";
+    return `${Number(value).toLocaleString()}원`;
+  };
+
+  const getWorkType = (item = {}) =>
+    item.details?.[0]?.work_type ||
+    item.detail_amounts?.[0]?.work_type ||
+    item.work_type ||
+    item.work_shift ||
+    "근무";
+
+  const getOvertimeAmount = (item = {}) => {
+    const detailAmount = (item.detail_amounts || [])
+      .filter((detail) => String(detail.work_type || "").includes("잔업"))
+      .reduce((sum, detail) => sum + (Number(detail.amount) || 0), 0);
+
+    if (detailAmount > 0) return detailAmount;
+
+    return Object.entries(item.amount_breakdown || {})
+      .filter(([key]) => key.includes("잔업"))
+      .reduce((sum, [, value]) => sum + (Number(value) || 0), 0);
+  };
+
+  const getBaseAmount = (item = {}) => {
+    const workType = getWorkType(item);
+    const baseDetail =
+      (item.detail_amounts || []).find((detail) => detail.work_type === workType) ||
+      (item.detail_amounts || []).find((detail) => !String(detail.work_type || "").includes("잔업"));
+
+    return (
+      baseDetail?.amount ??
+      item.amount_breakdown?.[workType] ??
+      item.amount_breakdown?.[item.work_shift] ??
+      0
+    );
+  };
+
   // 🔥 기록 상세 뷰 컴포넌트
   const DetailView = ({ event }) => {
     const data = event.extendedProps;
+    const groupedItems = data.grouped_items?.length ? data.grouped_items : [data];
+    const canAddMore = groupedItems.length < 2;
+    const totalAmount = data.calendar_amount ?? groupedItems.reduce(
+      (sum, item) => sum + (Number(item.amount) || 0),
+      0
+    );
     const statusText = data.is_approved === true ? "승인 완료" : data.is_approved === false ? "반려됨" : "승인 대기중";
     const statusColor = data.is_approved === true ? "green" : data.is_approved === false ? "red" : "orange";
+
+    if (groupedItems.length > 1) {
+      return (
+        <VStack align="stretch" spacing={4} py={2} color="white">
+          <HStack justify="space-between" align="center">
+            <Badge colorScheme={statusColor} p="2px 12px" borderRadius="full" fontSize="xs">
+              {statusText}
+            </Badge>
+            <Badge colorScheme="blue" borderRadius="full" px={3}>
+              {groupedItems.length}건 근무
+            </Badge>
+          </HStack>
+
+          <Box>
+            <Text fontSize="xs" color="gray.500" fontWeight="700" mb={1} textTransform="uppercase">
+              선택 날짜 총 금액
+            </Text>
+            <Text fontSize="2xl" fontWeight="900" color="blue.300">
+              {formatWon(totalAmount)}
+            </Text>
+          </Box>
+
+          <Divider borderColor="whiteAlpha.200" />
+
+          <VStack align="stretch" spacing={3}>
+            {groupedItems.map((item, index) => {
+              const workType = getWorkType(item);
+              const overtimeAmount = getOvertimeAmount(item);
+              const baseAmount = getBaseAmount(item);
+
+              return (
+                <Box
+                  key={`${item.date}-${item.work_place}-${index}`}
+                  bg="whiteAlpha.100"
+                  border="1px solid"
+                  borderColor="whiteAlpha.200"
+                  borderRadius="20px"
+                  p={4}
+                >
+                  <HStack justify="space-between" mb={2}>
+                    <Badge colorScheme="purple" borderRadius="full">
+                      {index + 1}번째 근무
+                    </Badge>
+                    <Text fontSize="xs" color="gray.400" fontWeight="700">
+                      {workType}
+                    </Text>
+                  </HStack>
+
+                  <Text fontSize="lg" fontWeight="900" mb={2}>
+                    {item.work_place}
+                  </Text>
+
+                  <VStack align="stretch" spacing={1} fontSize="sm" color="gray.200">
+                    <HStack justify="space-between">
+                      <Text>{workType}</Text>
+                      <Text fontWeight="800">{formatWon(baseAmount)}</Text>
+                    </HStack>
+                    {overtimeAmount > 0 && (
+                      <HStack justify="space-between">
+                        <Text>잔업</Text>
+                        <Text fontWeight="800">{formatWon(overtimeAmount)}</Text>
+                      </HStack>
+                    )}
+                    <Divider borderColor="whiteAlpha.200" />
+                    <HStack justify="space-between" color="blue.200">
+                      <Text fontWeight="800">총금액</Text>
+                      <Text fontWeight="900">{formatWon(item.amount)}</Text>
+                    </HStack>
+                  </VStack>
+                </Box>
+              );
+            })}
+          </VStack>
+        </VStack>
+      );
+    }
 
     return (
       <VStack align="stretch" spacing={5} py={2} color="white">
@@ -53,7 +173,9 @@ export default function CalendarSidebar({
           <Badge colorScheme={statusColor} p="2px 12px" borderRadius="full" fontSize="xs">
             {statusText}
           </Badge>
-          <Text fontSize="sm" color="gray.400" fontWeight="600">{data.work_shift}</Text>
+          <Text fontSize="sm" color="gray.400" fontWeight="600">
+            {data.work_type || data.work_shift}
+          </Text>
         </HStack>
 
         <Box>
@@ -78,6 +200,23 @@ export default function CalendarSidebar({
             </HStack>
             <Text fontSize="sm" color="gray.200">{data.rejection_reason}</Text>
           </Box>
+        )}
+
+        {canAddMore && (
+          <>
+            <Divider borderColor="whiteAlpha.200" />
+            <Box>
+              <Text fontSize="xs" color="gray.500" fontWeight="800" mb={3}>
+                추가 근무 등록
+              </Text>
+              <Option
+                selectedDate={selectedDate}
+                onRefresh={onRefresh}
+                onClose={onClose}
+                isMobile={isMobile}
+              />
+            </Box>
+          </>
         )}
       </VStack>
     );

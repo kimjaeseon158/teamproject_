@@ -30,13 +30,20 @@ export function useTotalFinance({ toast }) {
     return `${year}년 ${month}월`;
   };
 
-  const getPrevMonths = (year, month) => {
+  const addMonth = (year, month, delta) => {
+    const d = new Date(year, month - 1);
+    d.setMonth(d.getMonth() + delta);
+
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  };
+
+  const getCenteredMonths = (year, month) => {
     const base = new Date(year, month - 1);
     const arr = [];
 
-    for (let i = 2; i >= 0; i--) {
+    for (let i = -1; i <= 1; i++) {
       const d = new Date(base);
-      d.setMonth(base.getMonth() - i);
+      d.setMonth(base.getMonth() + i);
 
       const yyyy = d.getFullYear();
       const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -48,8 +55,12 @@ export function useTotalFinance({ toast }) {
   };
 
   const fetchAll = async (monthStr) => {
+    const [year, monthStrNum] = monthStr.split("-");
+    const monthNum = Number(monthStrNum);
+    const requestMonth = addMonth(Number(year), monthNum, 1);
+
     const res = await three_month_totals(
-      { month: monthStr },
+      { month: requestMonth },
       toast
     );
 
@@ -57,10 +68,7 @@ export function useTotalFinance({ toast }) {
 
     const d = res.data;
 
-    const [year, monthStrNum] = monthStr.split("-");
-    const monthNum = Number(monthStrNum);
-
-    const monthKeys = getPrevMonths(Number(year), monthNum);
+    const monthKeys = getCenteredMonths(Number(year), monthNum);
 
     const monthMap = {};
 
@@ -80,13 +88,7 @@ export function useTotalFinance({ toast }) {
 setThreeMonthData(parsedThree);
 
 // 🔥 핵심 수정
-setSelectedDetailMonth((prev) => {
-  if (!prev) return monthKeys[2];
-
-  return monthKeys.includes(prev)
-    ? prev
-    : monthKeys[2];
-});
+setSelectedDetailMonth(monthStr);
   };
 
   useEffect(() => {

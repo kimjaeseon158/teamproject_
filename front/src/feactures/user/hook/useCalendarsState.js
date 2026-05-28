@@ -37,16 +37,40 @@ export function useCalendarState() {
       const data = await fetchUserMonthlySummary(ym);
       setSummary(data);
 
-      const transformedEvents = data.daily_list.map((item) => {
-        const color = getStatusColor(item.is_approved);
+      const groupedByDate = data.daily_list.reduce((acc, item) => {
+        const dateItems = acc.get(item.date) || [];
+        dateItems.push(item);
+        acc.set(item.date, dateItems);
+        return acc;
+      }, new Map());
+
+      const transformedEvents = Array.from(groupedByDate.entries()).map(([date, items]) => {
+        const primary = items[0];
+        const color = getStatusColor(primary.is_approved);
+        const workType =
+          primary.details?.[0]?.work_type ||
+          primary.detail_amounts?.[0]?.work_type ||
+          primary.work_type ||
+          primary.work_shift;
+        const totalAmount = items.reduce(
+          (sum, item) => sum + (Number(item.amount) || 0),
+          0
+        );
+
         return {
-          id: `${item.date}-${item.work_place}`,
-          title: `근무지 - ${item.work_place} \n ${item.work_shift} - ${item.amount.toLocaleString()}원`,
-          start: item.date,
+          id: `${date}-${primary.work_place}`,
+          title: `근무지 - ${primary.work_place} \n ${workType} - ${primary.amount.toLocaleString()}원`,
+          start: date,
           backgroundColor: color,
           borderColor: color,
-          textColor: item.is_approved === null ? "black" : "white", // 노란색 배경엔 검은 글씨 권장
-          extendedProps: { ...item },
+          textColor: primary.is_approved === null ? "black" : "white", // 노란색 배경엔 검은 글씨 권장
+          extendedProps: {
+            ...primary,
+            work_type: workType,
+            calendar_amount: totalAmount,
+            grouped_items: items,
+            extra_count: Math.max(0, items.length - 1),
+          },
         };
       });
 

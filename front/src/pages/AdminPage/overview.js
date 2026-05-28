@@ -182,13 +182,14 @@ export default function OverviewPage() {
   }, [currentDate, threeMonthData]);
 
   const pendingPreview = useMemo(() => pendingList.slice(0, 5), [pendingList]);
+  const currentMonthLabel = `${currentDate.getMonth() + 1}월 지급(원)`;
   const kpis = [
-    { label: "전체 직원", value: formatNumber(peopleData.length), color: "blue.400", path: "/dashboard/admin" },
-    { label: "승인 대기", value: formatNumber(approvalSummary.total), color: "orange.400", path: "/dashboard/approval" },
-    { label: "오늘 근무", value: formatNumber(events.length), color: "green.400", path: "/dashboard/approval" },
+    { label: "전체 직원(명)", value: formatNumber(peopleData.length), color: "blue.400", path: "/dashboard/admin" },
+    { label: "승인 대기(건)", value: formatNumber(approvalSummary.total), color: "orange.400", path: "/dashboard/approval" },
+    { label: "오늘 근무(건)", value: formatNumber(events.length), color: "green.400", path: "/dashboard/approval" },
     { label: "근무지", value: formatNumber(dailyPaySummary.places), color: "teal.400", path: "/dashboard/daily-pay" },
-    { label: "평균 기본일급", value: formatWon(dailyPaySummary.averageBasePay), color: "purple.400", path: "/dashboard/daily-pay" },
-    { label: "이번달 지급", value: formatWon(currentMonthPay), color: "red.400", path: "/dashboard/total-sales" },
+    { label: "평균 기본일급(원)", value: formatNumber(dailyPaySummary.averageBasePay), color: "purple.400", path: "/dashboard/daily-pay" },
+    { label: currentMonthLabel, value: formatNumber(currentMonthPay), color: "red.400", path: "/dashboard/total-sales" },
   ];
 
   const handleMonthChange = (ym) => {
@@ -457,21 +458,36 @@ export default function OverviewPage() {
                 />
                 <Flex align="end" gap={3} flex="1" minH="180px" px={1}>
                   {threeMonthData.map((item) => {
+                    const total = Number(item.total || 0);
                     const maxValue = Math.max(...threeMonthData.map((month) => Number(month.total || 0)), 1);
-                    const percent = Math.max((Number(item.total || 0) / maxValue) * 100, 10);
+                    const percent = total > 0 ? Math.max((total / maxValue) * 100, 10) : 0;
                     return (
                       <Flex key={item.key} direction="column" align="center" justify="end" flex="1" h="100%" gap={2}>
-                        <Text fontSize="xs" fontWeight="800" color="gray.600" noOfLines={1}>
-                          {formatWon(item.total)}
-                        </Text>
-                        <Box
+                        <Flex
                           w="100%"
                           maxW="54px"
-                          h={`${percent}%`}
-                          minH="14px"
-                          bg="blue.400"
-                          borderRadius="md"
-                        />
+                          flex="1"
+                          minH="92px"
+                          direction="column"
+                          justify="end"
+                          gap={1}
+                          align="end"
+                          borderBottom="1px solid"
+                          borderColor="gray.300"
+                        >
+                          <Text fontSize="xs" fontWeight="800" color="gray.600" noOfLines={1} w="max-content" alignSelf="center">
+                            {formatWon(item.total)}
+                          </Text>
+                          {total > 0 && (
+                            <Box
+                              w="100%"
+                              h={`${percent}%`}
+                              minH="14px"
+                              bg="blue.400"
+                              borderRadius="md"
+                            />
+                          )}
+                        </Flex>
                         <Text fontSize="11px" color="gray.500" noOfLines={1}>
                           {item.label.replace("년", ".").replace("월", "")}
                         </Text>

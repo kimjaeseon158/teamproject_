@@ -14,20 +14,19 @@ export async function getWorkaddPlaceList(payload, toast) {
       { toast } // 옵션으로 toast 넘김
     );
 
-    if (!res) return null; // refresh 실패 시 null 반환
+    if (!res) throw new Error("인증 갱신에 실패했습니다.");
 
-    const data = await res.json();
-    return data;
-  } catch (err) {
-    if (toast) {
-      toast({
-        title: "네트워크 오류",
-        description: err.message,
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
+    if (!res.ok) {
+      let msg = "근무지 시급 추가에 실패했습니다.";
+      try {
+        const err = await res.json();
+        msg = err.detail || err.message || JSON.stringify(err);
+      } catch {}
+      throw new Error(msg);
     }
-    return null;
+
+    return res.json().catch(() => ({}));
+  } catch (err) {
+    throw err;
   }
 }

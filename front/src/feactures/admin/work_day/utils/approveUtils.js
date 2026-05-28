@@ -4,7 +4,18 @@ export const minutesToHM = (mins) => {
 };
 
 export const getMinutesByType = (details = [], type) =>
-  Number(details.find((d) => d.work_type === type)?.minutes) || 0;
+  details
+    .filter((detail) => String(detail.work_type || "").includes(type))
+    .reduce((total, detail) => total + (Number(detail.minutes) || 0), 0);
+
+export const getTotalWorkMinutes = (details = []) =>
+  details.reduce((total, detail) => total + (Number(detail.minutes) || 0), 0);
+
+export const getWorkDurationLabel = (details = []) =>
+  details
+    .filter((detail) => Number(detail.minutes) > 0)
+    .map((detail) => `${detail.work_type} ${minutesToHM(detail.minutes)}`)
+    .join(" · ");
 
 export const toDateOnly = (v) =>
   typeof v === "string" && v.includes("T") ? v.split("T")[0] : v ?? "";

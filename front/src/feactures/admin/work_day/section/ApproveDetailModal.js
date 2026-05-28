@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Modal,
   ModalOverlay,
@@ -40,6 +40,12 @@ export default function ApproveDetailModal({
   const [rejectReason, setRejectReason] = useState("");
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    if (isOpen) {
+      setRejectReason("");
+    }
+  }, [employee?.id, isOpen]);
+
   if (!employee) return null;
 
   /* ======================
@@ -53,7 +59,7 @@ export default function ApproveDetailModal({
         {
           user_uuid: employee.user_uuid,
           work_date: employee.date,
-          work_shift: employee.workType,
+          work_shift: employee.workShift || employee.workType,
           status: true,
         },
         { toast }
@@ -69,6 +75,7 @@ export default function ApproveDetailModal({
     } catch (err) {
       toast({
         title: "승인 중 오류 발생",
+        description: err.message,
         status: "error",
       });
     } finally {
@@ -95,7 +102,7 @@ export default function ApproveDetailModal({
         {
           user_uuid: employee.user_uuid,
           work_date: employee.date,
-          work_shift: employee.workType,
+          work_shift: employee.workShift || employee.workType,
           status: false,
           reject_reason: rejectReason,
         },
@@ -112,6 +119,7 @@ export default function ApproveDetailModal({
     } catch (err) {
       toast({
         title: "반려 중 오류 발생",
+        description: err.message,
         status: "error",
       });
     } finally {
@@ -136,11 +144,29 @@ export default function ApproveDetailModal({
           </InfoCard>
 
           <InfoCard title="근무 시간">
-            <Flex justify="space-between">
+            <Flex justify="space-between" align="center">
+              <Text fontSize="sm" color="gray.500" minW="72px">
+                근무시간
+              </Text>
               <Text>{employee.workTime}</Text>
               <Tag>{employee.workType}</Tag>
               <Text fontWeight="bold">{employee.dayHM}</Text>
             </Flex>
+            {employee.overtimeChecked && (
+              <Flex justify="space-between" align="center" mt={2}>
+                <Text fontSize="sm" color="gray.500" minW="72px">
+                  잔업시간
+                </Text>
+                <Text>{employee.overtimeTime || "-"}</Text>
+                <Tag colorScheme="orange">잔업</Tag>
+                <Text fontWeight="bold">{employee.overtimeDuration}</Text>
+              </Flex>
+            )}
+            <Box mt={3}>
+              <Text fontSize="sm" color="blue.600" fontWeight="semibold">
+                총 시간: {employee.totalWorkHM || employee.dayHM}
+              </Text>
+            </Box>
           </InfoCard>
 
           <InfoCard title="반려 사유">

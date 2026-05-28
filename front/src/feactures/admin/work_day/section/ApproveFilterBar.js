@@ -12,6 +12,7 @@ import {
   HStack,
 } from "@chakra-ui/react";
 import { DayPicker } from "react-day-picker";
+import { ko } from "date-fns/locale";
 import "react-day-picker/dist/style.css";
 import locationsList from "../../../common/work_placeCloums/locationsList";
 
@@ -102,6 +103,12 @@ export default function ApproveFilterBar({
 
               <DayPicker
                 mode="range"
+                locale={ko}
+                weekStartsOn={1}
+                formatters={{
+                  formatCaption: (month) =>
+                    `${month.getFullYear()}년 ${month.getMonth() + 1}월`,
+                }}
                 selected={range}
                 onSelect={setRange}
               />
@@ -116,7 +123,7 @@ export default function ApproveFilterBar({
                     setRange({ from: today, to: today });
                   }}
                 >
-                  Today
+                  오늘
                 </Button>
 
                 <Button

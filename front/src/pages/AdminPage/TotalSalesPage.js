@@ -11,7 +11,6 @@ import {
   SimpleGrid,
   Text,
   Tooltip,
-  useDisclosure,
   useToast,
 } from "@chakra-ui/react";
 import { DownloadIcon } from "@chakra-ui/icons";
@@ -20,7 +19,6 @@ import { useMemo, useState } from "react";
 import MonthPicker from "../../feactures/common/MonthPicker";
 import { useTotalFinance } from "../../feactures/admin/total_pay/hook/useTotalFinance";
 import ThreeMonthBarSection from "../../feactures/admin/total_pay/section/ThreeMonthBarSection";
-import ExcelExportModal from "../../feactures/admin/total_pay/section/ExcelExportModal";
 import { exportToGoogleExcel } from "../../feactures/admin/api/google/GoogleDrive";
 import excelIcon from "../../assets/img/excel.png";
 
@@ -28,7 +26,6 @@ const formatWon = (value) => `${Number(value || 0).toLocaleString()}원`;
 
 export default function TotalSalesPage() {
   const toast = useToast();
-  const { isOpen, onOpen, onClose } = useDisclosure();
   const [exportLoading, setExportLoading] = useState(false);
 
   const {
@@ -51,10 +48,23 @@ export default function TotalSalesPage() {
     [detailData]
   );
 
-  const handleConfirmExcel = async (workPlace, date) => {
+  const workerSummary = useMemo(() => {
+    const total = selectedMonthTotal || 1;
+
+    return [...detailData]
+      .sort((a, b) => Number(b.amount || 0) - Number(a.amount || 0))
+      .map((item, index) => ({
+        name: item.name,
+        amount: Number(item.amount || 0),
+        percent: Math.round((Number(item.amount || 0) / total) * 100),
+        rank: index + 1,
+      }));
+  }, [detailData, selectedMonthTotal]);
+
+  const handleExport = async () => {
     try {
       setExportLoading(true);
-      const result = await exportToGoogleExcel(workPlace, date);
+      const result = await exportToGoogleExcel("", selectedDetailMonth || apiMonth);
 
       if (result.success) {
         toast({
@@ -63,7 +73,6 @@ export default function TotalSalesPage() {
           status: "success",
           duration: 3000,
         });
-        onClose();
       } else {
         throw new Error(result.message || "Export failed");
       }
@@ -111,7 +120,8 @@ export default function TotalSalesPage() {
               colorScheme="green"
               variant="outline"
               size="sm"
-              onClick={onOpen}
+              onClick={handleExport}
+              isLoading={exportLoading}
             >
               내보내기
             </Button>
@@ -160,15 +170,81 @@ export default function TotalSalesPage() {
         minH={0}
         overflow="hidden"
       >
-        <Box flex="1.6" minW={0} minH={0}>
-          <ThreeMonthBarSection
-            data={threeMonthData}
-            selectedMonth={selectedDetailMonth}
-            height="100%"
-            onMonthClick={(month) => {
-              setSelectedDetailMonth(String(month).trim());
-            }}
-          />
+        <Box flex="1.6" minW={0} minH={0} display="flex" flexDirection="column" gap={3}>
+          <Box flex="1" minH={0}>
+            <ThreeMonthBarSection
+              data={threeMonthData}
+              selectedMonth={selectedDetailMonth}
+              height="100%"
+              onMonthClick={(month) => {
+                setSelectedDetailMonth(String(month).trim());
+              }}
+            />
+          </Box>
+
+          <Card border="1px solid" borderColor="gray.100" boxShadow="sm" flexShrink={0}>
+            <CardBody py={4}>
+              <Flex justify="space-between" align="center" mb={3}>
+                <Box>
+                  <Heading size="sm" color="gray.800">
+                    근무자별 지급 현황
+                  </Heading>
+                  <Text fontSize="sm" color="gray.500" mt={1}>
+                    선택 월 금액 기준 상위 근무자
+                  </Text>
+                </Box>
+                <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
+                  {workerSummary.length.toLocaleString()}명
+                </Badge>
+              </Flex>
+
+              {workerSummary.length === 0 ? (
+                <Box py={6} textAlign="center" bg="gray.50" borderRadius="md" color="gray.400">
+                  근무자별 지급 내역이 없습니다.
+                </Box>
+              ) : (
+                <Flex gap={3} align="stretch">
+                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3} flex="1">
+                    {workerSummary.slice(0, 4).map((item) => (
+                      <Box key={`${item.name}-${item.rank}`} p={3} bg="gray.50" borderRadius="md">
+                        <Flex justify="space-between" align="start" mb={2}>
+                          <Box minW={0}>
+                            <HStack spacing={2}>
+                              <Badge colorScheme={item.rank === 1 ? "blue" : "gray"}>#{item.rank}</Badge>
+                              <Text fontWeight="900" color="gray.800" noOfLines={1}>
+                                {item.name}
+                              </Text>
+                            </HStack>
+                            <Text fontSize="xs" color="gray.500" mt={1}>
+                              전체 대비 {item.percent}%
+                            </Text>
+                          </Box>
+                          <Text fontWeight="900" color="blue.600">
+                            {formatWon(item.amount)}
+                          </Text>
+                        </Flex>
+                        <Box h="8px" bg="white" borderRadius="full" overflow="hidden">
+                          <Box h="100%" w={`${Math.max(item.percent, 4)}%`} bg="blue.400" />
+                        </Box>
+                      </Box>
+                    ))}
+                  </SimpleGrid>
+
+                  <Box minW="180px" p={3} bg="blue.50" borderRadius="md" border="1px solid" borderColor="blue.100">
+                    <Text fontSize="xs" fontWeight="900" color="blue.600" mb={2}>
+                      선택 월 요약
+                    </Text>
+                    <Text fontSize="2xl" fontWeight="900" color="blue.700">
+                      {formatWon(selectedMonthTotal)}
+                    </Text>
+                    <Text fontSize="xs" color="blue.600" mt={2}>
+                      총 {workerSummary.length.toLocaleString()}명 지급
+                    </Text>
+                  </Box>
+                </Flex>
+              )}
+            </CardBody>
+          </Card>
         </Box>
 
         <Card flex="1" border="1px solid" borderColor="gray.100" boxShadow="sm" minH={0} overflow="hidden">
@@ -213,13 +289,6 @@ export default function TotalSalesPage() {
           </CardBody>
         </Card>
       </Flex>
-
-      <ExcelExportModal
-        isOpen={isOpen}
-        onClose={onClose}
-        onConfirm={handleConfirmExcel}
-        loading={exportLoading}
-      />
     </Box>
   );
 }

@@ -14,6 +14,7 @@ export function useAdminState() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchForm, setSearchForm] = useState(initialSearchForm);
+  const [isSearchActive, setIsSearchActive] = useState(false);
 
   return {
     peopleData, setPeopleData,
@@ -22,5 +23,6 @@ export function useAdminState() {
     showAddModal, setShowAddModal,
     showSearchModal, setShowSearchModal,
     searchForm, setSearchForm,
+    isSearchActive, setIsSearchActive,
   };
 }

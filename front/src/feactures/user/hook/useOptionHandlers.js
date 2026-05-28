@@ -45,9 +45,11 @@ export function useOptionHandlers({
       return labels[type] || "기타";
     };
 
+    const baseWorkType = isSpecial ? `${baseShift}특근` : baseShift;
+
     const details = [
       {
-        work_type: baseShift,
+        work_type: baseWorkType,
         minutes: calculateNetMinutes(startTime, finishTime),
         is_overtime_approved: isSpecial,
       },
@@ -67,6 +69,7 @@ export function useOptionHandlers({
         startTime,
         finishTime,
         baseShift,
+        baseWorkType,
         details,
       },
     ]);

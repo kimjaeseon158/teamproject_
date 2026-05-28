@@ -1,19 +1,29 @@
-// src/hooks/useGoogleLinkStatus.js
 import { useEffect, useState } from "react";
+
+const GOOGLE_LINKED_KEY = "googleLinked";
 
 export default function useGoogleLinkStatus() {
   const [state, setState] = useState({
-    loading: true,      // 판별 중
-    linked: false,      // 구글 연동 여부
-    reason: null,       // 'unauthenticated' | 'server' | 'network' | null
+    loading: true,
+    linked: false,
+    reason: null,
     lastCheckedAt: null,
-    events: [],         // 🔥 추가: 불러온 이벤트들
+    events: [],
   });
 
   useEffect(() => {
     let alive = true;
 
     (async () => {
+      const params = new URLSearchParams(window.location.search);
+      const authResult = params.get("google_auth");
+
+      if (authResult === "success") {
+        localStorage.setItem(GOOGLE_LINKED_KEY, "1");
+      } else if (authResult === "failed" || authResult === "invalid_state") {
+        localStorage.removeItem(GOOGLE_LINKED_KEY);
+      }
+
       try {
         const res = await fetch("/api/google_calendar_auth/events/", {
           method: "GET",
@@ -23,17 +33,17 @@ export default function useGoogleLinkStatus() {
         if (!alive) return;
 
         if (res.status === 200) {
-          // ✅ 여기서 한 번만 JSON 파싱 + 이벤트 변환까지 처리
           const data = await res.json();
-          const asEvents = (data?.events ?? []).map((e) => ({
-            id: e.id,
-            title: e.summary || "(제목 없음)",
-            start: new Date(e.start?.dateTime || e.start?.date),
-            end: new Date(e.end?.dateTime || e.end?.date),
-            description: e.description || "",
-            location: e.location || "",
+          const asEvents = (data?.events ?? []).map((event) => ({
+            id: event.id,
+            title: event.summary || "(제목 없음)",
+            start: new Date(event.start?.dateTime || event.start?.date),
+            end: new Date(event.end?.dateTime || event.end?.date),
+            description: event.description || "",
+            location: event.location || "",
           }));
 
+          localStorage.setItem(GOOGLE_LINKED_KEY, "1");
           setState({
             loading: false,
             linked: true,
@@ -41,36 +51,25 @@ export default function useGoogleLinkStatus() {
             lastCheckedAt: Date.now(),
             events: asEvents,
           });
-        } else if (res.status === 401 || res.status === 403) {
-          setState({
-            loading: false,
-            linked: false,
-            reason: "unauthenticated",
-            lastCheckedAt: Date.now(),
-            events: [],   // 🔥 실패 케이스에서는 빈 배열
-          });
-        } else if (res.status >= 500) {
-          setState({
-            loading: false,
-            linked: false,
-            reason: "server",
-            lastCheckedAt: Date.now(),
-            events: [],
-          });
-        } else {
-          setState({
-            loading: false,
-            linked: false,
-            reason: "server",
-            lastCheckedAt: Date.now(),
-            events: [],
-          });
+          return;
         }
-      } catch {
+
+        const locallyLinked = localStorage.getItem(GOOGLE_LINKED_KEY) === "1";
         setState({
           loading: false,
-          linked: false,
-          reason: "network",
+          linked: locallyLinked,
+          reason: locallyLinked ? null : res.status >= 500 ? "server" : "unauthenticated",
+          lastCheckedAt: Date.now(),
+          events: [],
+        });
+      } catch {
+        if (!alive) return;
+
+        const locallyLinked = localStorage.getItem(GOOGLE_LINKED_KEY) === "1";
+        setState({
+          loading: false,
+          linked: locallyLinked,
+          reason: locallyLinked ? null : "network",
           lastCheckedAt: Date.now(),
           events: [],
         });

@@ -11,24 +11,31 @@ import {
   Input,
   Button,
   VStack,
+  HStack,
   Select,
 } from "@chakra-ui/react";
 
 import { useAddPersonLogic } from "../hook/useAddPersonLogic";
 import { CARRIER_OPTIONS } from "../constants/carrierConstants";
 
-const AddPersonModal = ({ isOpen, onClose, onSave }) => {
+const AddPersonModal = ({ isOpen, onClose, onSave, toast }) => {
   const {
     formData,
     handleChange,
     handleSubmitBase,
     setFormData, 
-  } = useAddPersonLogic(onSave, onClose);
+  } = useAddPersonLogic(onSave, onClose, toast);
 
 
   const openAddressSearch = () => {
     if (!window.daum) {
-      alert("주소 검색 스크립트가 로드되지 않았습니다.");
+      toast?.({
+        title: "주소 검색 사용 불가",
+        description: "주소 검색 스크립트가 로드되지 않았습니다.",
+        status: "error",
+        duration: 2500,
+        isClosable: true,
+      });
       return;
     }
 
@@ -72,28 +79,28 @@ const AddPersonModal = ({ isOpen, onClose, onSave }) => {
               </FormControl>
 
               <FormControl isRequired>
-                <FormLabel>전화번호</FormLabel>
-                <Input
-                  name="phone_number"
-                  value={formData.phone_number}
-                  onChange={handleChange}
-                />
-              </FormControl>
-
-              <FormControl>
-                <FormLabel>통신사</FormLabel>
-                <Select
-                  name="mobile_carrier"
-                  value={formData.mobile_carrier}
-                  onChange={handleChange}
-                >
-                  <option value="">선택</option>
-                  {CARRIER_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Select>
+                <FormLabel>통신사 / 전화번호</FormLabel>
+                <HStack spacing={2}>
+                  <Select
+                    name="mobile_carrier"
+                    value={formData.mobile_carrier}
+                    onChange={handleChange}
+                    w="120px"
+                  >
+                    <option value="">통신사</option>
+                    {CARRIER_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </Select>
+                  <Input
+                    name="phone_number"
+                    value={formData.phone_number}
+                    onChange={handleChange}
+                    placeholder="010-1234-5678"
+                  />
+                </HStack>
               </FormControl>
 
               {/* 주소 검색 */}

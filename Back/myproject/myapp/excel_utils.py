@@ -113,7 +113,8 @@ WORK_TYPE_ROW = {
     "주간": 0,
     "평일 잔업": 1,
     "중식연장": 2,
-    "특근": 3,
+    "주간 특근": 3,
+    "야간 특근": 3,
     "철야": 4,
     "철야 잔업": 5,
     "조기출근": 6,
@@ -217,14 +218,14 @@ def generate_workplace_excel(work_place, year, month, template_file=None):
             user_work_map[name][day] = {}
 
         for detail in wd.details.all():
-            work_type = normalize_work_type(detail.work_type)
+            work_type = normalize_work_type(detail.work_type, wd.work_shift)
 
             if work_type not in WORK_TYPE_ROW:
                 continue
 
             row_offset = WORK_TYPE_ROW[work_type]
 
-            if work_type in ["주간", "특근", "철야"]:
+            if work_type in ["주간", "주간 특근", "야간 특근", "철야"]:
                 value = 1
             else:
                 value = hour_value(detail.minutes)

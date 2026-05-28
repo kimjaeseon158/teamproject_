@@ -93,6 +93,8 @@ class WorkPlaceRate(models.Model):
     overtime_hourly_wage      = models.PositiveIntegerField(null=True, blank=True)  # 잔업(연장)
     meal_ot_hourly_wage       = models.PositiveIntegerField(null=True, blank=True)  # 중식연장
     special_hourly_wage       = models.PositiveIntegerField(null=True, blank=True)  # 특근
+    day_special_hourly_wage   = models.PositiveIntegerField(null=True, blank=True)  # 주간 특근
+    night_special_hourly_wage = models.PositiveIntegerField(null=True, blank=True)  # 야간 특근
     overnight_hourly_wage     = models.PositiveIntegerField(null=True, blank=True)  # 철야(기본)
     overnight_ot_hourly_wage  = models.PositiveIntegerField(null=True, blank=True)  # 철야 연장(OT)
 

@@ -2,7 +2,8 @@ STANDARD_WORK_TYPES = {
     "주간",
     "평일 잔업",
     "중식연장",
-    "특근",
+    "주간 특근",
+    "야간 특근",
     "철야",
     "철야 잔업",
     "조기출근",
@@ -16,5 +17,8 @@ WORK_TYPE_ALIASES = {
 }
 
 
-def normalize_work_type(work_type: str) -> str:
+def normalize_work_type(work_type: str, work_shift: str | None = None) -> str:
+    if work_type == "특근":
+        return "야간 특근" if work_shift == "야간" else "주간 특근"
+
     return WORK_TYPE_ALIASES.get(work_type or "", work_type or "")

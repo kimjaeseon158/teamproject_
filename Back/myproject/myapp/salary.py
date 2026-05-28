@@ -17,6 +17,8 @@ class WageRates:
     overtime_hourly_wage: int
     meal_ot_hourly_wage: int
     special_hourly_wage: int
+    day_special_hourly_wage: int
+    night_special_hourly_wage: int
     overnight_hourly_wage: int
     overnight_ot_hourly_wage: int
 
@@ -33,8 +35,13 @@ def minutes_to_amount(daily_wage_8h: int, minutes: int) -> int:
     return (daily_wage_8h * minutes) // FULL_DAY_MINUTES
     # 예) 일급 100,000원, 240분 근무 (100000 * 240 + 240) // 480 = 50,000원 (정상)
 
-def get_detail_salary_amount(work_type: str, minutes: int, rates: WageRates) -> int:
-    wt = normalize_work_type(work_type).upper()
+def get_detail_salary_amount(
+    work_type: str,
+    minutes: int,
+    rates: WageRates,
+    work_shift: str | None = None,
+) -> int:
+    wt = normalize_work_type(work_type, work_shift).upper()
     mins = int(minutes or 0)
 
     if wt in ["주간"]:
@@ -45,6 +52,12 @@ def get_detail_salary_amount(work_type: str, minutes: int, rates: WageRates) -> 
 
     if wt in ["중식연장"]:
         return minutes_to_amount(rates.meal_ot_hourly_wage, mins)
+
+    if wt in ["주간 특근"]:
+        return minutes_to_amount(rates.day_special_hourly_wage, mins)
+
+    if wt in ["야간 특근"]:
+        return minutes_to_amount(rates.night_special_hourly_wage, mins)
 
     if wt in ["특근"]:
         return minutes_to_amount(rates.special_hourly_wage, mins)
@@ -58,21 +71,30 @@ def get_detail_salary_amount(work_type: str, minutes: int, rates: WageRates) -> 
     return 0
 
 
-def calculate_daily_salary(details, rates: WageRates) -> int:
+def calculate_daily_salary(
+    details,
+    rates: WageRates,
+    work_shift: str | None = None,
+) -> int:
     total = 0
 
     for d in details:
-        total += get_detail_salary_amount(d.work_type, d.minutes, rates)
+        total += get_detail_salary_amount(d.work_type, d.minutes, rates, work_shift)
 
     return max(total, 0)
 
 
-def calculate_daily_salary_breakdown(details, rates: WageRates) -> dict:
+def calculate_daily_salary_breakdown(
+    details,
+    rates: WageRates,
+    work_shift: str | None = None,
+) -> dict:
     by_work_type = {
         "주간": 0,
         "평일 잔업": 0,
         "중식연장": 0,
-        "특근": 0,
+        "주간 특근": 0,
+        "야간 특근": 0,
         "철야": 0,
         "철야 잔업": 0,
     }
@@ -80,9 +102,9 @@ def calculate_daily_salary_breakdown(details, rates: WageRates) -> dict:
 
     for d in details:
         work_type = d.work_type or ""
-        amount_type = normalize_work_type(work_type)
+        amount_type = normalize_work_type(work_type, work_shift)
         minutes = int(d.minutes or 0)
-        amount = get_detail_salary_amount(work_type, minutes, rates)
+        amount = get_detail_salary_amount(work_type, minutes, rates, work_shift)
 
         if amount_type in by_work_type:
             by_work_type[amount_type] += amount
@@ -119,6 +141,8 @@ def get_rates_for_workday(work_day) -> WageRates:
         overtime_hourly_wage=rate.overtime_hourly_wage,
         meal_ot_hourly_wage=rate.meal_ot_hourly_wage,
         special_hourly_wage=rate.special_hourly_wage,
+        day_special_hourly_wage=rate.day_special_hourly_wage or rate.special_hourly_wage,
+        night_special_hourly_wage=rate.night_special_hourly_wage or rate.special_hourly_wage,
         overnight_hourly_wage=rate.overnight_hourly_wage,
         overnight_ot_hourly_wage=rate.overnight_ot_hourly_wage,
     )
@@ -133,7 +157,7 @@ def sync_salary_expense_for_workday(work_day):
     if work_day.is_approved is True:
         rates = get_rates_for_workday(work_day)
         details = work_day.details.all()  # related_name="details"
-        amount = calculate_daily_salary(details, rates)
+        amount = calculate_daily_salary(details, rates, work_day.work_shift)
 
         Expense.objects.update_or_create(
             work_day=work_day,

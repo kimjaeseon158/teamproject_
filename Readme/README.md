@@ -147,6 +147,60 @@ teamproject_-3/
 | `front/src/common/` | 공통 버튼, 캘린더, 테이블, 날짜 선택 컴포넌트 |
 | `front/src/assets/` | 이미지 등 정적 리소스 |
 
+## 프론트/백엔드 필드명 약속
+
+### WorkPlaceRate 필드명
+
+프론트와 백엔드는 아래 변수명을 그대로 맞춰서 사용합니다.
+
+| 필드명 | 의미 |
+| --- | --- |
+| `user_uuid` | 사용자 UUID |
+| `work_place` | 근무지명 |
+| `base_hourly_wage` | 주간 기본 단가 |
+| `overtime_hourly_wage` | 평일 잔업 단가 |
+| `meal_ot_hourly_wage` | 중식연장 단가 |
+| `day_special_hourly_wage` | 주간 특근 단가 |
+| `night_special_hourly_wage` | 야간 특근 단가 |
+| `overnight_hourly_wage` | 철야 기본 단가 |
+| `overnight_ot_hourly_wage` | 철야 잔업 단가 |
+
+`special_hourly_wage`는 기존 호환용 필드입니다. 새로 주고받는 값은 `day_special_hourly_wage`, `night_special_hourly_wage`를 사용합니다.
+
+```json
+{
+  "user_uuid": "00000000-0000-0000-0000-000000000000",
+  "work_place": "A현장",
+  "base_hourly_wage": 100000,
+  "overtime_hourly_wage": 50000,
+  "meal_ot_hourly_wage": 30000,
+  "day_special_hourly_wage": 120000,
+  "night_special_hourly_wage": 150000,
+  "overnight_hourly_wage": 130000,
+  "overnight_ot_hourly_wage": 60000
+}
+```
+
+### work_type 표준 이름
+
+근무 상세 `work_type`은 아래 문자열을 기준으로 사용합니다.
+
+| work_type | 적용 단가 |
+| --- | --- |
+| `주간` | `base_hourly_wage` |
+| `평일 잔업` | `overtime_hourly_wage` |
+| `중식연장` | `meal_ot_hourly_wage` |
+| `주간 특근` | `day_special_hourly_wage` |
+| `야간 특근` | `night_special_hourly_wage` |
+| `철야` | `overnight_hourly_wage` |
+| `철야 잔업` | `overnight_ot_hourly_wage` |
+
+사용하지 않을 이름:
+
+- `잔업` 대신 `평일 잔업`
+- `철야연장` 대신 `철야 잔업`
+- `특근` 대신 `주간 특근` 또는 `야간 특근`
+
 ## 중요 라이브러리
 
 ### Backend

@@ -20,6 +20,8 @@ const handleAdd = async (payload) => {
       overtime_hourly_wage: payload.overtime_hourly_wage ?? null,
       meal_ot_hourly_wage: payload.meal_ot_hourly_wage ?? null,
       special_hourly_wage: payload.special_hourly_wage ?? null,
+      day_special_hourly_wage: payload.day_special_hourly_wage ?? null,
+      night_special_hourly_wage: payload.night_special_hourly_wage ?? null,
       overnight_hourly_wage: payload.overnight_hourly_wage ?? null,
       overnight_ot_hourly_wage: payload.overnight_ot_hourly_wage ?? null,
     },
@@ -52,6 +54,8 @@ const handleAdd = async (payload) => {
         overtime_hourly_wage: null,
         meal_ot_hourly_wage: null,
         special_hourly_wage: null,
+        day_special_hourly_wage: null,
+        night_special_hourly_wage: null,
         overnight_hourly_wage: null,
         overnight_ot_hourly_wage: null,
       }, { toast });

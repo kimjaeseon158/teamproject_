@@ -1,5 +1,5 @@
-import { Box, IconButton, HStack, Text, VStack, useBreakpointValue, Badge, Divider, Button } from "@chakra-ui/react";
-import { CloseIcon, TimeIcon, InfoIcon } from "@chakra-ui/icons";
+import { Box, IconButton, HStack, Text, VStack, useBreakpointValue, Badge, Divider } from "@chakra-ui/react";
+import { CloseIcon, InfoIcon } from "@chakra-ui/icons";
 import { useEffect, useRef } from "react";
 import Option from "../components/option";
 
@@ -76,6 +76,44 @@ export default function CalendarSidebar({
       item.amount_breakdown?.[workType] ??
       item.amount_breakdown?.[item.work_shift] ??
       0
+    );
+  };
+
+  const DesktopWorkSummary = ({ event }) => {
+    const data = event.extendedProps;
+    const groupedItems = data.grouped_items?.length ? data.grouped_items : [data];
+    const statusText = data.is_approved === true ? "승인" : data.is_approved === false ? "반려" : "대기";
+    const statusColor = data.is_approved === true ? "green" : data.is_approved === false ? "red" : "orange";
+
+    return (
+      <VStack align="stretch" spacing={2} mt={4}>
+        <Text fontSize="xs" color="gray.500" fontWeight="800">
+          이미 등록된 근무
+        </Text>
+        {groupedItems.map((item, index) => {
+          const workType = getWorkType(item);
+
+          return (
+            <HStack
+              key={`${item.date}-${item.work_place}-${index}`}
+              justify="space-between"
+              bg="whiteAlpha.100"
+              border="1px solid"
+              borderColor="whiteAlpha.200"
+              borderRadius="16px"
+              px={3}
+              py={2}
+            >
+              <Text fontSize="sm" fontWeight="800" noOfLines={1}>
+                {workType} · {item.work_place || "근무지 미지정"}
+              </Text>
+              <Badge colorScheme={statusColor} borderRadius="full" flexShrink={0}>
+                {statusText}
+              </Badge>
+            </HStack>
+          );
+        })}
+      </VStack>
     );
   };
 
@@ -316,9 +354,26 @@ export default function CalendarSidebar({
           borderColor="whiteAlpha.100"
         >
           {existingEvent ? (
-            <DetailView event={existingEvent} />
+            isMobile ? (
+              <DetailView event={existingEvent} />
+            ) : (
+              <>
+                <Option
+                  selectedDate={selectedDate}
+                  onRefresh={onRefresh}
+                  onClose={onClose}
+                  isMobile={isMobile}
+                />
+                <DesktopWorkSummary event={existingEvent} />
+              </>
+            )
           ) : (
-            <Option selectedDate={selectedDate} onRefresh={onRefresh} onClose={onClose} isMobile={isMobile} />
+            <Option
+              selectedDate={selectedDate}
+              onRefresh={onRefresh}
+              onClose={onClose}
+              isMobile={isMobile}
+            />
           )}
         </Box>
       </Box>

@@ -46,7 +46,18 @@ export function useApproveList(toast) {
         {},
         { toast }
       );
-      const json = await res.json();
+
+      if (!res) {
+        throw new Error("인증이 만료되었습니다. 다시 로그인해주세요.");
+      }
+
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(
+          json.detail || json.message || "승인 목록 조회에 실패했습니다."
+        );
+      }
 
       const mapped = (json.data || [])
         .map((w, idx) => {
@@ -90,8 +101,14 @@ export function useApproveList(toast) {
         .sort((a, b) => String(a.date).localeCompare(String(b.date)));
 
       setRows(mapped);
-    } catch {
-      toast({ title: "조회 실패", status: "error" });
+    } catch (err) {
+      toast?.({
+        title: "조회 실패",
+        description: err.message,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
     } finally {
       setLoading(false);
     }

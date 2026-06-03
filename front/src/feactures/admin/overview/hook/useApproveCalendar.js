@@ -62,7 +62,7 @@ export default function useApproveCalendar(currentDate) {
 
         setEvents(mapped);
       } catch (err) {
-        console.error("승인 대기 조회 실패", err);
+        console.error("승인 대기 조회 실패");
         setEvents([]);
         setRawData([]);
       } finally {

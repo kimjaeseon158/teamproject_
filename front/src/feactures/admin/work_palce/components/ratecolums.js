@@ -12,7 +12,7 @@ const getRateColumns = ({
   setTempRates,
 }) => {
 
-  const renderInput = (field, row) => (
+  const renderInput = (field, row, fallbackField) => (
     <Input
       size="sm"
       width="100%"
@@ -20,7 +20,7 @@ const getRateColumns = ({
       value={
         editedValues[field] !== undefined
           ? editedValues[field]
-          : row[field] ?? ""
+          : row[field] ?? row[fallbackField] ?? ""
       }
       onChange={(e) =>
         setEditedValues((prev) => ({
@@ -100,18 +100,32 @@ const getRateColumns = ({
     },
 
     {
-      key: "special_hourly_wage",
+      key: "day_special_hourly_wage",
       label: "주간 특근",
       width: "120px",
-      render: (value, row) =>
-        editingId === row.rate_uuid
-          ? renderInput("special_hourly_wage", row)
-          : value != null ? Number(value).toLocaleString() : "-",
+      render: (value, row) => {
+        const displayValue = value ?? row.special_hourly_wage;
+        return editingId === row.rate_uuid
+          ? renderInput("day_special_hourly_wage", row, "special_hourly_wage")
+          : displayValue != null ? Number(displayValue).toLocaleString() : "-";
+      },
+    },
+
+    {
+      key: "night_special_hourly_wage",
+      label: "야간 특근",
+      width: "120px",
+      render: (value, row) => {
+        const displayValue = value ?? row.special_hourly_wage;
+        return editingId === row.rate_uuid
+          ? renderInput("night_special_hourly_wage", row, "special_hourly_wage")
+          : displayValue != null ? Number(displayValue).toLocaleString() : "-";
+      },
     },
 
     {
       key: "overnight_hourly_wage",
-      label: "야간 특근",
+      label: "철야",
       width: "120px",
       render: (value, row) =>
         editingId === row.rate_uuid

@@ -35,7 +35,7 @@ export function useOptionHandlers({
     const getExtraWorkTypeLabel = (type) => {
       const labels = {
         weekday_ot: "평일 잔업",
-        holiday_special: "휴일 특근",
+        holiday_special: baseShift === "야간" ? "야간 특근" : "주간 특근",
         holiday_ot: "휴일 잔업",
         night_shift: "철야",
         night_ot: "철야 잔업",
@@ -45,7 +45,7 @@ export function useOptionHandlers({
       return labels[type] || "기타";
     };
 
-    const baseWorkType = isSpecial ? `${baseShift}특근` : baseShift;
+    const baseWorkType = isSpecial ? `${baseShift} 특근` : baseShift;
 
     const details = [
       {
@@ -107,7 +107,7 @@ export function useOptionHandlers({
 
       await submitWorkInfo(payload);
     } catch (e) {
-      console.error("등록 실패 원인:", e);
+      console.error("등록 실패 원인:");
       toast({
         title: "등록 실패",
         description: e?.message || "서버 응답을 확인해주세요.",
@@ -126,14 +126,14 @@ export function useOptionHandlers({
     if (onRefresh && selectedDate) {
       const ym = `${selectedDate.year}-${String(selectedDate.month).padStart(2, "0")}`;
       Promise.resolve(onRefresh(ym)).catch((e) => {
-        console.error("등록 후 캘린더 새로고침 실패:", e);
+        console.error("등록 후 캘린더 새로고침 실패");
       });
     }
 
     try {
       onClose?.();
     } catch (e) {
-      console.error("등록 후 닫기 처리 실패:", e);
+      console.error("등록 후 닫기 처리 실패");
     }
 
     setIsSubmitting?.(false);

@@ -41,20 +41,18 @@ export const useLogin = () => {
 
   /* ================= 자동 로그인 처리 ================= */
   useEffect(() => {
-    console.log("[useLogin] 자동 로그인 체크 중:", { loading, userUuid, loginType });
+
 
     // 로딩이 완료되었고, 유효한 userUuid와 loginType이 있다면 이미 로그인된 상태
     if (!loading && userUuid && loginType) {
-      console.log("[useLogin] 자동 로그인 조건 충족, 리다이렉트 시도:", loginType);
+    
       
       if (loginType === "admin") {
         navigate("/dashboard", { replace: true });
       } else if (loginType === "user") {
         navigate("/data", { replace: true });
       }
-    } else {
-      console.log("[useLogin] 자동 로그인 대기 중 또는 인증 필요");
-    }
+    } 
   }, [loading, userUuid, loginType, navigate]);
 
   // 현재 역할에 따른 스토리지 키 결정
@@ -135,7 +133,6 @@ export const useLogin = () => {
   const preventSpace = (e) => {
     if (e.key === " ") e.preventDefault();
   };
-  console.log(loginType)
   /* ================= 로그인 ================= */
 
   const handleSubmit = async (e) => {
@@ -239,7 +236,7 @@ export const useLogin = () => {
         position: "top",
       });
     } catch (err) {
-      console.error("로그인 API 에러", err);
+      console.error("로그인 에러");
       setLoginError("서버와의 연결이 원활하지 않습니다.");
       toast({
         title: "연결 오류",

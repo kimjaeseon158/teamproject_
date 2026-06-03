@@ -10,8 +10,6 @@ export default function RequireAuth({ children }) {
   const triedRef = useRef(false);
   const isAdminPath = location.pathname.startsWith("/dashboard");
   const isUserPath = location.pathname.startsWith("/data");  
-  // ✅ 인증 안 된 상태면 refresh 1회 시도
-  console.log(loginType, "/" , isUserPath)
   useEffect(() => {
     if (!loading && !userUuid && !triedRef.current) {
       triedRef.current = true;

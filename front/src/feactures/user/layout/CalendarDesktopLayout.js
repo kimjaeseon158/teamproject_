@@ -17,13 +17,12 @@ export default function CalendarDesktopLayout({
 }) {
   return (
     <Box display="flex" height="100vh" overflow="hidden">
-
       {/* 왼쪽 사이드바 */}
       <Box w="18%" minW="250px">
         <CalendarSidebar
           userName={userName}
           selectedDate={calendar.selectedDate}
-          onRefresh={calendar.loadMonthlyData} // 🔥 추가
+          onRefresh={calendar.loadMonthlyData}
           events={calendar.events}
           isMobileLayout={isMobile}
         />

@@ -2,22 +2,35 @@ import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
 
 export async function getWorkPlaceList(params = {}, toast) {
   try {
-    // 🔥 값 있는 것만 query로 생성
+    const hasFilter = Boolean(
+      params.user_name?.trim() || params.work_place?.trim()
+    );
     const query = new URLSearchParams(params).toString();
-    const baseUrl =
-      params.user_name || params.work_place
-        ? "/api/work_place_rate_list_filtering/"
-        : "/api/work_place_rate_list_create/";
+    const url = hasFilter
+      ? `/api/work_place_rate_list_filtering/${query ? `?${query}` : ""}`
+      : "/api/work_place_rate_list_create/";
 
     const res = await fetchWithAuth(
-      `${baseUrl}${query ? `?${query}` : ""}`,
+      url,
       { method: "GET" },
       { toast }
     );
 
     if (!res) return null;
 
-    return await res.json();
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      throw new Error(
+        data.detail || data.message || "근무지 시급 목록 조회에 실패했습니다."
+      );
+    }
+
+    return {
+      ...data,
+      success: data.success === true || data.success === "true",
+      users: Array.isArray(data.users) ? data.users : [],
+    };
 
   } catch (err) {
     if (toast) {

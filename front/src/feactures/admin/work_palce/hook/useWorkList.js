@@ -12,20 +12,29 @@ export function useDailyPay() {
       const result = await getWorkPlaceList(params, toast);
 
       // 🔥 검색일 때만 결과없음 알림
-    const isSearch =
+      const isSearch =
         params.user_name?.trim() ||
         params.work_place?.trim();
 
       if (isSearch && (!result?.users || result.users.length === 0)) {
-        toast({
+        toast?.({
           title: "검색 결과 없음",
           description: "조건에 맞는 데이터가 없습니다.",
           status: "info",
           duration: 3000,
           isClosable: true,
         });
-    }
-    setData(result?.users || []);
+      }
+
+      setData(result?.success ? result.users : []);
+    } catch (err) {
+      toast?.({
+        title: "일급 목록 조회 실패",
+        description: err.message,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
     } finally {
       setLoading(false);
     }

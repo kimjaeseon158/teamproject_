@@ -42,16 +42,6 @@ export default function AppRoutes() {
               </RequireAuth>
             }
           />
-
-          <Route
-            path="/admin-info"
-            element={
-              <RequireAuth>
-                <useAdminInformationLogic />
-              </RequireAuth>
-            }
-          />
-
           <Route
             path="/adminpage/*"
             element={

@@ -41,7 +41,7 @@ export default function CalendarHeader({
         body: JSON.stringify({ user_uuid: userUuid }),
       });
     } catch (err) {
-      console.error("Logout failed", err);
+      console.error("Logout failed");
     } finally {
       logout();
       navigate("/", { replace: true });

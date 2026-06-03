@@ -107,9 +107,6 @@ const Option = ({ selectedDate, onRefresh, onClose, isMobile = false }) => {
     }
 
     const result = totalMins > 0 ? minutesToHM(totalMins) : "";
-    if (result) {
-      console.log("📊 Real-time Total Work Duration:", result, `(${totalMins} mins)`);
-    }
     return result;
   }, [startTime, finishTime, extraEnabled, extraWorks]);
 

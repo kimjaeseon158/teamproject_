@@ -89,7 +89,15 @@ export default function TotalSalesPage() {
   };
 
   return (
-    <Box h="calc(100vh - 92px)" bg="gray.50" p={{ base: 4, md: 5 }} display="flex" flexDirection="column" overflow="hidden">
+    <Box
+      h="calc(100vh - 92px)"
+      bg="gray.50"
+      p={{ base: 4, md: 5 }}
+      display="flex"
+      flexDirection="column"
+      overflowX="hidden"
+      overflowY="auto"
+    >
       <Flex
         justify="space-between"
         align={{ base: "stretch", md: "center" }}
@@ -166,12 +174,16 @@ export default function TotalSalesPage() {
         gap={5}
         align="stretch"
         direction={{ base: "column", xl: "row" }}
-        flex="1"
-        minH={0}
-        overflow="hidden"
+        flex="none"
+        minH="auto"
+        overflow="visible"
       >
-        <Box flex="1.6" minW={0} minH={0} display="flex" flexDirection="column" gap={3}>
-          <Box flex="1" minH={0}>
+        <Box flex="1.6" minW={0} display="flex" flexDirection="column" gap={3}>
+          <Box
+            h={{ base: "360px", md: "420px", xl: "460px" }}
+            minH={{ base: "360px", md: "420px", xl: "460px" }}
+            flexShrink={0}
+          >
             <ThreeMonthBarSection
               data={threeMonthData}
               selectedMonth={selectedDetailMonth}
@@ -247,7 +259,14 @@ export default function TotalSalesPage() {
           </Card>
         </Box>
 
-        <Card flex="1" border="1px solid" borderColor="gray.100" boxShadow="sm" minH={0} overflow="hidden">
+        <Card
+          flex="1"
+          border="1px solid"
+          borderColor="gray.100"
+          boxShadow="sm"
+          minH={{ base: "360px", xl: "auto" }}
+          overflow="hidden"
+        >
           <CardBody display="flex" flexDirection="column">
             <Flex justify="space-between" align="center" mb={4}>
               <Box>

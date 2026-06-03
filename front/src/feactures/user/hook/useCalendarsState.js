@@ -76,7 +76,7 @@ export function useCalendarState() {
 
       setEvents(transformedEvents);
     } catch (err) {
-      console.error("Monthly Data Load Error:", err);
+      console.error(err);
     }
   };
 

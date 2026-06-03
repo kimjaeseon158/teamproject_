@@ -25,13 +25,17 @@ const formatWon = (value) => {
 };
 
 const average = (arr) => {
-  const valid = arr.filter((v) => v != null);
+  const valid = arr.filter((v) => v !== "" && v != null && !Number.isNaN(Number(v)));
   if (!valid.length) return null;
 
   return Math.round(
     valid.reduce((sum, value) => sum + Number(value), 0) / valid.length
   );
 };
+
+const averageRate = (rates, key) => average(rates.map((rate) => rate?.[key]));
+const averageRateWithFallback = (rates, key, fallbackKey) =>
+  average(rates.map((rate) => rate?.[key] ?? rate?.[fallbackKey]));
 
 export default function DailyPayPage() {
   const toast = useToast();
@@ -53,10 +57,22 @@ export default function DailyPayPage() {
         user_uuid: user.user_uuid,
         user_name: user.user_name,
         work_place: workPlaces.join(" / "),
-        base_hourly_wage: average(rates.map((r) => r.base_hourly_wage)),
-        overtime_hourly_wage: average(rates.map((r) => r.overtime_hourly_wage)),
-        special_hourly_wage: average(rates.map((r) => r.special_hourly_wage)),
-        overnight_hourly_wage: average(rates.map((r) => r.overnight_hourly_wage)),
+        base_hourly_wage: averageRate(rates, "base_hourly_wage"),
+        overtime_hourly_wage: averageRate(rates, "overtime_hourly_wage"),
+        meal_ot_hourly_wage: averageRate(rates, "meal_ot_hourly_wage"),
+        special_hourly_wage: averageRate(rates, "special_hourly_wage"),
+        day_special_hourly_wage: averageRateWithFallback(
+          rates,
+          "day_special_hourly_wage",
+          "special_hourly_wage"
+        ),
+        night_special_hourly_wage: averageRateWithFallback(
+          rates,
+          "night_special_hourly_wage",
+          "special_hourly_wage"
+        ),
+        overnight_hourly_wage: averageRate(rates, "overnight_hourly_wage"),
+        overnight_ot_hourly_wage: averageRate(rates, "overnight_ot_hourly_wage"),
       };
     }) || [];
   }, [data]);

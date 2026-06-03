@@ -39,6 +39,9 @@ const average = (values) => {
   );
 };
 
+const averageWithFallback = (rows, key, fallbackKey) =>
+  average(rows.map((row) => row[key] ?? row[fallbackKey]));
+
 const notify = (toast, options) => {
   toast({
     duration: 2500,
@@ -82,8 +85,8 @@ export default function RateEditModal({
       places: tableData.filter((row) => row.work_place && row.work_place !== EMPTY_PLACE).length,
       base: average(tableData.map((row) => row.base_hourly_wage)),
       overtime: average(tableData.map((row) => row.overtime_hourly_wage)),
-      daySpecial: average(tableData.map((row) => row.special_hourly_wage)),
-      nightSpecial: average(tableData.map((row) => row.overnight_hourly_wage)),
+      daySpecial: averageWithFallback(tableData, "day_special_hourly_wage", "special_hourly_wage"),
+      nightSpecial: averageWithFallback(tableData, "night_special_hourly_wage", "special_hourly_wage"),
     }),
     [tableData]
   );
@@ -122,6 +125,8 @@ export default function RateEditModal({
       overtime_hourly_wage: "",
       meal_ot_hourly_wage: "",
       special_hourly_wage: "",
+      day_special_hourly_wage: "",
+      night_special_hourly_wage: "",
       overnight_hourly_wage: "",
       overnight_ot_hourly_wage: "",
       isNew: true,
@@ -179,6 +184,8 @@ export default function RateEditModal({
           overtime_hourly_wage: null,
           meal_ot_hourly_wage: null,
           special_hourly_wage: null,
+          day_special_hourly_wage: null,
+          night_special_hourly_wage: null,
           overnight_hourly_wage: null,
           overnight_ot_hourly_wage: null,
         });

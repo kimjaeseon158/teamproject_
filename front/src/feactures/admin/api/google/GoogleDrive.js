@@ -51,7 +51,7 @@ export const exportToGoogleExcel = async (work_place, date) => {
       message: "구글 드라이브에 파일이 생성되었습니다.",
     };
   } catch (err) {
-    console.error("Google Drive Export Error (GET):", err);
+    console.error(err);
     throw err;
   }
 };

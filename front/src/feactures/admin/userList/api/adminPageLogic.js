@@ -29,7 +29,7 @@ export async function fetchFilteredPeople(queryParams, { toast } = {}) {
 
     return [];
   } catch (err) {
-    console.error("서버 요청 실패", err);
+    console.error("서버 요청 실패");
     return [];
   }
 }

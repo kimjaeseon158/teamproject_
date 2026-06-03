@@ -66,7 +66,7 @@ export async function fetchWithAuth(url, options = {}, { toast } = {}) {
         headers: retryHeaders,
       });
     } catch (e) {
-      console.error("refresh 요청 오류");
+      console.error(e.message);
       clearAccessToken();
 
       // (선택) 토스트
@@ -80,7 +80,7 @@ export async function fetchWithAuth(url, options = {}, { toast } = {}) {
   if (!res.ok) {
     try {
     } catch (e) {
-      console.warn("응답 body 읽기 실패");
+      console.warn("응답 읽기 실패");
     }
   }
 

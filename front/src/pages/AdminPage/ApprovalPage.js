@@ -10,11 +10,11 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { useState, useMemo, useEffect } from "react";
-import { useApproveList } from "../../feactures/admin/work_day/hook/useApproveList";
-import ApproveFilterBar from "../../feactures/admin/work_day/section/ApproveFilterBar";
-import ApproveTable from "../../feactures/admin/work_day/section/ApproveTable";
-import ApproveDetailModal from "../../feactures/admin/work_day/section/ApproveDetailModal";
-import { toYMD } from "../../feactures/admin/work_day/utils/approveUtils";
+import { useApproveList } from "../../features/admin/work_day/hook/useApproveList";
+import ApproveFilterBar from "../../features/admin/work_day/section/ApproveFilterBar";
+import ApproveTable from "../../features/admin/work_day/section/ApproveTable";
+import ApproveDetailModal from "../../features/admin/work_day/section/ApproveDetailModal";
+import { toYMD } from "../../features/admin/work_day/utils/approveUtils";
 
 export default function ApprovePage() {
   const toast = useToast();

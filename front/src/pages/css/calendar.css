@@ -1,0 +1,107 @@
+/* ============================= */
+/* 🌎 기본 배경 */
+/* ============================= */
+
+.user-calendar .calendarbk {
+  min-height: 100vh;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+/* 요일 헤더 */
+.user-calendar .fc .fc-col-header-cell {
+  height:50px;
+  padding: 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* 날짜 셀 프레임 */
+.user-calendar .fc .fc-daygrid-day-frame {
+  border: none !important;
+  min-height: 100%;
+  padding: 6px;
+}
+
+/* 날짜 숫자 */
+.user-calendar .fc .fc-daygrid-day-number {
+  font-size: 14px;
+  font-weight: 500;
+  padding: 4px;
+}
+
+/* 🔥 오늘 배경 제거 (user 전용만 적용) */
+.user-calendar .fc .fc-day-today {
+  background: transparent !important;
+}
+
+/* 구분선 */
+.user-calendar .fc .fc-daygrid-day {
+  border-bottom: 1px solid #f2f2f2 !important;
+}
+
+.user-calendar .fc .fc-daygrid-day:last-child {
+  border-bottom: none !important;
+}
+
+/* 선택된 날짜 */
+.user-calendar .fc .fc-daygrid-day.fc-selected-day {
+  background: rgba(99, 179, 237, 0.18) !important;
+}
+
+.user-calendar .fc .fc-daygrid-day.fc-selected-day .fc-daygrid-day-frame {
+  border: 2px solid #3182ce !important;
+}
+/* ============================= */
+/* 📱 모바일 전용 정리 */
+/* ============================= */
+
+@media (max-width: 768px) {
+
+  /* 6주 강제 높이 방지 */
+  .fc .fc-daygrid-body {
+    height: auto !important;
+  }
+
+  /* 날짜 숫자 오른쪽 상단 배치 */
+  .fc .fc-daygrid-day-top {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+  }
+
+  /* 셀 높이 조금 줄이기 */
+  .fc .fc-daygrid-day-frame {
+    min-height: 70px;
+  }
+  /* ============================= */
+/* 📱💻 태블릿 전용 (iPad 등) */
+/* ============================= */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+
+  .fc .fc-daygrid-day-frame {
+    min-height: 90px;
+    padding: 10px;
+  }
+
+  .fc .fc-daygrid-day-number {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .fc .fc-col-header-cell {
+    font-size: 15px;
+    padding: 12px 0;
+  }
+
+  .fc .fc-daygrid-day {
+    border-bottom: 1px solid #e6e6e6 !important;
+  }
+
+  .fc .fc-day-today {
+    background: rgba(49, 130, 206, 0.08) !important;
+  }
+} 
+}
+

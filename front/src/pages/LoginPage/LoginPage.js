@@ -1,7 +1,7 @@
 import { useBreakpointValue } from "@chakra-ui/react";
-import { useLogin } from "../../feactures/login/hook/useLogin";
-import LoginMobileLayout from "../../feactures/login/layout/LoginMobileLayout";
-import LoginDesktopLayout from "../../feactures/login/layout/LoginDesktopLayout";
+import { useLogin } from "../../features/login/hook/useLogin";
+import LoginMobileLayout from "../../features/login/layout/LoginMobileLayout";
+import LoginDesktopLayout from "../../features/login/layout/LoginDesktopLayout";
 
 const LoginPage = () => {
   const login = useLogin();

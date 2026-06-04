@@ -16,10 +16,10 @@ import {
 import { DownloadIcon } from "@chakra-ui/icons";
 import { useMemo, useState } from "react";
 
-import MonthPicker from "../../feactures/common/MonthPicker";
-import { useTotalFinance } from "../../feactures/admin/total_pay/hook/useTotalFinance";
-import ThreeMonthBarSection from "../../feactures/admin/total_pay/section/ThreeMonthBarSection";
-import { exportToGoogleExcel } from "../../feactures/admin/api/google/GoogleDrive";
+import MonthPicker from "../../features/common/MonthPicker";
+import { useTotalFinance } from "../../features/admin/total_pay/hook/useTotalFinance";
+import ThreeMonthBarSection from "../../features/admin/total_pay/section/ThreeMonthBarSection";
+import { exportToGoogleExcel } from "../../features/admin/api/google/GoogleDrive";
 import excelIcon from "../../assets/img/excel.png";
 
 const formatWon = (value) => `${Number(value || 0).toLocaleString()}원`;

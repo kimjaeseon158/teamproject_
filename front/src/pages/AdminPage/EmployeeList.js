@@ -17,15 +17,15 @@ import {
   useToast,
 } from "@chakra-ui/react";
 
-import AdminInformation from "../../feactures/admin/userList/components/AdminInformation.js";
-import AddPersonModal from "../../feactures/admin/userList/components/AddPersonModal.js";
-import CommonTable from "../../feactures/common/mytable.js";
-import SearchModal from "../../feactures/admin/userList/components/searchModal.js";
+import AdminInformation from "../../features/admin/userList/components/AdminInformation.js";
+import AddPersonModal from "../../features/admin/userList/components/AddPersonModal.js";
+import CommonTable from "../../features/common/mytable.js";
+import SearchModal from "../../features/admin/userList/components/searchModal.js";
 
-import { useAdminState } from "../../feactures/admin/userList/hook/useAdminState.js";
-import { useAdminData } from "../../feactures/admin/userList/hook/useAdminData.js";
-import { useAdminHandlers } from "../../feactures/admin/userList/hook/useAdminHandlers.js";
-import { user_listColmns } from "../../feactures/admin/userList/constants/user_listColmns.js";
+import { useAdminState } from "../../features/admin/userList/hook/useAdminState.js";
+import { useAdminData } from "../../features/admin/userList/hook/useAdminData.js";
+import { useAdminHandlers } from "../../features/admin/userList/hook/useAdminHandlers.js";
+import { userListColumns } from "../../features/admin/userList/constants/userListColumns.js";
 
 export default function EmployeeList() {
   const toast = useToast();
@@ -182,7 +182,7 @@ export default function EmployeeList() {
         <Box sx={{ "> div": { boxShadow: "none", borderRadius: 0 } }}>
           <CommonTable
             data={state.peopleData}
-            columns={user_listColmns}
+            columns={userListColumns}
             rowKey="user_uuid"
             selectable
             checkedItems={state.checkedItems}

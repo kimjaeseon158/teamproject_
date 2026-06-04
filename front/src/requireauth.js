@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useRef } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useUser } from "./feactures/auth/userContext";
+import { useUser } from "./features/auth/userContext";
 
 export default function RequireAuth({ children }) {
   const { loading, userUuid, revalidate, loginType } = useUser();

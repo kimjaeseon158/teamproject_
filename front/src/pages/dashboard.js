@@ -1,7 +1,7 @@
 import { Flex, Box } from "@chakra-ui/react";
 import { Routes, Route } from "react-router-dom";
-import Sidebar from "../feactures/admin/components/sideBar";
-import Header from "../feactures/admin/components/Header";
+import Sidebar from "../features/admin/components/sideBar";
+import Header from "../features/admin/components/Header";
 
 import Overview from "./AdminPage/overview";
 import EmployeeList from "./AdminPage/EmployeeList";        // adminpage 연결

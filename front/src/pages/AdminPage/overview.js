@@ -30,14 +30,14 @@ import { FcGoogle } from "react-icons/fc";
 import { useNavigate } from "react-router-dom";
 
 import CalendarView from "../../common/CalendarView";
-import MonthPicker from "../../feactures/common/MonthPicker";
-import useApproveCalendar from "../../feactures/admin/overview/hook/useApproveCalendar";
-import useApproveSummary from "../../feactures/admin/overview/hook/useApproveSummary";
-import useGoogleLinkStatus from "../../feactures/admin/api/google/useGoogleLinkStatus";
-import { login as googleLogin } from "../../feactures/admin/api/google/googleAuth";
-import { useDailyPay } from "../../feactures/admin/work_palce/hook/useWorkList";
-import { useTotalFinance } from "../../feactures/admin/total_pay/hook/useTotalFinance";
-import { useAdminData } from "../../feactures/admin/userList/hook/useAdminData";
+import MonthPicker from "../../features/common/MonthPicker";
+import useApproveCalendar from "../../features/admin/overview/hook/useApproveCalendar";
+import useApproveSummary from "../../features/admin/overview/hook/useApproveSummary";
+import useGoogleLinkStatus from "../../features/admin/api/google/useGoogleLinkStatus";
+import { login as googleLogin } from "../../features/admin/api/google/googleAuth";
+import { useDailyPay } from "../../features/admin/work_place/hook/useWorkList";
+import { useTotalFinance } from "../../features/admin/total_pay/hook/useTotalFinance";
+import { useAdminData } from "../../features/admin/userList/hook/useAdminData";
 
 const STORAGE_KEY = "adminOverviewLayout";
 

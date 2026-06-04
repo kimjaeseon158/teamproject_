@@ -1,12 +1,12 @@
 import { Routes, Route, useLocation } from "react-router-dom";
-import { UserProvider } from "../feactures/auth/userContext";
-import { AlarmProvider } from "../feactures/alarm";
+import { UserProvider } from "../features/auth/userContext";
+import { AlarmProvider } from "../features/alarm";
 
 import LoginPage from "../pages/LoginPage/LoginPage";
 import Calendar from "../pages/UserPage/CalendarPage";
 import Dashboard from "../pages/dashboard";
 import AdminPage from "../pages/AdminPage/EmployeeList";
-import GoogleCallbackDone from "../feactures/admin/api/google/GoogleCallbackDone";
+import GoogleCallbackDone from "../features/admin/api/google/GoogleCallbackDone";
 import RequireAuth from "../requireauth";
 
 export default function AppRoutes() {

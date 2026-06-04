@@ -12,12 +12,12 @@ import {
 } from "@chakra-ui/react";
 import { EditIcon, RepeatIcon, SearchIcon } from "@chakra-ui/icons";
 
-import { useDailyPay } from "../../feactures/admin/work_palce/hook/useWorkList";
-import { userPlace_listColmns } from "./DailyPayColmns";
+import { useDailyPay } from "../../features/admin/work_place/hook/useWorkList";
+import { userPlaceListColumns } from "./DailyPayColumns";
 
-import CommonTable from "../../feactures/common/mytable";
-import AddRateModal from "../../feactures/admin/work_palce/components/AddRateModal";
-import SearchRateModal from "../../feactures/admin/work_palce/components/SearchRateModal";
+import CommonTable from "../../features/common/mytable";
+import AddRateModal from "../../features/admin/work_place/components/AddRateModal";
+import SearchRateModal from "../../features/admin/work_place/components/SearchRateModal";
 
 const formatWon = (value) => {
   if (value == null || Number.isNaN(Number(value))) return "-";
@@ -93,7 +93,7 @@ export default function DailyPayPage() {
   }, [data, mergedData]);
 
   const columnsWithEdit = useMemo(() => [
-    ...userPlace_listColmns.map((column) => ({
+    ...userPlaceListColumns.map((column) => ({
       ...column,
       render:
         column.key.includes("wage")

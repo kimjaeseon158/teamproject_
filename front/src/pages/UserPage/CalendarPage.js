@@ -1,12 +1,12 @@
 import { useMediaQuery } from "@chakra-ui/react";
 import { useState } from "react";
-import { useUser } from "../../feactures/auth/userContext";
-import { useCalendarState } from "../../feactures/user/hook/useCalendarsState";
+import { useUser } from "../../features/auth/userContext";
+import { useCalendarState } from "../../features/user/hook/useCalendarsState";
 
-import CalendarDesktopLayout from "../../feactures/user/layout/CalendarDesktopLayout";
-import CalendarMobileLayout from "../../feactures/user/layout/CalendarMobileLayout";
+import CalendarDesktopLayout from "../../features/user/layout/CalendarDesktopLayout";
+import CalendarMobileLayout from "../../features/user/layout/CalendarMobileLayout";
 
-import "../css/calender.css"
+import "../css/calendar.css"
 
 export default function CalendarPage() {
   const { userName, userUuid } = useUser();

@@ -62,10 +62,10 @@ def get_detail_salary_amount(
     if wt in ["특근"]:
         return minutes_to_amount(rates.special_hourly_wage, mins)
 
-    if wt in ["철야"]:
+    if wt in ["야간"]:
         return minutes_to_amount(rates.overnight_hourly_wage, mins)
 
-    if wt in ["철야 잔업"]:
+    if wt in ["야간 잔업"]:
         return minutes_to_amount(rates.overnight_ot_hourly_wage, mins)
 
     return 0
@@ -95,8 +95,8 @@ def calculate_daily_salary_breakdown(
         "중식연장": 0,
         "주간 특근": 0,
         "야간 특근": 0,
-        "철야": 0,
-        "철야 잔업": 0,
+        "야간": 0,
+        "야간 잔업": 0,
     }
     detail_amounts = []
 

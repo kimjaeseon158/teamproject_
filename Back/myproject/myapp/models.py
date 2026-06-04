@@ -95,8 +95,8 @@ class WorkPlaceRate(models.Model):
     special_hourly_wage       = models.PositiveIntegerField(null=True, blank=True)  # 특근
     day_special_hourly_wage   = models.PositiveIntegerField(null=True, blank=True)  # 주간 특근
     night_special_hourly_wage = models.PositiveIntegerField(null=True, blank=True)  # 야간 특근
-    overnight_hourly_wage     = models.PositiveIntegerField(null=True, blank=True)  # 철야(기본)
-    overnight_ot_hourly_wage  = models.PositiveIntegerField(null=True, blank=True)  # 철야 연장(OT)
+    overnight_hourly_wage     = models.PositiveIntegerField(null=True, blank=True)  # 야간(기본)
+    overnight_ot_hourly_wage  = models.PositiveIntegerField(null=True, blank=True)  # 야간 잔업(OT)
 
     class Meta:
         constraints = [

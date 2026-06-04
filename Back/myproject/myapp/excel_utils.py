@@ -115,8 +115,8 @@ WORK_TYPE_ROW = {
     "중식연장": 2,
     "주간 특근": 3,
     "야간 특근": 3,
-    "철야": 4,
-    "철야 잔업": 5,
+    "야간": 4,
+    "야간 잔업": 5,
     "조기출근": 6,
 }
 
@@ -225,7 +225,7 @@ def generate_workplace_excel(work_place, year, month, template_file=None):
 
             row_offset = WORK_TYPE_ROW[work_type]
 
-            if work_type in ["주간", "주간 특근", "야간 특근", "철야"]:
+            if work_type in ["주간", "주간 특근", "야간 특근", "야간"]:
                 value = 1
             else:
                 value = hour_value(detail.minutes)

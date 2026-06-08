@@ -50,7 +50,7 @@ from .auth_utils import (
 from .excel_utils import (
     generate_workplace_excel,
     generate_salary_excel,
-    generate_user_pay_excel,
+    generate_users_pay_excel,
     generate_user_record_excel
 )
 from .google_drive_utils import GoogleDriveService
@@ -335,6 +335,94 @@ class GoogleDriveSalaryExcelExportAPIView(APIView):
         print("salary upload_result:", upload_result, flush=True)
 
         # 5. 브라우저 즉시 다운로드 응답 생성
+        output.seek(0)
+        response = HttpResponse(
+            output.read(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+        encoded_filename = urllib.parse.quote(save_filename)
+        response["Content-Disposition"] = f"attachment; filename*=UTF-8''{encoded_filename}"
+
+        return response
+
+
+class GoogleDriveUserPayExcelExportAPIView(APIView):
+    """
+    Google Drive와 연동하여 해당 월 사원별 개인 월급 명세서를 엑셀로 생성하고,
+    Drive에 저장한 뒤 브라우저 다운로드 파일로도 응답합니다.
+
+    생성 방식:
+    - user_pay 폴더에서 user_pay_template 템플릿 파일을 찾습니다.
+    - user_uuid 쿼리 파라미터가 있으면 해당 사원만 대상으로 생성합니다.
+    - user_uuid를 콤마로 여러 개 전달하면 지정된 여러 사원만 대상으로 생성합니다.
+    - user_uuid가 없으면 해당 월 승인된 근무내역이 있는 모든 사원을 대상으로 생성합니다.
+    - 하나의 엑셀 파일 안에 사원별 시트를 생성합니다.
+      예: 1번 시트=user1, 2번 시트=user2
+    """
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        # 0. Google Drive 접근 토큰과 프론트에서 전달한 조회 조건을 가져옵니다.
+        access_token = request.COOKIES.get("google_access_token")
+        date_str = request.query_params.get("date")       # 예: 2026-04
+        user_uuid = request.query_params.get("user_uuid")  # 선택값: 단일 UUID 또는 콤마 구분 UUID 목록
+
+        # 1. 조회 월 파라미터를 검증합니다.
+        try:
+            year, month = map(int, date_str.split("-"))
+            if not (1 <= month <= 12):
+                raise ValueError
+        except (ValueError, AttributeError):
+            return Response({"success": False}, status=400)
+
+        # 2. user_pay 폴더에서 개인 월급 명세서 템플릿을 찾습니다.
+        #    Drive에 템플릿이 없으면 generate_users_pay_excel 내부에서 기본 워크북을 생성합니다.
+        drive = GoogleDriveService(access_token)
+        pay_folder_id = drive.get_or_create_folder("user_pay")
+        template_id = drive.find_file("user_pay_template", pay_folder_id)
+        template_io = drive.download_file(template_id) if template_id else None
+
+        # 3. 명세서를 발급할 사원 목록을 결정합니다.
+        #    user_uuid가 있으면 지정된 사원만, 없으면 해당 월 승인 근무가 있는 모든 사원을 대상으로 합니다.
+        if user_uuid:
+            user_uuids = [
+                value.strip()
+                for value in user_uuid.split(",")
+                if value.strip()
+            ]
+        else:
+            user_uuids = list(
+                User_WorkDay.objects
+                .filter(
+                    work_date__year=year,
+                    work_date__month=month,
+                    is_approved=True,
+                )
+                .order_by("user_name")
+                .values_list("user_uuid_id", flat=True)
+                .distinct()
+            )
+
+        # 4. 전달받거나 조회된 user_uuid가 실제 사원 테이블에 존재하는지 확인합니다.
+        existing_count = User_Login_Info.objects.filter(user_uuid__in=user_uuids).count()
+        if existing_count != len(user_uuids):
+            return Response({"success": False}, status=404)
+
+        # 5. 사원별 개인 월급 명세서를 하나의 엑셀 파일에 시트 단위로 생성합니다.
+        wb = generate_users_pay_excel(user_uuids, year, month, template_file=template_io)
+
+        # 6. Drive 저장 경로를 user_pay/YYYY-MM 구조로 맞추고 파일명을 지정합니다.
+        target_folder_id = drive.get_folder_path_id(["user_pay", date_str])
+        save_filename = f"user_pay_{year}_{month:02d}.xlsx"
+
+        # 7. 생성한 워크북을 메모리에 저장한 뒤 Google Drive에 업로드하거나 기존 파일을 갱신합니다.
+        output = io.BytesIO()
+        wb.save(output)
+        drive.upload_or_update_file(output, save_filename, target_folder_id)
+
+        # 8. 같은 엑셀 파일을 브라우저 다운로드 응답으로 반환합니다.
         output.seek(0)
         response = HttpResponse(
             output.read(),

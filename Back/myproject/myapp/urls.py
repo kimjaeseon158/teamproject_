@@ -24,6 +24,7 @@ from .views import (
     GoogleCalendarEventsAPIView,
     GoogleDriveWorkplaceExcelExportAPIView,
     GoogleDriveSalaryExcelExportAPIView,
+    GoogleDriveUserPayExcelExportAPIView,
     AdminLogoutAPIView,
     UserLogoutAPIView,
     AdminPageWorkDayListAPIView,
@@ -63,6 +64,7 @@ urlpatterns = [
     path('google_calendar_auth/events/',      GoogleCalendarEventsAPIView.as_view(),            name='google-calendar-auth-events'),
     path('google_drive_excel_export/',        GoogleDriveWorkplaceExcelExportAPIView.as_view(), name='google-drive-excel-export'),
     path('google_drive_salary_excel_export/', GoogleDriveSalaryExcelExportAPIView.as_view(), name='google-drive-salary-excel-export'),
+    path('google_drive_user_pay_excel_export/', GoogleDriveUserPayExcelExportAPIView.as_view(), name='google-drive-user-pay-excel-export'),
 
     
     # Dashboard-Total-sales

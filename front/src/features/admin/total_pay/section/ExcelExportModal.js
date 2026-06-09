@@ -17,23 +17,38 @@ import {
   SimpleGrid,
   Badge,
 } from "@chakra-ui/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DownloadIcon } from "@chakra-ui/icons";
 // 경로 재검증: section -> total_pay -> admin -> features -> common
 import locationsList from "../../../common/work_placeColumns/locationsList";
 
-export default function ExcelExportModal({ isOpen, onClose, onConfirm, loading }) {
+export default function ExcelExportModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  loading,
+  showWorkPlace = true,
+}) {
   const today = new Date();
   const [workPlace, setWorkPlace] = useState("");
   const [year, setYear] = useState(today.getFullYear().toString());
   const [month, setMonth] = useState(String(today.getMonth() + 1).padStart(2, "0"));
 
+  useEffect(() => {
+    if (!isOpen) {
+      const resetDate = new Date();
+      setWorkPlace("");
+      setYear(resetDate.getFullYear().toString());
+      setMonth(String(resetDate.getMonth() + 1).padStart(2, "0"));
+    }
+  }, [isOpen]);
+
   const handleConfirm = () => {
-    if (!workPlace || !year || !month) {
+    if (!year || !month) {
       alert("근무지와 날짜를 모두 선택해주세요.");
       return;
     }
-    onConfirm(workPlace, `${year}-${month}`);
+    onConfirm(showWorkPlace ? workPlace : "", `${year}-${month}`);
   };
 
   const years = Array.from({ length: 5 }, (_, i) => (today.getFullYear() - i).toString());
@@ -60,6 +75,7 @@ export default function ExcelExportModal({ isOpen, onClose, onConfirm, loading }
         <ModalBody px={8} py={10}>
           <VStack spacing={8} align="stretch">
             {/* 근무지 선택 */}
+            {showWorkPlace && (
             <FormControl>
               <HStack mb={2} justify="space-between">
                 <FormLabel fontSize="xs" fontWeight="900" color="gray.400" m={0} textTransform="uppercase">근무지</FormLabel>
@@ -78,11 +94,13 @@ export default function ExcelExportModal({ isOpen, onClose, onConfirm, loading }
                 cursor="pointer"
                 _focus={{ bg: "white", boxShadow: "0 0 0 2px #48BB78" }}
               >
+                <option value="">전체</option>
                 {locationsList.map((loc) => (
                   <option key={loc} value={loc}>{loc}</option>
                 ))}
               </Select>
             </FormControl>
+            )}
 
             {/* 날짜 선택 */}
             <FormControl>

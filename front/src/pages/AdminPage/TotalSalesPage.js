@@ -11,6 +11,7 @@ import {
   SimpleGrid,
   Text,
   Tooltip,
+  useDisclosure,
   useToast,
 } from "@chakra-ui/react";
 import { DownloadIcon } from "@chakra-ui/icons";
@@ -19,6 +20,7 @@ import { useMemo, useState } from "react";
 import MonthPicker from "../../features/common/MonthPicker";
 import { useTotalFinance } from "../../features/admin/total_pay/hook/useTotalFinance";
 import ThreeMonthBarSection from "../../features/admin/total_pay/section/ThreeMonthBarSection";
+import ExcelExportModal from "../../features/admin/total_pay/section/ExcelExportModal";
 import { exportToGoogleExcel } from "../../features/admin/api/google/GoogleDrive";
 import excelIcon from "../../assets/img/excel.png";
 
@@ -26,6 +28,7 @@ const formatWon = (value) => `${Number(value || 0).toLocaleString()}원`;
 
 export default function TotalSalesPage() {
   const toast = useToast();
+  const exportDisclosure = useDisclosure();
   const [exportLoading, setExportLoading] = useState(false);
 
   const {
@@ -61,10 +64,10 @@ export default function TotalSalesPage() {
       }));
   }, [detailData, selectedMonthTotal]);
 
-  const handleExport = async () => {
+  const handleExport = async (workPlace, date) => {
     try {
       setExportLoading(true);
-      const result = await exportToGoogleExcel("", selectedDetailMonth || apiMonth);
+      const result = await exportToGoogleExcel(workPlace, date);
 
       if (result.success) {
         toast({
@@ -73,6 +76,7 @@ export default function TotalSalesPage() {
           status: "success",
           duration: 3000,
         });
+        exportDisclosure.onClose();
       } else {
         throw new Error(result.message || "Export failed");
       }
@@ -121,17 +125,17 @@ export default function TotalSalesPage() {
 
         <HStack spacing={2}>
           <MonthPicker value={apiMonth} onChange={(ym) => setApiMonth(ym)} size="sm" />
-          <Tooltip label="Google Sheets / Excel 내보내기" hasArrow>
+          <Tooltip label="Excel 생성" hasArrow>
             <Button
               leftIcon={<DownloadIcon />}
               rightIcon={<Image src={excelIcon} w="22px" h="22px" alt="excel" />}
               colorScheme="green"
               variant="outline"
               size="sm"
-              onClick={handleExport}
-              isLoading={exportLoading}
+              minW="92px"
+              onClick={exportDisclosure.onOpen}
             >
-              내보내기
+              Excel
             </Button>
           </Tooltip>
         </HStack>
@@ -308,6 +312,12 @@ export default function TotalSalesPage() {
           </CardBody>
         </Card>
       </Flex>
+      <ExcelExportModal
+        isOpen={exportDisclosure.isOpen}
+        onClose={exportDisclosure.onClose}
+        onConfirm={handleExport}
+        loading={exportLoading}
+      />
     </Box>
   );
 }

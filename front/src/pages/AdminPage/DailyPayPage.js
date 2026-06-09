@@ -10,14 +10,15 @@ import {
   SimpleGrid,
   Text,
   Tooltip,
+  useDisclosure,
   useToast,
 } from "@chakra-ui/react";
 import { DownloadIcon, EditIcon, RepeatIcon, SearchIcon } from "@chakra-ui/icons";
 
 import { useDailyPay } from "../../features/admin/work_place/hook/useWorkList";
 import { userPlaceListColumns } from "./DailyPayColumns";
-import MonthPicker from "../../features/common/MonthPicker";
 import { exportUserPayExcel } from "../../features/admin/api/google/GoogleDrive";
+import ExcelExportModal from "../../features/admin/total_pay/section/ExcelExportModal";
 import excelIcon from "../../assets/img/excel.png";
 
 import CommonTable from "../../features/common/mytable";
@@ -42,16 +43,11 @@ const averageRate = (rates, key) => average(rates.map((rate) => rate?.[key]));
 const averageRateWithFallback = (rates, key, fallbackKey) =>
   average(rates.map((rate) => rate?.[key] ?? rate?.[fallbackKey]));
 
-const getCurrentMonth = () => {
-  const today = new Date();
-  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
-};
-
 export default function DailyPayPage() {
   const toast = useToast();
+  const exportDisclosure = useDisclosure();
   const { data, loading, fetchDailyPay } = useDailyPay();
 
-  const [exportMonth, setExportMonth] = useState(getCurrentMonth);
   const [exportLoading, setExportLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -134,15 +130,15 @@ export default function DailyPayPage() {
   ], [data]);
 
   const statCards = [
-    { label: "등록 직원", value: `${summary.users.toLocaleString()}명` },
-    { label: "근무지 수", value: `${summary.places.toLocaleString()}곳` },
+    { label: "등록 직원(명)", value: `${summary.users.toLocaleString()}` },
+    { label: "근무지 수", value: `${summary.places.toLocaleString()}` },
     { label: "평균 기본일급", value: formatWon(summary.averageBasePay) },
   ];
 
-  const handleExcelExport = async () => {
+  const handleExcelExport = async (_workPlace, date) => {
     try {
       setExportLoading(true);
-      const result = await exportUserPayExcel(exportMonth);
+      const result = await exportUserPayExcel(date);
 
       if (!result.success) {
         throw new Error(result.message || "엑셀 생성에 실패했습니다.");
@@ -154,6 +150,7 @@ export default function DailyPayPage() {
         status: "success",
         duration: 3000,
       });
+      exportDisclosure.onClose();
     } catch (err) {
       toast({
         title: "엑셀 생성 실패",
@@ -190,15 +187,15 @@ export default function DailyPayPage() {
         </Box>
 
         <HStack spacing={2}>
-          <MonthPicker value={exportMonth} onChange={setExportMonth} size="sm" />
           <Tooltip label="일급관리 엑셀 생성" hasArrow>
             <Button
               leftIcon={<DownloadIcon />}
               rightIcon={<Image src={excelIcon} w="22px" h="22px" alt="excel" />}
               colorScheme="green"
               variant="outline"
-              onClick={handleExcelExport}
-              isLoading={exportLoading}
+              size="sm"
+              minW="92px"
+              onClick={exportDisclosure.onOpen}
             >
               Excel
             </Button>
@@ -297,6 +294,13 @@ export default function DailyPayPage() {
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         onSearch={(params) => fetchDailyPay(params, toast)}
+      />
+      <ExcelExportModal
+        isOpen={exportDisclosure.isOpen}
+        onClose={exportDisclosure.onClose}
+        onConfirm={handleExcelExport}
+        loading={exportLoading}
+        showWorkPlace={false}
       />
     </Box>
   );

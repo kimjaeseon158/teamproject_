@@ -14,27 +14,22 @@ import {
 } from "@chakra-ui/react";
 import { DownloadIcon } from "@chakra-ui/icons";
 import { useState, useMemo, useEffect } from "react";
-import MonthPicker from "../../features/common/MonthPicker";
 import { useApproveList } from "../../features/admin/work_day/hook/useApproveList";
 import ApproveFilterBar from "../../features/admin/work_day/section/ApproveFilterBar";
 import ApproveTable from "../../features/admin/work_day/section/ApproveTable";
 import ApproveDetailModal from "../../features/admin/work_day/section/ApproveDetailModal";
 import { toYMD } from "../../features/admin/work_day/utils/approveUtils";
 import { exportApprovalSalaryExcel } from "../../features/admin/api/google/GoogleDrive";
+import ExcelExportModal from "../../features/admin/total_pay/section/ExcelExportModal";
 import excelIcon from "../../assets/img/excel.png";
-
-const getCurrentMonth = () => {
-  const today = new Date();
-  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
-};
 
 export default function ApprovePage() {
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const exportDisclosure = useDisclosure();
 
   const { rows, loading, fetchList } = useApproveList(toast);
 
-  const [exportMonth, setExportMonth] = useState(getCurrentMonth);
   const [exportLoading, setExportLoading] = useState(false);
 
   const [status, setStatus] = useState("대기");
@@ -109,10 +104,10 @@ export default function ApprovePage() {
     });
   };
 
-  const handleExcelExport = async () => {
+  const handleExcelExport = async (_workPlace, date) => {
     try {
       setExportLoading(true);
-      const result = await exportApprovalSalaryExcel(exportMonth);
+      const result = await exportApprovalSalaryExcel(date);
 
       if (!result.success) {
         throw new Error(result.message || "엑셀 생성에 실패했습니다.");
@@ -124,6 +119,7 @@ export default function ApprovePage() {
         status: "success",
         duration: 3000,
       });
+      exportDisclosure.onClose();
     } catch (err) {
       toast({
         title: "엑셀 생성 실패",
@@ -153,7 +149,6 @@ export default function ApprovePage() {
           </Text>
         </Box>
         <HStack spacing={2} justify={{ base: "flex-start", md: "flex-end" }}>
-          <MonthPicker value={exportMonth} onChange={setExportMonth} size="sm" />
           <Tooltip label="승인관리 엑셀 생성" hasArrow>
             <Button
               leftIcon={<DownloadIcon />}
@@ -161,8 +156,8 @@ export default function ApprovePage() {
               colorScheme="green"
               variant="outline"
               size="sm"
-              onClick={handleExcelExport}
-              isLoading={exportLoading}
+              minW="92px"
+              onClick={exportDisclosure.onOpen}
             >
               Excel
             </Button>
@@ -243,6 +238,13 @@ export default function ApprovePage() {
         onClose={onClose}
         toast={toast}
         refresh={handleSearch}
+      />
+      <ExcelExportModal
+        isOpen={exportDisclosure.isOpen}
+        onClose={exportDisclosure.onClose}
+        onConfirm={handleExcelExport}
+        loading={exportLoading}
+        showWorkPlace={false}
       />
     </Box>
   );

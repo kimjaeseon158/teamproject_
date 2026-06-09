@@ -55,3 +55,59 @@ export const exportToGoogleExcel = async (work_place, date) => {
     throw err;
   }
 };
+
+const requestGoogleDriveExport = async (url) => {
+  const res = await fetchWithAuth(url, {
+    method: "GET",
+  });
+
+  if (!res) {
+    return {
+      success: false,
+      message: "서버 응답을 받지 못했습니다.",
+    };
+  }
+
+  const contentType = res.headers.get("content-type") || "";
+
+  if (!res.ok) {
+    if (contentType.includes("application/json")) {
+      const errorData = await res.json();
+      return {
+        success: false,
+        message:
+          errorData.message ||
+          errorData.error ||
+          "엑셀 생성 중 오류가 발생했습니다.",
+      };
+    }
+
+    return {
+      success: false,
+      message: "엑셀 생성 중 오류가 발생했습니다.",
+    };
+  }
+
+  if (contentType.includes("application/json")) {
+    return await res.json();
+  }
+
+  return {
+    success: true,
+    message: "Google Drive에 엑셀 파일이 생성되었습니다.",
+  };
+};
+
+export const exportApprovalSalaryExcel = async (date) => {
+  const queryParams = new URLSearchParams({ date }).toString();
+  return requestGoogleDriveExport(
+    `/api/google_drive_salary_excel_export/?${queryParams}`
+  );
+};
+
+export const exportUserPayExcel = async (date) => {
+  const queryParams = new URLSearchParams({ date }).toString();
+  return requestGoogleDriveExport(
+    `/api/google_drive_user_pay_excel_export/?${queryParams}`
+  );
+};

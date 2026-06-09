@@ -27,7 +27,6 @@ const EXTRA_WORK_TYPES = [
   { value: "weekday_ot", label: "평일 잔업" },
   { value: "holiday_special", label: "휴일 특근" },
   { value: "holiday_ot", label: "휴일 잔업" },
-  { value: "night_shift", label: "철야" },
   { value: "night_ot", label: "철야 잔업" },
   { value: "early_arrival", label: "조기 출근" },
   { value: "lunch_ext", label: "중식 연장" },

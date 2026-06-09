@@ -37,7 +37,6 @@ export function useOptionHandlers({
         weekday_ot: "평일 잔업",
         holiday_special: baseShift === "야간" ? "야간 특근" : "주간 특근",
         holiday_ot: "휴일 잔업",
-        night_shift: "철야",
         night_ot: "철야 잔업",
         early_arrival: "조기 출근",
         lunch_ext: "중식 연장",

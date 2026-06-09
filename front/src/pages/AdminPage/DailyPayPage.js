@@ -6,14 +6,19 @@ import {
   Flex,
   Heading,
   HStack,
+  Image,
   SimpleGrid,
   Text,
+  Tooltip,
   useToast,
 } from "@chakra-ui/react";
-import { EditIcon, RepeatIcon, SearchIcon } from "@chakra-ui/icons";
+import { DownloadIcon, EditIcon, RepeatIcon, SearchIcon } from "@chakra-ui/icons";
 
 import { useDailyPay } from "../../features/admin/work_place/hook/useWorkList";
 import { userPlaceListColumns } from "./DailyPayColumns";
+import MonthPicker from "../../features/common/MonthPicker";
+import { exportUserPayExcel } from "../../features/admin/api/google/GoogleDrive";
+import excelIcon from "../../assets/img/excel.png";
 
 import CommonTable from "../../features/common/mytable";
 import AddRateModal from "../../features/admin/work_place/components/AddRateModal";
@@ -37,10 +42,17 @@ const averageRate = (rates, key) => average(rates.map((rate) => rate?.[key]));
 const averageRateWithFallback = (rates, key, fallbackKey) =>
   average(rates.map((rate) => rate?.[key] ?? rate?.[fallbackKey]));
 
+const getCurrentMonth = () => {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+};
+
 export default function DailyPayPage() {
   const toast = useToast();
   const { data, loading, fetchDailyPay } = useDailyPay();
 
+  const [exportMonth, setExportMonth] = useState(getCurrentMonth);
+  const [exportLoading, setExportLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
@@ -127,6 +139,33 @@ export default function DailyPayPage() {
     { label: "평균 기본일급", value: formatWon(summary.averageBasePay) },
   ];
 
+  const handleExcelExport = async () => {
+    try {
+      setExportLoading(true);
+      const result = await exportUserPayExcel(exportMonth);
+
+      if (!result.success) {
+        throw new Error(result.message || "엑셀 생성에 실패했습니다.");
+      }
+
+      toast({
+        title: "엑셀 생성 완료",
+        description: result.message || "일급관리 엑셀 파일이 Google Drive에 생성되었습니다.",
+        status: "success",
+        duration: 3000,
+      });
+    } catch (err) {
+      toast({
+        title: "엑셀 생성 실패",
+        description: err.message || "잠시 후 다시 시도해주세요.",
+        status: "error",
+        duration: 3000,
+      });
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   return (
     <Box minH="100vh" bg="gray.50" p={{ base: 4, md: 6 }}>
       <Flex
@@ -151,6 +190,19 @@ export default function DailyPayPage() {
         </Box>
 
         <HStack spacing={2}>
+          <MonthPicker value={exportMonth} onChange={setExportMonth} size="sm" />
+          <Tooltip label="일급관리 엑셀 생성" hasArrow>
+            <Button
+              leftIcon={<DownloadIcon />}
+              rightIcon={<Image src={excelIcon} w="22px" h="22px" alt="excel" />}
+              colorScheme="green"
+              variant="outline"
+              onClick={handleExcelExport}
+              isLoading={exportLoading}
+            >
+              Excel
+            </Button>
+          </Tooltip>
           <Button
             leftIcon={<SearchIcon />}
             colorScheme="blue"

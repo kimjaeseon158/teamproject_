@@ -1,6 +1,68 @@
 import requests
 import json
 import io
+import urllib.parse
+from django.http import HttpResponse
+
+
+class GoogleDriveUploadError(Exception):
+    def __init__(self, status_code, response_text):
+        self.status_code = status_code
+        self.response_text = response_text
+        super().__init__(response_text)
+
+
+def parse_year_month(date_str):
+    """YYYY-MM 형식의 문자열을 year, month 정수로 변환합니다."""
+    try:
+        year, month = map(int, date_str.split("-"))
+        if not (1 <= month <= 12):
+            raise ValueError
+        return year, month
+    except (ValueError, AttributeError):
+        return None, None
+
+
+def download_drive_template(drive, folder_id, template_name):
+    """지정한 Drive 폴더에서 템플릿 파일을 찾아 BytesIO로 반환합니다."""
+    for filename in [template_name, f"{template_name}.xlsx"]:
+        template_id = drive.find_file(filename, folder_id)
+        if template_id:
+            return drive.download_file(template_id)
+    return None
+
+
+def workbook_download_response(workbook, filename):
+    """openpyxl Workbook을 브라우저 다운로드 응답으로 변환합니다."""
+    output = io.BytesIO()
+    workbook.save(output)
+    output.seek(0)
+
+    response = HttpResponse(
+        output.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    encoded_filename = urllib.parse.quote(filename)
+    response["Content-Disposition"] = f"attachment; filename*=UTF-8''{encoded_filename}"
+    return response
+
+
+def save_workbook_to_drive(drive, workbook, filename, folder_path):
+    """Drive 폴더 경로를 생성한 뒤 중복되지 않는 파일명으로 Workbook을 새로 업로드합니다."""
+    output = io.BytesIO()
+    workbook.save(output)
+
+    target_folder_id = drive.get_folder_path_id(folder_path)
+    save_filename = drive.get_available_filename(filename, target_folder_id)
+    result = drive.upload_file(output, save_filename, target_folder_id)
+
+    if isinstance(result, dict) and result.get("success") is False:
+        raise GoogleDriveUploadError(
+            result.get("status_code", 500),
+            result.get("response", ""),
+        )
+
+    return save_filename
 
 
 # ----------------------
@@ -79,6 +141,24 @@ class GoogleDriveService:
             return io.BytesIO(res.content)
         return None
 
+    def get_available_filename(self, filename, parent_id):
+        """같은 폴더에 같은 파일명이 있으면 filename(1).xlsx 형식으로 빈 이름을 찾습니다."""
+        if not self.find_file(filename, parent_id):
+            return filename
+
+        if "." in filename:
+            base_name, extension = filename.rsplit(".", 1)
+            extension = f".{extension}"
+        else:
+            base_name, extension = filename, ""
+
+        index = 1
+        while True:
+            candidate = f"{base_name}({index}){extension}"
+            if not self.find_file(candidate, parent_id):
+                return candidate
+            index += 1
+
 
     # ----------------------
     # 파일 업로드/수정 로직
@@ -101,7 +181,7 @@ class GoogleDriveService:
                 "metadata": ("metadata", json.dumps({"name": filename}), "application/json; charset=UTF-8"),
                 "file": (filename, file_io.getvalue(), mime_type)
             }
-            res = requests.post(
+            res = requests.patch(
                 url=update_url,
                 headers=self.headers_without_content_type(),
                 files=files_data
@@ -120,9 +200,6 @@ class GoogleDriveService:
                 files=files_data
             )
 
-        print("Drive upload status:", res.status_code, flush=True)
-        print("Drive upload response:", res.text, flush=True)
-
         if res.status_code >= 400:
             return {
             "success": False,
@@ -130,6 +207,31 @@ class GoogleDriveService:
             "response": res.text,
         }
             
+        return res.json()
+
+    def upload_file(self, file_io, filename, folder_id):
+        """같은 이름 검사 없이 새 파일을 업로드합니다."""
+        file_io.seek(0)
+        mime_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        upload_url = f"{self.UPLOAD_URL}?uploadType=multipart"
+        metadata = {"name": filename, "parents": [folder_id]}
+        files_data = {
+            "metadata": ("metadata", json.dumps(metadata), "application/json; charset=UTF-8"),
+            "file": (filename, file_io.getvalue(), mime_type)
+        }
+        res = requests.post(
+            url=upload_url,
+            headers=self.headers_without_content_type(),
+            files=files_data
+        )
+
+        if res.status_code >= 400:
+            return {
+                "success": False,
+                "status_code": res.status_code,
+                "response": res.text,
+            }
+
         return res.json()
 
 

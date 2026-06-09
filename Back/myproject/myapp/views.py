@@ -53,7 +53,14 @@ from .excel_utils import (
     generate_users_pay_excel,
     generate_user_record_excel
 )
-from .google_drive_utils import GoogleDriveService
+from .google_drive_utils import (
+    GoogleDriveService,
+    GoogleDriveUploadError,
+    parse_year_month,
+    download_drive_template,
+    workbook_download_response,
+    save_workbook_to_drive,
+)
 
 from .salary import (
     sync_salary_expense_for_workday,
@@ -68,7 +75,6 @@ import os
 import json
 import io
 import urllib.parse
-
 
 
 # ------------------- Refresh API -------------------
@@ -240,152 +246,120 @@ class GoogleCalendarEventsAPIView(APIView):
     
 class GoogleDriveWorkplaceExcelExportAPIView(APIView):
     """
-    구글 드라이브와 연동하여 특정 근무지의 해당 월 전체 근무 현황을 엑셀로 생성 및 업로드합니다.
+    workload 폴더에서 템플릿을 찾고, workload/YYYY-MM 폴더에 근무지별 근무현황 파일을 저장합니다.
+    work_place가 있으면 해당 근무지 파일 하나를 생성하고 다운로드 응답으로 반환합니다.
     """
     authentication_classes = []
-    permission_classes = [AllowAny] 
+    permission_classes = [AllowAny]
 
     def get(self, request):
         access_token = request.COOKIES.get("google_access_token")
+        if not access_token:
+            return Response({"success": False}, status=401)
 
-        # 프론트에서 받는 파라미터
-        date_str = request.query_params.get("date")          # 예: 2026-04
-        work_place = request.query_params.get("work_place")  # 출력 대상 근무지 (예: 강남점)
-        
-        try:
-            year, month = map(int, date_str.split("-"))
-        except (ValueError, AttributeError):
-            pass
+        date_str = request.query_params.get("date")
+        work_place = request.query_params.get("work_place")
+
+        year, month = parse_year_month(date_str)
+        if year is None:
+            return Response({"success": False}, status=400)
 
         drive = GoogleDriveService(access_token)
-        workload_id = drive.get_or_create_folder("workload")
-        
-        # 1. 근무지별 전체 현황 엑셀 생성
-        # 템플릿 탐색 및 다운로드 (근무지명과 일치하는 xlsx 파일 탐색)
-        template_id = drive.find_file("workload_template.xlsx", workload_id)
-        template_io = drive.download_file(template_id) if template_id else None
-        
-        # 엑셀 생성 (해당 근무지의 해당 월 모든 인원 데이터 포함)
-        wb = generate_workplace_excel(work_place, year, month, template_file=template_io)
-        
-        # 2. 구글 드라이브 업로드 경로 설정
-        # 경로: workload -> {근무지}_load -> {YYYY-MM}
-        target_folder_id = drive.get_folder_path_id(["workload", f"{work_place}_load", date_str])
-        save_filename = f"{work_place}_{year}_{month}.xlsx"
+        workload_folder_id = drive.get_or_create_folder("workload")
+        template_io = download_drive_template(drive, workload_folder_id, "workload_template")
 
-        # 3. 엑셀 메모리 저장 및 구글 드라이브 업로드
-        output = io.BytesIO()
-        wb.save(output)
-        upload_result = drive.upload_or_update_file(output, save_filename, target_folder_id)
-        print("upload_result:", upload_result, flush=True)
+        if work_place:
+            wb = generate_workplace_excel(work_place, year, month, template_file=template_io)
+            save_filename = f"{work_place}_{year}_{month:02d}.xlsx"
+            try:
+                save_filename = save_workbook_to_drive(drive, wb, save_filename, ["workload", date_str])
+            except GoogleDriveUploadError as exc:
+                return Response({"success": False}, status=exc.status_code)
 
-        # 4. 브라우저 즉시 다운로드 응답 생성
-        output.seek(0)
-        response = HttpResponse(
-            output.read(),
-            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            return workbook_download_response(wb, save_filename)
+
+        work_places = list(
+            User_WorkDay.objects
+            .filter(
+                work_date__year=year,
+                work_date__month=month,
+                is_approved=True,
+            )
+            .order_by("work_place")
+            .values_list("work_place", flat=True)
+            .distinct()
         )
-        
-        encoded_filename = urllib.parse.quote(save_filename)
-        response["Content-Disposition"] = f"attachment; filename*=UTF-8''{encoded_filename}"
-        
-        return response
+
+        generated_files = []
+        for place in work_places:
+            wb = generate_workplace_excel(place, year, month, template_file=template_io)
+            save_filename = f"{place}_{year}_{month:02d}.xlsx"
+            try:
+                save_filename = save_workbook_to_drive(drive, wb, save_filename, ["workload", date_str])
+            except GoogleDriveUploadError as exc:
+                return Response({"success": False}, status=exc.status_code)
+            generated_files.append(save_filename)
+
+        return Response({"success": True, "files": generated_files})
 
 
 class GoogleDriveSalaryExcelExportAPIView(APIView):
     """
-    Google Drive와 연동하여 해당 월 직원별 급여 지급대장 엑셀을 생성하고,
-    Drive에 저장한 뒤 브라우저에 다운로드 파일로 응답합니다.
+    salary 폴더에서 템플릿을 찾고, salary/YYYY-MM 폴더에 월 급여대장 파일을 저장합니다.
+    생성된 파일은 Google Drive에 저장한 뒤 브라우저 다운로드 응답으로도 반환합니다.
     """
     authentication_classes = []
     permission_classes = [AllowAny]
 
     def get(self, request):
-        # 0. Google Drive 접근 토큰 확인
         access_token = request.COOKIES.get("google_access_token")
+        if not access_token:
+            return Response({"success": False}, status=401)
 
-        # 프론트엔드에서 받는 대상 월: YYYY-MM
-        date_str = request.query_params.get("date") # 예: 2026-04
+        date_str = request.query_params.get("date")
 
-        try:
-            year, month = map(int, date_str.split("-"))
-            if not (1 <= month <= 12):
-                raise ValueError
-        except (ValueError, AttributeError):
-            return Response({"success": False, "message": "Invalid date format. Use YYYY-MM."}, status=400)
+        year, month = parse_year_month(date_str)
+        if year is None:
+            return Response({"success": False}, status=400)
 
-        # 1. salary 폴더에서 salary_template.xlsx 템플릿 탐색 및 다운로드
         drive = GoogleDriveService(access_token)
         salary_folder_id = drive.get_or_create_folder("salary")
+        template_io = download_drive_template(drive, salary_folder_id, "salary_template")
 
-        template_id = drive.find_file("salary_template.xlsx", salary_folder_id)
-        template_io = drive.download_file(template_id) if template_id else None
-
-        # 2. 직원별 해당 월 급여 지급대장 엑셀 생성
         wb = generate_salary_excel(year, month, template_file=template_io)
-
-        # 3. Google Drive 업로드 경로 설정: salary -> YYYY-MM
-        target_folder_id = drive.get_folder_path_id(["salary", date_str])
         save_filename = f"salary_{year}_{month:02d}.xlsx"
+        try:
+            save_filename = save_workbook_to_drive(drive, wb, save_filename, ["salary", date_str])
+        except GoogleDriveUploadError as exc:
+            return Response({"success": False}, status=exc.status_code)
 
-        # 4. 엑셀 파일을 메모리에 저장한 뒤 Drive에 업로드 또는 기존 파일 업데이트
-        output = io.BytesIO()
-        wb.save(output)
-        upload_result = drive.upload_or_update_file(output, save_filename, target_folder_id)
-        print("salary upload_result:", upload_result, flush=True)
-
-        # 5. 브라우저 즉시 다운로드 응답 생성
-        output.seek(0)
-        response = HttpResponse(
-            output.read(),
-            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-
-        encoded_filename = urllib.parse.quote(save_filename)
-        response["Content-Disposition"] = f"attachment; filename*=UTF-8''{encoded_filename}"
-
-        return response
+        return workbook_download_response(wb, save_filename)
 
 
 class GoogleDriveUserPayExcelExportAPIView(APIView):
     """
-    Google Drive와 연동하여 해당 월 사원별 개인 월급 명세서를 엑셀로 생성하고,
-    Drive에 저장한 뒤 브라우저 다운로드 파일로도 응답합니다.
-
-    생성 방식:
-    - user_pay 폴더에서 user_pay_template 템플릿 파일을 찾습니다.
-    - user_uuid 쿼리 파라미터가 있으면 해당 사원만 대상으로 생성합니다.
-    - user_uuid를 콤마로 여러 개 전달하면 지정된 여러 사원만 대상으로 생성합니다.
-    - user_uuid가 없으면 해당 월 승인된 근무내역이 있는 모든 사원을 대상으로 생성합니다.
-    - 하나의 엑셀 파일 안에 사원별 시트를 생성합니다.
-      예: 1번 시트=user1, 2번 시트=user2
+    user_pay 폴더에서 템플릿을 찾고, user_pay/YYYY-MM 폴더에 개인 월급명세서 파일을 저장합니다.
+    하나의 엑셀 파일 안에 사원별 시트를 생성합니다.
     """
     authentication_classes = []
     permission_classes = [AllowAny]
 
     def get(self, request):
-        # 0. Google Drive 접근 토큰과 프론트에서 전달한 조회 조건을 가져옵니다.
         access_token = request.COOKIES.get("google_access_token")
-        date_str = request.query_params.get("date")       # 예: 2026-04
-        user_uuid = request.query_params.get("user_uuid")  # 선택값: 단일 UUID 또는 콤마 구분 UUID 목록
+        if not access_token:
+            return Response({"success": False}, status=401)
 
-        # 1. 조회 월 파라미터를 검증합니다.
-        try:
-            year, month = map(int, date_str.split("-"))
-            if not (1 <= month <= 12):
-                raise ValueError
-        except (ValueError, AttributeError):
+        date_str = request.query_params.get("date")
+        user_uuid = request.query_params.get("user_uuid")
+
+        year, month = parse_year_month(date_str)
+        if year is None:
             return Response({"success": False}, status=400)
 
-        # 2. user_pay 폴더에서 개인 월급 명세서 템플릿을 찾습니다.
-        #    Drive에 템플릿이 없으면 generate_users_pay_excel 내부에서 기본 워크북을 생성합니다.
         drive = GoogleDriveService(access_token)
         pay_folder_id = drive.get_or_create_folder("user_pay")
-        template_id = drive.find_file("user_pay_template", pay_folder_id)
-        template_io = drive.download_file(template_id) if template_id else None
+        template_io = download_drive_template(drive, pay_folder_id, "user_pay_template")
 
-        # 3. 명세서를 발급할 사원 목록을 결정합니다.
-        #    user_uuid가 있으면 지정된 사원만, 없으면 해당 월 승인 근무가 있는 모든 사원을 대상으로 합니다.
         if user_uuid:
             user_uuids = [
                 value.strip()
@@ -405,34 +379,18 @@ class GoogleDriveUserPayExcelExportAPIView(APIView):
                 .distinct()
             )
 
-        # 4. 전달받거나 조회된 user_uuid가 실제 사원 테이블에 존재하는지 확인합니다.
         existing_count = User_Login_Info.objects.filter(user_uuid__in=user_uuids).count()
         if existing_count != len(user_uuids):
             return Response({"success": False}, status=404)
 
-        # 5. 사원별 개인 월급 명세서를 하나의 엑셀 파일에 시트 단위로 생성합니다.
         wb = generate_users_pay_excel(user_uuids, year, month, template_file=template_io)
-
-        # 6. Drive 저장 경로를 user_pay/YYYY-MM 구조로 맞추고 파일명을 지정합니다.
-        target_folder_id = drive.get_folder_path_id(["user_pay", date_str])
         save_filename = f"user_pay_{year}_{month:02d}.xlsx"
+        try:
+            save_filename = save_workbook_to_drive(drive, wb, save_filename, ["user_pay", date_str])
+        except GoogleDriveUploadError as exc:
+            return Response({"success": False}, status=exc.status_code)
 
-        # 7. 생성한 워크북을 메모리에 저장한 뒤 Google Drive에 업로드하거나 기존 파일을 갱신합니다.
-        output = io.BytesIO()
-        wb.save(output)
-        drive.upload_or_update_file(output, save_filename, target_folder_id)
-
-        # 8. 같은 엑셀 파일을 브라우저 다운로드 응답으로 반환합니다.
-        output.seek(0)
-        response = HttpResponse(
-            output.read(),
-            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-
-        encoded_filename = urllib.parse.quote(save_filename)
-        response["Content-Disposition"] = f"attachment; filename*=UTF-8''{encoded_filename}"
-
-        return response
+        return workbook_download_response(wb, save_filename)
 
 
 class CheckAdminLoginAPIView(APIView):

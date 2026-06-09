@@ -374,11 +374,13 @@ def generate_workplace_excel(work_place, year, month, template_file=None):
     ws = wb.active
 
     work_days = User_WorkDay.objects.filter(
-        work_place=work_place,
         work_date__year=year,
         work_date__month=month,
         is_approved=True
     ).prefetch_related("details")
+
+    if work_place:
+        work_days = work_days.filter(work_place=work_place)
 
     user_work_map = {}
 
@@ -432,7 +434,8 @@ def generate_workplace_excel(work_place, year, month, template_file=None):
 
     block_size = 9
 
-    safe_set(ws, title_row, title_col, f"{year}년 {month}월 {work_place} 근무 현황")
+    title_work_place = work_place if work_place else "전체"
+    safe_set(ws, title_row, title_col, f"{year}년 {month}월 {title_work_place} 근무 현황")
 
     # 요일 / 날짜
     for day in range(1, last_day + 1):

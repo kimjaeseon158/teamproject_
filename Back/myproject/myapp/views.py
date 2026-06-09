@@ -70,6 +70,7 @@ from .salary import (
 
 )
 from .date_utils import month_start_end, add_months
+from .work_types import normalize_work_type
 import requests
 import os
 import json
@@ -1227,6 +1228,8 @@ class UserMonthlyWorkSummaryAPIView(APIView):
         pending_amount  = 0
         day_shift_count   = 0
         night_shift_count = 0
+        early_work_count = 0
+        early_work_minutes = 0
 
         for wd in work_days:
             
@@ -1235,6 +1238,11 @@ class UserMonthlyWorkSummaryAPIView(APIView):
             detail_amounts = []
             is_approved = wd.is_approved
             details = list(wd.details.all())
+
+            for detail in details:
+                if normalize_work_type(detail.work_type, wd.work_shift) == "조기출근":
+                    early_work_count += 1
+                    early_work_minutes += int(detail.minutes or 0)
 
             # 근무 형태 카운트 (주간/야간)
             if wd.work_shift == "주간":
@@ -1296,5 +1304,7 @@ class UserMonthlyWorkSummaryAPIView(APIView):
             "pending_amount": pending_amount,
             "day_shift_count": day_shift_count,
             "night_shift_count": night_shift_count,
+            "early_work_count": early_work_count,
+            "early_work_minutes": early_work_minutes,
             "daily_list": daily_list
         })

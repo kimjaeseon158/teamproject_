@@ -21,6 +21,7 @@ class WageRates:
     night_special_hourly_wage: int
     overnight_hourly_wage: int
     overnight_ot_hourly_wage: int
+    early_hourly_wage: int
 
 def minutes_to_amount(daily_wage_8h: int, minutes: int) -> int:
     """
@@ -68,6 +69,9 @@ def get_detail_salary_amount(
     if wt in ["야간 잔업"]:
         return minutes_to_amount(rates.overnight_ot_hourly_wage, mins)
 
+    if wt in ["조기출근"]:
+        return minutes_to_amount(rates.early_hourly_wage, mins)
+
     return 0
 
 
@@ -97,6 +101,7 @@ def calculate_daily_salary_breakdown(
         "야간 특근": 0,
         "야간": 0,
         "야간 잔업": 0,
+        "조기출근": 0,
     }
     detail_amounts = []
 
@@ -145,6 +150,7 @@ def get_rates_for_workday(work_day) -> WageRates:
         night_special_hourly_wage=rate.night_special_hourly_wage or rate.special_hourly_wage,
         overnight_hourly_wage=rate.overnight_hourly_wage,
         overnight_ot_hourly_wage=rate.overnight_ot_hourly_wage,
+        early_hourly_wage=rate.early_hourly_wage,
     )
 
 @transaction.atomic

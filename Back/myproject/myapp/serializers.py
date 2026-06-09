@@ -132,4 +132,5 @@ class WorkPlaceRateCreateSerializer(serializers.ModelSerializer):
             "night_special_hourly_wage",
             "overnight_hourly_wage",
             "overnight_ot_hourly_wage",
+            "early_hourly_wage",
         ]

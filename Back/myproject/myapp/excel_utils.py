@@ -146,6 +146,7 @@ def _rate_value_for_work_type(rate, work_type):
         keys[4]: "night_special_hourly_wage",
         keys[5]: "overnight_hourly_wage",
         keys[6]: "overnight_ot_hourly_wage",
+        keys[7]: "early_hourly_wage",
     }
     field_name = field_by_type.get(work_type)
     if not field_name:
@@ -168,6 +169,7 @@ def _rates_to_wage_rates(rate):
         night_special_hourly_wage=rate.night_special_hourly_wage or rate.special_hourly_wage or 0,
         overnight_hourly_wage=rate.overnight_hourly_wage or 0,
         overnight_ot_hourly_wage=rate.overnight_ot_hourly_wage or 0,
+        early_hourly_wage=rate.early_hourly_wage or 0,
     )
 
 

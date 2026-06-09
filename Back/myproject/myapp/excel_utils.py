@@ -14,7 +14,7 @@ from .salary import WageRates, get_detail_salary_amount
 
 
 # ----------------------
-# 공통 워크북 헬퍼
+# 공통 헬퍼
 # ----------------------
 
 def _get_workbook(template_file, workplace_name=None, default_template="default.xlsx"):
@@ -41,20 +41,12 @@ def _get_workbook(template_file, workplace_name=None, default_template="default.
     return Workbook()
 
 
-# ----------------------
-# 공통 워크시트 헬퍼
-# ----------------------
-
 def safe_set(ws, row, col, value):
     cell = ws.cell(row=row, column=col)
     if isinstance(cell, MergedCell):
         return
     cell.value = value
 
-
-# ----------------------
-# 공통 행 복사 헬퍼
-# ----------------------
 
 def copy_cell(src, dst):
     """셀 값, 스타일, 수식, 서식 복사"""
@@ -99,187 +91,11 @@ def copy_row_block(ws, source_start, source_end, target_start, start_col=1, end_
             copy_cell(src, dst)
 
 
-# ----------------------
-# GoogleDriveWorkplaceExcelExportAPIView
-# ----------------------
-
 def hour_value(minutes):
     if not minutes:
         return None
     value = minutes / 60
     return int(value) if value.is_integer() else value
-
-
-# ----------------------
-# GoogleDriveUserPayExcelExportAPIView
-# ----------------------
-
-def _month_period_text(year, month):
-    _, last_day = calendar.monthrange(year, month)
-    return f"{year}-{month:02d}-01 ~ {year}-{month:02d}-{last_day:02d}"
-
-
-def _pay_quantity(work_type, minutes):
-    if not minutes:
-        return 0
-
-    day_count_types = [
-        list(WORK_TYPE_ROW.keys())[0],
-        list(WORK_TYPE_ROW.keys())[3],
-        list(WORK_TYPE_ROW.keys())[4],
-        list(WORK_TYPE_ROW.keys())[5],
-    ]
-
-    if work_type in day_count_types:
-        return 1
-
-    return hour_value(minutes) or 0
-
-
-def _rate_value_for_work_type(rate, work_type):
-    keys = list(WORK_TYPE_ROW.keys())
-    field_by_type = {
-        keys[0]: "base_hourly_wage",
-        keys[1]: "overtime_hourly_wage",
-        keys[2]: "meal_ot_hourly_wage",
-        keys[3]: "day_special_hourly_wage",
-        keys[4]: "night_special_hourly_wage",
-        keys[5]: "overnight_hourly_wage",
-        keys[6]: "overnight_ot_hourly_wage",
-        keys[7]: "early_hourly_wage",
-    }
-    field_name = field_by_type.get(work_type)
-    if not field_name:
-        return 0
-
-    value = getattr(rate, field_name, None)
-    if value is None and field_name in ["day_special_hourly_wage", "night_special_hourly_wage"]:
-        value = rate.special_hourly_wage
-
-    return int(value or 0)
-
-
-def _rates_to_wage_rates(rate):
-    return WageRates(
-        base_hourly_wage=rate.base_hourly_wage or 0,
-        overtime_hourly_wage=rate.overtime_hourly_wage or 0,
-        meal_ot_hourly_wage=rate.meal_ot_hourly_wage or 0,
-        special_hourly_wage=rate.special_hourly_wage or 0,
-        day_special_hourly_wage=rate.day_special_hourly_wage or rate.special_hourly_wage or 0,
-        night_special_hourly_wage=rate.night_special_hourly_wage or rate.special_hourly_wage or 0,
-        overnight_hourly_wage=rate.overnight_hourly_wage or 0,
-        overnight_ot_hourly_wage=rate.overnight_ot_hourly_wage or 0,
-        early_hourly_wage=rate.early_hourly_wage or 0,
-    )
-
-
-def _find_label_cell(ws, labels):
-    for row in ws.iter_rows():
-        for cell in row:
-            value = cell.value
-            if not isinstance(value, str):
-                continue
-            if any(label in value for label in labels):
-                return cell
-    return None
-
-
-def _set_value_next_to_label(ws, labels, value, fallback_cell):
-    label_cell = _find_label_cell(ws, labels)
-    if label_cell:
-        row = label_cell.row
-        for col in range(label_cell.column + 1, min(ws.max_column + 2, label_cell.column + 5)):
-            target = ws.cell(row=row, column=col)
-            if not isinstance(target, MergedCell):
-                target.value = value
-                return
-
-    ws[fallback_cell] = value
-
-
-def _find_pay_table(ws):
-    for row in range(1, ws.max_row + 1):
-        headers = {}
-
-        for col in range(1, ws.max_column + 1):
-            value = ws.cell(row=row, column=col).value
-            if not isinstance(value, str):
-                continue
-
-            if "지급내역" in value or "항목" in value:
-                headers["item"] = col
-            elif "수량" in value:
-                headers["quantity"] = col
-            elif "단가" in value:
-                headers["unit_price"] = col
-            elif "금액" in value or "지급액" in value:
-                headers["amount"] = col
-            elif "근무지" in value:
-                headers["work_place"] = col
-
-        if {"item", "quantity", "unit_price"}.issubset(headers):
-            headers.setdefault("amount", headers["unit_price"] + 1)
-            return row, headers
-
-    return 9, {
-        "work_place": 6,
-        "item": 7,
-        "quantity": 8,
-        "unit_price": 9,
-        "amount": 10,
-    }
-
-
-def _build_user_pay_rows(user_uuid, year, month):
-    work_days = (
-        User_WorkDay.objects
-        .filter(
-            user_uuid_id=user_uuid,
-            work_date__year=year,
-            work_date__month=month,
-            is_approved=True,
-        )
-        .prefetch_related("details")
-        .order_by("work_date", "work_place", "work_shift")
-    )
-
-    rate_map = {
-        rate.work_place: rate
-        for rate in WorkPlaceRate.objects.filter(user_id=user_uuid)
-    }
-    grouped = {}
-
-    for work_day in work_days:
-        rate = rate_map.get(work_day.work_place)
-        if not rate:
-            continue
-
-        wage_rates = _rates_to_wage_rates(rate)
-
-        for detail in work_day.details.all():
-            work_type = normalize_work_type(detail.work_type, work_day.work_shift)
-            if work_type not in WORK_TYPE_ROW:
-                continue
-
-            key = (work_day.work_place, work_type)
-            if key not in grouped:
-                grouped[key] = {
-                    "work_place": work_day.work_place,
-                    "work_type": work_type,
-                    "quantity": 0,
-                    "unit_price": _rate_value_for_work_type(rate, work_type),
-                    "amount": 0,
-                }
-
-            grouped[key]["quantity"] += _pay_quantity(work_type, detail.minutes)
-            grouped[key]["amount"] += get_detail_salary_amount(
-                detail.work_type,
-                detail.minutes,
-                wage_rates,
-                work_day.work_shift,
-            )
-
-    return sorted(grouped.values(), key=lambda row: (row["work_place"], WORK_TYPE_ROW[row["work_type"]]))
 
 
 # ----------------------
@@ -566,10 +382,9 @@ def generate_salary_excel(year, month, template_file=None):
         .order_by("work_day__user_uuid__user_name")
     )
 
-    # 템플릿 기준: 5행부터 직원 데이터, "총계" 행 전까지 직원 목록 입력
+    # 템플릿 기준: 5행부터 직원 1명당 1행씩 입력
     data_start_row = 5
     total_row = find_salary_total_row(ws, data_start_row=data_start_row)
-    company_name = ws.cell(row=data_start_row, column=2).value
     total_row = ensure_salary_rows(
         ws,
         employee_count=len(salary_rows),
@@ -577,35 +392,32 @@ def generate_salary_excel(year, month, template_file=None):
         total_row=total_row,
     )
 
-    safe_set(ws, 1, 1, f"({year}년 {month}월) 급.상여지급대장")
+    safe_set(ws, 1, 1, f"{year}-{month:02d} 급여 지급대장")
 
     # 기존 템플릿에 들어 있던 샘플 직원 데이터 초기화
     for row in range(data_start_row, total_row):
         for col in range(1, max(ws.max_column, 21) + 1):
             safe_set(ws, row, col, None)
 
-    # 직원별 이름, 주민등록번호, 해당 월 월급액 입력
+    # 직원별 순번, 이름, 주민등록번호, 승인된 근무내역 급여 합계 입력
     for idx, salary in enumerate(salary_rows, start=1):
         row = data_start_row + idx - 1
         amount = salary["total_amount"] or 0
 
         safe_set(ws, row, 1, idx)
-        safe_set(ws, row, 2, company_name)
         safe_set(ws, row, 3, salary["work_day__user_uuid__user_name"])
         safe_set(ws, row, 4, salary["work_day__user_uuid__resident_number"])
         safe_set(ws, row, 7, amount)
         safe_set(ws, row, 8, amount)
-        safe_set(ws, row, 9, 0)
-        safe_set(ws, row, 10, 0)
         safe_set(ws, row, 11, f"=SUM(H{row}:J{row})")
+        safe_set(ws, row, 18, f"=SUM(L{row}:Q{row})")
+        safe_set(ws, row, 19, f"=K{row}-R{row}")
 
     last_data_row = max(data_start_row, total_row - 1)
 
-    # 총계행은 직원 데이터 범위에 맞춰 다시 계산되도록 수식 입력
+    # 총계행은 급여 합계(G열)만 다시 계산되도록 수식 입력
     safe_set(ws, total_row, 1, "총   계")
-    for col in range(7, max(ws.max_column, 21) + 1):
-        col_letter = get_column_letter(col)
-        safe_set(ws, total_row, col, f"=SUM({col_letter}{data_start_row}:{col_letter}{last_data_row})")
+    safe_set(ws, total_row, 7, f"=SUM(G{data_start_row}:G{last_data_row})")
 
     return wb
 
@@ -614,48 +426,259 @@ def generate_salary_excel(year, month, template_file=None):
 # GoogleDriveUserPayExcelExportAPIView
 # ----------------------
 
+# user_pay 급여명세서 J~M열 매핑 전용 상수입니다.
+# workplace, salary 엑셀 매핑에서는 사용하지 않습니다.
+
+USER_PAY_RATE_FIELD_BY_WORK_TYPE = {
+    "주간": "base_hourly_wage",
+    "평일 잔업": "overtime_hourly_wage",
+    "중식연장": "meal_ot_hourly_wage",
+    "주간 특근": "day_special_hourly_wage",
+    "야간 특근": "night_special_hourly_wage",
+    "야간": "overnight_hourly_wage",
+    "야간 잔업": "overnight_ot_hourly_wage",
+    "조기출근": "early_hourly_wage",
+}
+
+USER_PAY_DAY_COUNT_WORK_TYPES = {
+    "주간",
+    "주간 특근",
+    "야간 특근",
+    "야간",
+}
+
+USER_PAY_WORK_TYPE_ROWS = [
+    ("평일주간", "주간", 13),
+    ("평일잔업", "평일 잔업", 14),
+    ("중식연장", "중식연장", 15),
+    ("주간특근", "주간 특근", 16),
+    ("야간특근", "야간 특근", 17),
+    ("평일야간", "야간", 18),
+    ("야간잔업", "야간 잔업", 19),
+    ("조기출근", "조기출근", 20),
+]
+
+
+def _month_period_text(year, month):
+    _, last_day = calendar.monthrange(year, month)
+    return f"{year}-{month:02d}-01 ~ {year}-{month:02d}-{last_day:02d}"
+
+
+def _pay_quantity(work_type, minutes):
+    if not minutes:
+        return 0
+
+    if work_type in USER_PAY_DAY_COUNT_WORK_TYPES:
+        return 1
+
+    return hour_value(minutes) or 0
+
+
+def _rate_value_for_work_type(rate, work_type):
+    field_name = USER_PAY_RATE_FIELD_BY_WORK_TYPE.get(work_type)
+    if not field_name:
+        return 0
+
+    value = getattr(rate, field_name, None)
+    if value is None and field_name in ["day_special_hourly_wage", "night_special_hourly_wage"]:
+        value = rate.special_hourly_wage
+
+    return int(value or 0)
+
+
+def _rates_to_wage_rates(rate):
+    return WageRates(
+        base_hourly_wage=rate.base_hourly_wage or 0,
+        overtime_hourly_wage=rate.overtime_hourly_wage or 0,
+        meal_ot_hourly_wage=rate.meal_ot_hourly_wage or 0,
+        special_hourly_wage=rate.special_hourly_wage or 0,
+        day_special_hourly_wage=rate.day_special_hourly_wage or rate.special_hourly_wage or 0,
+        night_special_hourly_wage=rate.night_special_hourly_wage or rate.special_hourly_wage or 0,
+        overnight_hourly_wage=rate.overnight_hourly_wage or 0,
+        overnight_ot_hourly_wage=rate.overnight_ot_hourly_wage or 0,
+        early_hourly_wage=rate.early_hourly_wage or 0,
+    )
+
+
+def _find_label_cell(ws, labels):
+    for row in ws.iter_rows():
+        for cell in row:
+            value = cell.value
+            if not isinstance(value, str):
+                continue
+            if any(label in value for label in labels):
+                return cell
+    return None
+
+
+def _set_value_next_to_label(ws, labels, value, fallback_cell):
+    label_cell = _find_label_cell(ws, labels)
+    if label_cell:
+        row = label_cell.row
+        for col in range(label_cell.column + 1, min(ws.max_column + 2, label_cell.column + 5)):
+            target = ws.cell(row=row, column=col)
+            if not isinstance(target, MergedCell):
+                target.value = value
+                return
+
+    ws[fallback_cell] = value
+
+
+def _find_pay_table(ws):
+    for row in range(1, ws.max_row + 1):
+        headers = {}
+
+        for col in range(1, ws.max_column + 1):
+            value = ws.cell(row=row, column=col).value
+            if not isinstance(value, str):
+                continue
+
+            if "지급내역" in value or "항목" in value:
+                headers["item"] = col
+            elif "수량" in value:
+                headers["quantity"] = col
+            elif "단가" in value:
+                headers["unit_price"] = col
+            elif "금액" in value or "지급액" in value:
+                headers["amount"] = col
+            elif "근무지" in value:
+                headers["work_place"] = col
+
+        if {"item", "quantity", "unit_price"}.issubset(headers):
+            headers.setdefault("amount", headers["unit_price"] + 1)
+            return row, headers
+
+    return 9, {
+        "work_place": 6,
+        "item": 7,
+        "quantity": 8,
+        "unit_price": 9,
+        "amount": 10,
+    }
+
+
+def _build_user_pay_rows(user_uuid, year, month):
+    work_days = (
+        User_WorkDay.objects
+        .filter(
+            user_uuid_id=user_uuid,
+            work_date__year=year,
+            work_date__month=month,
+            is_approved=True,
+        )
+        .prefetch_related("details")
+        .order_by("work_date", "work_place", "work_shift")
+    )
+
+    rate_map = {
+        rate.work_place: rate
+        for rate in WorkPlaceRate.objects.filter(user_id=user_uuid)
+    }
+    grouped = {}
+
+    for work_day in work_days:
+        rate = rate_map.get(work_day.work_place)
+        if not rate:
+            continue
+
+        wage_rates = _rates_to_wage_rates(rate)
+
+        for detail in work_day.details.all():
+            work_type = normalize_work_type(detail.work_type, work_day.work_shift)
+            if work_type not in WORK_TYPE_ROW:
+                continue
+
+            key = (work_day.work_place, work_type)
+            if key not in grouped:
+                grouped[key] = {
+                    "work_place": work_day.work_place,
+                    "work_type": work_type,
+                    "quantity": 0,
+                    "unit_price": _rate_value_for_work_type(rate, work_type),
+                    "amount": 0,
+                }
+
+            grouped[key]["quantity"] += _pay_quantity(work_type, detail.minutes)
+            grouped[key]["amount"] += get_detail_salary_amount(
+                detail.work_type,
+                detail.minutes,
+                wage_rates,
+                work_day.work_shift,
+            )
+
+    return sorted(grouped.values(), key=lambda row: (row["work_place"], WORK_TYPE_ROW[row["work_type"]]))
+
+
+def _build_user_pay_summary(user_uuid, year, month):
+    summary = {
+        work_type: {
+            "quantity": 0,
+            "unit_price": 0,
+        }
+        for _, work_type, _ in USER_PAY_WORK_TYPE_ROWS
+    }
+    rate_map = {
+        rate.work_place: rate
+        for rate in WorkPlaceRate.objects.filter(user_id=user_uuid)
+    }
+
+    work_days = (
+        User_WorkDay.objects
+        .filter(
+            user_uuid_id=user_uuid,
+            work_date__year=year,
+            work_date__month=month,
+            is_approved=True,
+        )
+        .prefetch_related("details")
+    )
+
+    month_work_places = work_days.values_list("work_place", flat=True).distinct()
+    base_rate = next(
+        (rate_map[work_place] for work_place in month_work_places if work_place in rate_map),
+        None,
+    )
+    if base_rate is None and rate_map:
+        base_rate = next(iter(rate_map.values()))
+
+    if base_rate:
+        for work_type in summary:
+            summary[work_type]["unit_price"] = _rate_value_for_work_type(base_rate, work_type)
+
+    for work_day in work_days:
+        rate = rate_map.get(work_day.work_place)
+
+        for detail in work_day.details.all():
+            work_type = normalize_work_type(detail.work_type, work_day.work_shift)
+            if work_type not in summary:
+                continue
+
+            summary[work_type]["quantity"] += _pay_quantity(work_type, detail.minutes)
+
+            if rate and not summary[work_type]["unit_price"]:
+                summary[work_type]["unit_price"] = _rate_value_for_work_type(rate, work_type)
+
+    return summary
+
+
 def _fill_user_pay_sheet(ws, user_uuid, year, month):
     user = User_Login_Info.objects.get(user_uuid=user_uuid)
-    pay_rows = _build_user_pay_rows(user_uuid, year, month)
+    pay_summary = _build_user_pay_summary(user_uuid, year, month)
 
-    ws["A1"] = ws["A1"].value or "개인 월급 명세서"
-    _set_value_next_to_label(ws, ["업무기간", "근무기간", "기간"], _month_period_text(year, month), "B3")
-    _set_value_next_to_label(ws, ["성명", "이름"], user.user_name, "B4")
-    _set_value_next_to_label(ws, ["사번", "직원번호", "아이디"], user.user_id, "B5")
+    _, last_day = calendar.monthrange(year, month)
+    safe_set(ws, 2, 2, f"{year}년 {month}월 급여명세서")
+    safe_set(ws, 4, 2, f"업무기간 ({year}.{month}.1~{year}.{month}.{last_day})")
+    safe_set(ws, 4, 7, "급여지급일()")
+    safe_set(ws, 5, 4, user.user_name)
 
-    header_row, columns = _find_pay_table(ws)
-    data_start_row = header_row + 1
-    total_row = data_start_row + len(pay_rows)
+    for label, work_type, row in USER_PAY_WORK_TYPE_ROWS:
+        safe_set(ws, row, 10, label)
+        safe_set(ws, row, 11, pay_summary[work_type]["quantity"])
+        safe_set(ws, row, 12, pay_summary[work_type]["unit_price"])
+        safe_set(ws, row, 13, f"=K{row}*L{row}")
 
-    if "work_place" in columns:
-        safe_set(ws, header_row, columns["work_place"], "근무지")
-    safe_set(ws, header_row, columns["item"], "지급내역")
-    safe_set(ws, header_row, columns["quantity"], "수량")
-    safe_set(ws, header_row, columns["unit_price"], "단가")
-    safe_set(ws, header_row, columns["amount"], "금액")
-
-    required_rows = max(len(pay_rows), 1)
-    current_capacity = max(ws.max_row - data_start_row, 0)
-    if required_rows > current_capacity:
-        ws.insert_rows(data_start_row + current_capacity, amount=required_rows - current_capacity)
-
-    for row in range(data_start_row, data_start_row + required_rows + 2):
-        for col in set(columns.values()):
-            safe_set(ws, row, col, None)
-
-    for idx, pay_row in enumerate(pay_rows):
-        row = data_start_row + idx
-        if "work_place" in columns:
-            safe_set(ws, row, columns["work_place"], pay_row["work_place"])
-        safe_set(ws, row, columns["item"], pay_row["work_type"])
-        safe_set(ws, row, columns["quantity"], pay_row["quantity"])
-        safe_set(ws, row, columns["unit_price"], pay_row["unit_price"])
-        safe_set(ws, row, columns["amount"], pay_row["amount"])
-
-    last_data_row = max(data_start_row, total_row - 1)
-    amount_col = get_column_letter(columns["amount"])
-    safe_set(ws, total_row, columns["item"], "합계")
-    safe_set(ws, total_row, columns["amount"], f"=SUM({amount_col}{data_start_row}:{amount_col}{last_data_row})")
+    safe_set(ws, 25, 10, "합계")
+    safe_set(ws, 25, 13, "=SUM(M13:M20)")
 
     return user
 

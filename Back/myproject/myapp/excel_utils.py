@@ -291,10 +291,10 @@ WORK_TYPE_ROW = {
     "평일 잔업": 1,
     "중식연장": 2,
     "주간 특근": 3,
-    "야간 특근": 3,
-    "야간": 4,
-    "야간 잔업": 5,
-    "조기출근": 6,
+    "야간 특근": 4,
+    "야간": 5,
+    "야간 잔업": 6,
+    "조기출근": 7,
 }
 
 
@@ -431,6 +431,7 @@ def generate_workplace_excel(work_place, year, month, template_file=None):
     header_row_date = 4  # P4
 
     data_start_row = 5
+    number_col = 3       # C열
     name_col = 4         # D열
     date_start_col = 16  # P열
 
@@ -451,6 +452,7 @@ def generate_workplace_excel(work_place, year, month, template_file=None):
     for idx, name in enumerate(sorted_names):
         current_row = data_start_row + (idx * block_size)
 
+        safe_set(ws, current_row, number_col, idx + 1)
         safe_set(ws, current_row, name_col, name)
 
         # 날짜 영역 초기화

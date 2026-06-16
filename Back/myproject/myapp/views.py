@@ -70,6 +70,7 @@ from .salary import (
 
 )
 from .date_utils import month_start_end, add_months
+from .work_types import normalize_work_type
 import requests
 import os
 import json
@@ -246,8 +247,8 @@ class GoogleCalendarEventsAPIView(APIView):
     
 class GoogleDriveWorkplaceExcelExportAPIView(APIView):
     """
-    workload 폴더에서 템플릿을 찾고, workload/YYYY-MM 폴더에 근무지별 근무현황 파일을 저장합니다.
-    work_place가 있으면 해당 근무지 파일 하나를 생성하고 다운로드 응답으로 반환합니다.
+    workload 폴더에서 템플릿을 찾고, workload/YYYY-MM 폴더에 근무현황 파일을 저장합니다.
+    work_place가 있으면 해당 근무지만, 없으면 모든 근무지의 승인 근무내역을 한 파일로 생성합니다.
     """
     authentication_classes = []
     permission_classes = [AllowAny]
@@ -278,29 +279,14 @@ class GoogleDriveWorkplaceExcelExportAPIView(APIView):
 
             return workbook_download_response(wb, save_filename)
 
-        work_places = list(
-            User_WorkDay.objects
-            .filter(
-                work_date__year=year,
-                work_date__month=month,
-                is_approved=True,
-            )
-            .order_by("work_place")
-            .values_list("work_place", flat=True)
-            .distinct()
-        )
+        wb = generate_workplace_excel(None, year, month, template_file=template_io)
+        save_filename = f"workload_all_{year}_{month:02d}.xlsx"
+        try:
+            save_filename = save_workbook_to_drive(drive, wb, save_filename, ["workload", date_str])
+        except GoogleDriveUploadError as exc:
+            return Response({"success": False}, status=exc.status_code)
 
-        generated_files = []
-        for place in work_places:
-            wb = generate_workplace_excel(place, year, month, template_file=template_io)
-            save_filename = f"{place}_{year}_{month:02d}.xlsx"
-            try:
-                save_filename = save_workbook_to_drive(drive, wb, save_filename, ["workload", date_str])
-            except GoogleDriveUploadError as exc:
-                return Response({"success": False}, status=exc.status_code)
-            generated_files.append(save_filename)
-
-        return Response({"success": True, "files": generated_files})
+        return workbook_download_response(wb, save_filename)
 
 
 class GoogleDriveSalaryExcelExportAPIView(APIView):
@@ -1242,6 +1228,8 @@ class UserMonthlyWorkSummaryAPIView(APIView):
         pending_amount  = 0
         day_shift_count   = 0
         night_shift_count = 0
+        early_work_count = 0
+        early_work_minutes = 0
 
         for wd in work_days:
             
@@ -1250,6 +1238,11 @@ class UserMonthlyWorkSummaryAPIView(APIView):
             detail_amounts = []
             is_approved = wd.is_approved
             details = list(wd.details.all())
+
+            for detail in details:
+                if normalize_work_type(detail.work_type, wd.work_shift) == "조기출근":
+                    early_work_count += 1
+                    early_work_minutes += int(detail.minutes or 0)
 
             # 근무 형태 카운트 (주간/야간)
             if wd.work_shift == "주간":
@@ -1311,5 +1304,7 @@ class UserMonthlyWorkSummaryAPIView(APIView):
             "pending_amount": pending_amount,
             "day_shift_count": day_shift_count,
             "night_shift_count": night_shift_count,
+            "early_work_count": early_work_count,
+            "early_work_minutes": early_work_minutes,
             "daily_list": daily_list
         })

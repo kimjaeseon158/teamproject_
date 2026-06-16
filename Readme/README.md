@@ -162,8 +162,9 @@ teamproject_-3/
 | `meal_ot_hourly_wage` | 중식연장 단가 |
 | `day_special_hourly_wage` | 주간 특근 단가 |
 | `night_special_hourly_wage` | 야간 특근 단가 |
-| `overnight_hourly_wage` | 철야 기본 단가 |
-| `overnight_ot_hourly_wage` | 철야 잔업 단가 |
+| `overnight_hourly_wage` | 야간 기본 단가 |
+| `overnight_ot_hourly_wage` | 야간 잔업 단가 |
+| `early_hourly_wage` | 조기출근 단가 |
 
 `special_hourly_wage`는 기존 호환용 필드입니다. 새로 주고받는 값은 `day_special_hourly_wage`, `night_special_hourly_wage`를 사용합니다.
 
@@ -177,7 +178,8 @@ teamproject_-3/
   "day_special_hourly_wage": 120000,
   "night_special_hourly_wage": 150000,
   "overnight_hourly_wage": 130000,
-  "overnight_ot_hourly_wage": 60000
+  "overnight_ot_hourly_wage": 60000,
+  "early_hourly_wage": 30000
 }
 ```
 
@@ -192,13 +194,16 @@ teamproject_-3/
 | `중식연장` | `meal_ot_hourly_wage` |
 | `주간 특근` | `day_special_hourly_wage` |
 | `야간 특근` | `night_special_hourly_wage` |
-| `철야` | `overnight_hourly_wage` |
-| `철야 잔업` | `overnight_ot_hourly_wage` |
+| `야간` | `overnight_hourly_wage` |
+| `야간 잔업` | `overnight_ot_hourly_wage` |
+| `조기출근` | `early_hourly_wage` |
 
 사용하지 않을 이름:
 
 - `잔업` 대신 `평일 잔업`
-- `철야연장` 대신 `철야 잔업`
+- `철야` 대신 `야간`
+- `철야연장` 대신 `야간 잔업`
+- `철야 잔업` 대신 `야간 잔업`
 - `특근` 대신 `주간 특근` 또는 `야간 특근`
 
 ## 중요 라이브러리

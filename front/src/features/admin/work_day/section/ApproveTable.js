@@ -42,7 +42,7 @@ const columns = [
     label: "근무일",
   },
   {
-    key: "dayHM",
+    key: "totalWorkHM",
     label: "근무시간",
   },
   {

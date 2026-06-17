@@ -143,6 +143,16 @@ const getRateColumns = ({
           : value != null ? Number(value).toLocaleString() : "-",
     },
 
+    {
+      key: "early_hourly_wage",
+      label: "조기 출근",
+      width: "120px",
+      render: (value, row) =>
+        editingId === row.rate_uuid
+          ? renderInput("early_hourly_wage", row)
+          : value != null ? Number(value).toLocaleString() : "-",
+    },
+
    {
       key: "manage",
       label: "관리",

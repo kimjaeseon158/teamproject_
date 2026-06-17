@@ -30,6 +30,39 @@ const InfoCard = ({ title, children }) => (
   </Box>
 );
 
+const EXTRA_WORK_COLOR_SCHEMES = {
+  weekday_ot: "orange",
+  holiday_special: "red",
+  holiday_ot: "orange",
+  night_ot: "purple",
+  early_arrival: "purple",
+  lunch_ext: "yellow",
+};
+
+const WorkTimeRow = ({ title, time, tag, duration, colorScheme = "blue" }) => (
+  <Flex
+    align="center"
+    justify="space-between"
+    gap={2}
+    p={3}
+    minH="54px"
+    fontcolor="black.700"
+  >
+    <Text fontSize="sm" color="gray.900" fontWeight="700" minW="64px">
+      {title}
+    </Text>
+    <Text flex="1" textAlign="center">
+      {time || "-"}
+    </Text>
+    <Tag colorScheme={colorScheme} w="88px" justifyContent="center">
+      {tag}
+    </Tag>
+    <Text fontWeight="bold" minW="48px" textAlign="right">
+      {duration}
+    </Text>
+  </Flex>
+);
+
 export default function ApproveDetailModal({
   employee,
   isOpen,
@@ -144,24 +177,23 @@ export default function ApproveDetailModal({
           </InfoCard>
 
           <InfoCard title="근무 시간">
-            <Flex justify="space-between" align="center">
-              <Text fontSize="sm" color="gray.500" minW="72px">
-                근무시간
-              </Text>
-              <Text>{employee.workTime}</Text>
-              <Tag>{employee.workType}</Tag>
-              <Text fontWeight="bold">{employee.dayHM}</Text>
-            </Flex>
-            {employee.overtimeChecked && (
-              <Flex justify="space-between" align="center" mt={2}>
-                <Text fontSize="sm" color="gray.500" minW="72px">
-                  잔업시간
-                </Text>
-                <Text>{employee.overtimeTime || "-"}</Text>
-                <Tag colorScheme="orange">잔업</Tag>
-                <Text fontWeight="bold">{employee.overtimeDuration}</Text>
-              </Flex>
-            )}
+            <WorkTimeRow
+              title="기본근무"
+              time={employee.workTime}
+              tag={employee.workType}
+              duration={employee.dayHM}
+            />
+            {(employee.extraWorkDetails || []).map((detail) => (
+              <Box key={detail.type} mt={1}>
+                <WorkTimeRow
+                  title="추가근무"
+                  time={detail.time}
+                  tag={detail.label}
+                  duration={detail.duration}
+                  colorScheme={EXTRA_WORK_COLOR_SCHEMES[detail.type] || "orange"}
+                />
+              </Box>
+            ))}
             <Box mt={3}>
               <Text fontSize="sm" color="blue.600" fontWeight="semibold">
                 총 시간: {employee.totalWorkHM || employee.dayHM}

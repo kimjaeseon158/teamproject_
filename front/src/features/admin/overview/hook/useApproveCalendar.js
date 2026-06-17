@@ -39,8 +39,8 @@ export default function useApproveCalendar(currentDate) {
 
         const workDays = await getAdminWorkDays({
           status: "대기",
-          start_date: startDate,
-          end_date: endDate,
+          start_date_str: startDate,
+          end_date_str: endDate,
         });
 
         const pendingOnly = Array.isArray(workDays)

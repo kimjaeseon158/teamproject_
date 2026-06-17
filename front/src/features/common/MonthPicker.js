@@ -26,6 +26,9 @@ export default function MonthPicker({
   height,
   borderRadius = "xl",
   placement = "bottom-start",
+  placeholder,
+  labelFormat = "year-month",
+  buttonLabel,
 }) {
   const today = new Date();
 
@@ -51,9 +54,13 @@ export default function MonthPicker({
 
   useEffect(() => {
     setYear(parsed.year);
-  }, [value]);
+  }, [parsed.year]);
 
-  const displayLabel = `${parsed.year}년 ${parsed.month}월`;
+  const formattedLabel =
+    labelFormat === "month"
+      ? `${parsed.month}월`
+      : `${parsed.year}년 ${parsed.month}월`;
+  const displayLabel = buttonLabel || (value ? formattedLabel : placeholder || formattedLabel);
 
   return (
     <Popover placement={placement}>

@@ -46,7 +46,7 @@ export default function CommonTable({
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Checkbox
-                    size="sm"
+                    size="md"
                     colorScheme="blue"
                     isChecked={!!checkedItems[row[rowKey]]}
                     onChange={() => onCheck?.(row[rowKey])}

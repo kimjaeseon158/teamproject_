@@ -8,12 +8,25 @@ import {
   HStack,
   Image,
   SimpleGrid,
+  Table,
+  Tbody,
+  Td,
   Text,
+  Th,
+  Thead,
   Tooltip,
+  Tr,
   useDisclosure,
   useToast,
 } from "@chakra-ui/react";
-import { DownloadIcon, EditIcon, RepeatIcon, SearchIcon } from "@chakra-ui/icons";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  DownloadIcon,
+  EditIcon,
+  RepeatIcon,
+  SearchIcon,
+} from "@chakra-ui/icons";
 
 import { useDailyPay } from "../../features/admin/work_place/hook/useWorkList";
 import { userPlaceListColumns } from "./DailyPayColumns";
@@ -21,7 +34,6 @@ import { exportUserPayExcel } from "../../features/admin/api/google/GoogleDrive"
 import ExcelExportModal from "../../features/admin/total_pay/section/ExcelExportModal";
 import excelIcon from "../../assets/img/excel.png";
 
-import CommonTable from "../../features/common/mytable";
 import AddRateModal from "../../features/admin/work_place/components/AddRateModal";
 import SearchRateModal from "../../features/admin/work_place/components/SearchRateModal";
 
@@ -42,6 +54,192 @@ const average = (arr) => {
 const averageRate = (rates, key) => average(rates.map((rate) => rate?.[key]));
 const averageRateWithFallback = (rates, key, fallbackKey) =>
   average(rates.map((rate) => rate?.[key] ?? rate?.[fallbackKey]));
+const PAGE_SIZE = 8;
+const HEADER_HEIGHT = "54px";
+const ROW_HEIGHT = "58px";
+
+const fixedTableSx = {
+  tableLayout: "fixed",
+  "th, td": {
+    h: ROW_HEIGHT,
+    maxH: ROW_HEIGHT,
+    py: 0,
+    verticalAlign: "middle",
+  },
+  th: {
+    h: HEADER_HEIGHT,
+    maxH: HEADER_HEIGHT,
+  },
+};
+
+function DailyPayFixedTable({ columns, data, onEdit }) {
+  const detailColumns = columns.filter((column) => column.key !== "user_name");
+
+  return (
+    <Box
+      display="grid"
+      gridTemplateColumns={{ base: "140px minmax(0, 1fr) 96px", md: "190px minmax(0, 1fr) 120px" }}
+      w="100%"
+      maxW="100%"
+      overflow="hidden"
+    >
+      <Box minW={0} borderRight="1px solid" borderColor="gray.100">
+        <Table variant="simple" size="md" sx={fixedTableSx}>
+          <Thead bg="gray.50">
+            <Tr>
+              <Th whiteSpace="nowrap">
+                이름
+              </Th>
+            </Tr>
+          </Thead>
+          <Tbody>
+            {data.map((row) => (
+              <Tr key={row.user_uuid} _hover={{ bg: "gray.50" }}>
+                <Td fontWeight="800" color="gray.800">
+                  <Text noOfLines={1}>{row.user_name}</Text>
+                </Td>
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      </Box>
+
+      <Box
+        minW={0}
+        maxW="100%"
+        overflowX="auto"
+        overflowY="hidden"
+        pb={2}
+        sx={{
+          "&::-webkit-scrollbar": { height: "10px" },
+          "&::-webkit-scrollbar-track": { background: "#EDF2F7" },
+          "&::-webkit-scrollbar-thumb": { background: "#A0AEC0", borderRadius: "999px" },
+        }}
+      >
+        <Table variant="simple" size="md" w="max-content" minW="1320px" sx={fixedTableSx}>
+          <Thead bg="gray.50">
+            <Tr>
+              {detailColumns.map((column) => (
+                <Th
+                  key={column.key}
+                  minW={column.key === "work_place" ? "280px" : "150px"}
+                  textAlign="center"
+                  whiteSpace="nowrap"
+                >
+                  {column.label}
+                </Th>
+              ))}
+            </Tr>
+          </Thead>
+
+          <Tbody>
+            {data.map((row) => (
+              <Tr key={row.user_uuid} _hover={{ bg: "gray.50" }}>
+                {detailColumns.map((column) => (
+                  <Td
+                    key={column.key}
+                    minW={column.key === "work_place" ? "280px" : "150px"}
+                    textAlign={column.key === "work_place" ? "left" : "center"}
+                    whiteSpace="nowrap"
+                    color="gray.700"
+                  >
+                    <Text noOfLines={1}>
+                      {column.render
+                        ? column.render(row[column.key], row)
+                        : row[column.key] || "-"}
+                    </Text>
+                  </Td>
+                ))}
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      </Box>
+
+      <Box minW={0} borderLeft="1px solid" borderColor="gray.100">
+        <Table variant="simple" size="md" sx={fixedTableSx}>
+          <Thead bg="gray.50">
+            <Tr>
+              <Th textAlign="center" whiteSpace="nowrap">
+                관리
+              </Th>
+            </Tr>
+          </Thead>
+
+          <Tbody>
+            {data.map((row) => (
+              <Tr key={row.user_uuid} _hover={{ bg: "gray.50" }}>
+                <Td textAlign="center">
+                  <Button
+                    size="sm"
+                    leftIcon={<EditIcon />}
+                    colorScheme="green"
+                    variant="ghost"
+                    onClick={() => onEdit(row)}
+                  >
+                    수정
+                  </Button>
+                </Td>
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      </Box>
+    </Box>
+  );
+}
+
+function DailyPayPagination({ currentPage, totalPages, onChange }) {
+  if (totalPages <= 1) return null;
+
+  const pageGroupSize = 5;
+  const groupIndex = Math.floor((currentPage - 1) / pageGroupSize);
+  const firstPage = groupIndex * pageGroupSize + 1;
+  const lastPage = Math.min(firstPage + pageGroupSize - 1, totalPages);
+  const pages = Array.from(
+    { length: lastPage - firstPage + 1 },
+    (_, index) => firstPage + index
+  );
+
+  return (
+    <Flex justify="center" align="center" gap={2} px={6} py={5}>
+      <Button
+        size="sm"
+        leftIcon={<ChevronLeftIcon />}
+        variant="outline"
+        isDisabled={currentPage === 1}
+        onClick={() => onChange(Math.max(1, currentPage - 1))}
+      >
+        이전
+      </Button>
+
+      <HStack spacing={1}>
+        {pages.map((page) => (
+          <Button
+            key={page}
+            size="sm"
+            minW="36px"
+            variant={page === currentPage ? "solid" : "ghost"}
+            colorScheme={page === currentPage ? "blue" : "gray"}
+            onClick={() => onChange(page)}
+          >
+            {page}
+          </Button>
+        ))}
+      </HStack>
+
+      <Button
+        size="sm"
+        rightIcon={<ChevronRightIcon />}
+        variant="outline"
+        isDisabled={currentPage === totalPages}
+        onClick={() => onChange(Math.min(totalPages, currentPage + 1))}
+      >
+        다음
+      </Button>
+    </Flex>
+  );
+}
 
 export default function DailyPayPage() {
   const toast = useToast();
@@ -51,6 +249,7 @@ export default function DailyPayPage() {
   const [exportLoading, setExportLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchDailyPay({}, toast);
@@ -81,6 +280,7 @@ export default function DailyPayPage() {
         ),
         overnight_hourly_wage: averageRate(rates, "overnight_hourly_wage"),
         overnight_ot_hourly_wage: averageRate(rates, "overnight_ot_hourly_wage"),
+        early_hourly_wage: averageRate(rates, "early_hourly_wage"),
       };
     }) || [];
   }, [data]);
@@ -100,34 +300,30 @@ export default function DailyPayPage() {
     };
   }, [data, mergedData]);
 
-  const columnsWithEdit = useMemo(() => [
-    ...userPlaceListColumns.map((column) => ({
+  const totalPages = Math.max(1, Math.ceil(mergedData.length / PAGE_SIZE));
+  const pagedData = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return mergedData.slice(start, start + PAGE_SIZE);
+  }, [currentPage, mergedData]);
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
+  const displayColumns = useMemo(() => (
+    userPlaceListColumns.map((column) => ({
       ...column,
       render:
         column.key.includes("wage")
           ? (value) => formatWon(value)
           : column.render,
-    })),
-    {
-      key: "edit",
-      label: "관리",
-      render: (_, row) => (
-        <Button
-          size="sm"
-          leftIcon={<EditIcon />}
-          colorScheme="green"
-          variant="ghost"
-          onClick={(e) => {
-            e.stopPropagation();
-            const user = data.find((u) => u.user_uuid === row.user_uuid);
-            setSelectedUser(user);
-          }}
-        >
-          수정
-        </Button>
-      ),
-    },
-  ], [data]);
+    }))
+  ), []);
+
+  const handleEdit = (row) => {
+    const user = data.find((u) => u.user_uuid === row.user_uuid);
+    setSelectedUser(user);
+  };
 
   const statCards = [
     { label: "등록 직원(명)", value: `${summary.users.toLocaleString()}` },
@@ -164,7 +360,7 @@ export default function DailyPayPage() {
   };
 
   return (
-    <Box minH="100vh" bg="gray.50" p={{ base: 4, md: 6 }}>
+    <Box minH="100%" bg="gray.50" p={{ base: 4, md: 6 }} maxW="100%" overflowX="hidden">
       <Flex
         justify="space-between"
         align={{ base: "stretch", md: "center" }}
@@ -210,7 +406,10 @@ export default function DailyPayPage() {
           <Button
             leftIcon={<RepeatIcon />}
             variant="outline"
-            onClick={() => fetchDailyPay({}, toast)}
+            onClick={() => {
+              setCurrentPage(1);
+              fetchDailyPay({}, toast);
+            }}
             isLoading={loading}
           >
             전체보기
@@ -246,6 +445,7 @@ export default function DailyPayPage() {
         borderRadius="lg"
         boxShadow="sm"
         overflow="hidden"
+        maxW="100%"
       >
         <Flex
           justify="space-between"
@@ -268,11 +468,16 @@ export default function DailyPayPage() {
           </Badge>
         </Flex>
 
-        <Box sx={{ "> div": { boxShadow: "none", borderRadius: 0 } }}>
-          <CommonTable
-            columns={columnsWithEdit}
-            data={mergedData}
-            rowKey="user_uuid"
+        <Box p={0}>
+          <DailyPayFixedTable
+            columns={displayColumns}
+            data={pagedData}
+            onEdit={handleEdit}
+          />
+          <DailyPayPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onChange={setCurrentPage}
           />
         </Box>
       </Box>
@@ -293,7 +498,10 @@ export default function DailyPayPage() {
       <SearchRateModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
-        onSearch={(params) => fetchDailyPay(params, toast)}
+        onSearch={(params) => {
+          setCurrentPage(1);
+          fetchDailyPay(params, toast);
+        }}
       />
       <ExcelExportModal
         isOpen={exportDisclosure.isOpen}

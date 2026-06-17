@@ -24,6 +24,7 @@ const handleAdd = async (payload) => {
       night_special_hourly_wage: payload.night_special_hourly_wage ?? null,
       overnight_hourly_wage: payload.overnight_hourly_wage ?? null,
       overnight_ot_hourly_wage: payload.overnight_ot_hourly_wage ?? null,
+      early_hourly_wage: payload.early_hourly_wage ?? null,
     },
     toast
   );
@@ -58,6 +59,7 @@ const handleAdd = async (payload) => {
         night_special_hourly_wage: null,
         overnight_hourly_wage: null,
         overnight_ot_hourly_wage: null,
+        early_hourly_wage: null,
       }, { toast });
     }
 

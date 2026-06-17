@@ -2,13 +2,16 @@
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
 
 export async function getAdminWorkDays(
-  { status, start_date, end_date } = {},
+  { status, start_date, end_date, start_date_str, end_date_str } = {},
   { toast } = {}
 ) {
   const qs = new URLSearchParams();
+  const startDate = start_date_str ?? start_date;
+  const endDate = end_date_str ?? end_date;
+
   if (status) qs.set("status", status);
-  if (start_date) qs.set("start_date", start_date);
-  if (end_date) qs.set("end_date", end_date);
+  if (startDate) qs.set("start_date_str", startDate);
+  if (endDate) qs.set("end_date_str", endDate);
 
   const url = qs.toString()
     ? `/api/admin_page_workday/?${qs.toString()}`

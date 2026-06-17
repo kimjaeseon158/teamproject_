@@ -85,6 +85,7 @@ export default function RateEditModal({
       places: tableData.filter((row) => row.work_place && row.work_place !== EMPTY_PLACE).length,
       base: average(tableData.map((row) => row.base_hourly_wage)),
       overtime: average(tableData.map((row) => row.overtime_hourly_wage)),
+      early: average(tableData.map((row) => row.early_hourly_wage)),
       daySpecial: averageWithFallback(tableData, "day_special_hourly_wage", "special_hourly_wage"),
       nightSpecial: averageWithFallback(tableData, "night_special_hourly_wage", "special_hourly_wage"),
     }),
@@ -129,6 +130,7 @@ export default function RateEditModal({
       night_special_hourly_wage: "",
       overnight_hourly_wage: "",
       overnight_ot_hourly_wage: "",
+      early_hourly_wage: "",
       isNew: true,
     };
 
@@ -188,6 +190,7 @@ export default function RateEditModal({
           night_special_hourly_wage: null,
           overnight_hourly_wage: null,
           overnight_ot_hourly_wage: null,
+          early_hourly_wage: null,
         });
       } else {
         result = await handleDelete({ user, rate_uuid: selectedId });
@@ -313,7 +316,7 @@ export default function RateEditModal({
               <ModalCloseButton position="static" />
             </Flex>
 
-            <SimpleGrid columns={{ base: 1, md: 4 }} spacing={3} mt={5}>
+            <SimpleGrid columns={{ base: 1, md: 5 }} spacing={3} mt={5}>
               <Box bg="whiteAlpha.900" border="1px solid" borderColor="white" borderRadius="xl" p={4}>
                 <Text fontSize="xs" color="gray.500" fontWeight="800">
                   평균 기본시급
@@ -344,6 +347,14 @@ export default function RateEditModal({
                 </Text>
                 <Text fontSize="2xl" fontWeight="900" color="blue.600">
                   {formatWon(summary.nightSpecial)}
+                </Text>
+              </Box>
+              <Box bg="whiteAlpha.900" border="1px solid" borderColor="white" borderRadius="xl" p={4}>
+                <Text fontSize="xs" color="gray.500" fontWeight="800">
+                  평균 조기 출근
+                </Text>
+                <Text fontSize="2xl" fontWeight="900" color="purple.600">
+                  {formatWon(summary.early)}
                 </Text>
               </Box>
             </SimpleGrid>

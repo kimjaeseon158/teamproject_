@@ -15,9 +15,9 @@ export default function Dashboard() {
   return (
     <Flex h="100vh">
       <Sidebar />
-      <Flex direction="column" flex="1">
+      <Flex direction="column" flex="1" minW={0}>
         <Header />
-        <Box p="4" flex="1" bg="gray.50" overflow="auto">
+        <Box p="4" flex="1" bg="gray.50" overflow="auto" minW={0}>
           <Routes>
             <Route path="/" element={<Overview />} />
             <Route path="admin" element={<EmployeeList />} />

@@ -18,6 +18,11 @@ export const userPlaceListColumns = [
     render: (value) => value ?? "-"
   },
   {
+    key: "meal_ot_hourly_wage",
+    label: "식대연장(평균)",
+    render: (value) => value ?? "-"
+  },
+  {
     key: "day_special_hourly_wage",
     label: "주간 특근(평균)",
     render: (value) => value ?? "-"
@@ -25,6 +30,21 @@ export const userPlaceListColumns = [
   {
     key: "night_special_hourly_wage",
     label: "야간 특근(평균)",
+    render: (value) => value ?? "-"
+  },
+  {
+    key: "overnight_hourly_wage",
+    label: "철야(평균)",
+    render: (value) => value ?? "-"
+  },
+  {
+    key: "overnight_ot_hourly_wage",
+    label: "야간연장(평균)",
+    render: (value) => value ?? "-"
+  },
+  {
+    key: "early_hourly_wage",
+    label: "조기 출근(평균)",
     render: (value) => value ?? "-"
   },
 ];

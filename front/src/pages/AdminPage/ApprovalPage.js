@@ -18,10 +18,14 @@ import { useApproveList } from "../../features/admin/work_day/hook/useApproveLis
 import ApproveFilterBar from "../../features/admin/work_day/section/ApproveFilterBar";
 import ApproveTable from "../../features/admin/work_day/section/ApproveTable";
 import ApproveDetailModal from "../../features/admin/work_day/section/ApproveDetailModal";
+import ApprovePagination from "../../features/admin/work_day/section/ApprovePagination";
 import { toYMD } from "../../features/admin/work_day/utils/approveUtils";
+import { getMonthRange, toMonthValue } from "../../features/admin/work_day/utils/approveDateUtils";
 import { exportApprovalSalaryExcel } from "../../features/admin/api/google/GoogleDrive";
 import ExcelExportModal from "../../features/admin/total_pay/section/ExcelExportModal";
 import excelIcon from "../../assets/img/excel.png";
+
+const APPROVAL_PAGE_SIZE = 10;
 
 export default function ApprovePage() {
   const toast = useToast();
@@ -35,8 +39,13 @@ export default function ApprovePage() {
   const [status, setStatus] = useState("대기");
   const [workPlace, setWorkPlace] = useState("");
   const [workType, setWorkType] = useState("");
+  const [userName, setUserName] = useState("");
+  const [extraWork, setExtraWork] = useState("");
+  const [sortField, setSortField] = useState("date");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // 🔥 현재 달의 시작일~종료일로 초기화
   const initialRange = useMemo(() => {
@@ -47,6 +56,22 @@ export default function ApprovePage() {
   }, []);
 
   const [range, setRange] = useState(initialRange);
+  const [selectedMonth, setSelectedMonth] = useState(toMonthValue(initialRange.from));
+
+  const handleMonthChange = (monthValue) => {
+    setSelectedMonth(monthValue);
+    setRange(getMonthRange(monthValue));
+  };
+
+  const handleRangeChange = (nextRange) => {
+    setSelectedMonth("");
+    setRange(nextRange || { from: undefined, to: undefined });
+  };
+
+  const handleRangeReset = () => {
+    setSelectedMonth("");
+    setRange({ from: undefined, to: undefined });
+  };
 
   const summary = useMemo(() => {
     return rows.reduce(
@@ -64,6 +89,31 @@ export default function ApprovePage() {
     );
   }, [rows]);
 
+  const sortedRows = useMemo(() => {
+    const nextRows = [...rows];
+    const direction = sortOrder === "asc" ? 1 : -1;
+
+    nextRows.sort((a, b) => {
+      if (sortField === "totalWorkMinutes") {
+        return ((Number(a.totalWorkMinutes) || 0) - (Number(b.totalWorkMinutes) || 0)) * direction;
+      }
+
+      return String(a[sortField] || "").localeCompare(String(b[sortField] || ""), "ko") * direction;
+    });
+
+    return nextRows;
+  }, [rows, sortField, sortOrder]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedRows.length / APPROVAL_PAGE_SIZE));
+  const paginatedRows = useMemo(() => {
+    const start = (currentPage - 1) * APPROVAL_PAGE_SIZE;
+    return sortedRows.slice(start, start + APPROVAL_PAGE_SIZE);
+  }, [currentPage, sortedRows]);
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
   // 🔥 페이지 진입 시 자동 조회
   useEffect(() => {
     if (range.from && range.to) {
@@ -71,6 +121,8 @@ export default function ApprovePage() {
         status: "대기",
         workPlace: "",
         workType: "",
+        userName: "",
+        extraWork: "",
         startDate: toYMD(range.from),
         endDate: toYMD(range.to),
       });
@@ -95,13 +147,40 @@ export default function ApprovePage() {
       return;
     }
 
+    setCurrentPage(1);
     fetchList({
       status,
       workPlace,
       workType,
+      userName,
+      extraWork,
       startDate: toYMD(range.from),
       endDate: toYMD(range.to ?? range.from),
     });
+  };
+
+  const handleSort = (field) => {
+    setCurrentPage(1);
+    setSortField((prevField) => {
+      if (prevField === field) {
+        setSortOrder((prevOrder) => (prevOrder === "asc" ? "desc" : "asc"));
+        return prevField;
+      }
+
+      setSortOrder(field === "date" ? "desc" : "asc");
+      return field;
+    });
+  };
+
+  const handleResetFilters = () => {
+    setStatus("대기");
+    setWorkPlace("");
+    setWorkType("");
+    setUserName("");
+    setExtraWork("");
+    setSortField("date");
+    setSortOrder("desc");
+    setCurrentPage(1);
   };
 
   const handleExcelExport = async (_workPlace, date) => {
@@ -191,9 +270,17 @@ export default function ApprovePage() {
           setWorkPlace={setWorkPlace}
           workType={workType}
           setWorkType={setWorkType}
+          userName={userName}
+          setUserName={setUserName}
+          extraWork={extraWork}
+          setExtraWork={setExtraWork}
           range={range}
-          setRange={setRange}
+          setRange={handleRangeChange}
           rangeLabel={rangeLabel}
+          selectedMonth={selectedMonth}
+          onMonthChange={handleMonthChange}
+          onRangeReset={handleRangeReset}
+          onReset={handleResetFilters}
           loading={loading}
           onSearch={handleSearch}
         />
@@ -214,7 +301,7 @@ export default function ApprovePage() {
           </Badge>
         </Flex>
         <ApproveTable
-          rows={rows}
+          rows={paginatedRows}
           selectedIds={selectedIds}
           toggleAll={(c) =>
             setSelectedIds(c ? new Set(rows.map((r) => r.id)) : new Set())
@@ -228,7 +315,17 @@ export default function ApprovePage() {
             setSelectedEmployee(emp);
             onOpen();
           }}
+          sortField={sortField}
+          sortOrder={sortOrder}
+          onSort={handleSort}
           pb="40px"
+        />
+        <ApprovePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalCount={sortedRows.length}
+          pageSize={APPROVAL_PAGE_SIZE}
+          onChange={setCurrentPage}
         />
       </Box>
 

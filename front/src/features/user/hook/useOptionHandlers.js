@@ -1,5 +1,6 @@
 import submitWorkInfo from "../api/submitWorkInfo";
 import { diffMinutes, calculateNetMinutes } from "../utils/timeUtils";
+import { getExtraWorkSubmitLabel } from "../../common/workTypes";
 
 export function useOptionHandlers({
   selectedDate,
@@ -32,19 +33,11 @@ export function useOptionHandlers({
       ? extraWorks.filter((r) => r.type && r.start && r.finish)
       : [];
 
-    const getExtraWorkTypeLabel = (type) => {
-      const labels = {
-        weekday_ot: "평일 잔업",
-        holiday_special: baseShift === "야간" ? "야간 특근" : "주간 특근",
-        holiday_ot: "휴일 잔업",
-        night_ot: "철야 잔업",
-        early_arrival: "조기 출근",
-        lunch_ext: "중식 연장",
-      };
-      return labels[type] || "기타";
-    };
-
     const baseWorkType = isSpecial ? `${baseShift} 특근` : baseShift;
+    const getExtraDetailWorkType = (type) =>
+      type === "holiday_special"
+        ? `${baseShift} 특근`
+        : getExtraWorkSubmitLabel(type, "기타");
 
     const details = [
       {
@@ -53,7 +46,7 @@ export function useOptionHandlers({
         is_overtime_approved: isSpecial,
       },
       ...extraRows.map((r) => ({
-        work_type: getExtraWorkTypeLabel(r.type),
+        work_type: getExtraDetailWorkType(r.type),
         minutes: diffMinutes(r.start, r.finish),
         is_overtime_approved: true,
       })),

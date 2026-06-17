@@ -2,6 +2,7 @@ import {
   Flex,
   Select,
   Button,
+  Input,
   Box,
   Popover,
   PopoverTrigger,
@@ -13,8 +14,20 @@ import {
 } from "@chakra-ui/react";
 import { DayPicker } from "react-day-picker";
 import { ko } from "date-fns/locale";
+import { useEffect, useRef, useState } from "react";
 import "react-day-picker/dist/style.css";
 import locationsList from "../../../common/work_placeColumns/locationsList";
+import MonthPicker from "../../../common/MonthPicker";
+import { EXTRA_WORK_TYPES } from "../../../common/workTypes";
+
+const getDisplayMonth = (monthValue, range) => {
+  if (monthValue) {
+    const [year, month] = monthValue.split("-").map(Number);
+    if (year && month) return new Date(year, month - 1, 1);
+  }
+
+  return range?.from || new Date();
+};
 
 export default function ApproveFilterBar({
   status,
@@ -23,12 +36,39 @@ export default function ApproveFilterBar({
   setWorkPlace,
   workType,
   setWorkType,
+  userName,
+  setUserName,
+  extraWork,
+  setExtraWork,
   range,
   setRange,
   rangeLabel,
+  selectedMonth,
+  onMonthChange,
+  onRangeReset,
+  onReset,
   onSearch,
   loading,
 }) {
+  const [calendarMonth, setCalendarMonth] = useState(() =>
+    getDisplayMonth(selectedMonth, range)
+  );
+  const previousSelectedMonthRef = useRef(selectedMonth);
+
+  const handleTodayClick = () => {
+    const today = new Date();
+    setRange({ from: today, to: today });
+    setCalendarMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+  };
+
+  useEffect(() => {
+    if (selectedMonth && selectedMonth !== previousSelectedMonthRef.current) {
+      setCalendarMonth(getDisplayMonth(selectedMonth, range));
+    }
+
+    previousSelectedMonthRef.current = selectedMonth;
+  }, [selectedMonth, range]);
+
   return (
     <Flex gap={3} align="center" wrap="wrap">
       <Select
@@ -74,6 +114,30 @@ export default function ApproveFilterBar({
         <option value="__NULL__">근무구분 미지정</option>
       </Select>
 
+      <Select
+        size="sm"
+        w={{ base: "100%", md: "170px" }}
+        value={extraWork}
+        onChange={(e) => setExtraWork(e.target.value)}
+        isDisabled={loading}
+      >
+        <option value="">추가근무 전체</option>
+        {EXTRA_WORK_TYPES.map((type) => (
+          <option key={type.value} value={type.submitLabel}>
+            {type.label}
+          </option>
+        ))}
+      </Select>
+
+      <Input
+        size="sm"
+        w={{ base: "100%", md: "170px" }}
+        value={userName}
+        onChange={(e) => setUserName(e.target.value)}
+        placeholder="직원명 검색"
+        isDisabled={loading}
+      />
+
       <Button
         size="sm"
         colorScheme="blue"
@@ -81,6 +145,10 @@ export default function ApproveFilterBar({
         isLoading={loading}
       >
         조회
+      </Button>
+
+      <Button size="sm" variant="outline" onClick={onReset} isDisabled={loading}>
+        초기화
       </Button>
 
       <Box ml={{ base: 0, md: "auto" }} w={{ base: "100%", md: "auto" }}>
@@ -96,11 +164,6 @@ export default function ApproveFilterBar({
             <PopoverCloseButton top="8px" right="8px" />
 
             <PopoverBody>
-              {/* 🔥 선택 기간 표시 */}
-              <Text fontSize="sm" mb={3} fontWeight="medium">
-                선택 기간: {rangeLabel}
-              </Text>
-
               <DayPicker
                 mode="range"
                 locale={ko}
@@ -109,8 +172,30 @@ export default function ApproveFilterBar({
                   formatCaption: (month) =>
                     `${month.getFullYear()}년 ${month.getMonth() + 1}월`,
                 }}
+                month={calendarMonth}
+                onMonthChange={setCalendarMonth}
                 selected={range}
                 onSelect={setRange}
+                components={{
+                  MonthCaption: ({ calendarMonth, ...props }) => (
+                    <HStack {...props} justify="flex-start" spacing={3} mb={2}>
+                      <Text fontSize="sm" fontWeight="800" color="gray.800">
+                        {`${calendarMonth.date.getFullYear()}년 ${calendarMonth.date.getMonth() + 1}월`}
+                      </Text>
+                      <MonthPicker
+                        value={selectedMonth}
+                        onChange={onMonthChange}
+                        size="xs"
+                        width="68px"
+                        borderRadius="md"
+                        placement="bottom-start"
+                        placeholder="월선택"
+                        labelFormat="month"
+                        buttonLabel="월선택"
+                      />
+                    </HStack>
+                  ),
+                }}
               />
 
               {/* 🔥 Today 버튼 */}
@@ -118,10 +203,7 @@ export default function ApproveFilterBar({
                 <Button
                   size="xs"
                   variant="ghost"
-                  onClick={() => {
-                    const today = new Date();
-                    setRange({ from: today, to: today });
-                  }}
+                  onClick={handleTodayClick}
                 >
                   오늘
                 </Button>
@@ -129,9 +211,7 @@ export default function ApproveFilterBar({
                 <Button
                   size="xs"
                   variant="ghost"
-                  onClick={() =>
-                    setRange({ from: undefined, to: undefined })
-                  }
+                  onClick={onRangeReset}
                 >
                   초기화
                 </Button>

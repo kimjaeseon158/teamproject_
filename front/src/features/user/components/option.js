@@ -14,6 +14,11 @@ import locationsList from "../../common/work_placeColumns/locationsList";
 import workTimeList from "../data/workTimeList";
 import "./activity.css";
 import { getExtraWorkTimes } from "../../common/workTimeUtils";
+import {
+  EXTRA_WORK_TYPES,
+  getExtraWorkTypeByLabel,
+  getExtraWorkTypeLabel,
+} from "../../common/workTypes";
 
 import {
   minutesToHM,
@@ -23,21 +28,9 @@ import {
 
 import { useOptionHandlers } from "../hook/useOptionHandlers";
 
-const EXTRA_WORK_TYPES = [
-  { value: "weekday_ot", label: "평일 잔업" },
-  { value: "holiday_special", label: "휴일 특근" },
-  { value: "holiday_ot", label: "휴일 잔업" },
-  { value: "night_ot", label: "철야 잔업" },
-  { value: "early_arrival", label: "조기 출근" },
-  { value: "lunch_ext", label: "중식 연장" },
-];
-
 const DEFAULT_MOBILE_START_TIME = "08:00";
 const DEFAULT_MOBILE_FINISH_TIME = "17:00";
 const DEFAULT_MOBILE_WORK_TIME = `${DEFAULT_MOBILE_START_TIME}~${DEFAULT_MOBILE_FINISH_TIME}`;
-
-const getExtraWorkTypeLabel = (type) =>
-  EXTRA_WORK_TYPES.find((item) => item.value === type)?.label || type || "종류 선택";
 
 const createExtraWorkRow = (type = "weekday_ot", startTime = "", finishTime = "") => {
   const times = getExtraWorkTimes(type, startTime, finishTime);
@@ -473,7 +466,9 @@ const Option = ({ selectedDate, onRefresh, onClose, isMobile = false }) => {
                         <VStack align="stretch" spacing={1} mt={2}>
                           {extraDetails.map((detail, detailIdx) => (
                             <HStack key={`${c.id}-${detailIdx}`} justify="space-between" fontSize="xs" color="orange.200">
-                              <Text>{detail.work_type}</Text>
+                              <Text>
+                                {getExtraWorkTypeByLabel(detail.work_type)?.label || detail.work_type}
+                              </Text>
                               <Text fontWeight="bold">{minutesToHM(detail.minutes)}</Text>
                             </HStack>
                           ))}

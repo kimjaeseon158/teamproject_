@@ -1,4 +1,4 @@
-import { Tag } from "@chakra-ui/react";
+import { Button, HStack, Tag, Text } from "@chakra-ui/react";
 import CommonTable from "../../../common/mytable";
 
 const getStatusColor = (status) => {
@@ -13,10 +13,28 @@ const getWorkTypeColor = (type) => {
   return "blue";
 };
 
-const columns = [
+const SortLabel = ({ children, sortKey, sortField, sortOrder, onSort }) => {
+  const isActive = sortField === sortKey;
+  const mark = !isActive ? "↕" : sortOrder === "asc" ? "↑" : "↓";
+
+  return (
+    <Button size="xs" variant="ghost" onClick={() => onSort(sortKey)}>
+      <HStack spacing={1}>
+        <Text>{children}</Text>
+        <Text color={isActive ? "blue.500" : "gray.400"}>{mark}</Text>
+      </HStack>
+    </Button>
+  );
+};
+
+const getColumns = ({ sortField, sortOrder, onSort }) => [
   {
     key: "name",
-    label: "이름",
+    label: (
+      <SortLabel sortKey="name" sortField={sortField} sortOrder={sortOrder} onSort={onSort}>
+        이름
+      </SortLabel>
+    ),
     render: (value) => <strong>{value}</strong>,
   },
   {
@@ -39,11 +57,20 @@ const columns = [
   },
   {
     key: "date",
-    label: "근무일",
+    label: (
+      <SortLabel sortKey="date" sortField={sortField} sortOrder={sortOrder} onSort={onSort}>
+        근무일
+      </SortLabel>
+    ),
   },
   {
-    key: "totalWorkHM",
-    label: "근무시간",
+    key: "totalWorkDisplay",
+    label: (
+      <SortLabel sortKey="totalWorkMinutes" sortField={sortField} sortOrder={sortOrder} onSort={onSort}>
+        총근무 시간
+      </SortLabel>
+    ),
+    render: (value, row) => value || row.totalWorkHM || "-",
   },
   {
     key: "location",
@@ -52,10 +79,19 @@ const columns = [
   },
 ];
 
-export default function ApproveTable({ rows, selectedIds, toggleOne, onRowClick }) {
+export default function ApproveTable({
+  rows,
+  selectedIds,
+  toggleOne,
+  onRowClick,
+  sortField,
+  sortOrder,
+  onSort,
+}) {
   const checkedItems = Object.fromEntries(
     rows.map((row) => [row.id, selectedIds.has(row.id)])
   );
+  const columns = getColumns({ sortField, sortOrder, onSort });
 
   return (
     <CommonTable

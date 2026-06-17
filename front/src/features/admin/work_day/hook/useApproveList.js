@@ -10,6 +10,42 @@ import {
   deriveStatus,
 } from "../utils/approveUtils";
 import { addMinutesToTime } from "../../../common/workTimeUtils";
+import { EXTRA_WORK_TYPES, getExtraWorkTypeByLabel } from "../../../common/workTypes";
+
+const getExtraWorkTimeRange = (type, minutes, workStartHM, workEndHM) => {
+  if (type === "lunch_ext") {
+    const lunchEndHM = addMinutesToTime("12:00", minutes);
+    return lunchEndHM ? `12:00~${lunchEndHM}` : "";
+  }
+
+  if (type === "early_arrival") {
+    const earlyStartHM = addMinutesToTime(workStartHM, -minutes);
+    return workStartHM && earlyStartHM ? `${earlyStartHM}~${workStartHM}` : "";
+  }
+
+  const extraEndHM = addMinutesToTime(workEndHM, minutes);
+  return workEndHM && extraEndHM ? `${workEndHM}~${extraEndHM}` : "";
+};
+
+const getExtraWorkDetails = (details = [], workStartHM, workEndHM) => {
+  const extraRows = details.slice(1);
+
+  return EXTRA_WORK_TYPES.map((type) => {
+    const minutes = extraRows
+      .filter((detail) => getExtraWorkTypeByLabel(detail.work_type)?.value === type.value)
+      .reduce((total, detail) => total + (Number(detail.minutes) || 0), 0);
+
+    if (minutes <= 0) return null;
+
+    return {
+      type: type.value,
+      label: type.label,
+      time: getExtraWorkTimeRange(type.value, minutes, workStartHM, workEndHM),
+      duration: minutesToHM(minutes),
+      minutes,
+    };
+  }).filter(Boolean);
+};
 
 export function useApproveList(toast) {
   const [rows, setRows] = useState([]);
@@ -21,6 +57,8 @@ export function useApproveList(toast) {
     endDate,
     workPlace = "",
     workType = "",
+    userName = "",
+    extraWork = "",
   }) => {
     try {
       setLoading(true);
@@ -28,8 +66,8 @@ export function useApproveList(toast) {
       const qs = new URLSearchParams();
 
       if (status) qs.set("status", status);
-      if (startDate) qs.set("start_date", startDate);
-      if (endDate) qs.set("end_date", endDate);
+      if (startDate) qs.set("start_date_str", startDate);
+      if (endDate) qs.set("end_date_str", endDate);
       if (workPlace === "__NULL__") {
         qs.set("work_place_isnull", "true");
       } else if (workPlace) {
@@ -40,6 +78,8 @@ export function useApproveList(toast) {
       } else if (workType) {
         qs.set("work_shift", workType);
       }
+      if (userName.trim()) qs.set("user_name", userName.trim());
+      if (extraWork) qs.set("extra_work", extraWork);
 
       const res = await fetchWithAuth(
         `/api/admin_page_workday/?${qs.toString()}`,
@@ -62,14 +102,21 @@ export function useApproveList(toast) {
       const mapped = (json.data || [])
         .map((w, idx) => {
           const day = getMinutesByType(w.details, "주간");
-          const overtime = getMinutesByType(w.details, "잔업");
-          const lunch = getMinutesByType(w.details, "중식");
           const totalWorkMinutes = getTotalWorkMinutes(w.details);
           const workDurationLabel = getWorkDurationLabel(w.details);
           const totalWorkHM = minutesToHM(totalWorkMinutes || day);
+          const baseWorkMinutes = Number(w.details?.[0]?.minutes) || day || totalWorkMinutes;
           const workStartHM = toTimeHM(w.work_start);
           const workEndHM = toTimeHM(w.work_end);
-          const overtimeEndHM = addMinutesToTime(workEndHM, overtime);
+          const extraWorkDetails = getExtraWorkDetails(w.details, workStartHM, workEndHM);
+          const extraWorkMinutes = extraWorkDetails.reduce(
+            (total, detail) => total + (Number(detail.minutes) || 0),
+            0
+          );
+          const totalWorkDisplay =
+            extraWorkMinutes > 0
+              ? `${minutesToHM(baseWorkMinutes)} + ${minutesToHM(extraWorkMinutes)}`
+              : minutesToHM(baseWorkMinutes);
 
           return {
             id: w.id ?? `${w.user_uuid}-${idx}`,
@@ -82,19 +129,14 @@ export function useApproveList(toast) {
               workStartHM && workEndHM
                 ? `${workStartHM}~${workEndHM}`
                 : "",
-            overtimeTime:
-              overtime > 0 && workEndHM && overtimeEndHM
-                ? `${workEndHM}~${overtimeEndHM}`
-                : "",
             location: w.work_place ?? "",
-            dayHM: minutesToHM(day),
+            dayHM: minutesToHM(baseWorkMinutes),
+            totalWorkMinutes,
             totalWorkHM,
             workDuration: totalWorkHM,
             workDurationLabel,
-            overtimeDuration: minutesToHM(overtime),
-            lunchDuration: minutesToHM(lunch),
-            overtimeChecked: overtime > 0,
-            lunchChecked: lunch > 0,
+            extraWorkDetails,
+            totalWorkDisplay,
             status: deriveStatus(w),
           };
         })

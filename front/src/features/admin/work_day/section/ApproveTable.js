@@ -1,5 +1,6 @@
-import { Button, HStack, Tag, Text } from "@chakra-ui/react";
+import { Tag } from "@chakra-ui/react";
 import CommonTable from "../../../common/mytable";
+import SortableHeaderLabel from "../../../common/SortableHeaderLabel";
 
 const getStatusColor = (status) => {
   if (status === "승인") return "green";
@@ -13,27 +14,13 @@ const getWorkTypeColor = (type) => {
   return "blue";
 };
 
-const SortLabel = ({ children, sortKey, sortField, sortOrder, onSort }) => {
-  const isActive = sortField === sortKey;
-  const mark = !isActive ? "↕" : sortOrder === "asc" ? "↑" : "↓";
-
-  return (
-    <Button size="xs" variant="ghost" onClick={() => onSort(sortKey)}>
-      <HStack spacing={1}>
-        <Text>{children}</Text>
-        <Text color={isActive ? "blue.500" : "gray.400"}>{mark}</Text>
-      </HStack>
-    </Button>
-  );
-};
-
 const getColumns = ({ sortField, sortOrder, onSort }) => [
   {
     key: "name",
     label: (
-      <SortLabel sortKey="name" sortField={sortField} sortOrder={sortOrder} onSort={onSort}>
+      <SortableHeaderLabel sortKey="name" sortField={sortField} sortOrder={sortOrder} onSort={onSort}>
         이름
-      </SortLabel>
+      </SortableHeaderLabel>
     ),
     render: (value) => <strong>{value}</strong>,
   },
@@ -58,17 +45,17 @@ const getColumns = ({ sortField, sortOrder, onSort }) => [
   {
     key: "date",
     label: (
-      <SortLabel sortKey="date" sortField={sortField} sortOrder={sortOrder} onSort={onSort}>
+      <SortableHeaderLabel sortKey="date" sortField={sortField} sortOrder={sortOrder} onSort={onSort}>
         근무일
-      </SortLabel>
+      </SortableHeaderLabel>
     ),
   },
   {
     key: "totalWorkDisplay",
     label: (
-      <SortLabel sortKey="totalWorkMinutes" sortField={sortField} sortOrder={sortOrder} onSort={onSort}>
+      <SortableHeaderLabel sortKey="totalWorkMinutes" sortField={sortField} sortOrder={sortOrder} onSort={onSort}>
         총근무 시간
-      </SortLabel>
+      </SortableHeaderLabel>
     ),
     render: (value, row) => value || row.totalWorkHM || "-",
   },
@@ -82,12 +69,15 @@ const getColumns = ({ sortField, sortOrder, onSort }) => [
 export default function ApproveTable({
   rows,
   selectedIds,
+  toggleAll,
   toggleOne,
   onRowClick,
   sortField,
   sortOrder,
   onSort,
 }) {
+  const selectableIds = rows.map((row) => row.id);
+  const selectedOnPageCount = selectableIds.filter((id) => selectedIds.has(id)).length;
   const checkedItems = Object.fromEntries(
     rows.map((row) => [row.id, selectedIds.has(row.id)])
   );
@@ -100,7 +90,15 @@ export default function ApproveTable({
       rowKey="id"
       selectable
       checkedItems={checkedItems}
-      onCheck={(id) => toggleOne(id, !selectedIds.has(id))}
+      selectAll={{
+        isChecked: selectableIds.length > 0 && selectedOnPageCount === selectableIds.length,
+        isIndeterminate: selectedOnPageCount > 0 && selectedOnPageCount < selectableIds.length,
+        isDisabled: selectableIds.length === 0,
+        onChange: (checked) => toggleAll(checked, selectableIds),
+      }}
+      onCheck={(id) => {
+        toggleOne(id, !selectedIds.has(id));
+      }}
       onRowClick={onRowClick}
     />
   );

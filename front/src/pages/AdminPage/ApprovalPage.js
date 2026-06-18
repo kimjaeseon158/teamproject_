@@ -19,6 +19,7 @@ import ApproveFilterBar from "../../features/admin/work_day/section/ApproveFilte
 import ApproveTable from "../../features/admin/work_day/section/ApproveTable";
 import ApproveDetailModal from "../../features/admin/work_day/section/ApproveDetailModal";
 import ApprovePagination from "../../features/admin/work_day/section/ApprovePagination";
+import ApproveBulkActionBar from "../../features/admin/work_day/section/ApproveBulkActionBar";
 import { toYMD } from "../../features/admin/work_day/utils/approveUtils";
 import { getMonthRange, toMonthValue } from "../../features/admin/work_day/utils/approveDateUtils";
 import { exportApprovalSalaryExcel } from "../../features/admin/api/google/GoogleDrive";
@@ -93,12 +94,25 @@ export default function ApprovePage() {
     const nextRows = [...rows];
     const direction = sortOrder === "asc" ? 1 : -1;
 
+    const compareText = (aValue, bValue, compareDirection = 1) =>
+      String(aValue || "").localeCompare(String(bValue || ""), "ko") * compareDirection;
+
     nextRows.sort((a, b) => {
       if (sortField === "totalWorkMinutes") {
-        return ((Number(a.totalWorkMinutes) || 0) - (Number(b.totalWorkMinutes) || 0)) * direction;
+        const minutesCompare =
+          ((Number(a.totalWorkMinutes) || 0) - (Number(b.totalWorkMinutes) || 0)) * direction;
+        return minutesCompare || compareText(a.date, b.date, -1) || compareText(a.name, b.name);
       }
 
-      return String(a[sortField] || "").localeCompare(String(b[sortField] || ""), "ko") * direction;
+      if (sortField === "date") {
+        return compareText(a.date, b.date, direction) || compareText(a.name, b.name);
+      }
+
+      if (sortField === "name") {
+        return compareText(a.name, b.name, direction) || compareText(a.date, b.date, -1);
+      }
+
+      return compareText(a[sortField], b[sortField], direction);
     });
 
     return nextRows;
@@ -109,10 +123,22 @@ export default function ApprovePage() {
     const start = (currentPage - 1) * APPROVAL_PAGE_SIZE;
     return sortedRows.slice(start, start + APPROVAL_PAGE_SIZE);
   }, [currentPage, sortedRows]);
+  const selectedRows = useMemo(
+    () => rows.filter((row) => selectedIds.has(row.id)),
+    [rows, selectedIds]
+  );
 
   useEffect(() => {
     setCurrentPage((page) => Math.min(page, totalPages));
   }, [totalPages]);
+
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      const availableIds = new Set(rows.map((row) => row.id));
+      const next = new Set([...prev].filter((id) => availableIds.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [rows]);
 
   // 🔥 페이지 진입 시 자동 조회
   useEffect(() => {
@@ -148,6 +174,7 @@ export default function ApprovePage() {
     }
 
     setCurrentPage(1);
+    clearSelection();
     fetchList({
       status,
       workPlace,
@@ -167,8 +194,31 @@ export default function ApprovePage() {
         return prevField;
       }
 
-      setSortOrder(field === "date" ? "desc" : "asc");
+      setSortOrder("asc");
       return field;
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  const handlePageChange = (page) => {
+    clearSelection();
+    setCurrentPage(page);
+  };
+
+  const handleTogglePage = (checked, ids) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => {
+        if (checked) {
+          next.add(id);
+        } else {
+          next.delete(id);
+        }
+      });
+      return next;
     });
   };
 
@@ -181,6 +231,7 @@ export default function ApprovePage() {
     setSortField("date");
     setSortOrder("desc");
     setCurrentPage(1);
+    clearSelection();
   };
 
   const handleExcelExport = async (_workPlace, date) => {
@@ -296,16 +347,20 @@ export default function ApprovePage() {
               주간 {summary.day} · 야간 {summary.night} · 특근 {summary.special}
             </Text>
           </Box>
-          <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
-            {rows.length.toLocaleString()}건
-          </Badge>
+          <HStack spacing={3}>
+            <ApproveBulkActionBar
+              selectedRows={selectedRows}
+              toast={toast}
+              refresh={handleSearch}
+              clearSelection={clearSelection}
+              isDisabled={loading}
+            />
+          </HStack>
         </Flex>
         <ApproveTable
           rows={paginatedRows}
           selectedIds={selectedIds}
-          toggleAll={(c) =>
-            setSelectedIds(c ? new Set(rows.map((r) => r.id)) : new Set())
-          }
+          toggleAll={handleTogglePage}
           toggleOne={(id, c) => {
             const next = new Set(selectedIds);
             c ? next.add(id) : next.delete(id);
@@ -325,7 +380,7 @@ export default function ApprovePage() {
           totalPages={totalPages}
           totalCount={sortedRows.length}
           pageSize={APPROVAL_PAGE_SIZE}
-          onChange={setCurrentPage}
+          onChange={handlePageChange}
         />
       </Box>
 

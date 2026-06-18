@@ -8,7 +8,9 @@ export default function CommonTable({
   data,
   selectable = false,
   checkedItems = {},
+  disabledRowIds = new Set(),
   onCheck,
+  selectAll,
   onRowClick,
   rowKey = "id",
 }) {
@@ -23,7 +25,22 @@ export default function CommonTable({
       <Table variant="simple" size="md">
         <Thead bg="gray.50" h="60px">
           <Tr>
-            {selectable && <Th w="60px" textAlign="center">선택</Th>}
+            {selectable && (
+              <Th w="60px" textAlign="center">
+                {selectAll ? (
+                  <Checkbox
+                    size="md"
+                    colorScheme="blue"
+                    isChecked={selectAll.isChecked}
+                    isIndeterminate={selectAll.isIndeterminate}
+                    isDisabled={selectAll.isDisabled}
+                    onChange={(e) => selectAll.onChange?.(e.target.checked)}
+                  />
+                ) : (
+                  "선택"
+                )}
+              </Th>
+            )}
             {columns.map(col => (
               <Th key={col.key}  w={col.width || "auto"}  textAlign={col.align || "center"}>{col.label}</Th>
             ))}
@@ -49,6 +66,7 @@ export default function CommonTable({
                     size="md"
                     colorScheme="blue"
                     isChecked={!!checkedItems[row[rowKey]]}
+                    isDisabled={disabledRowIds.has(row[rowKey])}
                     onChange={() => onCheck?.(row[rowKey])}
                   />
                 </Td>

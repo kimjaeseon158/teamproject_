@@ -10,8 +10,14 @@ export async function getAdminWorkDays(
   const endDate = end_date_str ?? end_date;
 
   if (status) qs.set("status", status);
-  if (startDate) qs.set("start_date_str", startDate);
-  if (endDate) qs.set("end_date_str", endDate);
+  if (startDate) {
+    qs.set("start_date", startDate);
+    qs.set("start_date_str", startDate);
+  }
+  if (endDate) {
+    qs.set("end_date", endDate);
+    qs.set("end_date_str", endDate);
+  }
 
   const url = qs.toString()
     ? `/api/admin_page_workday/?${qs.toString()}`

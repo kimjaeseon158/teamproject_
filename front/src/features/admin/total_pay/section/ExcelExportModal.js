@@ -22,6 +22,8 @@ import { DownloadIcon } from "@chakra-ui/icons";
 // 경로 재검증: section -> total_pay -> admin -> features -> common
 import locationsList from "../../../common/work_placeColumns/locationsList";
 
+const ALL_WORK_PLACES = "__ALL__";
+
 export default function ExcelExportModal({
   isOpen,
   onClose,
@@ -30,14 +32,14 @@ export default function ExcelExportModal({
   showWorkPlace = true,
 }) {
   const today = new Date();
-  const [workPlace, setWorkPlace] = useState("");
+  const [workPlace, setWorkPlace] = useState(ALL_WORK_PLACES);
   const [year, setYear] = useState(today.getFullYear().toString());
   const [month, setMonth] = useState(String(today.getMonth() + 1).padStart(2, "0"));
 
   useEffect(() => {
     if (!isOpen) {
       const resetDate = new Date();
-      setWorkPlace("");
+      setWorkPlace(ALL_WORK_PLACES);
       setYear(resetDate.getFullYear().toString());
       setMonth(String(resetDate.getMonth() + 1).padStart(2, "0"));
     }
@@ -48,7 +50,8 @@ export default function ExcelExportModal({
       alert("근무지와 날짜를 모두 선택해주세요.");
       return;
     }
-    onConfirm(showWorkPlace ? workPlace : "", `${year}-${month}`);
+    const selectedWorkPlace = workPlace === ALL_WORK_PLACES ? "" : workPlace;
+    onConfirm(showWorkPlace ? selectedWorkPlace : "", `${year}-${month}`);
   };
 
   const years = Array.from({ length: 5 }, (_, i) => (today.getFullYear() - i).toString());
@@ -82,7 +85,6 @@ export default function ExcelExportModal({
                 {workPlace && <Badge colorScheme="green" variant="subtle" borderRadius="full" px={2}>Selected</Badge>}
               </HStack>
               <Select
-                placeholder="근무지를 선택해주세요"
                 value={workPlace}
                 onChange={(e) => setWorkPlace(e.target.value)}
                 h="56px"
@@ -94,7 +96,7 @@ export default function ExcelExportModal({
                 cursor="pointer"
                 _focus={{ bg: "white", boxShadow: "0 0 0 2px #48BB78" }}
               >
-                <option value="">전체</option>
+                <option value={ALL_WORK_PLACES}>전체</option>
                 {locationsList.map((loc) => (
                   <option key={loc} value={loc}>{loc}</option>
                 ))}

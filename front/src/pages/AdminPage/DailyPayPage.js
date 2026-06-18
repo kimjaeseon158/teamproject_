@@ -7,6 +7,8 @@ import {
   Heading,
   HStack,
   Image,
+  Input,
+  Select,
   SimpleGrid,
   Table,
   Tbody,
@@ -25,7 +27,6 @@ import {
   DownloadIcon,
   EditIcon,
   RepeatIcon,
-  SearchIcon,
 } from "@chakra-ui/icons";
 
 import { useDailyPay } from "../../features/admin/work_place/hook/useWorkList";
@@ -35,7 +36,8 @@ import ExcelExportModal from "../../features/admin/total_pay/section/ExcelExport
 import excelIcon from "../../assets/img/excel.png";
 
 import AddRateModal from "../../features/admin/work_place/components/AddRateModal";
-import SearchRateModal from "../../features/admin/work_place/components/SearchRateModal";
+import SortableHeaderLabel from "../../features/common/SortableHeaderLabel";
+import locationsList from "../../features/common/work_placeColumns/locationsList";
 
 const formatWon = (value) => {
   if (value == null || Number.isNaN(Number(value))) return "-";
@@ -72,8 +74,19 @@ const fixedTableSx = {
   },
 };
 
-function DailyPayFixedTable({ columns, data, onEdit }) {
+function DailyPayFixedTable({ columns, data, onEdit, sortField, sortOrder, onSort }) {
   const detailColumns = columns.filter((column) => column.key !== "user_name");
+  const sortableLabel = (column) => (
+    <SortableHeaderLabel
+      sortKey={column.key}
+      sortField={sortField}
+      sortOrder={sortOrder}
+      onSort={onSort}
+    >
+      {column.label}
+    </SortableHeaderLabel>
+  );
+  const nameColumn = columns.find((column) => column.key === "user_name");
 
   return (
     <Box
@@ -88,7 +101,7 @@ function DailyPayFixedTable({ columns, data, onEdit }) {
           <Thead bg="gray.50">
             <Tr>
               <Th whiteSpace="nowrap">
-                이름
+                {nameColumn ? sortableLabel(nameColumn) : "이름"}
               </Th>
             </Tr>
           </Thead>
@@ -126,7 +139,7 @@ function DailyPayFixedTable({ columns, data, onEdit }) {
                   textAlign="center"
                   whiteSpace="nowrap"
                 >
-                  {column.label}
+                  {sortableLabel(column)}
                 </Th>
               ))}
             </Tr>
@@ -248,8 +261,11 @@ export default function DailyPayPage() {
 
   const [exportLoading, setExportLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchUserName, setSearchUserName] = useState("");
+  const [searchWorkPlace, setSearchWorkPlace] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortField, setSortField] = useState("user_name");
+  const [sortOrder, setSortOrder] = useState("desc");
 
   useEffect(() => {
     fetchDailyPay({}, toast);
@@ -300,11 +316,42 @@ export default function DailyPayPage() {
     };
   }, [data, mergedData]);
 
-  const totalPages = Math.max(1, Math.ceil(mergedData.length / PAGE_SIZE));
+  const sortedData = useMemo(() => {
+    const nextData = [...mergedData];
+    const direction = sortOrder === "asc" ? 1 : -1;
+
+    const compareText = (aValue, bValue, compareDirection = 1) =>
+      String(aValue || "").localeCompare(String(bValue || ""), "ko") * compareDirection;
+
+    nextData.sort((a, b) => {
+      const aValue = a[sortField];
+      const bValue = b[sortField];
+      const aNumber = Number(aValue);
+      const bNumber = Number(bValue);
+
+      if (!Number.isNaN(aNumber) && !Number.isNaN(bNumber)) {
+        return (aNumber - bNumber) * direction || compareText(a.user_name, b.user_name);
+      }
+
+      if (sortField === "user_name") {
+        return compareText(a.user_name, b.user_name, direction) || compareText(a.work_place, b.work_place);
+      }
+
+      if (sortField === "work_place") {
+        return compareText(a.work_place, b.work_place, direction) || compareText(a.user_name, b.user_name);
+      }
+
+      return compareText(aValue, bValue, direction) || compareText(a.user_name, b.user_name);
+    });
+
+    return nextData;
+  }, [mergedData, sortField, sortOrder]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedData.length / PAGE_SIZE));
   const pagedData = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
-    return mergedData.slice(start, start + PAGE_SIZE);
-  }, [currentPage, mergedData]);
+    return sortedData.slice(start, start + PAGE_SIZE);
+  }, [currentPage, sortedData]);
 
   useEffect(() => {
     setCurrentPage((page) => Math.min(page, totalPages));
@@ -323,6 +370,34 @@ export default function DailyPayPage() {
   const handleEdit = (row) => {
     const user = data.find((u) => u.user_uuid === row.user_uuid);
     setSelectedUser(user);
+  };
+
+  const handleSort = (field) => {
+    setCurrentPage(1);
+    setSortField((prevField) => {
+      if (prevField === field) {
+        setSortOrder((prevOrder) => (prevOrder === "asc" ? "desc" : "asc"));
+        return prevField;
+      }
+
+      setSortOrder("asc");
+      return field;
+    });
+  };
+
+  const handleSearch = () => {
+    setCurrentPage(1);
+    fetchDailyPay({
+      user_name: searchUserName,
+      work_place: searchWorkPlace,
+    }, toast);
+  };
+
+  const handleResetSearch = () => {
+    setSearchUserName("");
+    setSearchWorkPlace("");
+    setCurrentPage(1);
+    fetchDailyPay({}, toast);
   };
 
   const statCards = [
@@ -382,7 +457,7 @@ export default function DailyPayPage() {
           </Text>
         </Box>
 
-        <HStack spacing={2}>
+        <HStack spacing={2} justify={{ base: "flex-start", md: "flex-end" }}>
           <Tooltip label="일급관리 엑셀 생성" hasArrow>
             <Button
               leftIcon={<DownloadIcon />}
@@ -397,19 +472,10 @@ export default function DailyPayPage() {
             </Button>
           </Tooltip>
           <Button
-            leftIcon={<SearchIcon />}
-            colorScheme="blue"
-            onClick={() => setIsSearchOpen(true)}
-          >
-            검색
-          </Button>
-          <Button
             leftIcon={<RepeatIcon />}
             variant="outline"
-            onClick={() => {
-              setCurrentPage(1);
-              fetchDailyPay({}, toast);
-            }}
+            size="sm"
+            onClick={handleResetSearch}
             isLoading={loading}
           >
             전체보기
@@ -437,6 +503,51 @@ export default function DailyPayPage() {
           </Box>
         ))}
       </SimpleGrid>
+
+      <Box
+        bg="white"
+        border="1px solid"
+        borderColor="gray.100"
+        borderRadius="lg"
+        boxShadow="sm"
+        px={{ base: 4, md: 6 }}
+        py={4}
+        mb={6}
+      >
+        <Flex gap={3} align="center" justify="flex-start" wrap="wrap">
+          <Input
+            size="sm"
+            w={{ base: "100%", md: "170px" }}
+            placeholder="직원명 검색"
+            value={searchUserName}
+            onChange={(e) => setSearchUserName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSearch();
+            }}
+          />
+          <Select
+            size="sm"
+            w={{ base: "100%", md: "220px" }}
+            value={searchWorkPlace}
+            onChange={(e) => setSearchWorkPlace(e.target.value)}
+          >
+            <option value="">근무지 전체</option>
+            {locationsList.map((location) => (
+              <option key={location} value={location}>
+                {location}
+              </option>
+            ))}
+          </Select>
+          <Button
+            colorScheme="blue"
+            size="sm"
+            onClick={handleSearch}
+            isLoading={loading}
+          >
+            조회
+          </Button>
+        </Flex>
+      </Box>
 
       <Box
         bg="white"
@@ -473,6 +584,9 @@ export default function DailyPayPage() {
             columns={displayColumns}
             data={pagedData}
             onEdit={handleEdit}
+            sortField={sortField}
+            sortOrder={sortOrder}
+            onSort={handleSort}
           />
           <DailyPayPagination
             currentPage={currentPage}
@@ -495,14 +609,6 @@ export default function DailyPayPage() {
         />
       )}
 
-      <SearchRateModal
-        isOpen={isSearchOpen}
-        onClose={() => setIsSearchOpen(false)}
-        onSearch={(params) => {
-          setCurrentPage(1);
-          fetchDailyPay(params, toast);
-        }}
-      />
       <ExcelExportModal
         isOpen={exportDisclosure.isOpen}
         onClose={exportDisclosure.onClose}

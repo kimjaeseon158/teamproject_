@@ -66,8 +66,14 @@ export function useApproveList(toast) {
       const qs = new URLSearchParams();
 
       if (status) qs.set("status", status);
-      if (startDate) qs.set("start_date_str", startDate);
-      if (endDate) qs.set("end_date_str", endDate);
+      if (startDate) {
+        qs.set("start_date", startDate);
+        qs.set("start_date_str", startDate);
+      }
+      if (endDate) {
+        qs.set("end_date", endDate);
+        qs.set("end_date_str", endDate);
+      }
       if (workPlace === "__NULL__") {
         qs.set("work_place_isnull", "true");
       } else if (workPlace) {

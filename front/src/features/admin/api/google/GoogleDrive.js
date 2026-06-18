@@ -8,8 +8,7 @@ import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
 export const exportToGoogleExcel = async (work_place, date) => {
   try {
     // GET 방식이므로 데이터를 URL 뒤에 ?key=value 형태로 붙여서 보냅니다.
-    const params = { date };
-    if (work_place) params.work_place = work_place;
+    const params = { date, work_place: work_place || "" };
     const queryParams = new URLSearchParams(params).toString();
     const url = `/api/google_drive_excel_export/?${queryParams}`;
 

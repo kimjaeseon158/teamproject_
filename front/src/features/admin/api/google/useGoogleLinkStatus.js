@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-
-const GOOGLE_LINKED_KEY = "googleLinked";
+import { clearGoogleLinked, markGoogleLinked } from "./googleLinkStorage";
 
 export default function useGoogleLinkStatus() {
   const [state, setState] = useState({
@@ -19,9 +18,9 @@ export default function useGoogleLinkStatus() {
       const authResult = params.get("google_auth");
 
       if (authResult === "success") {
-        localStorage.setItem(GOOGLE_LINKED_KEY, "1");
+        markGoogleLinked();
       } else if (authResult === "failed" || authResult === "invalid_state") {
-        localStorage.removeItem(GOOGLE_LINKED_KEY);
+        clearGoogleLinked();
       }
 
       try {
@@ -43,7 +42,7 @@ export default function useGoogleLinkStatus() {
             location: event.location || "",
           }));
 
-          localStorage.setItem(GOOGLE_LINKED_KEY, "1");
+          markGoogleLinked();
           setState({
             loading: false,
             linked: true,
@@ -54,22 +53,24 @@ export default function useGoogleLinkStatus() {
           return;
         }
 
-        const locallyLinked = localStorage.getItem(GOOGLE_LINKED_KEY) === "1";
+        if (res.status === 401 || res.status === 403) {
+          clearGoogleLinked();
+        }
+
         setState({
           loading: false,
-          linked: locallyLinked,
-          reason: locallyLinked ? null : res.status >= 500 ? "server" : "unauthenticated",
+          linked: false,
+          reason: res.status >= 500 ? "server" : "unauthenticated",
           lastCheckedAt: Date.now(),
           events: [],
         });
       } catch {
         if (!alive) return;
 
-        const locallyLinked = localStorage.getItem(GOOGLE_LINKED_KEY) === "1";
         setState({
           loading: false,
-          linked: locallyLinked,
-          reason: locallyLinked ? null : "network",
+          linked: false,
+          reason: "network",
           lastCheckedAt: Date.now(),
           events: [],
         });

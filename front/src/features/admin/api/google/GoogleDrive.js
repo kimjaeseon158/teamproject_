@@ -1,4 +1,19 @@
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { clearGoogleLinked } from "./googleLinkStorage";
+
+const GOOGLE_AUTH_EXPIRED_MESSAGE =
+  "Google Drive 인증이 만료되었습니다. 다시 구글 연동 후 시도해주세요.";
+
+const isGoogleAuthExpired = (status) => status === 401 || status === 403;
+
+const googleAuthExpiredResult = () => {
+  clearGoogleLinked();
+  return {
+    success: false,
+    code: "GOOGLE_AUTH_EXPIRED",
+    message: GOOGLE_AUTH_EXPIRED_MESSAGE,
+  };
+};
 
 /**
  * 구글 드라이브 엑셀 업로드 API 호출 (GET 방식)
@@ -26,6 +41,10 @@ export const exportToGoogleExcel = async (work_place, date) => {
     const contentType = res.headers.get("content-type") || "";
 
     if (!res.ok) {
+      if (isGoogleAuthExpired(res.status)) {
+        return googleAuthExpiredResult();
+      }
+
       if (contentType.includes("application/json")) {
         const errorData = await res.json();
         return {
@@ -72,6 +91,10 @@ const requestGoogleDriveExport = async (url) => {
   const contentType = res.headers.get("content-type") || "";
 
   if (!res.ok) {
+    if (isGoogleAuthExpired(res.status)) {
+      return googleAuthExpiredResult();
+    }
+
     if (contentType.includes("application/json")) {
       const errorData = await res.json();
       return {

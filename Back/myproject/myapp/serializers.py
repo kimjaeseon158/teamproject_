@@ -1,6 +1,14 @@
 from rest_framework import serializers
 from django.db import transaction
-from .models import User_Login_Info, Expense, Income, User_WorkDay, User_WorkDetail, WorkPlaceRate
+from .models import (
+    User_Login_Info,
+    Expense,
+    Income,
+    User_WorkDay,
+    User_WorkDetail,
+    WorkPlaceRate,
+    AdminWorkPlace,
+)
 from .work_types import normalize_work_type
 
 class User_Login_InfoSerializer(serializers.ModelSerializer):
@@ -118,11 +126,39 @@ class WorkPlaceRateSerializer(serializers.ModelSerializer):
 
 class WorkPlaceRateCreateSerializer(serializers.ModelSerializer):
     user_uuid = serializers.UUIDField(write_only=True)
+    admin_work_place_uuid = serializers.UUIDField(write_only=True, required=False)
 
     class Meta:
         model = WorkPlaceRate
         fields = [
             "user_uuid",            
+            "admin_work_place_uuid",
+            "work_place",
+            "base_hourly_wage",
+            "overtime_hourly_wage",
+            "meal_ot_hourly_wage",
+            "special_hourly_wage",
+            "day_special_hourly_wage",
+            "night_special_hourly_wage",
+            "overnight_hourly_wage",
+            "overnight_ot_hourly_wage",
+            "early_hourly_wage",
+        ]
+
+
+class AdminWorkPlaceSerializer(serializers.ModelSerializer):
+    admin_uuid = serializers.CharField(source="admin_uuid_str", read_only=True)
+
+    class Meta:
+        model = AdminWorkPlace
+        fields = "__all__"
+        read_only_fields = ("admin_work_place_uuid", "admin", "created_at", "updated_at")
+
+
+class AdminWorkPlaceCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdminWorkPlace
+        fields = [
             "work_place",
             "base_hourly_wage",
             "overtime_hourly_wage",

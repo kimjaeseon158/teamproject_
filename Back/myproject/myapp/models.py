@@ -139,6 +139,37 @@ class Admin_Login_Info(models.Model):
 
 # 수입 매출 관련 테이블
 
+class AdminWorkPlace(models.Model):
+    admin_work_place_uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    admin = models.ForeignKey(
+        Admin_Login_Info,
+        to_field="admin_uuid",
+        on_delete=models.CASCADE,
+        related_name="work_places",
+    )
+    work_place = models.CharField(max_length=100)
+
+    base_hourly_wage          = models.PositiveIntegerField(null=True, blank=True)
+    overtime_hourly_wage      = models.PositiveIntegerField(null=True, blank=True)
+    meal_ot_hourly_wage       = models.PositiveIntegerField(null=True, blank=True)
+    special_hourly_wage       = models.PositiveIntegerField(null=True, blank=True)
+    day_special_hourly_wage   = models.PositiveIntegerField(null=True, blank=True)
+    night_special_hourly_wage = models.PositiveIntegerField(null=True, blank=True)
+    overnight_hourly_wage     = models.PositiveIntegerField(null=True, blank=True)
+    overnight_ot_hourly_wage  = models.PositiveIntegerField(null=True, blank=True)
+    early_hourly_wage         = models.PositiveIntegerField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["admin", "work_place"], name="uniq_admin_work_place")
+        ]
+        ordering = ["work_place"]
+
+    @property
+    def admin_uuid_str(self):
+        return str(self.admin_id) if self.admin_id else None
+
+
 class Income(models.Model):
     Income_uuid    = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
     date           = models.DateField()                                                      # 매출 날짜

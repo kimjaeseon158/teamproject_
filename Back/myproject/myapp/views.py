@@ -11,7 +11,9 @@ from .serializers import (
     ExpenseSerializer,
     UserWorkDaySerializer,
     WorkPlaceRateSerializer,
-    WorkPlaceRateCreateSerializer
+    WorkPlaceRateCreateSerializer,
+    AdminWorkPlaceSerializer,
+    AdminWorkPlaceCreateSerializer,
 )
 from .auth_utils import check_user_credentials, check_admin_credentials
 from .jwt_utils import (
@@ -28,7 +30,8 @@ from .models import (
     UserRefreshToken,
     User_WorkDay,
     User_WorkDetail,
-    WorkPlaceRate
+    WorkPlaceRate,
+    AdminWorkPlace,
 )
 from django.db.models import Sum
 from django.db import transaction
@@ -1099,6 +1102,130 @@ class AdminWorkDayStatusUpdateAPIView(APIView):
         return Response({"success": True})
 
 
+RATE_FIELD_NAMES = [
+    "base_hourly_wage",
+    "overtime_hourly_wage",
+    "meal_ot_hourly_wage",
+    "special_hourly_wage",
+    "day_special_hourly_wage",
+    "night_special_hourly_wage",
+    "overnight_hourly_wage",
+    "overnight_ot_hourly_wage",
+    "early_hourly_wage",
+]
+
+
+def _admin_work_place_qs(admin):
+    return AdminWorkPlace.objects.filter(admin=admin).order_by("work_place")
+
+
+def _admin_work_place_list_response(admin):
+    serializer = AdminWorkPlaceSerializer(_admin_work_place_qs(admin), many=True)
+    return Response({"success": True, "work_places": serializer.data})
+
+
+def _apply_admin_work_place(admin, data):
+    data = data.copy()
+    admin_work_place_uuid = data.pop("admin_work_place_uuid", None)
+    work_place = data.get("work_place")
+
+    if admin_work_place_uuid:
+        try:
+            admin_work_place = AdminWorkPlace.objects.get(
+                admin=admin,
+                admin_work_place_uuid=admin_work_place_uuid,
+            )
+        except AdminWorkPlace.DoesNotExist:
+            return None, "저장된 근무지가 아닙니다."
+
+        data["work_place"] = admin_work_place.work_place
+        for field in RATE_FIELD_NAMES:
+            if data.get(field) is None:
+                data[field] = getattr(admin_work_place, field)
+        return data, None
+
+    if not work_place:
+        return None, "근무지를 선택해주세요."
+
+    try:
+        admin_work_place = AdminWorkPlace.objects.get(admin=admin, work_place=work_place)
+    except AdminWorkPlace.DoesNotExist:
+        return None, "저장된 근무지만 선택할 수 있습니다."
+
+    for field in RATE_FIELD_NAMES:
+        if data.get(field) is None:
+            data[field] = getattr(admin_work_place, field)
+    return data, None
+
+
+class AdminWorkPlaceListCreateAPIView(APIView):
+    authentication_classes = [AdminJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return _admin_work_place_list_response(request.user)
+
+    @transaction.atomic
+    def post(self, request):
+        serializer = AdminWorkPlaceCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({"success": False, "errors": serializer.errors})
+
+        try:
+            serializer.save(admin=request.user)
+        except IntegrityError:
+            return Response({"success": False, "message": "이미 저장된 근무지입니다."})
+
+        return _admin_work_place_list_response(request.user)
+
+
+class AdminWorkPlaceUpdateDeleteAPIView(APIView):
+    authentication_classes = [AdminJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+        admin_work_place_uuid = request.data.get("admin_work_place_uuid")
+        if not admin_work_place_uuid:
+            return Response({"success": False, "message": "admin_work_place_uuid가 필요합니다."})
+
+        try:
+            admin_work_place = AdminWorkPlace.objects.get(
+                admin=request.user,
+                admin_work_place_uuid=admin_work_place_uuid,
+            )
+        except AdminWorkPlace.DoesNotExist:
+            return Response({"success": False, "message": "저장된 근무지가 아닙니다."})
+
+        serializer = AdminWorkPlaceCreateSerializer(
+            admin_work_place,
+            data=request.data,
+            partial=True,
+        )
+        if not serializer.is_valid():
+            return Response({"success": False, "errors": serializer.errors})
+
+        try:
+            serializer.save()
+        except IntegrityError:
+            return Response({"success": False, "message": "이미 저장된 근무지입니다."})
+
+        return _admin_work_place_list_response(request.user)
+
+    def delete(self, request):
+        admin_work_place_uuid = request.data.get("admin_work_place_uuid")
+        if not admin_work_place_uuid:
+            return Response({"success": False, "message": "admin_work_place_uuid가 필요합니다."})
+
+        deleted_count, _ = AdminWorkPlace.objects.filter(
+            admin=request.user,
+            admin_work_place_uuid=admin_work_place_uuid,
+        ).delete()
+        if not deleted_count:
+            return Response({"success": False, "message": "저장된 근무지가 아닙니다."})
+
+        return _admin_work_place_list_response(request.user)
+
+
 class WorkPlaceRateListCreateAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -1118,6 +1245,9 @@ class WorkPlaceRateListCreateAPIView(APIView):
             return Response({"success": False, "errors": "입력 정보가 유효하지 않습니다."})
 
         user_uuid = create_ser.validated_data.pop("user_uuid")
+        rate_data, error_message = _apply_admin_work_place(request.user, create_ser.validated_data)
+        if error_message:
+            return Response({"success": False, "message": error_message})
 
         try:
             user = User_Login_Info.objects.get(user_uuid=user_uuid)
@@ -1125,7 +1255,7 @@ class WorkPlaceRateListCreateAPIView(APIView):
             return Response({"success": False, "message": "존재하지 않는 user 입니다."})
 
         try:
-            WorkPlaceRate.objects.create(user=user, **create_ser.validated_data)
+            WorkPlaceRate.objects.create(user=user, **rate_data)
         except IntegrityError:
             return Response({"success": False, "message": "이미 존재하는 근무지입니다."})
 
@@ -1147,7 +1277,13 @@ class WorkPlaceRateUpdateDeleteAPIView(APIView):
         except WorkPlaceRate.DoesNotExist:
             return Response({"success": False})
 
-        serializer = WorkPlaceRateSerializer(rate, data=request.data, partial=True)
+        rate_data = request.data.copy()
+        if "admin_work_place_uuid" in rate_data or "work_place" in rate_data:
+            rate_data, error_message = _apply_admin_work_place(request.user, rate_data)
+            if error_message:
+                return Response({"success": False, "message": error_message})
+
+        serializer = WorkPlaceRateSerializer(rate, data=rate_data, partial=True)
         if not serializer.is_valid():
             return Response({"success": False})
 

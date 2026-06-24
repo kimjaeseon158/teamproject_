@@ -147,12 +147,24 @@ class WorkPlaceRateCreateSerializer(serializers.ModelSerializer):
 
 
 class AdminWorkPlaceSerializer(serializers.ModelSerializer):
-    admin_uuid = serializers.CharField(source="admin_uuid_str", read_only=True)
-
     class Meta:
         model = AdminWorkPlace
-        fields = "__all__"
-        read_only_fields = ("admin_work_place_uuid", "admin", "created_at", "updated_at")
+        fields = [
+            "admin_work_place_uuid",
+            "work_place",
+            "base_hourly_wage",
+            "overtime_hourly_wage",
+            "meal_ot_hourly_wage",
+            "special_hourly_wage",
+            "day_special_hourly_wage",
+            "night_special_hourly_wage",
+            "overnight_hourly_wage",
+            "overnight_ot_hourly_wage",
+            "early_hourly_wage",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ("admin_work_place_uuid", "created_at", "updated_at")
 
 
 class AdminWorkPlaceCreateSerializer(serializers.ModelSerializer):

@@ -8,7 +8,7 @@ export async function getWorkPlaceFiltering({ user_name, work_place }, toast) {
     }).toString();
 
     const res = await fetchWithAuth(
-      `/api/work_place_rate_list_filtering/?${query}`,
+      `/api/work-place-rate-list-filtering/?${query}`,
       { method: "GET" },
       { toast }
     );
@@ -19,7 +19,7 @@ export async function getWorkPlaceFiltering({ user_name, work_place }, toast) {
   } catch (err) {
     if (toast) {
       toast({
-        title: "네트워크 오류",
+        title: "?�트?�크 ?�류",
         description: err.message,
         status: "error",
         duration: 3000,

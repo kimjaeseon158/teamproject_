@@ -1,7 +1,7 @@
 import { fetchWithAuth } from "../../../services/api/fetchWithAuth";
 
 /* =========================
-   날짜 유틸
+   ?�짜 ?�틸
 ========================= */
 const toYYYYMMDD = (d) => {
   if (d && typeof d === "object" && d.year && d.month && d.day) {
@@ -17,17 +17,17 @@ const toYYYYMMDD = (d) => {
 const toDateTime = (date, hm) => `${date} ${hm}:00`;
 
 /* =========================
-   UUID 기준 근무 등록
+   UUID 기�? 근무 ?�록
 ========================= */
 const submitWorkInfo = async (input, { toast } = {}) => {
   let body;
 
-  // ✅ bulk
+  // ??bulk
   if (Array.isArray(input)) {
     body = {
       data: input.map(item => {
         const workDate = toYYYYMMDD(item.work_date);
-        if (!workDate) throw new Error("날짜 변환 실패");
+        if (!workDate) throw new Error("?�짜 변???�패");
 
         return {
           user_uuid: item.user_uuid,
@@ -42,7 +42,7 @@ const submitWorkInfo = async (input, { toast } = {}) => {
       }),
     };
   }
-  // ✅ single
+  // ??single
   else {
     const {
       user_uuid,
@@ -56,10 +56,10 @@ const submitWorkInfo = async (input, { toast } = {}) => {
       details = [],
     } = input;
 
-    if (!user_uuid) throw new Error("user_uuid가 없습니다.");
+    if (!user_uuid) throw new Error("user_uuid가 ?�습?�다.");
 
     const workDate = toYYYYMMDD(work_date ?? selectedDate);
-    if (!workDate) throw new Error("날짜 변환 실패");
+    if (!workDate) throw new Error("?�짜 변???�패");
 
     body = {
       data: {
@@ -76,7 +76,7 @@ const submitWorkInfo = async (input, { toast } = {}) => {
   }
 
   const res = await fetchWithAuth(
-    "/api/user_work_info/",
+    "/api/user-work-info/",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -86,7 +86,7 @@ const submitWorkInfo = async (input, { toast } = {}) => {
   );
 
   if (!res || !res.ok) {
-    let msg = "근무 정보 전송 실패";
+    let msg = "근무 ?�보 ?�송 ?�패";
     try {
       const err = await res.json();
       msg = err.detail || err.message || msg;
@@ -94,7 +94,7 @@ const submitWorkInfo = async (input, { toast } = {}) => {
     throw new Error(msg);
   }
 
-  // ✅ 여기만 수정
+  // ???�기�??�정
   try {
     return await res.json();
   } catch {

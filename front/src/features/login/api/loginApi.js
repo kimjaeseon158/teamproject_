@@ -1,6 +1,6 @@
 // src/login/api/loginApi.js
 export const adminLoginAPI = async (id, password, admin_code) => {
-  const response = await fetch("/api/check_admin_login/", {
+  const response = await fetch("/api/check-admin-login/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -11,7 +11,7 @@ export const adminLoginAPI = async (id, password, admin_code) => {
 };
 
 export const userLoginAPI = async (id, password) => {
-  const response = await fetch(`/api/check_user_login/`, {
+  const response = await fetch(`/api/check-user-login/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",

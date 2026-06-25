@@ -8,7 +8,7 @@ export async function three_month_totals(payload, toast) {
       : "";
 
     const res = await fetchWithAuth(
-      `/api/expense_3months_totals/${query}`, // 🔥 슬래시 제거
+      `/api/expense-3months-totals/${query}`, // ?�� ?�래???�거
       {
         method: "GET",
         headers: { "Content-Type": "application/json" },
@@ -24,7 +24,7 @@ export async function three_month_totals(payload, toast) {
   } catch (err) {
     if (toast) {
       toast({
-        title: "네트워크 오류",
+        title: "?�트?�크 ?�류",
         description: err.message,
         status: "error",
         duration: 3000,

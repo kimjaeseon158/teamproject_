@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import {
   Badge,
   Box,
@@ -36,8 +36,9 @@ import ExcelExportModal from "../../features/admin/total_pay/section/ExcelExport
 import excelIcon from "../../assets/img/excel.png";
 
 import AddRateModal from "../../features/admin/work_place/components/AddRateModal";
+import AdminWorkPlaceModal from "../../features/admin/work_place/components/AdminWorkPlaceModal";
 import SortableHeaderLabel from "../../features/common/SortableHeaderLabel";
-import locationsList from "../../features/common/work_placeColumns/locationsList";
+import { getAdminWorkPlaceList } from "../../features/admin/work_place/api/adminWorkPlace";
 
 const formatWon = (value) => {
   if (value == null || Number.isNaN(Number(value))) return "-";
@@ -257,12 +258,15 @@ function DailyPayPagination({ currentPage, totalPages, onChange }) {
 export default function DailyPayPage() {
   const toast = useToast();
   const exportDisclosure = useDisclosure();
+  const adminWorkPlaceDisclosure = useDisclosure();
   const { data, loading, fetchDailyPay } = useDailyPay();
 
   const [exportLoading, setExportLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchUserName, setSearchUserName] = useState("");
   const [searchWorkPlace, setSearchWorkPlace] = useState("");
+  const [adminWorkPlaces, setAdminWorkPlaces] = useState([]);
+  const [workPlacesLoading, setWorkPlacesLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState("user_name");
   const [sortOrder, setSortOrder] = useState("desc");
@@ -270,6 +274,28 @@ export default function DailyPayPage() {
   useEffect(() => {
     fetchDailyPay({}, toast);
   }, []);
+
+  const loadAdminWorkPlaces = useCallback(async () => {
+    try {
+      setWorkPlacesLoading(true);
+      const workPlaces = await getAdminWorkPlaceList(toast);
+      setAdminWorkPlaces(workPlaces);
+    } catch (err) {
+      toast({
+        title: "관리자 근무지 목록을 불러오지 못했습니다.",
+        description: err?.message,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setWorkPlacesLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    loadAdminWorkPlaces();
+  }, [loadAdminWorkPlaces]);
 
   const mergedData = useMemo(() => {
     return data?.map((user) => {
@@ -402,7 +428,13 @@ export default function DailyPayPage() {
 
   const statCards = [
     { label: "등록 직원(명)", value: `${summary.users.toLocaleString()}` },
-    { label: "근무지 수", value: `${summary.places.toLocaleString()}` },
+    {
+      label: "근무지 수",
+      value: workPlacesLoading
+        ? "..."
+        : `${adminWorkPlaces.length.toLocaleString()}`,
+      action: adminWorkPlaceDisclosure.onOpen,
+    },
     { label: "평균 기본일급", value: formatWon(summary.averageBasePay) },
   ];
 
@@ -494,12 +526,29 @@ export default function DailyPayPage() {
             p={5}
             boxShadow="sm"
           >
-            <Text fontSize="sm" fontWeight="700" color="gray.500" mb={2}>
-              {card.label}
-            </Text>
-            <Text fontSize="2xl" fontWeight="900" color="gray.800">
-              {card.value}
-            </Text>
+            <Flex justify="space-between" align="flex-start" gap={3}>
+              <Box>
+                <Text fontSize="sm" fontWeight="700" color="gray.500" mb={2}>
+                  {card.label}
+                </Text>
+                <Text fontSize="2xl" fontWeight="900" color="gray.800">
+                  {card.value}
+                </Text>
+              </Box>
+              {card.action && (
+                <Tooltip label="근무지 추가/수정" hasArrow>
+                  <Button
+                    aria-label="근무지 추가/수정"
+                    size="sm"
+                    colorScheme="blue"
+                    variant="outline"
+                    onClick={card.action}
+                  >
+                    자세히 보기
+                  </Button>
+                </Tooltip>
+              )}
+            </Flex>
           </Box>
         ))}
       </SimpleGrid>
@@ -530,11 +579,12 @@ export default function DailyPayPage() {
             w={{ base: "100%", md: "220px" }}
             value={searchWorkPlace}
             onChange={(e) => setSearchWorkPlace(e.target.value)}
+            isDisabled={workPlacesLoading}
           >
             <option value="">근무지 전체</option>
-            {locationsList.map((location) => (
-              <option key={location} value={location}>
-                {location}
+            {adminWorkPlaces.map((place) => (
+              <option key={place.admin_work_place_uuid} value={place.work_place}>
+                {place.work_place}
               </option>
             ))}
           </Select>
@@ -606,8 +656,20 @@ export default function DailyPayPage() {
             fetchDailyPay({}, toast);
             setSelectedUser(null);
           }}
+          initialAdminWorkPlaces={adminWorkPlaces}
         />
       )}
+
+      <AdminWorkPlaceModal
+        isOpen={adminWorkPlaceDisclosure.isOpen}
+        onClose={adminWorkPlaceDisclosure.onClose}
+        workPlaceCount={adminWorkPlaces.length}
+        workPlaces={adminWorkPlaces}
+        onSuccess={() => {
+          loadAdminWorkPlaces();
+          fetchDailyPay({}, toast);
+        }}
+      />
 
       <ExcelExportModal
         isOpen={exportDisclosure.isOpen}

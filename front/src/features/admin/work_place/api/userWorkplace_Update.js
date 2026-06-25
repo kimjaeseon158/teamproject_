@@ -3,7 +3,7 @@ import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
 
 export async function getWorkPlaceList_Update(payload, { toast } = {}) {
   const res = await fetchWithAuth(
-    "/api/work_place_rate_update_delete/",
+    "/api/work-place-rate-update-delete/",
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -13,7 +13,7 @@ export async function getWorkPlaceList_Update(payload, { toast } = {}) {
   );
 
   if (!res.ok) {
-    let msg = "상태 업데이트 실패";
+    let msg = "?�태 ?�데?�트 ?�패";
     try {
       const err = await res.json();
       msg = err.detail || err.message || JSON.stringify(err);

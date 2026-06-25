@@ -18,11 +18,12 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { AddIcon, CheckIcon, DeleteIcon, InfoOutlineIcon } from "@chakra-ui/icons";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import CommonTable from "../../../common/mytable";
 import getRateColumns from "./rateColumns";
 import { useWorkPlaceRate } from "../hook/useWorkPlaceRate";
+import { getAdminWorkPlaceList } from "../api/adminWorkPlace";
 
 const EMPTY_PLACE = "미지정";
 
@@ -61,6 +62,7 @@ export default function RateEditModal({
   user,
   onClose,
   onSuccess,
+  initialAdminWorkPlaces = [],
 }) {
   const toast = useToast();
   const { handleAdd, handleUpdate, handleDelete } = useWorkPlaceRate(toast);
@@ -69,8 +71,33 @@ export default function RateEditModal({
   const [editedValues, setEditedValues] = useState({});
   const [checkedItems, setCheckedItems] = useState({});
   const [tempRates, setTempRates] = useState([]);
+  const [adminWorkPlaces, setAdminWorkPlaces] = useState(initialAdminWorkPlaces);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    setAdminWorkPlaces(initialAdminWorkPlaces);
+  }, [initialAdminWorkPlaces]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (initialAdminWorkPlaces.length > 0) return;
+
+    const loadAdminWorkPlaces = async () => {
+      try {
+        const workPlaces = await getAdminWorkPlaceList(toast);
+        setAdminWorkPlaces(workPlaces);
+      } catch (err) {
+        notify(toast, {
+          title: "관리자 근무지 목록을 불러오지 못했습니다.",
+          description: err?.message,
+          status: "error",
+        });
+      }
+    };
+
+    loadAdminWorkPlaces();
+  }, [initialAdminWorkPlaces.length, isOpen, toast]);
 
   const tableData = useMemo(
     () => [...(user?.rates || []), ...tempRates],
@@ -122,6 +149,7 @@ export default function RateEditModal({
     const newRow = {
       rate_uuid: `temp-${Date.now()}`,
       work_place: "",
+      admin_work_place_uuid: "",
       base_hourly_wage: "",
       overtime_hourly_wage: "",
       meal_ot_hourly_wage: "",
@@ -286,8 +314,9 @@ export default function RateEditModal({
         setEditedValues,
         setEditingId,
         setTempRates,
+        adminWorkPlaces,
       }),
-    [editingId, editedValues]
+    [editingId, editedValues, adminWorkPlaces]
   );
 
   return (

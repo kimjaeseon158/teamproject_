@@ -3,25 +3,25 @@ import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
 
 export async function expense_Data(payload, toast) {
   try {
-    // fetchWithAuth 호출
+    // fetchWithAuth ?�출
     const res = await fetchWithAuth(
-      " /api/expense_add/",
+      " /api/expense-add/",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       },
-      { toast } // 옵션으로 toast 넘김
+      { toast } // ?�션?�로 toast ?��?
     );
 
-    if (!res) return null; // refresh 실패 시 null 반환
+    if (!res) return null; // refresh ?�패 ??null 반환
 
     const data = await res.json();
     return data;
   } catch (err) {
     if (toast) {
       toast({
-        title: "네트워크 오류",
+        title: "?�트?�크 ?�류",
         description: err.message,
         status: "error",
         duration: 3000,

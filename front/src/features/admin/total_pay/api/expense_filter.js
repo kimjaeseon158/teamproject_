@@ -4,8 +4,8 @@ import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
 export async function expense_filter_Data({ start, end }, toast) {
   try {
     const startStr = start.toISOString().split("T")[0]; // 2025-09-22
-    const endStr = end.toISOString().split("T")[0];     // 2025-09-25 등
-    const url = `/api/expense_filtered/?start_date=${startStr}&end_date=${endStr}`;
+    const endStr = end.toISOString().split("T")[0];
+    const url = `/api/expense-filtered/?start_date=${startStr}&end_date=${endStr}`;
 
     const res = await fetchWithAuth(url, { method: "GET" }, { toast });
     if (!res) return null;
@@ -15,7 +15,7 @@ export async function expense_filter_Data({ start, end }, toast) {
   } catch (err) {
     if (toast) {
       toast({
-        title: "네트워크 오류",
+        title: "?ㅽ듃?뚰겕 ?ㅻ쪟",
         description: err.message,
         status: "error",
         duration: 3000,

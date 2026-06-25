@@ -1,18 +1,17 @@
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
 
 /**
- * GET 방식으로 사용자 리스트 조회
- * -> data는 쿼리스트링으로 변환해서 전달
- * -> refresh token 자동 처리
+ * GET 諛⑹떇?쇰줈 ?ъ슜??由ъ뒪??議고쉶
+ * -> data??荑쇰━?ㅽ듃留곸쑝濡?蹂?섑빐???꾨떖
+ * -> refresh token ?먮룞 泥섎━
  */
 export const Panel_PostData = async (data = {}, toast) => {
   try {
-    // ① data 객체 → 쿼리스트링 변환
     const query = new URLSearchParams(data).toString();
 
-    // ② GET + fetchWithAuth 사용
+    // ??GET + fetchWithAuth ?ъ슜
     const res = await fetchWithAuth(
-      `/api/user_info_list/?${query}`,  // GET 방식으로 data 전달
+      `/api/user-info-list/?${query}`,  // GET 諛⑹떇?쇰줈 data ?꾨떖
       {
         method: "GET",
         headers: {
@@ -26,8 +25,8 @@ export const Panel_PostData = async (data = {}, toast) => {
 
       if (toast) {
         toast({
-          title: "유저 정보 조회 실패",
-          description: `상태 코드: ${res?.status}`,
+          title: "?좎? ?뺣낫 議고쉶 ?ㅽ뙣",
+          description: `?곹깭 肄붾뱶: ${res?.status}`,
           status: "error",
           duration: 3000,
           isClosable: true,
@@ -41,11 +40,11 @@ export const Panel_PostData = async (data = {}, toast) => {
     return result;
 
   } catch (error) {
-    console.error("Panel_PostData 네트워크 오류");
+    console.error("Panel_PostData ?ㅽ듃?뚰겕 ?ㅻ쪟");
 
     if (toast) {
       toast({
-        title: "네트워크 오류",
+        title: "?ㅽ듃?뚰겕 ?ㅻ쪟",
         description: error.message,
         status: "error",
         duration: 3000,

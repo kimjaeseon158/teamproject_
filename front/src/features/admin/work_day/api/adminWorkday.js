@@ -20,13 +20,13 @@ export async function getAdminWorkDays(
   }
 
   const url = qs.toString()
-    ? `/api/admin_page_workday/?${qs.toString()}`
-    : "/api/admin_page_workday/";
+    ? `/api/admin-page-workday/?${qs.toString()}`
+    : "/api/admin-page-workday/";
 
   const res = await fetchWithAuth(url, { method: "GET" }, { toast });
 
   if (!res.ok) {
-    let msg = "근무내역 조회 실패";
+    let msg = "근무?�역 조회 ?�패";
     try {
       const err = await res.json();
       msg = err.detail || JSON.stringify(err);

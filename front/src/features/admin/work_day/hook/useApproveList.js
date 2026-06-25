@@ -88,20 +88,20 @@ export function useApproveList(toast) {
       if (extraWork) qs.set("extra_work", extraWork);
 
       const res = await fetchWithAuth(
-        `/api/admin_page_workday/?${qs.toString()}`,
+        `/api/admin-page-workday/?${qs.toString()}`,
         {},
         { toast }
       );
 
       if (!res) {
-        throw new Error("인증이 만료되었습니다. 다시 로그인해주세요.");
+        throw new Error("?�증??만료?�었?�니?? ?�시 로그?�해주세??");
       }
 
       const json = await res.json().catch(() => ({}));
 
       if (!res.ok) {
         throw new Error(
-          json.detail || json.message || "승인 목록 조회에 실패했습니다."
+          json.detail || json.message || "?�인 목록 조회???�패?�습?�다."
         );
       }
 
@@ -151,7 +151,7 @@ export function useApproveList(toast) {
       setRows(mapped);
     } catch (err) {
       toast?.({
-        title: "조회 실패",
+        title: "조회 ?�패",
         description: err.message,
         status: "error",
         duration: 3000,

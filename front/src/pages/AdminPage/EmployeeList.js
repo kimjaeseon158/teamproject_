@@ -12,7 +12,6 @@ import {
   Flex,
   Heading,
   HStack,
-  SimpleGrid,
   Text,
   useToast,
 } from "@chakra-ui/react";
@@ -38,22 +37,29 @@ export default function EmployeeList() {
     [state.checkedItems]
   );
 
-  const carrierCount = useMemo(() => {
-    const carriers = new Set(
-      state.peopleData.map((person) => person.mobile_carrier).filter(Boolean)
-    );
-    return carriers.size;
-  }, [state.peopleData]);
-
   const hasSearchFilter = useMemo(() => {
     return state.isSearchActive || Object.values(state.searchForm).some((value) => String(value || "").trim());
   }, [state.isSearchActive, state.searchForm]);
 
-  const statCards = [
-    { label: "전체 직원", value: `${state.peopleData.length.toLocaleString()}명` },
-    { label: "선택됨", value: `${selectedCount.toLocaleString()}명` },
-    { label: "통신사 수", value: `${carrierCount.toLocaleString()}개` },
-  ];
+  const selectableIds = useMemo(
+    () => state.peopleData.map((person) => person.user_uuid).filter(Boolean),
+    [state.peopleData]
+  );
+  const checkedCountOnPage = useMemo(
+    () => selectableIds.filter((uuid) => state.checkedItems[uuid]).length,
+    [selectableIds, state.checkedItems]
+  );
+  const isAllChecked = selectableIds.length > 0 && checkedCountOnPage === selectableIds.length;
+  const isIndeterminate = checkedCountOnPage > 0 && checkedCountOnPage < selectableIds.length;
+  const handleSelectAll = (checked) => {
+    state.setCheckedItems((prev) => {
+      const next = { ...prev };
+      selectableIds.forEach((uuid) => {
+        next[uuid] = checked;
+      });
+      return next;
+    });
+  };
 
   return (
     <Box minH="100vh" bg="gray.50" p={{ base: 4, md: 6 }}>
@@ -119,27 +125,6 @@ export default function EmployeeList() {
         </HStack>
       </Flex>
 
-      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={6}>
-        {statCards.map((card) => (
-          <Box
-            key={card.label}
-            bg="white"
-            border="1px solid"
-            borderColor="gray.100"
-            borderRadius="lg"
-            p={5}
-            boxShadow="sm"
-          >
-            <Text fontSize="sm" fontWeight="700" color="gray.500" mb={2}>
-              {card.label}
-            </Text>
-            <Text fontSize="2xl" fontWeight="900" color="gray.800">
-              {card.value}
-            </Text>
-          </Box>
-        ))}
-      </SimpleGrid>
-
       <Box
         bg="white"
         border="1px solid"
@@ -174,7 +159,7 @@ export default function EmployeeList() {
               </Badge>
             )}
             <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
-              {state.peopleData.length.toLocaleString()}건
+                {state.peopleData.length.toLocaleString()}명
             </Badge>
           </HStack>
         </Flex>
@@ -187,6 +172,12 @@ export default function EmployeeList() {
             selectable
             checkedItems={state.checkedItems}
             onCheck={handlers.handleCheckboxChange}
+            selectAll={{
+              isChecked: isAllChecked,
+              isIndeterminate,
+              isDisabled: selectableIds.length === 0,
+              onChange: handleSelectAll,
+            }}
             onRowClick={state.setSelectedPerson}
           />
         </Box>

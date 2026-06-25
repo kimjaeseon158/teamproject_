@@ -4,7 +4,6 @@ export async function fetchFilteredPeople(queryParams, { toast } = {}) {
     const filters = queryParams.filters || {};
     const params = {};
 
-    // 🔥 모델 필드만 보내기
     Object.keys(filters).forEach((key) => {
       if (filters[key]) {
         params[key] = filters[key];
@@ -14,7 +13,7 @@ export async function fetchFilteredPeople(queryParams, { toast } = {}) {
     const query = new URLSearchParams(params).toString();
 
     const res = await fetchWithAuth(
-      `/api/user_info_filtering/?${query}`,
+      `/api/user-info-filtering/?${query}`,
       { method: "GET" },
       { toast }
     );
@@ -29,7 +28,7 @@ export async function fetchFilteredPeople(queryParams, { toast } = {}) {
 
     return [];
   } catch (err) {
-    console.error("서버 요청 실패");
+    console.error("?쒕쾭 ?붿껌 ?ㅽ뙣");
     return [];
   }
 }

@@ -34,7 +34,7 @@ export default function CalendarHeader({
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/user_logout/", {
+      await fetch("/api/user-logout/", {
         method: "DELETE",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -70,7 +70,7 @@ export default function CalendarHeader({
             <HStack flex={hideSummaryOnMobile ? 1 : undefined} justify={hideSummaryOnMobile ? "flex-end" : undefined}>
               <Alarm />
               <Button size="xs" colorScheme="red" onClick={handleLogout}>
-                로그아웃
+                濡쒓렇?꾩썐
               </Button>
             </HStack>
           </HStack>
@@ -114,7 +114,7 @@ export default function CalendarHeader({
           <HStack position="absolute" right="0" zIndex="9999">
             <Alarm />
             <Button size="sm" colorScheme="red" onClick={handleLogout}>
-              로그아웃
+              濡쒓렇?꾩썐
             </Button>
           </HStack>
 

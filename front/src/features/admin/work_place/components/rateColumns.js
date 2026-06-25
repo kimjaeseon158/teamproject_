@@ -2,7 +2,24 @@
 
 import { Input, IconButton, Select  } from "@chakra-ui/react";
 import { FaEdit, FaTrash } from "react-icons/fa";
-import locationsList from "../../../common/work_placeColumns/locationsList";
+
+const RATE_FIELDS = [
+  "base_hourly_wage",
+  "overtime_hourly_wage",
+  "meal_ot_hourly_wage",
+  "special_hourly_wage",
+  "day_special_hourly_wage",
+  "night_special_hourly_wage",
+  "overnight_hourly_wage",
+  "overnight_ot_hourly_wage",
+  "early_hourly_wage",
+];
+
+const getSelectedPlaceUuid = (row, adminWorkPlaces) => {
+  if (row.admin_work_place_uuid) return row.admin_work_place_uuid;
+  return adminWorkPlaces.find((place) => place.work_place === row.work_place)
+    ?.admin_work_place_uuid ?? "";
+};
 
 const getRateColumns = ({
   editingId,
@@ -10,6 +27,7 @@ const getRateColumns = ({
   setEditedValues,
   setEditingId,
   setTempRates,
+  adminWorkPlaces = [],
 }) => {
 
   const renderInput = (field, row, fallbackField) => (
@@ -35,7 +53,7 @@ const getRateColumns = ({
     {
       key: "work_place",
       label: "근무지",
-      width: "220px",
+      width: "200px",
       render: (value, row) => {
 
         if (editingId === row.rate_uuid) {
@@ -43,22 +61,35 @@ const getRateColumns = ({
             <Select
               size="sm"
               width="100%"
+              minW="170px"
               value={
-                editedValues.work_place !== undefined
-                  ? editedValues.work_place
-                  : row.work_place ?? "미지정"
+                editedValues.admin_work_place_uuid !== undefined
+                  ? editedValues.admin_work_place_uuid
+                  : getSelectedPlaceUuid(row, adminWorkPlaces)
               }
-              onChange={(e) =>
+              onChange={(e) => {
+                const selectedPlace = adminWorkPlaces.find(
+                  (place) => place.admin_work_place_uuid === e.target.value
+                );
+
                 setEditedValues((prev) => ({
                   ...prev,
-                  work_place: e.target.value,
-                }))
-              }
+                  admin_work_place_uuid: selectedPlace?.admin_work_place_uuid ?? "",
+                  work_place: selectedPlace?.work_place ?? "",
+                  ...RATE_FIELDS.reduce((next, field) => {
+                    next[field] = selectedPlace?.[field] ?? "";
+                    return next;
+                  }, {}),
+                }));
+              }}
             >
-              <option value="미지정">미지정</option>
-              {locationsList.map((loc) => (
-                <option key={loc} value={loc}>
-                  {loc}
+              <option value="">미지정</option>
+              {adminWorkPlaces.map((place) => (
+                <option
+                  key={place.admin_work_place_uuid}
+                  value={place.admin_work_place_uuid}
+                >
+                  {place.work_place}
                 </option>
               ))}
             </Select>

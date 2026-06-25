@@ -4,7 +4,7 @@ import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
 export async function income_Data(payload, toast) {
   try {
     const res = await fetchWithAuth(
-      "/api/income_add/",
+      "/api/income-add/",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -13,14 +13,13 @@ export async function income_Data(payload, toast) {
       { toast }
     );
 
-    if (!res) return null; // 인증/네트워크 문제 등
-
+    if (!res) return null; // ?�증/?�트?�크 문제 ??
     const data = await res.json();
     return data;
   } catch (err) {
     if (toast) {
       toast({
-        title: "네트워크 오류",
+        title: "?�트?�크 ?�류",
         description: err.message,
         status: "error",
         duration: 3000,

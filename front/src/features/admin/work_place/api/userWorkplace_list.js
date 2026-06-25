@@ -7,8 +7,8 @@ export async function getWorkPlaceList(params = {}, toast) {
     );
     const query = new URLSearchParams(params).toString();
     const url = hasFilter
-      ? `/api/work_place_rate_list_filtering/${query ? `?${query}` : ""}`
-      : "/api/work_place_rate_list_create/";
+      ? `/api/work-place-rate-list-filtering/${query ? `?${query}` : ""}`
+      : "/api/work-place-rate-list-create/";
 
     const res = await fetchWithAuth(
       url,
@@ -22,7 +22,7 @@ export async function getWorkPlaceList(params = {}, toast) {
 
     if (!res.ok) {
       throw new Error(
-        data.detail || data.message || "근무지 시급 목록 조회에 실패했습니다."
+        data.detail || data.message || "근무지 ?�급 목록 조회???�패?�습?�다."
       );
     }
 
@@ -35,7 +35,7 @@ export async function getWorkPlaceList(params = {}, toast) {
   } catch (err) {
     if (toast) {
       toast({
-        title: "네트워크 오류",
+        title: "?�트?�크 ?�류",
         description: err.message,
         status: "error",
         duration: 3000,

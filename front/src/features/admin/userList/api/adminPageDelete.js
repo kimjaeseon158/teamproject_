@@ -2,34 +2,34 @@
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
 
 /**
- * 사원 삭제 (UUID 기준)
- * @param {string[]} userUuids - 삭제할 user_uuid 배열
+ * ?�원 ??�� (UUID 기�?)
+ * @param {string[]} userUuids - ??��??user_uuid 배열
  */
 export const deleteEmployees = async (userUuids, { toast } = {}) => {
   try {
     if (!Array.isArray(userUuids) || userUuids.length === 0) {
-      return { success: false, error: "삭제할 대상이 없습니다." };
+      return { success: false, error: "??��???�?�이 ?�습?�다." };
     }
 
     const deletedUsers = [];
 
     for (const uuid of userUuids) {
       const response = await fetchWithAuth(
-        "/api/user_info_delete/",
+        "/api/user-info-delete/",
         {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            user_uuid: uuid, // 🔥 문자열 하나씩 보냄
+            user_uuid: uuid, // ?�� 문자???�나??보냄
           }),
         },
         { toast }
       );
 
       if (!response) {
-        return { success: false, error: "인증 만료" };
+        return { success: false, error: "?�증 만료" };
       }
 
       const parsed = await response.json();

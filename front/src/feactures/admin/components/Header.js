@@ -18,7 +18,7 @@ export default function Header() {
         body: JSON.stringify({ admin_uuid: userUuid }),
       });
     } catch (err) {
-      console.error("logout error");
+      console.error("error");
     } finally {
       // ?”¥ ?´ë¼?´ì–¸???íƒœ ?•ë¦¬ (?„ì—­ ?íƒœ ë°?? í°)
       logout();

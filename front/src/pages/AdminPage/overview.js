@@ -36,6 +36,7 @@ import useApproveSummary from "../../features/admin/overview/hook/useApproveSumm
 import useGoogleLinkStatus from "../../features/admin/api/google/useGoogleLinkStatus";
 import { login as googleLogin } from "../../features/admin/api/google/googleAuth";
 import { useDailyPay } from "../../features/admin/work_place/hook/useWorkList";
+import { getAdminWorkPlaceList } from "../../features/admin/work_place/api/adminWorkPlace";
 import { useTotalFinance } from "../../features/admin/total_pay/hook/useTotalFinance";
 import { useAdminData } from "../../features/admin/userList/hook/useAdminData";
 
@@ -122,6 +123,7 @@ export default function OverviewPage() {
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [peopleData, setPeopleData] = useState([]);
+  const [adminWorkPlaces, setAdminWorkPlaces] = useState([]);
 
   const googleStatus = useGoogleLinkStatus();
   const { events, loading: approvalLoading, rawData: pendingList } =
@@ -143,6 +145,25 @@ export default function OverviewPage() {
   }, []);
 
   useEffect(() => {
+    const loadAdminWorkPlaces = async () => {
+      try {
+        const workPlaces = await getAdminWorkPlaceList(toast);
+        setAdminWorkPlaces(workPlaces);
+      } catch (err) {
+        toast({
+          title: "관리자 근무지 목록을 불러오지 못했습니다.",
+          description: err?.message,
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    };
+
+    loadAdminWorkPlaces();
+  }, [toast]);
+
+  useEffect(() => {
     setApiMonth(formatMonth(currentDate));
   }, [currentDate, setApiMonth]);
 
@@ -151,22 +172,20 @@ export default function OverviewPage() {
   }, [widgets]);
 
   const dailyPaySummary = useMemo(() => {
-    const places = new Set();
     const basePays = [];
 
     dailyPayData.forEach((user) => {
       user.rates?.forEach((rate) => {
-        if (rate.work_place) places.add(rate.work_place);
         if (rate.base_hourly_wage != null) basePays.push(rate.base_hourly_wage);
       });
     });
 
     return {
       users: dailyPayData.length,
-      places: places.size,
+      places: adminWorkPlaces.length,
       averageBasePay: average(basePays),
     };
-  }, [dailyPayData]);
+  }, [adminWorkPlaces.length, dailyPayData]);
 
   const financeTotal = useMemo(
     () => threeMonthData.reduce((sum, item) => sum + Number(item.total || 0), 0),

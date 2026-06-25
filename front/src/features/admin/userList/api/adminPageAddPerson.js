@@ -1,12 +1,12 @@
-// 경로는 네 프로젝트에 맞게!
+// 寃쎈줈?????꾨줈?앺듃??留욊쾶!
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
 
 export const AddUser_PostData = async (data, { toast } = {}) => {
   try {
     const response = await fetchWithAuth(
-      "/api/user_info_add/",
+      "/api/user-info-add/",
       {
-        method: "PATCH", // 백엔드가 PATCH로 받게 되어 있으면 그대로
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
@@ -15,18 +15,18 @@ export const AddUser_PostData = async (data, { toast } = {}) => {
       { toast }
     );
 
-    // 🔁 refresh 실패시 fetchWithAuth가 null 반환 → 로그인 만료
+    // ?봺 refresh ?ㅽ뙣??fetchWithAuth媛 null 諛섑솚 ??濡쒓렇??留뚮즺
     if (!response) {
       return {
         success: false,
-        error: "인증 만료 또는 재로그인 필요",
+        error: "?몄쬆 留뚮즺 ?먮뒗 ?щ줈洹몄씤 ?꾩슂",
       };
     }
 
     const result = await response.json();
     return result;
   } catch (error) {
-    console.error("서버 전송 오류");
+    console.error("?쒕쾭 ?꾩넚 ?ㅻ쪟");
     return {
       success: false,
       error: error.message,

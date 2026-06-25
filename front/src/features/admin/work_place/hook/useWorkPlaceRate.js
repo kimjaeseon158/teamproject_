@@ -8,13 +8,14 @@ import { getWorkPlaceFiltering } from "../api/userWorkplaceFiltering";
 export function useWorkPlaceRate(toast) {
 
   /* ======================
-     ADD (data 배열 구조)
+     ADD (data 諛곗뿴 援ъ“)
   ====================== */
 const handleAdd = async (payload) => {
 
   return await getWorkaddPlaceList(
     {
       user_uuid: payload.user_uuid,
+      admin_work_place_uuid: payload.admin_work_place_uuid,
       work_place: payload.work_place,
       base_hourly_wage: payload.base_hourly_wage ?? null,
       overtime_hourly_wage: payload.overtime_hourly_wage ?? null,
@@ -44,7 +45,7 @@ const handleAdd = async (payload) => {
 
     if (!rate_uuid) return;
 
-    // 마지막 1개면 reset
+    // 留덉?留?1媛쒕㈃ reset
     if (user.rates.length === 1) {
       const rate = user.rates[0];
 

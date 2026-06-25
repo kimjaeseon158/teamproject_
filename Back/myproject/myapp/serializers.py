@@ -161,10 +161,8 @@ class AdminWorkPlaceSerializer(serializers.ModelSerializer):
             "overnight_hourly_wage",
             "overnight_ot_hourly_wage",
             "early_hourly_wage",
-            "created_at",
-            "updated_at",
         ]
-        read_only_fields = ("admin_work_place_uuid", "created_at", "updated_at")
+        read_only_fields = ("admin_work_place_uuid",)
 
 
 class AdminWorkPlaceCreateSerializer(serializers.ModelSerializer):

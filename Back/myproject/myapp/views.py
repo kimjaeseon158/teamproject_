@@ -1051,55 +1051,79 @@ class AdminWorkDayStatusUpdateAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def patch(self, request):
-        user_uuid = request.data.get("user_uuid")
-        work_date_str = request.data.get("work_date")
-        work_shift = request.data.get("work_shift")
-        status = request.data.get("status")  # True / False
-        reject_reason = request.data.get("reject_reason")
+    def _get_work_day_update(self, item, default_status=None, default_reject_reason=None):
+        user_uuid = item.get("user_uuid")
+        work_date_str = item.get("work_date")
+        work_shift = item.get("work_shift")
+        status = item.get("status", default_status)
+        reject_reason = item.get("reject_reason", default_reject_reason)
 
         if not user_uuid or not work_date_str or status is None or not work_shift:
-            return Response({"success": False})
+            return None
 
         if status not in [True, False]:
-            return Response({"success": False})
-        
+            return None
 
         try:
             work_date = datetime.strptime(work_date_str, "%Y-%m-%d").date()
         except ValueError:
-            return Response(
-                {"success": False},
-            )
+            return None
 
         try:
             work_day = User_WorkDay.objects.get(
                 user_uuid_id=user_uuid, work_date=work_date, work_shift=work_shift
             )
         except User_WorkDay.DoesNotExist:
-            return Response(
-                {"success": False},
+            return None
+
+        return {
+            "work_day": work_day,
+            "status": status,
+            "reject_reason": reject_reason,
+        }
+
+    def patch(self, request):
+        request_items = request.data.get("data")
+        default_status = request.data.get("status")
+        default_reject_reason = request.data.get("reject_reason")
+
+        if request_items is None:
+            request_items = [request.data]
+        elif not isinstance(request_items, list) or len(request_items) == 0:
+            return Response({"success": False})
+
+        updates = []
+        for item in request_items:
+            if not isinstance(item, dict):
+                return Response({"success": False})
+
+            update = self._get_work_day_update(
+                item,
+                default_status=default_status,
+                default_reject_reason=default_reject_reason,
             )
+            if update is None:
+                return Response({"success": False})
+            updates.append(update)
 
         with transaction.atomic():
-            # 완료(승인)
-            if status == True:
-                work_day.is_approved = True
-                work_day.reject_reason = None
+            for update in updates:
+                work_day = update["work_day"]
+                status = update["status"]
+                reject_reason = update["reject_reason"]
 
-        # 거절(반려)
-            elif status == False:
-                if not reject_reason:
-                    return Response({"success": False})  # 반려 사유 반드시 기제
-                work_day.is_approved = False
-                work_day.reject_reason = reject_reason
+                if status == True:
+                    work_day.is_approved = True
+                    work_day.reject_reason = None
+                elif status == False:
+                    work_day.is_approved = False
+                    work_day.reject_reason = reject_reason
 
-            work_day.save()
+                work_day.save()
+                sync_salary_expense_for_workday(work_day)
 
-            # 승인/반려/대기 상태에 따라 Expense 동기화
-            sync_salary_expense_for_workday(work_day)
+        return Response({"success": True, "updated_count": len(updates)})
 
-        return Response({"success": True})
 
 
 RATE_FIELD_NAMES = [

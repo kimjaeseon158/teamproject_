@@ -12,6 +12,7 @@ class User_Login_Info(models.Model):
     user_name       = models.CharField(max_length=50, default='홍길동')   # 유저 이름
     user_id         = models.CharField(max_length=50,unique=True)
     password        = models.CharField(max_length=100, default='1234')
+    must_change_password = models.BooleanField(default=True)
     phone_number    = models.CharField(max_length=20)
     mobile_carrier  = models.CharField(max_length=20)
     resident_number = models.CharField(max_length=14)

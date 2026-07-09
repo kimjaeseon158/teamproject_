@@ -41,6 +41,7 @@ from django.http import HttpResponse
 from django.utils import timezone
 from django.conf import settings
 from django.shortcuts import redirect
+from django.contrib.auth.hashers import check_password
 from datetime import datetime
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import Flow
@@ -438,6 +439,7 @@ class CheckAdminLoginAPIView(APIView):
         return response
 
 
+
 class AdminLogoutAPIView(APIView):
     permission_classes = [AllowAny]
 
@@ -510,6 +512,7 @@ class CheckUserLoginAPIView(APIView):
                 "user_name": user_name,
                 "user_uuid": user_uuid,
                 "access": str(access),
+                "must_change_password": user_instance.must_change_password,
             }
         )
 
@@ -524,6 +527,34 @@ class CheckUserLoginAPIView(APIView):
         )
 
         return response
+
+class UserPasswordChangeAPIView(APIView):
+    authentication_classes = [UserJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+        user = request.user
+        current_password = request.data.get("current_password")
+        new_password = request.data.get("new_password")
+        new_password_confirm = request.data.get("new_password_confirm")
+
+        if not current_password or not new_password or not new_password_confirm:
+            return Response({"success": False}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not check_password(current_password, user.password):
+            return Response({"success": False}, status=status.HTTP_400_BAD_REQUEST)
+
+        if new_password != new_password_confirm:
+            return Response({"success": False}, status=status.HTTP_400_BAD_REQUEST)
+
+        if check_password(new_password, user.password):
+            return Response({"success": False}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.password = new_password
+        user.must_change_password = False
+        user.save(update_fields=["password", "must_change_password"])
+
+        return Response({"success": True, "must_change_password": False})
 
 
 class UserLogoutAPIView(APIView):
@@ -613,7 +644,10 @@ class UserInfoUpdateAPIView(APIView):
                 user_instance, data=request.data, partial=True
             )
             if serializer.is_valid():
-                serializer.save()
+                if "password" in request.data and request.data.get("password"):
+                    serializer.save(must_change_password=True)
+                else:
+                    serializer.save()
                 # 업데이트 후 전체 유저 데이터 가져오기
                 all_data = User_Login_Info.objects.all()
                 user_data = User_InfoSerializer(all_data, many=True)
@@ -1366,6 +1400,12 @@ class UserWorkInfoAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        if request.user.must_change_password:
+            return Response(
+                {"success": False, "must_change_password": True},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         data = request.data.get("data")
 
         # 1개/여러개 자동 판별
@@ -1383,6 +1423,12 @@ class UserMonthlyWorkSummaryAPIView(APIView):
 
     def get(self, request):
         user        = request.user
+        if user.must_change_password:
+            return Response(
+                {"success": False, "must_change_password": True},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         date_str    = request.query_params.get("date")
         year, month = map(int, date_str.split("-"))
 

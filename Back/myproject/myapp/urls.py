@@ -5,6 +5,7 @@ from .views import (
     UserWorkInfoAPIView,
     UserInfoDeleteAPIView,
     UserInfoUpdateAPIView,
+    UserPasswordChangeAPIView,
     CheckUserLoginAPIView,
     UserInfoFilteringAPIView,
     UserInfoListAPIView,
@@ -44,6 +45,7 @@ urlpatterns = [
     path('check-admin-login/', CheckAdminLoginAPIView.as_view(),  name='check-admin-login'),
     path('admin-logout/',      AdminLogoutAPIView.as_view(),      name='admin-logout'),
     path('check-user-login/',  CheckUserLoginAPIView.as_view(),   name='check-user-login'),
+    path('user-password-change/', UserPasswordChangeAPIView.as_view(), name='user-password-change'),
     path('user-logout/',       UserLogoutAPIView.as_view(),       name='user-logout'),
     
     # Dashboard-admin-page

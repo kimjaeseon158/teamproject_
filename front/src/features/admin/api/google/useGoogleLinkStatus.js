@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { clearGoogleLinked, markGoogleLinked } from "./googleLinkStorage";
+import { googleEventsUrl } from "./googleApiConfig";
 
 export default function useGoogleLinkStatus() {
   const [state, setState] = useState({
@@ -24,7 +25,7 @@ export default function useGoogleLinkStatus() {
       }
 
       try {
-        const res = await fetch("/api/google-calendar-auth/events/", {
+        const res = await fetch(googleEventsUrl, {
           method: "GET",
           credentials: "include",
         });
@@ -35,7 +36,7 @@ export default function useGoogleLinkStatus() {
           const data = await res.json();
           const asEvents = (data?.events ?? []).map((event) => ({
             id: event.id,
-            title: event.summary || "(?�목 ?�음)",
+            title: event.summary || "(제목 없음)",
             start: new Date(event.start?.dateTime || event.start?.date),
             end: new Date(event.end?.dateTime || event.end?.date),
             description: event.description || "",

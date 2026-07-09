@@ -11,7 +11,16 @@ import { setAccessToken } from "../../../services/api/token";
 export const useLogin = () => {
   const navigate = useNavigate();
   const toast = useToast();
-  const { loading, userUuid, loginType, revalidate, setUserName, setLoginType } =
+  const {
+    loading,
+    userUuid,
+    loginType,
+    mustChangePassword,
+    revalidate,
+    setUserName,
+    setLoginType,
+    setMustChangePassword,
+  } =
       useUser();
 
 
@@ -22,7 +31,7 @@ export const useLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [rememberId, setRememberId] = useState(false);
   
-  // 세션 동안 역할별 입력값을 기억하기 위한 상태
+  // ?몄뀡 ?숈븞 ??븷蹂??낅젰媛믪쓣 湲곗뼲?섍린 ?꾪븳 ?곹깭
   const [sessionIds, setSessionIds] = useState({ user: "", admin: "" });
 
   const [values, setValues] = useState({
@@ -39,26 +48,26 @@ export const useLogin = () => {
 
   const [loginError, setLoginError] = useState("");
 
-  /* ================= 자동 로그인 처리 ================= */
+  /* ================= ?먮룞 濡쒓렇??泥섎━ ================= */
   useEffect(() => {
 
 
-    // 로딩이 완료되었고, 유효한 userUuid와 loginType이 있다면 이미 로그인된 상태
+    // 濡쒕뵫???꾨즺?섏뿀怨? ?좏슚??userUuid? loginType???덈떎硫??대? 濡쒓렇?몃맂 ?곹깭
     if (!loading && userUuid && loginType) {
     
       
       if (loginType === "admin") {
         navigate("/dashboard", { replace: true });
       } else if (loginType === "user") {
-        navigate("/data", { replace: true });
+        navigate(mustChangePassword ? "/data/password-change" : "/data", { replace: true });
       }
     } 
-  }, [loading, userUuid, loginType, navigate]);
+  }, [loading, userUuid, loginType, mustChangePassword, navigate]);
 
-  // 현재 역할에 따른 스토리지 키 결정
+  // ?꾩옱 ??븷???곕Ⅸ ?ㅽ넗由ъ? ??寃곗젙
   const storageKey = role === "admin" ? "rememberedAdminId" : "rememberedUserId";
 
-  /* ================= 역할 전환 및 초기 로드 ================= */
+  /* ================= ??븷 ?꾪솚 諛?珥덇린 濡쒕뱶 ================= */
 
   useEffect(() => {
     const savedId = localStorage.getItem(storageKey);
@@ -66,8 +75,7 @@ export const useLogin = () => {
       setValues((prev) => ({ ...prev, id: savedId }));
       setRememberId(true);
     } else {
-      // 로컬 스토리지에 없으면 해당 역할의 세션 저장값(입력했던 값)을 불러옴
-      setValues((prev) => ({ ...prev, id: sessionIds[role] }));
+      // 濡쒖뺄 ?ㅽ넗由ъ????놁쑝硫??대떦 ??븷???몄뀡 ??κ컪(?낅젰?덈뜕 媛???遺덈윭??      setValues((prev) => ({ ...prev, id: sessionIds[role] }));
       setRememberId(false);
     }
   }, [role, storageKey, sessionIds]);
@@ -88,13 +96,12 @@ export const useLogin = () => {
     setRememberId(!!savedId);
   };
 
-  /* ================= role 변경 ================= */
+  /* ================= role 蹂寃?================= */
 
   const setRole = (nextRole) => {
     if (nextRole === role) return;
 
-    // 현재 입력된 ID를 현재 역할의 세션 상태에 저장
-    setSessionIds((prev) => ({ ...prev, [role]: values.id }));
+    // ?꾩옱 ?낅젰??ID瑜??꾩옱 ??븷???몄뀡 ?곹깭?????    setSessionIds((prev) => ({ ...prev, [role]: values.id }));
     
     setRoleState(nextRole);
     // Clear password and admin_code when switching roles.
@@ -124,7 +131,7 @@ export const useLogin = () => {
     const isChecked = e.target.checked;
     setRememberId(isChecked);
     
-    // 체크 해제 시 즉시 로컬스토리지에서 삭제 
+    // 泥댄겕 ?댁젣 ??利됱떆 濡쒖뺄?ㅽ넗由ъ??먯꽌 ??젣 
     if (!isChecked) {
       localStorage.removeItem(storageKey);
     }
@@ -133,13 +140,13 @@ export const useLogin = () => {
   const preventSpace = (e) => {
     if (e.key === " ") e.preventDefault();
   };
-  /* ================= 로그인 ================= */
+  /* ================= 濡쒓렇??================= */
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoginError("");
 
-    // 1️⃣ validation
+    // 1截뤴깵 validation
     const validResult = await validation({
       id: values.id,
       password: values.password,
@@ -150,7 +157,7 @@ export const useLogin = () => {
 
     if (!validResult?.success) return;
 
-    // 2️⃣ API 호출 전 로딩 시작
+    // 2截뤴깵 API ?몄텧 ??濡쒕뵫 ?쒖옉
     setIsLoading(true);
     let response;
 
@@ -180,29 +187,29 @@ export const useLogin = () => {
         return;
       }
 
-      // 3️⃣ 토큰 저장
+            // access token check
       if (!response.access) {
-        setLoginError("access token 없음");
+        setLoginError("access token ?놁쓬");
         setIsLoading(false);
         return;
       }
 
       setAccessToken(response.access);
 
-      // 4️⃣ 아이디 기억하기 처리 (성공 시 다시 한 번 확인)
+      // 4截뤴깵 ?꾩씠??湲곗뼲?섍린 泥섎━ (?깃났 ???ㅼ떆 ??踰??뺤씤)
       if (rememberId) {
         localStorage.setItem(storageKey, values.id);
       } else {
         localStorage.removeItem(storageKey);
       }
 
-      // 🔥 5️⃣ userName 세팅
+      // ?뵦 5截뤴깵 userName ?명똿
       setUserName(
         response?.user_name ??
         response?.admin_name ??
         ""
       );
-      // 🔥 5️⃣ userName + role 세팅
+      // ?뵦 5截뤴깵 userName + role ?명똿
       const userRole = response.role || role;
 
       setUserName(
@@ -212,31 +219,32 @@ export const useLogin = () => {
       );
 
       setLoginType(userRole);
+      setMustChangePassword(userRole === "user" && response?.must_change_password === true);
 
-      // 🔥 6️⃣ 상태 안정화 (중요)
+      // ?뵦 6截뤴깵 ?곹깭 ?덉젙??(以묒슂)
       await revalidate();
 
-      // 🔥 7️⃣ 이동 (한 번만!)
+      // ?뵦 7截뤴깵 ?대룞 (??踰덈쭔!)
       setFadeOut(true);
-      //브라우저 종류 후 재접속 시도시 자동 라우팅 안됨
+      //釉뚮씪?곗? 醫낅쪟 ???ъ젒???쒕룄???먮룞 ?쇱슦???덈맖
       if (userRole === "admin") {
         navigate("/dashboard");
       } else {
-        navigate("/data");
+        navigate(response?.must_change_password === true ? "/data/password-change" : "/data");
       }
 
 
 
       toast({
         title: "로그인 성공",
-        description: `${response?.user_name ?? response?.admin_name ?? "회원"}님 환영합니다!`,
+        description: `${response?.user_name ?? response?.admin_name ?? "회원"}님 환영합니다.`,
         status: "success",
         duration: 2000,
         isClosable: true,
         position: "top",
       });
     } catch (err) {
-      console.error("로그인 에러");
+      console.error("로그인 오류");
       setLoginError("서버와의 연결이 원활하지 않습니다.");
       toast({
         title: "연결 오류",
@@ -262,7 +270,7 @@ export const useLogin = () => {
     loginError,
     fadeOut,
     isLoading,
-    loading, // 전역 로딩 상태 추가 (refresh token 확인 중인지 여부)
+    loading, // ?꾩뿭 濡쒕뵫 ?곹깭 異붽? (refresh token ?뺤씤 以묒씤吏 ?щ?)
     rememberId,
 
     onChange,
@@ -271,3 +279,5 @@ export const useLogin = () => {
     handleSubmit,
   };
 };
+
+

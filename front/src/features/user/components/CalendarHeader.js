@@ -70,7 +70,7 @@ export default function CalendarHeader({
             <HStack flex={hideSummaryOnMobile ? 1 : undefined} justify={hideSummaryOnMobile ? "flex-end" : undefined}>
               <Alarm />
               <Button size="xs" colorScheme="red" onClick={handleLogout}>
-                濡쒓렇?꾩썐
+                로그아웃 
               </Button>
             </HStack>
           </HStack>
@@ -114,7 +114,7 @@ export default function CalendarHeader({
           <HStack position="absolute" right="0" zIndex="9999">
             <Alarm />
             <Button size="sm" colorScheme="red" onClick={handleLogout}>
-              濡쒓렇?꾩썐
+              로그아웃
             </Button>
           </HStack>
 

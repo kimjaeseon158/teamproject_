@@ -15,7 +15,7 @@ export async function expense_filter_Data({ start, end }, toast) {
   } catch (err) {
     if (toast) {
       toast({
-        title: "?ㅽ듃?뚰겕 ?ㅻ쪟",
+        title: "네트워크 오류",
         description: err.message,
         status: "error",
         duration: 3000,

@@ -4,6 +4,7 @@ import { AlarmProvider } from "../features/alarm";
 
 import LoginPage from "../pages/LoginPage/LoginPage";
 import Calendar from "../pages/UserPage/CalendarPage";
+import PasswordChangePage from "../pages/UserPage/PasswordChangePage";
 import Dashboard from "../pages/dashboard";
 import AdminPage from "../pages/AdminPage/EmployeeList";
 import GoogleCallbackDone from "../features/admin/api/google/GoogleCallbackDone";
@@ -30,6 +31,15 @@ export default function AppRoutes() {
             element={
               <RequireAuth>
                 <Calendar />
+              </RequireAuth>
+            }
+          />
+
+          <Route
+            path="/data/password-change"
+            element={
+              <RequireAuth>
+                <PasswordChangePage />
               </RequireAuth>
             }
           />

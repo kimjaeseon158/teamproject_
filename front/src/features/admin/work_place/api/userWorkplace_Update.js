@@ -13,7 +13,7 @@ export async function getWorkPlaceList_Update(payload, { toast } = {}) {
   );
 
   if (!res.ok) {
-    let msg = "?�태 ?�데?�트 ?�패";
+    let msg = "상태 업데이트 실패";
     try {
       const err = await res.json();
       msg = err.detail || err.message || JSON.stringify(err);

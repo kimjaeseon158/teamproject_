@@ -13,7 +13,7 @@ export async function getAdminWorkPlaceList(toast) {
 
   if (!res.ok) {
     throw new Error(
-      data.detail || data.message || "愿由ъ옄 洹쇰Т吏 紐⑸줉 議고쉶???ㅽ뙣?덉뒿?덈떎."
+      data.detail || data.message || "관리자 근무지 목록 조회에 실패했습니다."
     );
   }
 
@@ -31,13 +31,13 @@ export async function createAdminWorkPlace(payload, toast) {
     { toast }
   );
 
-  if (!res) throw new Error("?몄쬆 媛깆떊???ㅽ뙣?덉뒿?덈떎.");
+  if (!res) throw new Error("인증 갱신에 실패했습니다.");
 
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
     throw new Error(
-      data.detail || data.message || "愿由ъ옄 洹쇰Т吏 ?깅줉???ㅽ뙣?덉뒿?덈떎."
+      data.detail || data.message || "관리자 근무지 등록에 실패했습니다."
     );
   }
 

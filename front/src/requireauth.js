@@ -1,15 +1,17 @@
-﻿import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useUser } from "./features/auth/userContext";
 
 export default function RequireAuth({ children }) {
-  const { loading, userUuid, revalidate, loginType } = useUser();
+  const { loading, userUuid, revalidate, loginType, mustChangePassword } =
+    useUser();
   const location = useLocation();
 
   // 🔁 revalidate 중복 호출 방지
   const triedRef = useRef(false);
   const isAdminPath = location.pathname.startsWith("/dashboard");
-  const isUserPath = location.pathname.startsWith("/data");  
+  const isUserPath = location.pathname.startsWith("/data");
+  const isPasswordChangePath = location.pathname === "/data/password-change";
   useEffect(() => {
     if (!loading && !userUuid && !triedRef.current) {
       triedRef.current = true;
@@ -30,6 +32,13 @@ export default function RequireAuth({ children }) {
   }
   if (isUserPath && loginType !== "user") {
     return <Navigate to="/dashboard" replace />;
+  }
+  if (
+    isUserPath &&
+    mustChangePassword &&
+    !isPasswordChangePath
+  ) {
+    return <Navigate to="/data/password-change" replace />;
   }
   return children;
 }

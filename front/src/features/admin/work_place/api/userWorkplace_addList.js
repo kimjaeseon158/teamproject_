@@ -3,7 +3,7 @@ import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
 
 export async function getWorkaddPlaceList(payload, toast) {
   try {
-    // fetchWithAuth ?�출
+    // fetchWithAuth 호출
     const res = await fetchWithAuth(
       "/api/work-place-rate-list-create/",
       {
@@ -11,13 +11,13 @@ export async function getWorkaddPlaceList(payload, toast) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       },
-      { toast } // ?�션?�로 toast ?��?
+      { toast } // 옵션으로 toast 전달
     );
 
-    if (!res) throw new Error("?�증 갱신???�패?�습?�다.");
+    if (!res) throw new Error("인증 갱신에 실패했습니다.");
 
     if (!res.ok) {
-      let msg = "근무지 ?�급 추�????�패?�습?�다.";
+      let msg = "근무지 일급 추가에 실패했습니다.";
       try {
         const err = await res.json();
         msg = err.detail || err.message || JSON.stringify(err);

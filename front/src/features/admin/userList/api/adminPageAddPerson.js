@@ -19,7 +19,7 @@ export const AddUser_PostData = async (data, { toast } = {}) => {
     if (!response) {
       return {
         success: false,
-        error: "?몄쬆 留뚮즺 ?먮뒗 ?щ줈洹몄씤 ?꾩슂",
+        error: "인증 만료 또는 로그인 필요",
       };
     }
 

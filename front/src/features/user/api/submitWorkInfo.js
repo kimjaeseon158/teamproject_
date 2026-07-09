@@ -1,7 +1,7 @@
 import { fetchWithAuth } from "../../../services/api/fetchWithAuth";
 
 /* =========================
-   ?�짜 ?�틸
+   날짜 유틸
 ========================= */
 const toYYYYMMDD = (d) => {
   if (d && typeof d === "object" && d.year && d.month && d.day) {
@@ -17,17 +17,17 @@ const toYYYYMMDD = (d) => {
 const toDateTime = (date, hm) => `${date} ${hm}:00`;
 
 /* =========================
-   UUID 기�? 근무 ?�록
+   UUID 기반 근무 등록
 ========================= */
 const submitWorkInfo = async (input, { toast } = {}) => {
   let body;
 
-  // ??bulk
+  // bulk
   if (Array.isArray(input)) {
     body = {
       data: input.map(item => {
         const workDate = toYYYYMMDD(item.work_date);
-        if (!workDate) throw new Error("?�짜 변???�패");
+        if (!workDate) throw new Error("날짜 변환 실패");
 
         return {
           user_uuid: item.user_uuid,
@@ -42,7 +42,7 @@ const submitWorkInfo = async (input, { toast } = {}) => {
       }),
     };
   }
-  // ??single
+  // single
   else {
     const {
       user_uuid,
@@ -56,10 +56,10 @@ const submitWorkInfo = async (input, { toast } = {}) => {
       details = [],
     } = input;
 
-    if (!user_uuid) throw new Error("user_uuid가 ?�습?�다.");
+    if (!user_uuid) throw new Error("user_uuid가 없습니다.");
 
     const workDate = toYYYYMMDD(work_date ?? selectedDate);
-    if (!workDate) throw new Error("?�짜 변???�패");
+    if (!workDate) throw new Error("날짜 변환 실패");
 
     body = {
       data: {
@@ -86,7 +86,7 @@ const submitWorkInfo = async (input, { toast } = {}) => {
   );
 
   if (!res || !res.ok) {
-    let msg = "근무 ?�보 ?�송 ?�패";
+    let msg = "근무 정보 전송 실패";
     try {
       const err = await res.json();
       msg = err.detail || err.message || msg;
@@ -94,7 +94,7 @@ const submitWorkInfo = async (input, { toast } = {}) => {
     throw new Error(msg);
   }
 
-  // ???�기�??�정
+  // 응답이 비어 있을 수 있음
   try {
     return await res.json();
   } catch {

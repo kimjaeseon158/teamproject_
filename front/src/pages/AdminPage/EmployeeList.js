@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import {
   AddIcon,
   DeleteIcon,
+  EditIcon,
   RepeatIcon,
   SearchIcon,
 } from "@chakra-ui/icons";
@@ -60,6 +61,31 @@ export default function EmployeeList() {
       return next;
     });
   };
+  const tableColumns = useMemo(
+    () => [
+      ...userListColumns,
+      {
+        key: "edit",
+        label: "수정",
+        width: "110px",
+        render: (_value, row) => (
+          <Button
+            size="sm"
+            leftIcon={<EditIcon />}
+            colorScheme="green"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              state.setSelectedPerson(row);
+            }}
+          >
+            수정
+          </Button>
+        ),
+      },
+    ],
+    [state]
+  );
 
   return (
     <Box minH="100vh" bg="gray.50" p={{ base: 4, md: 6 }}>
@@ -148,7 +174,7 @@ export default function EmployeeList() {
               직원 목록
             </Heading>
             <Text fontSize="sm" color="gray.500" mt={1}>
-              행을 클릭하면 직원 상세 정보를 확인하고 수정할 수 있습니다.
+              테이블의 수정 버튼으로 직원 상세 정보를 확인하고 수정할 수 있습니다.
             </Text>
           </Box>
 
@@ -167,7 +193,7 @@ export default function EmployeeList() {
         <Box sx={{ "> div": { boxShadow: "none", borderRadius: 0 } }}>
           <CommonTable
             data={state.peopleData}
-            columns={userListColumns}
+            columns={tableColumns}
             rowKey="user_uuid"
             selectable
             checkedItems={state.checkedItems}
@@ -178,7 +204,6 @@ export default function EmployeeList() {
               isDisabled: selectableIds.length === 0,
               onChange: handleSelectAll,
             }}
-            onRowClick={state.setSelectedPerson}
           />
         </Box>
       </Box>

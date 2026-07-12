@@ -1,30 +1,15 @@
-// src/js/total_payPost.js
-import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { ApiGet, toQueryString } from "../../../../services/api/requestJson";
 
 export async function three_month_totals(payload, toast) {
   try {
-    const query = payload
-      ? `?${new URLSearchParams(payload).toString()}`
-      : "";
-
-    const res = await fetchWithAuth(
-      `/api/expense-3months-totals/${query}`, // ?î• ?¨Îûò???úÍ±∞
-      {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      },
+    return await ApiGet(
+      `/api/expense-3months-totals/${toQueryString(payload)}`,
       { toast }
     );
-
-    if (!res) return null;
-
-    const data = await res.json();
-    return data;
-
   } catch (err) {
     if (toast) {
       toast({
-        title: "?§Ìä∏?åÌÅ¨ ?§Î•ò",
+        title: "ÎÑ§Ìä∏ÏõåÌÅ¨ Ïò§Î•ò",
         description: err.message,
         status: "error",
         duration: 3000,

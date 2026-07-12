@@ -23,9 +23,8 @@ const AddPersonModal = ({ isOpen, onClose, onSave, toast }) => {
     formData,
     handleChange,
     handleSubmitBase,
-    setFormData, 
+    setFormData,
   } = useAddPersonLogic(onSave, onClose, toast);
-
 
   const openAddressSearch = () => {
     if (!window.daum) {
@@ -53,7 +52,7 @@ const AddPersonModal = ({ isOpen, onClose, onSave, toast }) => {
     <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>사원 추가</ModalHeader>
+        <ModalHeader>직원 추가</ModalHeader>
         <ModalCloseButton />
 
         <form onSubmit={handleSubmitBase}>
@@ -103,7 +102,6 @@ const AddPersonModal = ({ isOpen, onClose, onSave, toast }) => {
                 </HStack>
               </FormControl>
 
-              {/* 주소 검색 */}
               <FormControl>
                 <FormLabel>주소</FormLabel>
                 <Button

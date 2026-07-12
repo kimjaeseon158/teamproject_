@@ -46,7 +46,6 @@ const WorkTimeRow = ({ title, time, tag, duration, colorScheme = "blue" }) => (
     gap={2}
     p={3}
     minH="54px"
-    fontcolor="black.700"
   >
     <Text fontSize="sm" color="gray.900" fontWeight="700" minW="64px">
       {title}
@@ -81,9 +80,6 @@ export default function ApproveDetailModal({
 
   if (!employee) return null;
 
-  /* ======================
-     승인 처리
-  ====================== */
   const handleApprove = async () => {
     try {
       setSaving(true);
@@ -116,9 +112,6 @@ export default function ApproveDetailModal({
     }
   };
 
-  /* ======================
-     반려 처리
-  ====================== */
   const handleReject = async () => {
     if (!rejectReason.trim()) {
       toast({
@@ -167,7 +160,6 @@ export default function ApproveDetailModal({
         <ModalHeader>근무 상세 정보</ModalHeader>
 
         <ModalBody>
-
           <InfoCard title="근무 요약">
             <Flex justify="space-between">
               <Text>{employee.name}</Text>
@@ -203,12 +195,11 @@ export default function ApproveDetailModal({
 
           <InfoCard title="반려 사유">
             <Textarea
-              placeholder="반려 사유를 입력하세요"
+              placeholder="반려 사유를 입력하세요."
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
             />
           </InfoCard>
-
         </ModalBody>
 
         <ModalFooter>
@@ -234,7 +225,6 @@ export default function ApproveDetailModal({
             닫기
           </Button>
         </ModalFooter>
-
       </ModalContent>
     </Modal>
   );

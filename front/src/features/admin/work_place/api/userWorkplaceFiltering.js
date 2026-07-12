@@ -1,25 +1,18 @@
-import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { ApiGet, toQueryString } from "../../../../services/api/requestJson";
 
 export async function getWorkPlaceFiltering({ user_name, work_place }, toast) {
   try {
-    const query = new URLSearchParams({
-      user_name,
-      work_place,
-    }).toString();
-
-    const res = await fetchWithAuth(
-      `/api/work-place-rate-list-filtering/?${query}`,
-      { method: "GET" },
+    return await ApiGet(
+      `/api/work-place-rate-list-filtering/${toQueryString({
+        user_name,
+        work_place,
+      })}`,
       { toast }
     );
-
-    if (!res) return null;
-
-    return await res.json();
   } catch (err) {
     if (toast) {
       toast({
-        title: "?�트?�크 ?�류",
+        title: "네트워크 오류",
         description: err.message,
         status: "error",
         duration: 3000,

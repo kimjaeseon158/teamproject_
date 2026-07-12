@@ -1,27 +1,24 @@
 import { Flex, Box, Button } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../auth/userContext";
-import { getAccessToken, clearAccessToken } from "../../../services/api/token";
 import { Alarm } from "../../alarm";
+import { fetchWithAuth } from "../../../services/api/fetchWithAuth";
 
 export default function Header() {
   const navigate = useNavigate();
   const { userUuid, logout } = useUser();
 
   const handleLogout = async () => {
-    const token = getAccessToken();
     try {
-      await fetch("/api/admin-logout/", {
+      await fetchWithAuth("/api/admin-logout/", {
         method: "DELETE",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ admin_uuid: userUuid }),
       });
     } catch (err) {
-      console.error("logout error");
+      console.error("logout error", err);
     } finally {
-      // ?”¥ ?´ë¼?´ì–¸???íƒœ ?•ë¦¬ (?„ì—­ ?íƒœ ë°?? í°)
-      logout();
+      logout({ skipRefresh: true });
       navigate("/", { replace: true });
     }
   };
@@ -37,12 +34,10 @@ export default function Header() {
       align="center"
       justify="space-between"
     >
-      {/* ?¼ìª½ */}
       <Box fontWeight="bold" fontSize="lg">
         Dashboard
       </Box>
 
-      {/* ?¤ë¥¸ìª?*/}
       <Flex align="center" gap="3">
         <Alarm />
         <Button
@@ -57,4 +52,3 @@ export default function Header() {
     </Flex>
   );
 }
-  

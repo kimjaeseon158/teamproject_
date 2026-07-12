@@ -1,94 +1,27 @@
-import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import {
+  ApiDelete,
+  ApiGet,
+  ApiPatch,
+  ApiPost,
+} from "../../../../services/api/requestJson";
 
 export async function getAdminWorkPlaceList(toast) {
-  const res = await fetchWithAuth(
-    "/api/admin-work-place-list-create/",
-    { method: "GET" },
-    { toast }
-  );
-
-  if (!res) return [];
-
-  const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    throw new Error(
-      data.detail || data.message || "관리자 근무지 목록 조회에 실패했습니다."
-    );
-  }
-
-  return Array.isArray(data.work_places) ? data.work_places : [];
+  const data = await ApiGet("/api/admin-work-place-list-create/", { toast });
+  return Array.isArray(data?.work_places) ? data.work_places : [];
 }
 
 export async function createAdminWorkPlace(payload, toast) {
-  const res = await fetchWithAuth(
-    "/api/admin-work-place-list-create/",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    },
-    { toast }
-  );
-
-  if (!res) throw new Error("인증 갱신에 실패했습니다.");
-
-  const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    throw new Error(
-      data.detail || data.message || "관리자 근무지 등록에 실패했습니다."
-    );
-  }
-
-  return data;
+  return await ApiPost("/api/admin-work-place-list-create/", payload, { toast });
 }
 
 export async function updateAdminWorkPlace(payload, toast) {
-  const res = await fetchWithAuth(
-    "/api/admin-work-place-update-delete/",
-    {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    },
-    { toast }
-  );
-
-  if (!res) throw new Error("인증 갱신에 실패했습니다.");
-
-  const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    throw new Error(
-      data.detail || data.message || "관리자 근무지 수정에 실패했습니다."
-    );
-  }
-
-  return data;
+  return await ApiPatch("/api/admin-work-place-update-delete/", payload, { toast });
 }
 
 export async function deleteAdminWorkPlace(adminWorkPlaceUuid, toast) {
-  const res = await fetchWithAuth(
+  return await ApiDelete(
     "/api/admin-work-place-update-delete/",
-    {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ admin_work_place_uuid: adminWorkPlaceUuid }),
-    },
+    { admin_work_place_uuid: adminWorkPlaceUuid },
     { toast }
   );
-
-  if (!res) throw new Error("인증 갱신에 실패했습니다.");
-
-  const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    throw new Error(
-      data.detail || data.message || "관리자 근무지 삭제에 실패했습니다."
-    );
-  }
-
-  return data;
 }
-

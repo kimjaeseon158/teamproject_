@@ -11,13 +11,13 @@ export default function useApproveSummary(workDays = []) {
     };
 
     workDays.forEach((item) => {
-      if (item.is_approved !== null) return; // 승인된 것 제외
+      if (item.is_approved !== null) return;
 
       summary.total += 1;
 
       if (item.work_shift === "주간") summary.day += 1;
       if (item.work_shift === "야간") summary.night += 1;
-      if (item.work_shift === "특근") summary.special += 1;
+      if (String(item.work_shift || "").includes("특근")) summary.special += 1;
 
       const key = item.user_uuid;
 

@@ -11,7 +11,8 @@ export async function fetchTotalData({ start, end, toast }) {
 
   if (!data || !data.success) return null;
 
-  // ?�익/지�?배열 변??  const revenueByCompany = Object.entries(data.data.income_totals || {}).map(
+  // 수익/지출 배열 변환
+  const revenueByCompany = Object.entries(data.data.income_totals || {}).map(
     ([name, value]) => ({ name, value })
   );
   const expenseData = Object.entries(data.data.expense_totals || {}).map(

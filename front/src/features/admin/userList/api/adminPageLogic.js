@@ -1,34 +1,16 @@
-import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { ApiGet, toQueryString } from "../../../../services/api/requestJson";
+
 export async function fetchFilteredPeople(queryParams, { toast } = {}) {
   try {
     const filters = queryParams.filters || {};
-    const params = {};
-
-    Object.keys(filters).forEach((key) => {
-      if (filters[key]) {
-        params[key] = filters[key];
-      }
-    });
-
-    const query = new URLSearchParams(params).toString();
-
-    const res = await fetchWithAuth(
-      `/api/user-info-filtering/?${query}`,
-      { method: "GET" },
+    const data = await ApiGet(
+      `/api/user-info-filtering/${toQueryString(filters)}`,
       { toast }
     );
 
-    if (!res) return [];
-
-    const result = await res.json();
-
-    if (Array.isArray(result?.data)) {
-      return result.data;
-    }
-
-    return [];
+    return Array.isArray(data?.data) ? data.data : [];
   } catch (err) {
-    console.error("?쒕쾭 ?붿껌 ?ㅽ뙣");
+    console.error("서버 요청 실패", err);
     return [];
   }
 }

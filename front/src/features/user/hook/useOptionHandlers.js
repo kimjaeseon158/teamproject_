@@ -25,12 +25,12 @@ export function useOptionHandlers({
 }) {
   const handleAddToCart = () => {
     if (!location || !startTime || !finishTime) {
-      toast({ title: "필수 항목을 입력하세요", status: "warning" });
+      toast({ title: "필수 항목을 입력하세요.", status: "warning" });
       return;
     }
 
     const extraRows = extraEnabled
-      ? extraWorks.filter((r) => r.type && r.start && r.finish)
+      ? extraWorks.filter((row) => row.type && row.start && row.finish)
       : [];
 
     const baseWorkType = isSpecial ? `${baseShift} 특근` : baseShift;
@@ -45,9 +45,9 @@ export function useOptionHandlers({
         minutes: calculateNetMinutes(startTime, finishTime),
         is_overtime_approved: isSpecial,
       },
-      ...extraRows.map((r) => ({
-        work_type: getExtraDetailWorkType(r.type),
-        minutes: diffMinutes(r.start, r.finish),
+      ...extraRows.map((row) => ({
+        work_type: getExtraDetailWorkType(row.type),
+        minutes: diffMinutes(row.start, row.finish),
         is_overtime_approved: true,
       })),
     ];
@@ -66,7 +66,7 @@ export function useOptionHandlers({
       },
     ]);
 
-    toast({ title: "장바구니에 추가됨", status: "info", duration: 1200 });
+    toast({ title: "장바구니에 추가되었습니다.", status: "info", duration: 1200 });
     resetForm();
   };
 
@@ -74,7 +74,7 @@ export function useOptionHandlers({
     if (isSubmitting) return;
 
     if (cart.length === 0) {
-      toast({ title: "등록할 항목이 없습니다", status: "info" });
+      toast({ title: "등록할 항목이 없습니다.", status: "info" });
       return;
     }
     setIsSubmitConfirmOpen(true);
@@ -99,7 +99,7 @@ export function useOptionHandlers({
 
       await submitWorkInfo(payload);
     } catch (e) {
-      console.error("등록 실패 원인:");
+      console.error("등록 실패 원인:", e);
       toast({
         title: "등록 실패",
         description: e?.message || "서버 응답을 확인해주세요.",
@@ -118,14 +118,14 @@ export function useOptionHandlers({
     if (onRefresh && selectedDate) {
       const ym = `${selectedDate.year}-${String(selectedDate.month).padStart(2, "0")}`;
       Promise.resolve(onRefresh(ym)).catch((e) => {
-        console.error("등록 후 캘린더 새로고침 실패");
+        console.error("등록 후 캘린더 새로고침 실패:", e);
       });
     }
 
     try {
       onClose?.();
     } catch (e) {
-      console.error("등록 후 닫기 처리 실패");
+      console.error("등록 후 닫기 처리 실패:", e);
     }
 
     setIsSubmitting?.(false);

@@ -1,32 +1,18 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import {
-  Box, Stack, Button, Menu, MenuButton, MenuList, MenuItem,
-  HStack, Text, Input, Switch, IconButton, VStack,
-  useToast, AlertDialog, AlertDialogOverlay, AlertDialogContent,
-  AlertDialogHeader, AlertDialogBody, AlertDialogFooter,
-  Badge, Center
-} from "@chakra-ui/react";
-import { ChevronDownIcon, DeleteIcon, TimeIcon, InfoOutlineIcon } from "@chakra-ui/icons";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Badge, Button, HStack, Stack, Text, useToast, VStack } from "@chakra-ui/react";
 
 import { useUser } from "../../auth/userContext";
-import TimeWheelPicker from "../../common/TimeWheelPicker";
 import locationsList from "../../common/work_placeColumns/locationsList";
-import workTimeList from "../data/workTimeList";
-import "./activity.css";
 import { getExtraWorkTimes } from "../../common/workTimeUtils";
-import {
-  EXTRA_WORK_TYPES,
-  getExtraWorkTypeByLabel,
-  getExtraWorkTypeLabel,
-} from "../../common/workTypes";
-
-import {
-  minutesToHM,
-  diffMinutes,
-  calculateNetMinutes,
-} from "../utils/timeUtils";
-
+import workTimeList from "../data/workTimeList";
 import { useOptionHandlers } from "../hook/useOptionHandlers";
+import { calculateNetMinutes, diffMinutes, minutesToHM } from "../utils/timeUtils";
+import OptionExtraWorkSection from "./OptionExtraWorkSection";
+import OptionLocationSection from "./OptionLocationSection";
+import OptionSegmentedControl from "./OptionSegmentedControl";
+import OptionSubmitConfirmDialog from "./OptionSubmitConfirmDialog";
+import OptionTimeSection from "./OptionTimeSection";
+import "./activity.css";
 
 const DEFAULT_MOBILE_START_TIME = "08:00";
 const DEFAULT_MOBILE_FINISH_TIME = "17:00";
@@ -50,18 +36,16 @@ const Option = ({ selectedDate, onRefresh, onClose, isMobile = false }) => {
   const [workTime, setWorkTime] = useState("");
   const [startTime, setStartTime] = useState("");
   const [finishTime, setFinishTime] = useState("");
-
   const [baseShift, setBaseShift] = useState("주간");
   const [isSpecial, setIsSpecial] = useState(false);
-
   const [extraEnabled, setExtraEnabled] = useState(false);
   const [extraWorks, setExtraWorks] = useState([]);
-
   const [cart, setCart] = useState([]);
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const filteredWorkTimeList = useMemo(
-    () => workTimeList.filter((t) => t.shift === baseShift),
+    () => workTimeList.filter((time) => time.shift === baseShift),
     [baseShift]
   );
 
@@ -80,26 +64,22 @@ const Option = ({ selectedDate, onRefresh, onClose, isMobile = false }) => {
     setWorkTime((prev) => prev || DEFAULT_MOBILE_WORK_TIME);
   }, [isMobile]);
 
-  // 🔥 실시간 자동 계산 (메인 근무 + 추가 근무 합계)
   const totalWorkTimeHM = useMemo(() => {
     let totalMins = 0;
-    
-    // 1. 메인 근무 시간 (휴게시간 차감)
+
     if (startTime && finishTime) {
       totalMins += calculateNetMinutes(startTime, finishTime);
     }
-    
-    // 2. 추가 근무 시간들 합계
+
     if (extraEnabled) {
-      extraWorks.forEach(ex => {
-        if (ex.start && ex.finish) {
-          totalMins += diffMinutes(ex.start, ex.finish);
+      extraWorks.forEach((extraWork) => {
+        if (extraWork.start && extraWork.finish) {
+          totalMins += diffMinutes(extraWork.start, extraWork.finish);
         }
       });
     }
 
-    const result = totalMins > 0 ? minutesToHM(totalMins) : "";
-    return result;
+    return totalMins > 0 ? minutesToHM(totalMins) : "";
   }, [startTime, finishTime, extraEnabled, extraWorks]);
 
   useEffect(() => {
@@ -126,27 +106,7 @@ const Option = ({ selectedDate, onRefresh, onClose, isMobile = false }) => {
         };
       })
     );
-  }, [startTime, finishTime, extraEnabled]);
-
-  const updateExtraWork = (idx, patch) => {
-    setExtraWorks((prev) =>
-      prev.map((r, i) => {
-        if (i !== idx) return r;
-        const n = { ...r, ...patch };
-        if (patch.type) {
-          const times = getExtraWorkTimes(patch.type, startTime, finishTime);
-          n.start = times.start;
-          n.finish = times.finish;
-        }
-        n.duration = (n.start && n.finish) ? minutesToHM(diffMinutes(n.start, n.finish)) : "";
-        return n;
-      })
-    );
-  };
-
-  const handleRemoveExtraRow = (idx) => {
-    setExtraWorks((prev) => prev.filter((_, i) => i !== idx));
-  };
+  }, [startTime, finishTime, extraEnabled, extraWorks.length]);
 
   const resetForm = () => {
     setLocation("");
@@ -158,10 +118,51 @@ const Option = ({ selectedDate, onRefresh, onClose, isMobile = false }) => {
     setExtraWorks([]);
   };
 
-  const handleSelectWorkTime = (s, f) => {
-    setStartTime(s);
-    setFinishTime(f);
-    setWorkTime(`${s}~${f}`);
+  const handleShiftChange = (shift) => {
+    setBaseShift(shift);
+    setWorkTime("");
+    setStartTime("");
+    setFinishTime("");
+  };
+
+  const handleSelectWorkTime = (start, finish) => {
+    setStartTime(start);
+    setFinishTime(finish);
+    setWorkTime(`${start}~${finish}`);
+  };
+
+  const handleStartTimeChange = (value) => {
+    setStartTime(value);
+    setWorkTime(`${value}~${finishTime || DEFAULT_MOBILE_FINISH_TIME}`);
+  };
+
+  const handleFinishTimeChange = (value) => {
+    setFinishTime(value);
+    setWorkTime(`${startTime || DEFAULT_MOBILE_START_TIME}~${value}`);
+  };
+
+  const updateExtraWork = (index, patch) => {
+    setExtraWorks((prev) =>
+      prev.map((row, rowIndex) => {
+        if (rowIndex !== index) return row;
+
+        const nextRow = { ...row, ...patch };
+        if (patch.type) {
+          const times = getExtraWorkTimes(patch.type, startTime, finishTime);
+          nextRow.start = times.start;
+          nextRow.finish = times.finish;
+        }
+        nextRow.duration =
+          nextRow.start && nextRow.finish
+            ? minutesToHM(diffMinutes(nextRow.start, nextRow.finish))
+            : "";
+        return nextRow;
+      })
+    );
+  };
+
+  const handleRemoveExtraRow = (index) => {
+    setExtraWorks((prev) => prev.filter((_, rowIndex) => rowIndex !== index));
   };
 
   const {
@@ -170,13 +171,25 @@ const Option = ({ selectedDate, onRefresh, onClose, isMobile = false }) => {
     handleSubmitAll,
     handleConfirmSubmitAll,
   } = useOptionHandlers({
-    selectedDate, userUuid, userName, cart, setCart, toast, resetForm,
-    baseShift, isSpecial, startTime, finishTime, location, extraEnabled, extraWorks,
+    selectedDate,
+    userUuid,
+    userName,
+    cart,
+    setCart,
+    toast,
+    resetForm,
+    baseShift,
+    isSpecial,
+    startTime,
+    finishTime,
+    location,
+    extraEnabled,
+    extraWorks,
     setIsSubmitConfirmOpen,
     isSubmitting,
     setIsSubmitting,
     onRefresh,
-    onClose, // 🔥 추가
+    onClose,
   });
 
   useEffect(() => {
@@ -185,238 +198,64 @@ const Option = ({ selectedDate, onRefresh, onClose, isMobile = false }) => {
     }
   }, [cart.length, isSubmitConfirmOpen]);
 
-  /* 모바일용 세그먼트 버튼 컴포넌트 */
-  const SegmentedControl = () => (
-    <HStack bg="whiteAlpha.100" p={1} borderRadius="xl" w="100%">
-      {["주간", "야간"].map((s) => (
-        <Center
-          key={s}
-          flex={1}
-          py={2}
-          borderRadius="lg"
-          bg={baseShift === s ? "blue.500" : "transparent"}
-          color={baseShift === s ? "white" : "gray.400"}
-          fontWeight="bold"
-          fontSize="sm"
-          cursor="pointer"
-          onClick={() => {
-            setBaseShift(s);
-            setWorkTime("");
-            setStartTime("");
-            setFinishTime("");
-          }}
-          transition="all 0.2s"
-        >
-          {s}
-        </Center>
-      ))}
-      <Center
-        flex={1}
-        py={2}
-        borderRadius="lg"
-        bg={isSpecial ? "orange.400" : "transparent"}
-        color={isSpecial ? "white" : "gray.400"}
-        fontWeight="bold"
-        fontSize="sm"
-        cursor="pointer"
-        onClick={() => setIsSpecial(!isSpecial)}
-        transition="all 0.2s"
-      >
-        특근 {isSpecial && "✓"}
-      </Center>
-    </HStack>
-  );
-
   return (
     <Stack spacing={5} color="white" w="100%" pb={10}>
       <HStack justify="space-between" align="center">
         <VStack align="start" spacing={0}>
-          <Text fontSize="2xl" fontWeight="900" letterSpacing="-1px">
+          <Text fontSize="2xl" fontWeight="900" letterSpacing="0">
             {displayDate.month}월 {displayDate.day}일
           </Text>
-          <Text fontSize="xs" color="gray.500">{displayDate.year}년 활동 기록</Text>
+          <Text fontSize="xs" color="gray.500">
+            {displayDate.year}년 노동 기록
+          </Text>
         </VStack>
         <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
           {baseShift} {isSpecial && "/ 특근"}
         </Badge>
       </HStack>
 
-      <SegmentedControl />
+      <OptionSegmentedControl
+        baseShift={baseShift}
+        isSpecial={isSpecial}
+        onShiftChange={handleShiftChange}
+        onSpecialToggle={() => setIsSpecial((prev) => !prev)}
+      />
 
-      <VStack align="stretch" spacing={2}>
-        <Text fontSize="xs" fontWeight="bold" color="gray.500" ml={1}>근무 시간</Text>
-        
-        {isMobile ? (
-          /* 📱 모바일: 휠 선택기 */
-          <HStack 
-            justify="center" 
-            spacing={6} 
-            p={4} 
-            bg="whiteAlpha.100" 
-            borderRadius="24px"
-            border="1px solid"
-            borderColor="whiteAlpha.100"
-          >
-            <VStack spacing={1}>
-              <Text fontSize="10px" color="gray.500" fontWeight="bold">시작 시간</Text>
-              <TimeWheelPicker 
-                value={startTime || "08:00"} 
-                onChange={(v) => {
-                  setStartTime(v);
-                  setWorkTime(`${v}~${finishTime || "17:00"}`);
-                }} 
-              />
-            </VStack>
+      <OptionTimeSection
+        isMobile={isMobile}
+        startTime={startTime}
+        finishTime={finishTime}
+        workTime={workTime}
+        totalWorkTimeHM={totalWorkTimeHM}
+        filteredWorkTimeList={filteredWorkTimeList}
+        onStartTimeChange={handleStartTimeChange}
+        onFinishTimeChange={handleFinishTimeChange}
+        onSelectWorkTime={handleSelectWorkTime}
+      />
 
-            <Box mt={6}>
-              <Text fontSize="xl" fontWeight="bold" color="blue.400">~</Text>
-            </Box>
+      <OptionLocationSection
+        location={location}
+        locations={locationsList}
+        onChange={setLocation}
+      />
 
-            <VStack spacing={1}>
-              <Text fontSize="10px" color="gray.500" fontWeight="bold">종료 시간</Text>
-              <TimeWheelPicker 
-                value={finishTime || "17:00"} 
-                onChange={(v) => {
-                  setFinishTime(v);
-                  setWorkTime(`${startTime || "08:00"}~${v}`);
-                }} 
-              />
-            </VStack>
-          </HStack>
-        ) : (
-          /* 💻 데스크톱: 기존 드롭다운 메뉴 */
-          <Menu>
-            <MenuButton 
-              as={Button} 
-              variant="unstyled" 
-              w="100%" 
-              h="56px"
-              bg="whiteAlpha.100" 
-              borderRadius="16px"
-              px={4}
-              textAlign="left"
-            >
-              <HStack justify="space-between" w="100%">
-                <Text color={workTime ? "white" : "gray.500"} fontSize="md" fontWeight="600" isTruncated>
-                  {workTime || "근무 시간을 선택하세요"}
-                </Text>
-                <ChevronDownIcon color="gray.500" />
-              </HStack>
-            </MenuButton>
-            <MenuList bg="#2c2c2e" borderColor="whiteAlpha.200" color="white" maxH="300px" overflowY="auto" borderRadius="16px">
-              {filteredWorkTimeList.map((t, i) => (
-                <MenuItem 
-                  key={i} 
-                  bg="transparent" 
-                  _hover={{ bg: "whiteAlpha.100" }} 
-                  onClick={() => handleSelectWorkTime(t.startTime, t.finishTime)} 
-                  py={3}
-                >
-                  <HStack justify="space-between" w="100%">
-                    <Text fontSize="md" fontWeight="600">{t.startTime} ~ {t.finishTime}</Text>
-                    <Text fontSize="xs" color="gray.500">
-                      ({minutesToHM(calculateNetMinutes(t.startTime, t.finishTime))})
-                    </Text>
-                  </HStack>
-                </MenuItem>
-              ))}
-            </MenuList>
-          </Menu>
-        )}
-
-        {totalWorkTimeHM && (
-          <Center 
-            py={2} 
-            px={4} 
-            borderRadius="12px" 
-            border="1px dashed" 
-            borderColor="blue.500" 
-            bg="rgba(43, 108, 176, 0.1)"
-          >
-            <HStack spacing={2}>
-              <TimeIcon color="blue.300" w={3} h={3} />
-              <Text fontSize="sm" fontWeight="bold" color="blue.300">
-                총 근무 시간: <Text as="span" color="white">{totalWorkTimeHM}</Text>
-              </Text>
-            </HStack>
-          </Center>
-        )}
-      </VStack>
-
-      <VStack align="stretch" spacing={2}>
-        <Text fontSize="xs" fontWeight="bold" color="gray.500" ml={1}>업체 및 장소</Text>
-        <Menu>
-          <MenuButton 
-            as={Button} 
-            variant="unstyled" 
-            w="100%" 
-            h="56px"
-            bg="whiteAlpha.100" 
-            borderRadius="16px"
-            px={4}
-            textAlign="left"
-          >
-            <HStack justify="space-between" w="100%">
-              <Text color={location ? "white" : "gray.500"} fontSize="md" fontWeight="600" isTruncated>
-                {location || "근무 장소를 선택하세요"}
-              </Text>
-              <ChevronDownIcon color="gray.500" />
-            </HStack>
-          </MenuButton>
-          <MenuList bg="#2c2c2e" borderColor="whiteAlpha.200" color="white" maxH="300px" overflowY="auto" borderRadius="16px">
-            {locationsList.map((loc, idx) => (
-              <MenuItem key={idx} bg="transparent" _hover={{ bg: "whiteAlpha.100" }} onClick={() => setLocation(loc)} py={3}>
-                {loc}
-              </MenuItem>
-            ))}
-          </MenuList>
-        </Menu>
-      </VStack>
-
-      <VStack align="stretch" spacing={3}>
-        <HStack justify="space-between">
-          <HStack>
-            <InfoOutlineIcon w={3} h={3} color="orange.300" />
-            <Text fontSize="xs" fontWeight="bold" color="gray.500">추가 근무 내역</Text>
-          </HStack>
-          <Switch size="sm" colorScheme="orange" isChecked={extraEnabled} onChange={(e) => setExtraEnabled(e.target.checked)} />
-        </HStack>
-
-        {extraEnabled && extraWorks.map((row, idx) => (
-          <Box key={idx} p={3} borderRadius="20px" bg="rgba(124, 45, 18, 0.1)" border="1px solid" borderColor="orange.900">
-            <HStack justify="space-between" mb={3}>
-              <Menu>
-                <MenuButton as={Button} size="xs" variant="solid" colorScheme="orange" borderRadius="full" rightIcon={<ChevronDownIcon />}>
-                  {getExtraWorkTypeLabel(row.type)}
-                </MenuButton>
-                <MenuList bg="#2c2c2e" borderColor="whiteAlpha.200">
-                  {EXTRA_WORK_TYPES.map(({ value, label }) => (
-                    <MenuItem key={value} bg="transparent" onClick={() => updateExtraWork(idx, { type: value })}>{label}</MenuItem>
-                  ))}
-                </MenuList>
-              </Menu>
-              <IconButton icon={<DeleteIcon />} size="xs" variant="ghost" colorScheme="red" onClick={() => handleRemoveExtraRow(idx)} />
-            </HStack>
-
-            <HStack justify="space-between" align="center">
-              <HStack flex={1} justify="center" spacing={2}>
-                {isMobile ? <TimeWheelPicker value={row.start} onChange={(val) => updateExtraWork(idx, { start: val })} /> :
-                  <Input size="xs" value={row.start} onChange={(e) => updateExtraWork(idx, { start: e.target.value })} />}
-                <Text fontSize="xs" color="orange.300">~</Text>
-                {isMobile ? <TimeWheelPicker value={row.finish} onChange={(val) => updateExtraWork(idx, { finish: val })} /> :
-                  <Input size="xs" value={row.finish} onChange={(e) => updateExtraWork(idx, { finish: e.target.value })} />}
-              </HStack>
-              <Badge variant="subtle" colorScheme="orange" borderRadius="md" ml={2}>
-                {row.duration || "0:00"}
-              </Badge>
-            </HStack>
-          </Box>
-        ))}
-      </VStack>
+      <OptionExtraWorkSection
+        enabled={extraEnabled}
+        rows={extraWorks}
+        isMobile={isMobile}
+        onEnabledChange={setExtraEnabled}
+        onUpdate={updateExtraWork}
+        onRemove={handleRemoveExtraRow}
+      />
 
       <VStack spacing={3} pt={2}>
-        <Button 
-          w="100%" h="56px" colorScheme="blue" borderRadius="18px" fontSize="lg" fontWeight="800"
+        <Button
+          w="100%"
+          h="56px"
+          colorScheme="blue"
+          borderRadius="18px"
+          fontSize="lg"
+          fontWeight="800"
           onClick={handleAddToCart}
           boxShadow="0 8px 20px -8px rgba(49, 130, 206, 0.5)"
         >
@@ -424,68 +263,28 @@ const Option = ({ selectedDate, onRefresh, onClose, isMobile = false }) => {
         </Button>
 
         {cart.length > 0 && (
-          <Button w="100%" h="56px" colorScheme="green" variant="outline" borderWidth="2px" borderRadius="18px" onClick={handleSubmitAll}>
+          <Button
+            w="100%"
+            h="56px"
+            colorScheme="green"
+            variant="outline"
+            borderWidth="2px"
+            borderRadius="18px"
+            onClick={handleSubmitAll}
+          >
             기록 모두 등록 ({cart.length}건)
           </Button>
         )}
       </VStack>
 
-      <AlertDialog isOpen={isSubmitConfirmOpen} leastDestructiveRef={cancelRef} onClose={() => setIsSubmitConfirmOpen(false)} isCentered>
-        <AlertDialogOverlay backdropFilter="blur(4px)">
-          <AlertDialogContent bg="#1c1c1e" color="white" borderRadius="24px" m={4}>
-            <AlertDialogHeader fontSize="lg" fontWeight="bold">최종 등록 확인</AlertDialogHeader>
-            <AlertDialogBody>
-              <VStack spacing={3} align="stretch" maxH="300px" overflowY="auto" py={2}>
-                {cart.map((c) => {
-                  const extraDetails = c.details.slice(1);
-
-                  return (
-                    <Box key={c.id} bg="whiteAlpha.100" p={3} borderRadius="16px">
-                      <HStack justify="space-between">
-                        <HStack spacing={2}>
-                          <Text fontWeight="bold">{c.work_date.month}/{c.work_date.day}</Text>
-                          <Badge colorScheme={c.baseWorkType?.includes("특근") ? "orange" : "blue"}>
-                            {c.baseWorkType || c.baseShift}
-                          </Badge>
-                          <Badge colorScheme={extraDetails.length > 0 ? "orange" : "gray"}>
-                            {extraDetails.length > 0 ? `잔업 ${extraDetails.length}건` : "잔업 없음"}
-                          </Badge>
-                        </HStack>
-                        <IconButton
-                          icon={<DeleteIcon />}
-                          size="xs"
-                          variant="ghost"
-                          colorScheme="red"
-                          onClick={() => handleDeleteFromCart(c.id)}
-                          aria-label="Remove item"
-                        />
-                      </HStack>
-                      <Text fontSize="sm" color="gray.400">{c.startTime} ~ {c.finishTime} | {c.location}</Text>
-
-                      {extraDetails.length > 0 && (
-                        <VStack align="stretch" spacing={1} mt={2}>
-                          {extraDetails.map((detail, detailIdx) => (
-                            <HStack key={`${c.id}-${detailIdx}`} justify="space-between" fontSize="xs" color="orange.200">
-                              <Text>
-                                {getExtraWorkTypeByLabel(detail.work_type)?.label || detail.work_type}
-                              </Text>
-                              <Text fontWeight="bold">{minutesToHM(detail.minutes)}</Text>
-                            </HStack>
-                          ))}
-                        </VStack>
-                      )}
-                    </Box>
-                  );
-                })}
-              </VStack>
-            </AlertDialogBody>
-            <AlertDialogFooter gap={3}>
-              <Button ref={cancelRef} variant="ghost" onClick={() => setIsSubmitConfirmOpen(false)}>취소</Button>
-              <Button colorScheme="green" borderRadius="xl" onClick={handleConfirmSubmitAll}>지금 등록하기</Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
+      <OptionSubmitConfirmDialog
+        isOpen={isSubmitConfirmOpen}
+        cancelRef={cancelRef}
+        cart={cart}
+        onClose={() => setIsSubmitConfirmOpen(false)}
+        onDelete={handleDeleteFromCart}
+        onConfirm={handleConfirmSubmitAll}
+      />
     </Stack>
   );
 };

@@ -8,7 +8,7 @@ import { getWorkPlaceFiltering } from "../api/userWorkplaceFiltering";
 export function useWorkPlaceRate(toast) {
 
   /* ======================
-     ADD (data 諛곗뿴 援ъ“)
+     ADD (data 배열 구조)
   ====================== */
 const handleAdd = async (payload) => {
 
@@ -45,7 +45,7 @@ const handleAdd = async (payload) => {
 
     if (!rate_uuid) return;
 
-    // 留덉?留?1媛쒕㈃ reset
+    // 마지막 1개면 reset
     if (user.rates.length === 1) {
       const rate = user.rates[0];
 

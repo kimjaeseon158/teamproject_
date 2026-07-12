@@ -28,15 +28,13 @@ export default function SearchModal({
       <ModalOverlay backdropFilter="blur(4px)" />
       <ModalContent borderRadius="xl" p={2}>
         <ModalHeader fontSize="lg" fontWeight="bold">
-           직원 검색
+          직원 검색
         </ModalHeader>
 
         <Divider mb={4} />
 
         <ModalBody>
           <Stack spacing={5}>
-
-            {/* 이름 + 정렬 */}
             <Box>
               <Text fontSize="sm" mb={1} color="gray.600">
                 이름
@@ -49,16 +47,12 @@ export default function SearchModal({
               />
             </Box>
 
-
-
-            {/* 전화번호 + 통신사 한 줄 */}
             <Box>
               <Text fontSize="sm" mb={1} color="gray.600">
                 전화번호
               </Text>
 
               <HStack>
-
                 <Select
                   name="mobile_carrier"
                   value={searchForm.mobile_carrier || ""}
@@ -82,7 +76,6 @@ export default function SearchModal({
               </HStack>
             </Box>
 
-            {/* 주민번호 */}
             <Box>
               <Text fontSize="sm" mb={1} color="gray.600">
                 주민번호
@@ -95,29 +88,27 @@ export default function SearchModal({
               />
             </Box>
 
-          
-
             <Divider />
             <HStack mt={3}>
-                <Select
-                  placeholder="정렬 필드"
-                  name="sorting"
-                  onChange={onChange}
-                >
-                  <option value="user_name">이름</option>
-                  <option value="phone_number">전화번호</option>
-                </Select>
+              <Select
+                placeholder="정렬 필드"
+                name="sorting"
+                onChange={onChange}
+              >
+                <option value="user_name">이름</option>
+                <option value="phone_number">전화번호</option>
+              </Select>
 
-                <Select
-                  placeholder="정렬 방향"
-                  name="direction"
-                  onChange={onChange}
-                >
-                  <option value="asc">오름차순</option>
-                  <option value="desc">내림차순</option>
-                </Select>
+              <Select
+                placeholder="정렬 방향"
+                name="direction"
+                onChange={onChange}
+              >
+                <option value="asc">오름차순</option>
+                <option value="desc">내림차순</option>
+              </Select>
             </HStack>
-            </Stack>
+          </Stack>
         </ModalBody>
 
         <ModalFooter>

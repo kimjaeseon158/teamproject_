@@ -15,6 +15,7 @@ import { useNotifySocket } from "../../services/ws/useNotifySocket";
 const UserContext = createContext(null);
 const MUST_CHANGE_PASSWORD_KEY = "mustChangePassword";
 const SKIP_REFRESH_ONCE_KEY = "skipRefreshOnce";
+const LOGGED_OUT_KEY = "loggedOut";
 
 export function UserProvider({ children, loginType: initialLoginType }) {
   const [loading, setLoading] = useState(true);
@@ -41,7 +42,8 @@ export function UserProvider({ children, loginType: initialLoginType }) {
   const [alarmCount, setAlarmCount] = useState(0);
 
   /* =========================
-     ?뵦 loginType 蹂寃???珥덇린??  ========================= */
+     loginType 변경 시 초기화
+  ========================= */
   useEffect(() => {
     setAlarms([]);
     setAlarmCount(0);
@@ -51,10 +53,24 @@ export function UserProvider({ children, loginType: initialLoginType }) {
     if (initialLoginType) {
       setLoginType(initialLoginType);
     }
-  }, [initialLoginType])
+  }, [initialLoginType]);
+
   /* =========================
-     ?몄쬆 ?숆린??  ========================= */
+     인증 동기화
+  ========================= */
   const revalidate = useCallback(async () => {
+    if (sessionStorage.getItem(LOGGED_OUT_KEY) === "true") {
+      clearAccessToken();
+      setUserUuid(null);
+      setUserName(null);
+      setLoginType(null);
+      setMustChangePassword(false);
+      setAlarms([]);
+      setAlarmCount(0);
+      setLoading(false);
+      return false;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/refresh-token/", {
@@ -63,13 +79,13 @@ export function UserProvider({ children, loginType: initialLoginType }) {
       });
 
 
-      if (!res.ok) throw new Error("refresh ?ㅽ뙣");
+      if (!res.ok) throw new Error("refresh 실패");
 
       const json = await res.json();
       const access = json?.access;
-      const serverRole = json?.Role || json?.role; // ?臾몄옄 Role怨??뚮Ц??role 紐⑤몢 ???
+      const serverRole = json?.Role || json?.role; // 대문자 Role과 소문자 role 모두 대응
       const serverMustChangePassword = json?.must_change_password;
-      if (!access) throw new Error("access token ?놁쓬");
+      if (!access) throw new Error("access token 없음");
       
       setAccessToken(access);
       if (serverRole) setLoginType(serverRole);
@@ -98,6 +114,18 @@ export function UserProvider({ children, loginType: initialLoginType }) {
 
   useEffect(() => {
     const token = getAccessToken();
+    if (sessionStorage.getItem(LOGGED_OUT_KEY) === "true") {
+      clearAccessToken();
+      setUserUuid(null);
+      setUserName(null);
+      setLoginType(null);
+      setMustChangePassword(false);
+      setAlarms([]);
+      setAlarmCount(0);
+      setLoading(false);
+      return;
+    }
+
     if (sessionStorage.getItem(SKIP_REFRESH_ONCE_KEY) === "true") {
       sessionStorage.removeItem(SKIP_REFRESH_ONCE_KEY);
       setLoading(false);
@@ -108,12 +136,12 @@ export function UserProvider({ children, loginType: initialLoginType }) {
     } else {
       setLoading(false);
     }
-  }, [revalidate]);
+  }, [revalidate, setMustChangePassword]);
 
   const token = getAccessToken();
 
   /* =========================
-     ?뵦 WebSocket ?곌껐
+     WebSocket 연결
   ========================= */
   const { connected: wsConnected } = useNotifySocket({
     token: !loading && token && userUuid ? token : null,
@@ -122,10 +150,10 @@ export function UserProvider({ children, loginType: initialLoginType }) {
     onMessage: (data) => {
 
       /* =========================
-         ?뵷 ADMIN ?꾩슜 泥섎━
+         ADMIN 전용 처리
       ========================= */
       if (loginType === "admin") {
-        // ?뱀떆 reject ???臾댁떆
+        // 임시 reject 데이터 무시
         if (data?.rejects) {
         }
 
@@ -141,7 +169,7 @@ export function UserProvider({ children, loginType: initialLoginType }) {
       }
 
       /* =========================
-         ?윟 USER ?꾩슜 泥섎━
+         USER 전용 처리
       ========================= */
       if (loginType === "user") {
         if (Array.isArray(data?.rejects)) {
@@ -176,13 +204,14 @@ export function UserProvider({ children, loginType: initialLoginType }) {
         alarms,
         alarmCount,
         wsConnected,
-        loginType, // ?뵦 Alarm?먯꽌 ?ъ슜
+        loginType, // Alarm에서 사용
         mustChangePassword,
         setUserName,
         setLoginType,
         setMustChangePassword,
         revalidate,
         logout: ({ skipRefresh = false } = {}) => {
+          sessionStorage.setItem(LOGGED_OUT_KEY, "true");
           if (skipRefresh) {
             sessionStorage.setItem(SKIP_REFRESH_ONCE_KEY, "true");
           }
@@ -208,5 +237,3 @@ export function useUser() {
   }
   return ctx;
 }
-
-

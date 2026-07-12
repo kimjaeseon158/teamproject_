@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import locationsList from "../../../common/work_placeColumns/locationsList";
 import { formatPhoneNumber, formatResidentNumber } from "../utils/format";
 
 export function useAdminInformationLogic(person, onClose, onSave, toast) {
@@ -7,8 +6,6 @@ export function useAdminInformationLogic(person, onClose, onSave, toast) {
     ...person,
     phone_number: person?.phone_number || "010-",
   });
-
-  const [showPanel, setShowPanel] = useState(false);
 
   const notify = (options) => {
     toast?.({
@@ -90,16 +87,9 @@ export function useAdminInformationLogic(person, onClose, onSave, toast) {
     if (saved !== false) onClose();
   };
 
-  const handleBackFromPanel = () => {
-    setShowPanel(false);
-  };
-
   return {
     formData,
-    showPanel,
     handleChange,
     handleSubmit,
-    handleBackFromPanel,
-    locationsList,
   };
 }

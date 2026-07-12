@@ -1,6 +1,3 @@
-import { useAdminInformationLogic } from "../hook/useAdminInformationLogic";
-import { CARRIER_OPTIONS } from "../constants/carrierConstants";
-
 import {
   Modal,
   ModalOverlay,
@@ -18,20 +15,16 @@ import {
   HStack,
 } from "@chakra-ui/react";
 
+import { CARRIER_OPTIONS } from "../constants/carrierConstants";
+import { useAdminInformationLogic } from "../hook/useAdminInformationLogic";
+
 const AdminInformation = ({ person, onClose, onSave, toast }) => {
   const {
     formData,
-    showPanel,
     handleChange,
     handleSubmit,
-    handleBackFromPanel,
-    locationsList,
   } = useAdminInformationLogic(person, onClose, onSave, toast);
 
-
-  /* =========================
-     일반 정보 수정 모달
-  ========================= */
   return (
     <Modal isOpen={!!person} onClose={onClose} isCentered size="lg">
       <ModalOverlay />

@@ -17,16 +17,16 @@ export const getWorkDurationLabel = (details = []) =>
     .map((detail) => `${detail.work_type} ${minutesToHM(detail.minutes)}`)
     .join(" · ");
 
-export const toDateOnly = (v) =>
-  typeof v === "string" && v.includes("T") ? v.split("T")[0] : v ?? "";
+export const toDateOnly = (value) =>
+  typeof value === "string" && value.includes("T") ? value.split("T")[0] : value ?? "";
 
-export const toTimeHM = (v) =>
-  typeof v === "string" && v.includes("T") ? v.split("T")[1].slice(0, 5) : "";
+export const toTimeHM = (value) =>
+  typeof value === "string" && value.includes("T") ? value.split("T")[1].slice(0, 5) : "";
 
-export const deriveStatus = (w) =>
-  w?.is_approved === true ? "승인" : w?.is_approved === false ? "거절" : "대기";
+export const deriveStatus = (workDay) =>
+  workDay?.is_approved === true ? "승인" : workDay?.is_approved === false ? "거절" : "대기";
 
-export const toYMD = (d) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-    d.getDate()
+export const toYMD = (date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate()
   ).padStart(2, "0")}`;

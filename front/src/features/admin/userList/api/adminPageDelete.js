@@ -1,40 +1,21 @@
-// src/admin/js/adminPageDelete.js
-import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { ApiDelete } from "../../../../services/api/requestJson";
 
-/**
- * ?¬ì› ?? œ (UUID ê¸°ì?)
- * @param {string[]} userUuids - ?? œ??user_uuid ë°°ì—´
- */
 export const deleteEmployees = async (userUuids, { toast } = {}) => {
   try {
     if (!Array.isArray(userUuids) || userUuids.length === 0) {
-      return { success: false, error: "?? œ???€?ì´ ?†ìŠµ?ˆë‹¤." };
+      return { success: false, error: "ì‚­ì œí•  ëŒ€ìƒì´ ì—†ìŠµë‹ˆë‹¤." };
     }
 
     const deletedUsers = [];
 
     for (const uuid of userUuids) {
-      const response = await fetchWithAuth(
+      const result = await ApiDelete(
         "/api/user-info-delete/",
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            user_uuid: uuid, // ?”¥ ë¬¸ì???˜ë‚˜??ë³´ëƒ„
-          }),
-        },
+        { user_uuid: uuid },
         { toast }
       );
 
-      if (!response) {
-        return { success: false, error: "?¸ì¦ ë§Œë£Œ" };
-      }
-
-      const parsed = await response.json();
-
-      if (parsed?.success) {
+      if (result?.success) {
         deletedUsers.push(uuid);
       }
     }

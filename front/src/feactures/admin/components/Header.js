@@ -1,7 +1,6 @@
 import { Flex, Box, Button } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../auth/userContext";
-import { getAccessToken, clearAccessToken } from "../../../services/api/token";
 import { Alarm } from "../../alarm";
 
 export default function Header() {
@@ -9,7 +8,6 @@ export default function Header() {
   const { userUuid, logout } = useUser();
 
   const handleLogout = async () => {
-    const token = getAccessToken();
     try {
       await fetch("/api/admin-logout/", {
         method: "DELETE",
@@ -20,7 +18,7 @@ export default function Header() {
     } catch (err) {
       console.error("error");
     } finally {
-      // ?�� ?�라?�언???�태 ?�리 (?�역 ?�태 �??�큰)
+      // 클라이언트 상태 정리 (전역 상태 및 토큰)
       logout();
       navigate("/", { replace: true });
     }
@@ -37,12 +35,12 @@ export default function Header() {
       align="center"
       justify="space-between"
     >
-      {/* ?�쪽 */}
+      {/* 왼쪽 */}
       <Box fontWeight="bold" fontSize="lg">
         Dashboard
       </Box>
 
-      {/* ?�른�?*/}
+      {/* 오른쪽 */}
       <Flex align="center" gap="3">
         <Alarm />
         <Button

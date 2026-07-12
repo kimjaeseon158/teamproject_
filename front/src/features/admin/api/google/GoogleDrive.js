@@ -1,4 +1,5 @@
 import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { toQueryString } from "../../../../services/api/requestJson";
 import { clearGoogleLinked } from "./googleLinkStorage";
 
 const GOOGLE_AUTH_EXPIRED_MESSAGE =
@@ -23,9 +24,10 @@ const googleAuthExpiredResult = () => {
 export const exportToGoogleExcel = async (work_place, date) => {
   try {
     // GET 방식이므로 데이터를 URL 뒤에 key=value 형태로 붙여 보냅니다.
-    const params = { date, work_place: work_place || "" };
-    const queryParams = new URLSearchParams(params).toString();
-    const url = `/api/google-drive-excel-export/?${queryParams}`;
+    const url = `/api/google-drive-excel-export/${toQueryString({
+      date,
+      work_place,
+    })}`;
 
     return requestGoogleDriveExport(url, "구글 드라이브에 파일이 생성되었습니다.");
   } catch (err) {
@@ -84,15 +86,13 @@ const requestGoogleDriveExport = async (
 };
 
 export const exportApprovalSalaryExcel = async (date) => {
-  const queryParams = new URLSearchParams({ date }).toString();
   return requestGoogleDriveExport(
-    `/api/google-drive-salary-excel-export/?${queryParams}`
+    `/api/google-drive-salary-excel-export/${toQueryString({ date })}`
   );
 };
 
 export const exportUserPayExcel = async (date) => {
-  const queryParams = new URLSearchParams({ date }).toString();
   return requestGoogleDriveExport(
-    `/api/google-drive-user-pay-excel-export/?${queryParams}`
+    `/api/google-drive-user-pay-excel-export/${toQueryString({ date })}`
   );
 };

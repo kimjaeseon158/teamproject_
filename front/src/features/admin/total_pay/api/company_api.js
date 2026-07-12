@@ -1,25 +1,12 @@
-// src/js/total_payPost.js
-import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { ApiPost } from "../../../../services/api/requestJson";
 
 export async function income_Data(payload, toast) {
   try {
-    const res = await fetchWithAuth(
-      "/api/income-add/",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      },
-      { toast }
-    );
-
-    if (!res) return null; // ?�증/?�트?�크 문제 ??
-    const data = await res.json();
-    return data;
+    return await ApiPost("/api/income-add/", payload, { toast });
   } catch (err) {
     if (toast) {
       toast({
-        title: "?�트?�크 ?�류",
+        title: "네트워크 오류",
         description: err.message,
         status: "error",
         duration: 3000,

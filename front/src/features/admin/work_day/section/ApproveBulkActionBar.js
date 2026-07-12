@@ -76,7 +76,7 @@ export default function ApproveBulkActionBar({
   const openConfirm = (nextActionType) => {
     if (!selectedCount) {
       toast({
-        title: "선택된 내역이 없습니다.",
+        title: "선택한 내역이 없습니다.",
         description: "처리할 항목을 먼저 선택해주세요.",
         status: "warning",
         duration: 2500,
@@ -202,7 +202,7 @@ export default function ApproveBulkActionBar({
             )}
             {selectedNames && (
               <Text mt={2} fontSize="xs" color="gray.500">
-                대상: {selectedNames}
+                대상 {selectedNames}
                 {targetRows.length > 3 ? ` 외 ${targetRows.length - 3}건` : ""}
               </Text>
             )}
@@ -211,7 +211,7 @@ export default function ApproveBulkActionBar({
                 mt={4}
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="거절 사유를 입력해주세요"
+                placeholder="거절 사유를 입력해주세요."
                 isDisabled={saving}
               />
             )}

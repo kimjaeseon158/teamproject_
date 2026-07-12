@@ -1,27 +1,12 @@
-// src/js/total_payPost.js
-import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { ApiPost } from "../../../../services/api/requestJson";
 
 export async function expense_Data(payload, toast) {
   try {
-    // fetchWithAuth ?¸ì¶œ
-    const res = await fetchWithAuth(
-      " /api/expense-add/",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      },
-      { toast } // ?µì…˜?¼ë¡œ toast ?˜ê?
-    );
-
-    if (!res) return null; // refresh ?¤íŒ¨ ??null ë°˜í™˜
-
-    const data = await res.json();
-    return data;
+    return await ApiPost("/api/expense-add/", payload, { toast });
   } catch (err) {
     if (toast) {
       toast({
-        title: "?¤íŠ¸?Œí¬ ?¤ë¥˜",
+        title: "ë„¤íŠ¸ì›Œí¬ ì˜¤ë¥˜",
         description: err.message,
         status: "error",
         duration: 3000,

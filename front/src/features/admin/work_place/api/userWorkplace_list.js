@@ -1,37 +1,22 @@
-import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { ApiGet, toQueryString } from "../../../../services/api/requestJson";
 
 export async function getWorkPlaceList(params = {}, toast) {
   try {
-    const hasFilter = Boolean(
-      params.user_name?.trim() || params.work_place?.trim()
-    );
-    const query = new URLSearchParams(params).toString();
-    const url = hasFilter
-      ? `/api/work-place-rate-list-filtering/${query ? `?${query}` : ""}`
+    const query = toQueryString({
+      user_name: params.user_name,
+      work_place: params.work_place,
+    });
+    const url = query
+      ? `/api/work-place-rate-list-filtering/${query}`
       : "/api/work-place-rate-list-create/";
 
-    const res = await fetchWithAuth(
-      url,
-      { method: "GET" },
-      { toast }
-    );
-
-    if (!res) return null;
-
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      throw new Error(
-        data.detail || data.message || "근무지 일급 목록 조회에 실패했습니다."
-      );
-    }
+    const data = await ApiGet(url, { toast });
 
     return {
       ...data,
-      success: data.success === true || data.success === "true",
-      users: Array.isArray(data.users) ? data.users : [],
+      success: data?.success === true || data?.success === "true",
+      users: Array.isArray(data?.users) ? data.users : [],
     };
-
   } catch (err) {
     if (toast) {
       toast({

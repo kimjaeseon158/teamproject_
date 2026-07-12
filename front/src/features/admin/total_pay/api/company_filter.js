@@ -1,17 +1,17 @@
-// src/js/total_payPost.js
-import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { ApiGet, toQueryString } from "../../../../services/api/requestJson";
 
 export async function income_filter_Data({ start, end }, toast) {
   try {
-    const startStr = start.toISOString().split("T")[0]; // 2025-09-22
+    const startStr = start.toISOString().split("T")[0];
     const endStr = end.toISOString().split("T")[0];
-    const url = `/api/income-filtered/?start_date=${startStr}&end_date=${endStr}`;
 
-    const res = await fetchWithAuth(url, { method: "GET" }, { toast });
-    if (!res) return null;
-
-    const data = await res.json();
-    return data;
+    return await ApiGet(
+      `/api/income-filtered/${toQueryString({
+        start_date: startStr,
+        end_date: endStr,
+      })}`,
+      { toast }
+    );
   } catch (err) {
     if (toast) {
       toast({

@@ -5,11 +5,9 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
   const onMessageRef = useRef(onMessage);
   const retryRef = useRef(0);
   const retryTimerRef = useRef(null);
-  const messageSeqRef = useRef(0); // 🔥 여기
-  const WS_BASE_URL = process.env.REACT_APP_WS_BASE_URL;
+  const messageSeqRef = useRef(0);
   const [connected, setConnected] = useState(false);
 
-  // 최신 onMessage 유지
   useEffect(() => {
     onMessageRef.current = onMessage;
   }, [onMessage]);
@@ -25,10 +23,12 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
       } catch {}
       wsRef.current = null;
 
+      const baseUrl = process.env.REACT_APP_WS_BASE_URL;
       const wsUrl =
         loginType === "admin"
-          ? `${WS_BASE_URL}/admin/request-monitor/?admin_uuid=${uuid}`
-          : `${WS_BASE_URL}/user/request-monitor/?user_uuid=${uuid}`;
+          ? `${baseUrl}/admin/request-monitor/?admin_uuid=${uuid}`
+          : `${baseUrl}/user/request-monitor/?user_uuid=${uuid}`;
+
       const ws = new WebSocket(wsUrl, [token]);
       wsRef.current = ws;
 
@@ -37,28 +37,24 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
         setConnected(true);
       };
 
-      ws.onmessage = (e) => {
+      ws.onmessage = (event) => {
         try {
-          const data = JSON.parse(e.data);
-
-          // 🔥 메시지 순번 누적
+          const data = JSON.parse(event.data);
           messageSeqRef.current += 1;
-
           onMessageRef.current?.(data);
         } catch {
           console.warn("WS parse error");
         }
       };
 
-      ws.onclose = (e) => {
+      ws.onclose = (event) => {
         setConnected(false);
 
         if (closedByCleanup) return;
-        if (e.code === 1000 || e.code === 1008) return;
+        if (event.code === 1000 || event.code === 1008) return;
 
         const delay = Math.min(1000 * 2 ** retryRef.current, 30000);
         retryRef.current += 1;
-
         retryTimerRef.current = setTimeout(connect, delay);
       };
 

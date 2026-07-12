@@ -1,20 +1,26 @@
 import {
   Box,
   Button,
-  IconButton,
   HStack,
+  IconButton,
   Text,
   useBreakpointValue,
 } from "@chakra-ui/react";
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-} from "@chakra-ui/icons";
+import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import { useNavigate } from "react-router-dom";
-import { useUser } from "../../auth/userContext";
+
+import { ApiDelete } from "../../../services/api/requestJson";
 import { Alarm } from "../../alarm";
+import { useUser } from "../../auth/userContext";
 import MonthPicker from "../../common/MonthPicker";
 import StatusLegend from "./StatusLegend";
+
+const formatKoreanMonth = (title) => {
+  if (!title) return "";
+
+  const [year, month] = title.split("-");
+  return `${year}년 ${Number(month)}월`;
+};
 
 export default function CalendarHeader({
   userUuid,
@@ -26,7 +32,6 @@ export default function CalendarHeader({
 }) {
   const navigate = useNavigate();
   const { logout } = useUser();
-
   const isMobile = useBreakpointValue({
     base: true,
     md: false,
@@ -34,12 +39,7 @@ export default function CalendarHeader({
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/user-logout/", {
-        method: "DELETE",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_uuid: userUuid }),
-      });
+      await ApiDelete("/api/user-logout/", { user_uuid: userUuid });
     } catch (err) {
       console.error("Logout failed");
     } finally {
@@ -55,29 +55,27 @@ export default function CalendarHeader({
     setCalendarTitle?.(ym);
   };
 
-  const formatKoreanMonth = (title) => {
-    if (!title) return "";
-    const [year, month] = title.split("-");
-    return `${year}년 ${Number(month)}월`;
-  };
-
   return (
     <Box mb={4}>
       {isMobile ? (
         <>
           <HStack justify="space-between" mb={2}>
             {!hideSummaryOnMobile && <StatusLegend summary={summary} />}
-            <HStack flex={hideSummaryOnMobile ? 1 : undefined} justify={hideSummaryOnMobile ? "flex-end" : undefined}>
+            <HStack
+              flex={hideSummaryOnMobile ? 1 : undefined}
+              justify={hideSummaryOnMobile ? "flex-end" : undefined}
+            >
               <Alarm />
               <Button size="xs" colorScheme="red" onClick={handleLogout}>
-                로그아웃 
+                로그아웃
               </Button>
             </HStack>
           </HStack>
 
           <HStack justify="center" spacing={2} w="100%">
             <IconButton
-              size="sm" 
+              aria-label="이전 달"
+              size="sm"
               variant="ghost"
               icon={<ChevronLeftIcon />}
               onClick={() => window.calendarRef?.getApi()?.prev()}
@@ -97,6 +95,7 @@ export default function CalendarHeader({
             />
 
             <IconButton
+              aria-label="다음 달"
               size="sm"
               variant="ghost"
               icon={<ChevronRightIcon />}
@@ -119,9 +118,10 @@ export default function CalendarHeader({
           </HStack>
 
           <IconButton
+            aria-label="이전 달"
             size="lg"
             variant="ghost"
-            icon={<ChevronLeftIcon  boxSize={6}/>}
+            icon={<ChevronLeftIcon boxSize={6} />}
             onClick={() => window.calendarRef?.getApi()?.prev()}
           />
 
@@ -135,6 +135,7 @@ export default function CalendarHeader({
           </Text>
 
           <IconButton
+            aria-label="다음 달"
             size="lg"
             variant="ghost"
             icon={<ChevronRightIcon boxSize={6} />}

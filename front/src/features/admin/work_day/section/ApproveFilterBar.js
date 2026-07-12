@@ -160,7 +160,6 @@ export default function ApproveFilterBar({
           </PopoverTrigger>
 
           <PopoverContent w="auto" p={4}>
-            {/* 🔥 Arrow 제거해서 겹침 해결 */}
             <PopoverCloseButton top="8px" right="8px" />
 
             <PopoverBody>
@@ -189,16 +188,15 @@ export default function ApproveFilterBar({
                         width="68px"
                         borderRadius="md"
                         placement="bottom-start"
-                        placeholder="월선택"
+                        placeholder="월 선택"
                         labelFormat="month"
-                        buttonLabel="월선택"
+                        buttonLabel="월 선택"
                       />
                     </HStack>
                   ),
                 }}
               />
 
-              {/* 🔥 Today 버튼 */}
               <HStack mt={4} justify="space-between">
                 <Button
                   size="xs"

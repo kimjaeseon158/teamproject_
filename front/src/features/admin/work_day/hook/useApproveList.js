@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
 import {
   minutesToHM,
   getMinutesByType,
@@ -11,6 +10,7 @@ import {
 } from "../utils/approveUtils";
 import { addMinutesToTime } from "../../../common/workTimeUtils";
 import { EXTRA_WORK_TYPES, getExtraWorkTypeByLabel } from "../../../common/workTypes";
+import { getAdminWorkDays } from "../api/adminWorkday";
 
 const getExtraWorkTimeRange = (type, minutes, workStartHM, workEndHM) => {
   if (type === "lunch_ext") {
@@ -63,58 +63,29 @@ export function useApproveList(toast) {
     try {
       setLoading(true);
 
-      const qs = new URLSearchParams();
-
-      if (status) qs.set("status", status);
-      if (startDate) {
-        qs.set("start_date", startDate);
-        qs.set("start_date_str", startDate);
-      }
-      if (endDate) {
-        qs.set("end_date", endDate);
-        qs.set("end_date_str", endDate);
-      }
-      if (workPlace === "__NULL__") {
-        qs.set("work_place_isnull", "true");
-      } else if (workPlace) {
-        qs.set("work_place", workPlace);
-      }
-      if (workType === "__NULL__") {
-        qs.set("work_shift_isnull", "true");
-      } else if (workType) {
-        qs.set("work_shift", workType);
-      }
-      if (userName.trim()) qs.set("user_name", userName.trim());
-      if (extraWork) qs.set("extra_work", extraWork);
-
-      const res = await fetchWithAuth(
-        `/api/admin-page-workday/?${qs.toString()}`,
-        {},
+      const workDays = await getAdminWorkDays(
+        {
+          status,
+          start_date: startDate,
+          end_date: endDate,
+          work_place: workPlace === "__NULL__" ? "" : workPlace,
+          work_shift: workType === "__NULL__" ? "" : workType,
+          user_name: userName.trim(),
+          extra_work: extraWork,
+        },
         { toast }
       );
 
-      if (!res) {
-        throw new Error("인증이 만료되었습니다. 다시 로그인해주세요.");
-      }
-
-      const json = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        throw new Error(
-          json.detail || json.message || "승인 목록 조회에 실패했습니다."
-        );
-      }
-
-      const mapped = (json.data || [])
-        .map((w, idx) => {
-          const day = getMinutesByType(w.details, "주간");
-          const totalWorkMinutes = getTotalWorkMinutes(w.details);
-          const workDurationLabel = getWorkDurationLabel(w.details);
+      const mapped = workDays
+        .map((workDay, index) => {
+          const day = getMinutesByType(workDay.details, "주간");
+          const totalWorkMinutes = getTotalWorkMinutes(workDay.details);
+          const workDurationLabel = getWorkDurationLabel(workDay.details);
           const totalWorkHM = minutesToHM(totalWorkMinutes || day);
-          const baseWorkMinutes = Number(w.details?.[0]?.minutes) || day || totalWorkMinutes;
-          const workStartHM = toTimeHM(w.work_start);
-          const workEndHM = toTimeHM(w.work_end);
-          const extraWorkDetails = getExtraWorkDetails(w.details, workStartHM, workEndHM);
+          const baseWorkMinutes = Number(workDay.details?.[0]?.minutes) || day || totalWorkMinutes;
+          const workStartHM = toTimeHM(workDay.work_start);
+          const workEndHM = toTimeHM(workDay.work_end);
+          const extraWorkDetails = getExtraWorkDetails(workDay.details, workStartHM, workEndHM);
           const extraWorkMinutes = extraWorkDetails.reduce(
             (total, detail) => total + (Number(detail.minutes) || 0),
             0
@@ -125,17 +96,17 @@ export function useApproveList(toast) {
               : minutesToHM(baseWorkMinutes);
 
           return {
-            id: w.id ?? `${w.user_uuid}-${idx}`,
-            user_uuid: w.user_uuid,
-            name: w.user_name,
-            date: toDateOnly(w.work_date),
-            workShift: w.work_shift ?? "",
-            workType: w.work_shift ?? w.details?.[0]?.work_type ?? "-",
+            id: workDay.id ?? `${workDay.user_uuid}-${index}`,
+            user_uuid: workDay.user_uuid,
+            name: workDay.user_name,
+            date: toDateOnly(workDay.work_date),
+            workShift: workDay.work_shift ?? "",
+            workType: workDay.work_shift ?? workDay.details?.[0]?.work_type ?? "-",
             workTime:
               workStartHM && workEndHM
                 ? `${workStartHM}~${workEndHM}`
                 : "",
-            location: w.work_place ?? "",
+            location: workDay.work_place ?? "",
             dayHM: minutesToHM(baseWorkMinutes),
             totalWorkMinutes,
             totalWorkHM,
@@ -143,7 +114,7 @@ export function useApproveList(toast) {
             workDurationLabel,
             extraWorkDetails,
             totalWorkDisplay,
-            status: deriveStatus(w),
+            status: deriveStatus(workDay),
           };
         })
         .sort((a, b) => String(a.date).localeCompare(String(b.date)));

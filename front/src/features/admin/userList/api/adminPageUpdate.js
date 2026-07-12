@@ -1,66 +1,30 @@
-// src/admin/js/adminPageUpdate.js
-import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
+import { ApiPatch } from "../../../../services/api/requestJson";
 
-/**
- * ?¬ì› ?•ë³´ ?˜ì • (UUID ê¸°ì?)
- * @param {Object} employeeData - ë°˜ë“œ??user_uuid ?¬í•¨
- */
 export const updateEmployee = async (employeeData, { toast } = {}) => {
   try {
-    // ?”¥ ?ˆì „?¥ì¹˜: UUID ?„ìˆ˜
     if (!employeeData?.user_uuid) {
       return {
         success: false,
-        error: "user_uuidê°€ ?†ëŠ” ?°ì´?°ì…?ˆë‹¤.",
+        error: "user_uuidê°€ ì—†ëŠ” ë°ì´í„°ì…ë‹ˆë‹¤.",
       };
     }
 
-    const response = await fetchWithAuth(
-      "/api/user-info-update/",
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(employeeData), // user_uuid ?¬í•¨ ?„ì²´ ê°ì²´
-      },
-      { toast }
-    );
+    const result = await ApiPatch("/api/user-info-update/", employeeData, { toast });
 
-    // refresh ?¤íŒ¨ ??fetchWithAuthê°€ null
-    if (!response) {
+    if (result?.success === false) {
       return {
         success: false,
-        error: "?¸ì¦ ë§Œë£Œ ?ëŠ” ?¬ë¡œê·¸ì¸ ?„ìš”",
-      };
-    }
-
-    const text = await response.text();
-
-    let result;
-    try {
-      result = JSON.parse(text);
-    } catch (err) {
-      console.error("?…ë°?´íŠ¸ ?‘ë‹µ JSON ?Œì‹± ?¤íŒ¨");
-      return {
-        success: false,
-        error: "?œë²„ ?‘ë‹µ ?Œì‹± ?¤íŒ¨",
-      };
-    }
-
-    if (!response.ok || result?.success === false) {
-      return {
-        success: false,
-        error: result?.message || "?…ë°?´íŠ¸ ?¤íŒ¨",
+        error: result?.message || "ì—…ë°ì´íŠ¸ ì‹¤íŒ¨",
       };
     }
 
     return {
       success: true,
       updated: result?.updated_user || employeeData,
+      user_data: result?.user_data,
     };
   } catch (error) {
-    console.error("?…ë°?´íŠ¸ ?ëŸ¬");
+    console.error("ì—…ë°ì´íŠ¸ ì˜¤ë¥˜", error);
     return { success: false, error: error.message };
   }
 };

@@ -1,27 +1,9 @@
 import { Flex, Box, Button } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
-import { useUser } from "../../auth/userContext";
 import { Alarm } from "../../alarm";
-import { fetchWithAuth } from "../../../services/api/fetchWithAuth";
+import useAdminLogout from "../hook/useAdminLogout";
 
 export default function Header() {
-  const navigate = useNavigate();
-  const { userUuid, logout } = useUser();
-
-  const handleLogout = async () => {
-    try {
-      await fetchWithAuth("/api/admin-logout/", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ admin_uuid: userUuid }),
-      });
-    } catch (err) {
-      console.error("logout error", err);
-    } finally {
-      logout({ skipRefresh: true });
-      navigate("/", { replace: true });
-    }
-  };
+  const { canLogout, handleLogout } = useAdminLogout();
 
   return (
     <Flex
@@ -44,7 +26,7 @@ export default function Header() {
           colorScheme="teal"
           size="sm"
           onClick={handleLogout}
-          isDisabled={!userUuid}
+          isDisabled={!canLogout}
         >
           Logout
         </Button>

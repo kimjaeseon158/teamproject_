@@ -13,16 +13,9 @@ import {
   Flex,
   Textarea,
 } from "@chakra-ui/react";
-import { adminWorkdayStatusUpdate } from "../api/adminWorkdayStatusUpdate";
 
 const InfoCard = ({ title, children }) => (
-  <Box
-    border="1px solid"
-    borderColor="gray.300"
-    borderRadius="12px"
-    p={4}
-    mb={3}
-  >
+  <Box border="1px solid" borderColor="gray.300" borderRadius="12px" p={4} mb={3}>
     <Text fontSize="sm" fontWeight="bold" mb={2}>
       {title}
     </Text>
@@ -40,13 +33,7 @@ const EXTRA_WORK_COLOR_SCHEMES = {
 };
 
 const WorkTimeRow = ({ title, time, tag, duration, colorScheme = "blue" }) => (
-  <Flex
-    align="center"
-    justify="space-between"
-    gap={2}
-    p={3}
-    minH="54px"
-  >
+  <Flex align="center" justify="space-between" gap={2} p={3} minH="54px">
     <Text fontSize="sm" color="gray.900" fontWeight="700" minW="64px">
       {title}
     </Text>
@@ -66,11 +53,11 @@ export default function ApproveDetailModal({
   employee,
   isOpen,
   onClose,
-  toast,
-  refresh,
+  onApprove,
+  onReject,
+  saving,
 }) {
   const [rejectReason, setRejectReason] = useState("");
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -79,79 +66,6 @@ export default function ApproveDetailModal({
   }, [employee?.id, isOpen]);
 
   if (!employee) return null;
-
-  const handleApprove = async () => {
-    try {
-      setSaving(true);
-
-      await adminWorkdayStatusUpdate(
-        {
-          user_uuid: employee.user_uuid,
-          work_date: employee.date,
-          work_shift: employee.workShift || employee.workType,
-          status: true,
-        },
-        { toast }
-      );
-
-      toast({
-        title: "승인 완료",
-        status: "success",
-      });
-
-      onClose();
-      refresh();
-    } catch (err) {
-      toast({
-        title: "승인 중 오류 발생",
-        description: err.message,
-        status: "error",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleReject = async () => {
-    if (!rejectReason.trim()) {
-      toast({
-        title: "반려 사유를 입력하세요.",
-        status: "warning",
-      });
-      return;
-    }
-
-    try {
-      setSaving(true);
-
-      await adminWorkdayStatusUpdate(
-        {
-          user_uuid: employee.user_uuid,
-          work_date: employee.date,
-          work_shift: employee.workShift || employee.workType,
-          status: false,
-          reject_reason: rejectReason,
-        },
-        { toast }
-      );
-
-      toast({
-        title: "반려 완료",
-        status: "info",
-      });
-
-      onClose();
-      refresh();
-    } catch (err) {
-      toast({
-        title: "반려 중 오류 발생",
-        description: err.message,
-        status: "error",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
@@ -207,7 +121,7 @@ export default function ApproveDetailModal({
             colorScheme="green"
             mr={2}
             isLoading={saving}
-            onClick={handleApprove}
+            onClick={() => onApprove(employee)}
           >
             승인
           </Button>
@@ -216,7 +130,7 @@ export default function ApproveDetailModal({
             colorScheme="red"
             mr={2}
             isLoading={saving}
-            onClick={handleReject}
+            onClick={() => onReject(employee, rejectReason)}
           >
             반려
           </Button>

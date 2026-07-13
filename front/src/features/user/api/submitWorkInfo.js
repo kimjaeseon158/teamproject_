@@ -1,4 +1,4 @@
-import { fetchWithAuth } from "../../../services/api/fetchWithAuth";
+import { ApiPost } from "../../../services/api/requestJson";
 
 /* =========================
    날짜 유틸
@@ -19,12 +19,9 @@ const toDateTime = (date, hm) => `${date} ${hm}:00`;
 /* =========================
    UUID 기반 근무 등록
 ========================= */
-const submitWorkInfo = async (input, { toast } = {}) => {
-  let body;
-
-  // bulk
+export const buildWorkInfoPayload = (input) => {
   if (Array.isArray(input)) {
-    body = {
+    return {
       data: input.map(item => {
         const workDate = toYYYYMMDD(item.work_date);
         if (!workDate) throw new Error("날짜 변환 실패");
@@ -42,64 +39,41 @@ const submitWorkInfo = async (input, { toast } = {}) => {
       }),
     };
   }
-  // single
-  else {
-    const {
+
+  const {
+    user_uuid,
+    user_name,
+    work_shift,
+    selectedDate,
+    work_date,
+    startTime,
+    finishTime,
+    location,
+    details = [],
+  } = input;
+
+  if (!user_uuid) throw new Error("user_uuid가 없습니다.");
+
+  const workDate = toYYYYMMDD(work_date ?? selectedDate);
+  if (!workDate) throw new Error("날짜 변환 실패");
+
+  return {
+    data: {
       user_uuid,
       user_name,
       work_shift,
-      selectedDate,
-      work_date,
-      startTime,
-      finishTime,
-      location,
-      details = [],
-    } = input;
-
-    if (!user_uuid) throw new Error("user_uuid가 없습니다.");
-
-    const workDate = toYYYYMMDD(work_date ?? selectedDate);
-    if (!workDate) throw new Error("날짜 변환 실패");
-
-    body = {
-      data: {
-        user_uuid,
-        user_name,
-        work_shift,
-        work_date: workDate,
-        work_start: toDateTime(workDate, startTime),
-        work_end: toDateTime(workDate, finishTime),
-        work_place: location,
-        details,
-      },
-    };
-  }
-
-  const res = await fetchWithAuth(
-    "/api/user-work-info/",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      work_date: workDate,
+      work_start: toDateTime(workDate, startTime),
+      work_end: toDateTime(workDate, finishTime),
+      work_place: location,
+      details,
     },
-    { toast }
-  );
+  };
+};
 
-  if (!res || !res.ok) {
-    let msg = "근무 정보 전송 실패";
-    try {
-      const err = await res.json();
-      msg = err.detail || err.message || msg;
-    } catch {}
-    throw new Error(msg);
-  }
-
-  // 응답이 비어 있을 수 있음
-  try {
-    return await res.json();
-  } catch {
-    return null;
-  }
+const submitWorkInfo = async (input, { toast } = {}) => {
+  const body = buildWorkInfoPayload(input);
+  return await ApiPost("/api/user-work-info/", body, { toast });
 };
 
 export default submitWorkInfo;

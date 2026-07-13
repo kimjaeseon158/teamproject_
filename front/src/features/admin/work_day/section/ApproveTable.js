@@ -1,10 +1,11 @@
 import { Tag } from "@chakra-ui/react";
 import CommonTable from "../../../common/mytable";
 import SortableHeaderLabel from "../../../common/SortableHeaderLabel";
+import { isApprovedStatus, isRejectedStatus } from "../utils/approveUtils";
 
 const getStatusColor = (status) => {
-  if (status === "승인") return "green";
-  if (status === "거절" || status === "반려") return "red";
+  if (isApprovedStatus(status)) return "green";
+  if (isRejectedStatus(status)) return "red";
   return "yellow";
 };
 
@@ -54,7 +55,7 @@ const getColumns = ({ sortField, sortOrder, onSort }) => [
     key: "totalWorkDisplay",
     label: (
       <SortableHeaderLabel sortKey="totalWorkMinutes" sortField={sortField} sortOrder={sortOrder} onSort={onSort}>
-        총근무 시간
+        총근무시간
       </SortableHeaderLabel>
     ),
     render: (value, row) => value || row.totalWorkHM || "-",

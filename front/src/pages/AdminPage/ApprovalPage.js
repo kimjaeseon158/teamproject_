@@ -68,9 +68,10 @@ export default function ApprovePage() {
             <ApproveBulkActionBar
               selectedRows={approval.selectedRows}
               toast={approval.toast}
-              refresh={approval.handleSearch}
               clearSelection={approval.clearSelection}
               isDisabled={approval.loading}
+              onBulkUpdate={approval.updateBulkStatus}
+              saving={approval.bulkSaving}
             />
           </HStack>
         </Flex>
@@ -99,8 +100,9 @@ export default function ApprovePage() {
         employee={approval.selectedEmployee}
         isOpen={approval.detailDisclosure.isOpen}
         onClose={approval.detailDisclosure.onClose}
-        toast={approval.toast}
-        refresh={approval.handleSearch}
+        onApprove={approval.approveEmployee}
+        onReject={approval.rejectEmployee}
+        saving={approval.detailSaving}
       />
 
       <ExcelExportModal

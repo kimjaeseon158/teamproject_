@@ -18,6 +18,23 @@ export async function requestJson(
   url,
   { method = "GET", body, headers, toast } = {}
 ) {
+  const res = await requestApiResponse(url, { method, body, headers, toast });
+  if (!res) return null;
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const message =
+      data.detail || data.message || data.error || "API 요청에 실패했습니다.";
+    throw new Error(message);
+  }
+
+  return data;
+}
+
+export async function requestApiResponse(
+  url,
+  { method = "GET", body, headers, toast } = {}
+) {
   const options = {
     method,
     headers: {
@@ -30,17 +47,7 @@ export async function requestJson(
     options.body = JSON.stringify(body);
   }
 
-  const res = await fetchWithAuth(url, options, { toast });
-  if (!res) return null;
-
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const message =
-      data.detail || data.message || data.error || "API 요청에 실패했습니다.";
-    throw new Error(message);
-  }
-
-  return data;
+  return await fetchWithAuth(url, options, { toast });
 }
 
 export const ApiGet = (url, { toast, headers } = {}) =>
@@ -54,3 +61,9 @@ export const ApiPatch = (url, body, { toast, headers } = {}) =>
 
 export const ApiDelete = (url, body, { toast, headers } = {}) =>
   requestJson(url, { method: "DELETE", body, toast, headers });
+
+export const ApiRawGet = (url, { toast, headers } = {}) =>
+  requestApiResponse(url, { method: "GET", toast, headers });
+
+export const ApiRawDelete = (url, body, { toast, headers } = {}) =>
+  requestApiResponse(url, { method: "DELETE", body, toast, headers });

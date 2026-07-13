@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useToast } from "@chakra-ui/react";
 
-import { getAdminWorkPlaceList } from "../../work_place/api/adminWorkPlace";
+import { useAdminData } from "../../userList/hook/useAdminData";
 import { useDailyPay } from "../../work_place/hook/useWorkList";
 import { useTotalFinance } from "../../total_pay/hook/useTotalFinance";
-import { useAdminData } from "../../userList/hook/useAdminData";
+import { login as googleLogin } from "../../api/google/googleAuth";
 import useApproveCalendar from "./useApproveCalendar";
 import useApproveSummary from "./useApproveSummary";
 import useGoogleLinkStatus from "../../api/google/useGoogleLinkStatus";
+import useOverviewWorkPlaces from "./useOverviewWorkPlaces";
 import {
   DEFAULT_OVERVIEW_WIDGETS,
   OVERVIEW_STORAGE_KEY,
@@ -32,11 +33,11 @@ export default function useOverviewPage() {
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [peopleData, setPeopleData] = useState([]);
-  const [adminWorkPlaces, setAdminWorkPlaces] = useState([]);
 
   const googleStatus = useGoogleLinkStatus();
+  const adminWorkPlaces = useOverviewWorkPlaces(toast);
   const { events, loading: approvalLoading, rawData: pendingList } =
-    useApproveCalendar(currentDate);
+    useApproveCalendar(currentDate, toast);
   const approvalSummary = useApproveSummary(pendingList);
   const {
     data: dailyPayData,
@@ -50,25 +51,6 @@ export default function useOverviewPage() {
   useEffect(() => {
     fetchDailyPay({}, toast);
   }, [fetchDailyPay, toast]);
-
-  useEffect(() => {
-    const loadAdminWorkPlaces = async () => {
-      try {
-        const workPlaces = await getAdminWorkPlaceList(toast);
-        setAdminWorkPlaces(workPlaces);
-      } catch (err) {
-        toast({
-          title: "관리자 근무지 목록을 불러오지 못했습니다.",
-          description: err?.message,
-          status: "error",
-          duration: 3000,
-          isClosable: true,
-        });
-      }
-    };
-
-    loadAdminWorkPlaces();
-  }, [toast]);
 
   useEffect(() => {
     setApiMonth(formatMonth(currentDate));
@@ -110,27 +92,55 @@ export default function useOverviewPage() {
 
   const pendingPreview = useMemo(() => pendingList.slice(0, 5), [pendingList]);
 
-  const kpis = useMemo(() => ([
-    { label: "전체 직원(명)", value: formatNumber(peopleData.length), color: "blue.400", path: "/dashboard/admin" },
-    { label: "승인 대기 건", value: formatNumber(approvalSummary.total), color: "orange.400", path: "/dashboard/approval" },
-    { label: "오늘 근무(건)", value: formatNumber(events.length), color: "green.400", path: "/dashboard/approval" },
-    { label: "근무지", value: formatNumber(dailyPaySummary.places), color: "teal.400", path: "/dashboard/daily-pay" },
-    { label: "평균 기본일급(원)", value: formatNumber(dailyPaySummary.averageBasePay), color: "purple.400", path: "/dashboard/daily-pay" },
-    {
-      label: `${currentDate.getMonth() + 1}월 지급액`,
-      value: formatNumber(currentMonthPay),
-      color: "red.400",
-      path: "/dashboard/total-sales",
-    },
-  ]), [
-    approvalSummary.total,
-    currentDate,
-    currentMonthPay,
-    dailyPaySummary.averageBasePay,
-    dailyPaySummary.places,
-    events.length,
-    peopleData.length,
-  ]);
+  const kpis = useMemo(
+    () => [
+      {
+        label: "전체 직원(명)",
+        value: formatNumber(peopleData.length),
+        color: "blue.400",
+        path: "/dashboard/admin",
+      },
+      {
+        label: "승인 대기(건)",
+        value: formatNumber(approvalSummary.total),
+        color: "orange.400",
+        path: "/dashboard/approval",
+      },
+      {
+        label: "오늘 근무(건)",
+        value: formatNumber(events.length),
+        color: "green.400",
+        path: "/dashboard/approval",
+      },
+      {
+        label: "근무지",
+        value: formatNumber(dailyPaySummary.places),
+        color: "teal.400",
+        path: "/dashboard/daily-pay",
+      },
+      {
+        label: "평균 기본시급(원)",
+        value: formatNumber(dailyPaySummary.averageBasePay),
+        color: "purple.400",
+        path: "/dashboard/daily-pay",
+      },
+      {
+        label: `${currentDate.getMonth() + 1}월 지급액`,
+        value: formatNumber(currentMonthPay),
+        color: "red.400",
+        path: "/dashboard/total-sales",
+      },
+    ],
+    [
+      approvalSummary.total,
+      currentDate,
+      currentMonthPay,
+      dailyPaySummary.averageBasePay,
+      dailyPaySummary.places,
+      events.length,
+      peopleData.length,
+    ]
+  );
 
   const hiddenWidgets = useMemo(
     () => Object.entries(OVERVIEW_WIDGET_LABELS).filter(([key]) => !widgets[key]),
@@ -154,7 +164,9 @@ export default function useOverviewPage() {
   };
 
   const moveMonth = (amount) => {
-    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + amount, 1));
+    setCurrentDate(
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() + amount, 1)
+    );
   };
 
   const showWidget = (key) => {
@@ -170,6 +182,10 @@ export default function useOverviewPage() {
     setCurrentDate((prev) => new Date(prev));
   };
 
+  const handleGoogleLogin = () => {
+    googleLogin();
+  };
+
   return {
     approvalLoading,
     approvalSummary,
@@ -179,6 +195,7 @@ export default function useOverviewPage() {
     events,
     financeTotal,
     googleStatus,
+    handleGoogleLogin,
     handleMonthChange,
     hiddenWidgets,
     hideWidget,

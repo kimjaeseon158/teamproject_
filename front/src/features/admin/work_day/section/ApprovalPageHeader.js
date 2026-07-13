@@ -21,7 +21,7 @@ export default function ApprovalPageHeader({ loading, totalCount, onExcelOpen })
       </Box>
 
       <HStack spacing={2} justify={{ base: "flex-start", md: "flex-end" }}>
-        <Tooltip label="승인관리 엑셀 생성" hasArrow>
+        <Tooltip label="승인관리 문서 생성" hasArrow>
           <Button
             leftIcon={<DownloadIcon />}
             rightIcon={<Image src={excelIcon} w="22px" h="22px" alt="excel" />}

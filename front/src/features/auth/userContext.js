@@ -7,9 +7,9 @@ import React, {
 } from "react";
 import {
   getAccessToken,
-  setAccessToken,
   clearAccessToken,
 } from "../../services/api/token";
+import { refreshAuthSession } from "../../services/api/authApi";
 import { useNotifySocket } from "../../services/ws/useNotifySocket";
 
 const UserContext = createContext(null);
@@ -73,21 +73,11 @@ export function UserProvider({ children, loginType: initialLoginType }) {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/refresh-token/", {
-        method: "POST",
-        credentials: "include",
-      });
-
-
-      if (!res.ok) throw new Error("refresh 실패");
-
-      const json = await res.json();
-      const access = json?.access;
-      const serverRole = json?.Role || json?.role; // 대문자 Role과 소문자 role 모두 대응
+      const json = await refreshAuthSession();
+      const access = json.access;
+      const serverRole = json?.Role || json?.role;
       const serverMustChangePassword = json?.must_change_password;
-      if (!access) throw new Error("access token 없음");
-      
-      setAccessToken(access);
+
       if (serverRole) setLoginType(serverRole);
       if (typeof serverMustChangePassword === "boolean") {
         setMustChangePassword(serverMustChangePassword);

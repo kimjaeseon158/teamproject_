@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+
 import { getWorkPlaceList } from "../api/userWorkplace_list";
 
 export function useDailyPay() {
@@ -10,9 +11,7 @@ export function useDailyPay() {
 
     try {
       const result = await getWorkPlaceList(params, toast);
-      const isSearch =
-        params.user_name?.trim() ||
-        params.work_place?.trim();
+      const isSearch = params.user_name?.trim() || params.work_place?.trim();
 
       if (isSearch && (!result?.users || result.users.length === 0)) {
         toast?.({

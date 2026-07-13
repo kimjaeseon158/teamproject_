@@ -1,9 +1,8 @@
-import { fetchWithAuth } from "../../../../services/api/fetchWithAuth";
-import { toQueryString } from "../../../../services/api/requestJson";
+import { ApiRawGet, toQueryString } from "../../../../services/api/requestJson";
 import { clearGoogleLinked } from "./googleLinkStorage";
 
 const GOOGLE_AUTH_EXPIRED_MESSAGE =
-  "Google Drive 인증이 만료되었습니다. 다시 구글 연동을 시도해주세요.";
+  "Google Drive 인증이 만료되었습니다. 다시 Google 연동을 시도해주세요.";
 
 const isGoogleAuthExpired = (status) => status === 401 || status === 403;
 
@@ -16,33 +15,20 @@ const googleAuthExpiredResult = () => {
   };
 };
 
-/**
- * 구글 드라이브 엑셀 업로드 API 호출 (GET 방식)
- * @param {string} work_place - 근무지 (예: "A현장")
- * @param {string} date - 날짜 (예: "2026-04-03")
- */
 export const exportToGoogleExcel = async (work_place, date) => {
-  try {
-    // GET 방식이므로 데이터를 URL 뒤에 key=value 형태로 붙여 보냅니다.
-    const url = `/api/google-drive-excel-export/${toQueryString({
-      date,
-      work_place,
-    })}`;
+  const url = `/api/google-drive-excel-export/${toQueryString({
+    date,
+    work_place,
+  })}`;
 
-    return requestGoogleDriveExport(url, "구글 드라이브에 파일이 생성되었습니다.");
-  } catch (err) {
-    console.error(err);
-    throw err;
-  }
+  return requestGoogleDriveExport(url, "Google Drive에 파일이 생성되었습니다.");
 };
 
 const requestGoogleDriveExport = async (
   url,
   successMessage = "Google Drive에 엑셀 파일이 생성되었습니다."
 ) => {
-  const res = await fetchWithAuth(url, {
-    method: "GET",
-  });
+  const res = await ApiRawGet(url);
 
   if (!res) {
     return {
@@ -85,14 +71,12 @@ const requestGoogleDriveExport = async (
   };
 };
 
-export const exportApprovalSalaryExcel = async (date) => {
-  return requestGoogleDriveExport(
+export const exportApprovalSalaryExcel = async (date) =>
+  requestGoogleDriveExport(
     `/api/google-drive-salary-excel-export/${toQueryString({ date })}`
   );
-};
 
-export const exportUserPayExcel = async (date) => {
-  return requestGoogleDriveExport(
+export const exportUserPayExcel = async (date) =>
+  requestGoogleDriveExport(
     `/api/google-drive-user-pay-excel-export/${toQueryString({ date })}`
   );
-};

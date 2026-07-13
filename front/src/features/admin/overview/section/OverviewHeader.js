@@ -14,13 +14,13 @@ import { RepeatIcon } from "@chakra-ui/icons";
 import { FcGoogle } from "react-icons/fc";
 
 import MonthPicker from "../../../common/MonthPicker";
-import { login as googleLogin } from "../../api/google/googleAuth";
 import { formatMonth } from "../utils/overviewFormat";
 
 export default function OverviewHeader({
   currentDate,
   googleStatus,
   isLoading,
+  onGoogleLogin,
   onMonthChange,
   onRefresh,
 }) {
@@ -36,7 +36,7 @@ export default function OverviewHeader({
           </Badge>
         </HStack>
         <Text color="gray.500" fontSize="sm">
-          필요한 현황만 켜서 관리자 첫 화면을 구성합니다.
+          필요한 현황만 모아서 관리자 첫 화면을 구성합니다.
         </Text>
       </Box>
 
@@ -47,12 +47,12 @@ export default function OverviewHeader({
           <Tag colorScheme="green" borderRadius="full" px={3} py={2}>
             <HStack spacing={2}>
               <FcGoogle />
-              <Text fontWeight="700">구글 연동</Text>
+              <Text fontWeight="700">Google 연동</Text>
             </HStack>
           </Tag>
         ) : (
-          <Button leftIcon={<FcGoogle />} variant="outline" size="sm" onClick={googleLogin}>
-            구글 연결
+          <Button leftIcon={<FcGoogle />} variant="outline" size="sm" onClick={onGoogleLogin}>
+            Google 연결
           </Button>
         )}
 

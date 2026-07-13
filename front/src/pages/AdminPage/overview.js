@@ -23,6 +23,7 @@ export default function OverviewPage() {
           currentDate={overview.currentDate}
           googleStatus={overview.googleStatus}
           isLoading={overview.dailyPayLoading || overview.approvalLoading}
+          onGoogleLogin={overview.handleGoogleLogin}
           onMonthChange={overview.handleMonthChange}
           onRefresh={overview.refresh}
         />

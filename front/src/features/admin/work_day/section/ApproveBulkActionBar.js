@@ -13,10 +13,8 @@ import {
   useDisclosure,
 } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
-import { adminWorkdayBulkStatusUpdate } from "../api/adminWorkdayBulkStatusUpdate";
 
-const isApprovedStatus = (status) => status === "승인";
-const isRejectedStatus = (status) => status === "거절" || status === "반려";
+import { isApprovedStatus, isRejectedStatus } from "../utils/approveUtils";
 
 const ACTION_META = {
   approve: {
@@ -27,25 +25,25 @@ const ACTION_META = {
     successTitle: "선택 승인 완료",
   },
   reject: {
-    title: "선택 거절",
-    confirmText: "거절하기",
+    title: "선택 반려",
+    confirmText: "반려하기",
     colorScheme: "red",
     status: false,
-    successTitle: "선택 거절 완료",
+    successTitle: "선택 반려 완료",
   },
 };
 
 export default function ApproveBulkActionBar({
   selectedRows,
   toast,
-  refresh,
   clearSelection,
   isDisabled,
+  onBulkUpdate,
+  saving,
 }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [actionType, setActionType] = useState("approve");
   const [rejectReason, setRejectReason] = useState("");
-  const [saving, setSaving] = useState(false);
 
   const action = ACTION_META[actionType];
   const isReject = actionType === "reject";
@@ -76,7 +74,7 @@ export default function ApproveBulkActionBar({
   const openConfirm = (nextActionType) => {
     if (!selectedCount) {
       toast({
-        title: "선택한 내역이 없습니다.",
+        title: "선택된 내역이 없습니다.",
         description: "처리할 항목을 먼저 선택해주세요.",
         status: "warning",
         duration: 2500,
@@ -95,7 +93,7 @@ export default function ApproveBulkActionBar({
         title: "처리할 항목이 없습니다.",
         description:
           nextActionType === "reject"
-            ? "이미 거절 또는 반려된 항목은 제외됩니다."
+            ? "이미 반려된 항목은 제외됩니다."
             : "이미 승인된 항목은 제외됩니다.",
         status: "warning",
         duration: 2500,
@@ -111,39 +109,23 @@ export default function ApproveBulkActionBar({
   const handleConfirm = async () => {
     if (isReject && !rejectReason.trim()) {
       toast({
-        title: "거절 사유를 입력해주세요.",
+        title: "반려 사유를 입력해주세요.",
         status: "warning",
         duration: 2500,
       });
       return;
     }
 
-    try {
-      setSaving(true);
-      await adminWorkdayBulkStatusUpdate(targetRows, action.status, {
-        toast,
-        rejectReason: rejectReason.trim(),
-      });
+    const success = await onBulkUpdate({
+      rows: targetRows,
+      status: action.status,
+      rejectReason: rejectReason.trim(),
+      successTitle: action.successTitle,
+    });
 
-      toast({
-        title: action.successTitle,
-        description: `${targetRows.length}건이 처리되었습니다.`,
-        status: "success",
-        duration: 2500,
-      });
-
+    if (success) {
       clearSelection();
       onClose();
-      refresh();
-    } catch (err) {
-      toast({
-        title: "일괄 처리 실패",
-        description: err.message,
-        status: "error",
-        duration: 3000,
-      });
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -169,7 +151,7 @@ export default function ApproveBulkActionBar({
           onClick={() => openConfirm("reject")}
           isDisabled={isDisabled}
         >
-          선택 거절
+          선택 반려
         </Button>
       </HStack>
 
@@ -181,28 +163,28 @@ export default function ApproveBulkActionBar({
           <ModalBody>
             <Text fontSize="sm" color="gray.700">
               선택한 {selectedCount.toLocaleString()}건 중 {targetRows.length.toLocaleString()}건을{" "}
-              {isReject ? "거절" : "승인"}하시겠습니까?
+              {isReject ? "반려" : "승인"}하시겠습니까?
             </Text>
             <Text mt={3} fontSize="sm" color="gray.600">
-              대기 → {isReject ? "거절" : "승인"}: {pendingTargetCount.toLocaleString()}건
+              대기 중 {isReject ? "반려" : "승인"}: {pendingTargetCount.toLocaleString()}건
             </Text>
             {isReject ? (
               <Text fontSize="sm" color="gray.600">
-                승인 → 거절: {approvedTargetCount.toLocaleString()}건
+                승인 후 반려: {approvedTargetCount.toLocaleString()}건
               </Text>
             ) : (
               <Text fontSize="sm" color="gray.600">
-                반려/거절 → 승인: {rejectedTargetCount.toLocaleString()}건
+                반려 후 승인: {rejectedTargetCount.toLocaleString()}건
               </Text>
             )}
             {!!excludedRows.length && (
               <Text fontSize="sm" color="gray.500">
-                기존 {isReject ? "거절/반려" : "승인"}: {excludedRows.length.toLocaleString()}건 제외
+                기존 {isReject ? "반려" : "승인"}: {excludedRows.length.toLocaleString()}건 제외
               </Text>
             )}
             {selectedNames && (
               <Text mt={2} fontSize="xs" color="gray.500">
-                대상 {selectedNames}
+                대상: {selectedNames}
                 {targetRows.length > 3 ? ` 외 ${targetRows.length - 3}건` : ""}
               </Text>
             )}
@@ -211,7 +193,7 @@ export default function ApproveBulkActionBar({
                 mt={4}
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="거절 사유를 입력해주세요."
+                placeholder="반려 사유를 입력해주세요."
                 isDisabled={saving}
               />
             )}

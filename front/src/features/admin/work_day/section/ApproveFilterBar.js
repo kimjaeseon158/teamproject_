@@ -19,6 +19,7 @@ import "react-day-picker/dist/style.css";
 import locationsList from "../../../common/work_placeColumns/locationsList";
 import MonthPicker from "../../../common/MonthPicker";
 import { EXTRA_WORK_TYPES } from "../../../common/workTypes";
+import { APPROVAL_STATUS } from "../constants/approvalConstants";
 
 const getDisplayMonth = (monthValue, range) => {
   if (monthValue) {
@@ -78,10 +79,10 @@ export default function ApproveFilterBar({
         onChange={(e) => setStatus(e.target.value)}
         isDisabled={loading}
       >
-        <option value="전체">전체</option>
-        <option value="승인">승인</option>
-        <option value="대기">대기</option>
-        <option value="거절">거절</option>
+        <option value={APPROVAL_STATUS.ALL}>전체</option>
+        <option value={APPROVAL_STATUS.APPROVED}>승인</option>
+        <option value={APPROVAL_STATUS.PENDING}>대기</option>
+        <option value={APPROVAL_STATUS.REJECTED}>반려</option>
       </Select>
 
       <Select
@@ -138,12 +139,7 @@ export default function ApproveFilterBar({
         isDisabled={loading}
       />
 
-      <Button
-        size="sm"
-        colorScheme="blue"
-        onClick={onSearch}
-        isLoading={loading}
-      >
+      <Button size="sm" colorScheme="blue" onClick={onSearch} isLoading={loading}>
         조회
       </Button>
 
@@ -198,19 +194,11 @@ export default function ApproveFilterBar({
               />
 
               <HStack mt={4} justify="space-between">
-                <Button
-                  size="xs"
-                  variant="ghost"
-                  onClick={handleTodayClick}
-                >
+                <Button size="xs" variant="ghost" onClick={handleTodayClick}>
                   오늘
                 </Button>
 
-                <Button
-                  size="xs"
-                  variant="ghost"
-                  onClick={onRangeReset}
-                >
+                <Button size="xs" variant="ghost" onClick={onRangeReset}>
                   초기화
                 </Button>
               </HStack>

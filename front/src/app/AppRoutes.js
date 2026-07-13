@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Navigate, Routes, Route, useLocation } from "react-router-dom";
 import { UserProvider } from "../features/auth/userContext";
 import { AlarmProvider } from "../features/alarm";
 
@@ -6,14 +6,13 @@ import LoginPage from "../pages/LoginPage/LoginPage";
 import Calendar from "../pages/UserPage/CalendarPage";
 import PasswordChangePage from "../pages/UserPage/PasswordChangePage";
 import Dashboard from "../pages/dashboard";
-import AdminPage from "../pages/AdminPage/EmployeeList";
 import GoogleCallbackDone from "../features/admin/api/google/GoogleCallbackDone";
 import RequireAuth from "../requireauth";
 
 export default function AppRoutes() {
   const { pathname } = useLocation();
 
-  const loginType = pathname.startsWith("/dashboard")
+  const loginType = pathname.startsWith("/dashboard") || pathname.startsWith("/adminpage")
     ? "admin"
     : pathname.startsWith("/data")
     ? "user"
@@ -29,7 +28,7 @@ export default function AppRoutes() {
           <Route
             path="/data"
             element={
-              <RequireAuth>
+              <RequireAuth role="user">
                 <Calendar />
               </RequireAuth>
             }
@@ -38,7 +37,7 @@ export default function AppRoutes() {
           <Route
             path="/data/password-change"
             element={
-              <RequireAuth>
+              <RequireAuth role="user">
                 <PasswordChangePage />
               </RequireAuth>
             }
@@ -47,7 +46,7 @@ export default function AppRoutes() {
           <Route
             path="/dashboard/*"
             element={
-              <RequireAuth>
+              <RequireAuth role="admin">
                 <Dashboard />
               </RequireAuth>
             }
@@ -55,9 +54,7 @@ export default function AppRoutes() {
           <Route
             path="/adminpage/*"
             element={
-              <RequireAuth>
-                <AdminPage />
-              </RequireAuth>
+              <Navigate to="/dashboard/admin" replace />
             }
           />
         </Routes>

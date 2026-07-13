@@ -1,26 +1,8 @@
 import { useEffect, useState } from "react";
-import { getAdminWorkDays } from "../../work_day/api/adminWorkday";
 
-function getMonthRange(date) {
-  const year = date.getFullYear();
-  const month = date.getMonth();
-  const start = new Date(year, month, 1);
-  const end = new Date(year, month + 1, 0);
+import { fetchOverviewPendingWorkDays } from "../api/overviewApi";
 
-  const toYMD = (target) => {
-    const y = target.getFullYear();
-    const m = String(target.getMonth() + 1).padStart(2, "0");
-    const day = String(target.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-  };
-
-  return {
-    startDate: toYMD(start),
-    endDate: toYMD(end),
-  };
-}
-
-export default function useApproveCalendar(currentDate) {
+export default function useApproveCalendar(currentDate, toast) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [rawData, setRawData] = useState([]);
@@ -29,14 +11,7 @@ export default function useApproveCalendar(currentDate) {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const { startDate, endDate } = getMonthRange(currentDate);
-
-        const workDays = await getAdminWorkDays({
-          status: "대기",
-          start_date_str: startDate,
-          end_date_str: endDate,
-        });
-
+        const workDays = await fetchOverviewPendingWorkDays(currentDate, { toast });
         const pendingOnly = Array.isArray(workDays)
           ? workDays.filter((item) => item.is_approved === null)
           : [];
@@ -64,7 +39,7 @@ export default function useApproveCalendar(currentDate) {
     };
 
     fetchData();
-  }, [currentDate]);
+  }, [currentDate, toast]);
 
   return { events, loading, rawData };
 }

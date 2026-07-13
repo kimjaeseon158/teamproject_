@@ -1,3 +1,5 @@
+import { APPROVAL_STATUS } from "../constants/approvalConstants";
+
 export const minutesToHM = (mins) => {
   const m = Math.max(0, Number(mins) || 0);
   return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
@@ -23,8 +25,17 @@ export const toDateOnly = (value) =>
 export const toTimeHM = (value) =>
   typeof value === "string" && value.includes("T") ? value.split("T")[1].slice(0, 5) : "";
 
+export const isApprovedStatus = (status) => status === APPROVAL_STATUS.APPROVED;
+
+export const isRejectedStatus = (status) =>
+  status === APPROVAL_STATUS.REJECTED || status === "거절";
+
 export const deriveStatus = (workDay) =>
-  workDay?.is_approved === true ? "승인" : workDay?.is_approved === false ? "거절" : "대기";
+  workDay?.is_approved === true
+    ? APPROVAL_STATUS.APPROVED
+    : workDay?.is_approved === false
+      ? APPROVAL_STATUS.REJECTED
+      : APPROVAL_STATUS.PENDING;
 
 export const toYMD = (date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(

@@ -1,5 +1,5 @@
-// src/api/fetchWithAuth.js
-import { getAccessToken, setAccessToken, clearAccessToken } from "./token";
+import { refreshAccessToken } from "./authApi";
+import { getAccessToken, clearAccessToken } from "./token";
 
 // 동시에 401/403 에러가 여러 번 발생해도 refresh는 1번만 시도하도록 잠금
 let refreshPromise = null;
@@ -27,30 +27,9 @@ export async function fetchWithAuth(url, options = {}, { toast } = {}) {
     try {
       // refresh가 이미 진행 중이면 그 요청을 기다립니다.
       if (!refreshPromise) {
-        refreshPromise = fetch("/api/refresh-token/", {
-          method: "POST",
-          credentials: "include",
-        })
-          .then(async (refreshRes) => {
-            if (!refreshRes.ok) {
-              throw new Error(`refresh failed: ${refreshRes.status}`);
-            }
-            const refreshData = await refreshRes.json();
-
-            const newAccess =
-              refreshData.access ||
-              refreshData.access_token ||
-              refreshData.accessToken;
-
-            // success 여부와 관계없이 access 토큰이 있으면 정상 처리합니다.
-            if (!newAccess) throw new Error("no access token in refresh response");
-
-            setAccessToken(newAccess);
-            return newAccess;
-          })
-          .finally(() => {
-            refreshPromise = null;
-          });
+        refreshPromise = refreshAccessToken().finally(() => {
+          refreshPromise = null;
+        });
       }
 
       const newAccess = await refreshPromise;

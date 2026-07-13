@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@chakra-ui/react";
 
 import { adminLoginAPI, userLoginAPI } from "../api/loginApi";
-import { validation } from "../utils/validation";
-import { useUser } from "../../auth/userContext";
 import { setAccessToken } from "../../../services/api/token";
+import { useUser } from "../../auth/userContext";
+import { validation } from "../utils/validation";
 
 export const useLogin = () => {
   const navigate = useNavigate();
@@ -43,7 +43,9 @@ export const useLogin = () => {
       if (loginType === "admin") {
         navigate("/dashboard", { replace: true });
       } else if (loginType === "user") {
-        navigate(mustChangePassword ? "/data/password-change" : "/data", { replace: true });
+        navigate(mustChangePassword ? "/data/password-change" : "/data", {
+          replace: true,
+        });
       }
     }
   }, [loading, userUuid, loginType, mustChangePassword, navigate]);
@@ -139,7 +141,7 @@ export const useLogin = () => {
       }
 
       if (!response.access) {
-        setLoginError("access token 없음");
+        setLoginError("access token이 없습니다.");
         setIsLoading(false);
         return;
       }
@@ -157,7 +159,9 @@ export const useLogin = () => {
 
       setUserName(userName);
       setLoginType(userRole);
-      setMustChangePassword(userRole === "user" && response?.must_change_password === true);
+      setMustChangePassword(
+        userRole === "user" && response?.must_change_password === true
+      );
 
       await revalidate();
 
@@ -165,7 +169,9 @@ export const useLogin = () => {
       if (userRole === "admin") {
         navigate("/dashboard");
       } else {
-        navigate(response?.must_change_password === true ? "/data/password-change" : "/data");
+        navigate(
+          response?.must_change_password === true ? "/data/password-change" : "/data"
+        );
       }
 
       toast({

@@ -1,49 +1,45 @@
 # 일일 근무 기록 및 일급 관리 시스템
 
-직원이 근무 내용을 직접 등록하고, 관리자가 근무 기록을 승인한 뒤 일급과 매출/지출을 관리할 수 있도록 만든 Django + React 기반 웹 애플리케이션입니다.
+직원이 근무 내용을 직접 등록하고, 관리자가 근무 기록 승인, 급여 계산, 매출/지출, Google 연동, 실시간 알림을 관리하는 Django + React 기반 웹 애플리케이션입니다.
 
-프론트엔드는 React로 사용자/관리자 화면을 구성하고, 백엔드는 Django REST API로 로그인, 근무 기록, 급여 계산, 재무 데이터, Google 연동, 실시간 알림을 처리합니다.
+프론트엔드는 React로 사용자/관리자 화면을 제공하고, 백엔드는 Django REST API와 Django Channels WebSocket으로 로그인, 근무 기록, 급여 계산, 재무 데이터, Google Drive Excel export, 실시간 알림을 처리합니다.
 
 ## 주요 기능
 
 ### 사용자 기능
 
-- 사용자 로그인 및 인증 상태 유지
-- 달력 기반 근무 일정/근무 기록 확인
+- 사용자 로그인 및 JWT 인증
 - 근무 날짜, 근무지, 근무 시간, 근무 형태 입력
-- 주간/야간/연장/식대 연장 등 근무 상세 시간 등록
-- 제출한 근무 기록의 승인 상태 확인
+- 제출한 근무 기록의 승인/반려 상태 확인
 - 반려된 근무 기록과 반려 사유 확인
 - 월별 근무 요약 및 예상 일급 확인
 
 ### 관리자 기능
 
-- 관리자 로그인 및 권한 기반 화면 접근
-- 직원 목록 조회, 추가, 수정, 삭제
-- 직원별 근무지 및 근무지별 시급 정보 관리
+- 관리자 로그인/로그아웃
+- 직원 목록 조회, 추가, 수정, 삭제, 필터링
+- 직원별 근무지 및 근무지별 시급 관리
 - 제출된 근무 기록 승인/반려 처리
 - 승인 대기 건수 실시간 알림 확인
-- 일급/급여 관련 데이터 조회
-- 매출과 지출 등록, 수정, 삭제
-- 기간별 재무 데이터 조회 및 차트 시각화
+- 수입/지출 등록, 수정, 삭제, 기간별 조회
 - 최근 3개월 지출 합계 조회
 - Google OAuth 연동
 - Google Calendar 이벤트 조회
-- Google Drive로 근무지/급여 Excel 파일 내보내기
+- Google Drive 템플릿 기반 근무지/급여/사용자 급여 Excel export
 
 ### WebSocket 실시간 알림
 
-- 관리자는 직원이 제출한 근무 기록 중 승인 대기 건수가 생기면 실시간으로 알림을 받을 수 있습니다.
-- 사용자는 본인의 근무 기록이 반려되었을 때 반려 건수와 반려 사유를 실시간으로 확인할 수 있습니다.
-- 승인/반려 상태 변경을 새로고침 없이 화면에 반영해 관리자와 사용자가 빠르게 상태를 확인할 수 있습니다.
+- 관리자는 승인 대기 근무 기록 건수를 실시간으로 받습니다.
+- 사용자는 본인의 반려 근무 기록 수와 반려 사유를 실시간으로 받습니다.
+- Django Channels와 Redis Channel Layer를 사용합니다.
 
 ### JWT 인증
 
-- 사용자와 관리자는 로그인 성공 시 JWT 기반 인증 토큰을 사용합니다.
-- Access Token은 API 요청 인증에 사용하고, Refresh Token은 Access Token 재발급에 사용합니다.
-- Refresh Token은 관리자용 `AdminRefreshToken`, 사용자용 `UserRefreshToken` 모델로 구분해 관리합니다.
-- 프론트엔드는 `front/src/services/api/fetchWithAuth.js`, `front/src/services/api/token.js`에서 토큰 처리와 인증 API 요청을 관리합니다.
-- 백엔드는 `djangorestframework-simplejwt`와 `Back/myproject/myapp/jwt_utils.py`, `Back/myproject/myapp/auth_utils.py`를 사용해 토큰 생성, 검증, 재발급, 로그아웃 처리를 수행합니다.
+- 사용자와 관리자는 로그인 성공 시 JWT Access Token과 Refresh Token을 사용합니다.
+- Access Token은 API 인증에 사용합니다.
+- Refresh Token은 HttpOnly Cookie로 내려가며 Access Token 재발급에 사용합니다.
+- Refresh Token은 관리자용 `AdminRefreshToken`, 사용자용 `UserRefreshToken` 모델로 구분해 저장합니다.
+- JWT 인증/토큰 관련 코드는 `Back/myproject/myapp/api_views/token/` 아래로 정리했습니다.
 
 ## 프로젝트 구조
 
@@ -52,8 +48,6 @@ teamproject_-3/
 ├─ Back/
 │  └─ myproject/
 │     ├─ manage.py
-│     ├─ requirements.txt
-│     ├─ db.sqlite3
 │     ├─ myproject/
 │     │  ├─ settings.py
 │     │  ├─ urls.py
@@ -61,192 +55,120 @@ teamproject_-3/
 │     │  ├─ wsgi.py
 │     │  └─ middlewares.py
 │     └─ myapp/
+│        ├─ apps.py
 │        ├─ models.py
 │        ├─ serializers.py
 │        ├─ views.py
 │        ├─ urls.py
-│        ├─ consumers.py
-│        ├─ routing.py
-│        ├─ auth_utils.py
-│        ├─ jwt_utils.py
 │        ├─ salary.py
-│        ├─ excel_utils.py
-│        ├─ google_drive_utils.py
-│        ├─ date_utils.py
-│        ├─ signals.py
+│        ├─ api_views/
+│        │  ├─ __init__.py
+│        │  ├─ admin/
+│        │  │  ├─ __init__.py
+│        │  │  ├─ admin_auth.py
+│        │  │  ├─ user_management.py
+│        │  │  ├─ finance.py
+│        │  │  └─ work.py
+│        │  ├─ user/
+│        │  │  ├─ __init__.py
+│        │  │  └─ user.py
+│        │  ├─ google/
+│        │  │  ├─ __init__.py
+│        │  │  ├─ google.py
+│        │  │  ├─ excel_utils.py
+│        │  │  └─ google_drive_utils.py
+│        │  ├─ token/
+│        │  │  ├─ __init__.py
+│        │  │  ├─ jwt_utils.py
+│        │  │  └─ token.py
+│        │  └─ shared/
+│        │     ├─ __init__.py
+│        │     ├─ common.py
+│        │     └─ utils.py
+│        ├─ ws/
+│        │  ├─ __init__.py
+│        │  ├─ consumers.py
+│        │  ├─ routing.py
+│        │  └─ signals.py
 │        └─ migrations/
 ├─ front/
 │  ├─ package.json
 │  ├─ vercel.json
 │  ├─ public/
 │  └─ src/
-│     ├─ app/
-│     ├─ pages/
-│     ├─ services/
-│     ├─ common/
-│     ├─ feactures/
-│     └─ assets/
 └─ Readme/
    ├─ README.md
    └─ Code_Review/
 ```
 
-## 주요 파일 용도
+## Backend 주요 파일
 
-### Backend
-
-| 파일 | 용도 |
+| 파일/폴더 | 역할 |
 | --- | --- |
 | `Back/myproject/manage.py` | Django 관리 명령 실행 파일 |
-| `Back/myproject/requirements.txt` | 백엔드 Python 패키지 목록 |
-| `Back/myproject/myproject/settings.py` | Django 앱, DB, JWT, CORS, Redis, Google OAuth, 정적 파일 설정 |
+| `Back/myproject/myproject/settings.py` | Django, DB, JWT, CORS, Redis, Google OAuth 설정 |
 | `Back/myproject/myproject/urls.py` | 프로젝트 전체 URL 연결 |
-| `Back/myproject/myproject/asgi.py` | HTTP와 WebSocket 처리를 위한 ASGI 진입점 |
-| `Back/myproject/myproject/wsgi.py` | 배포용 WSGI 진입점 |
-| `Back/myproject/myproject/middlewares.py` | 인증/요청 처리에 사용하는 커스텀 미들웨어 |
-| `Back/myproject/myapp/models.py` | 사용자, 관리자, 근무일, 근무 상세, 근무지 시급, 매출, 지출, Refresh Token 모델 정의 |
-| `Back/myproject/myapp/serializers.py` | 모델 데이터를 API 요청/응답 형식으로 변환 |
-| `Back/myproject/myapp/views.py` | 로그인, 직원 관리, 근무 기록, 승인, 급여, 재무, Google 연동 API 로직 |
-| `Back/myproject/myapp/urls.py` | `myapp` API 엔드포인트 라우팅 |
-| `Back/myproject/myapp/consumers.py` | Django Channels 기반 WebSocket 알림 처리 |
-| `Back/myproject/myapp/routing.py` | WebSocket URL 라우팅 |
-| `Back/myproject/myapp/auth_utils.py` | 사용자/관리자 인증 보조 로직 |
-| `Back/myproject/myapp/jwt_utils.py` | JWT 및 Refresh Token 관련 유틸리티 |
-| `Back/myproject/myapp/salary.py` | 근무 시간과 시급 기준 일급 계산 로직 |
-| `Back/myproject/myapp/excel_utils.py` | Excel 생성/내보내기 관련 유틸리티 |
-| `Back/myproject/myapp/google_drive_utils.py` | Google Drive 업로드/연동 유틸리티 |
-| `Back/myproject/myapp/date_utils.py` | 날짜 계산 및 변환 유틸리티 |
-| `Back/myproject/myapp/signals.py` | 데이터 변경 시 알림 등 후속 처리 연결 |
+| `Back/myproject/myproject/asgi.py` | HTTP/WebSocket ASGI 진입점, `myapp.ws.routing` 연결 |
+| `Back/myproject/myproject/wsgi.py` | WSGI 진입점 |
+| `Back/myproject/myproject/middlewares.py` | WebSocket 토큰 인증 미들웨어 |
+| `Back/myproject/myapp/apps.py` | Django 앱 설정, `myapp.ws.signals` 등록 |
+| `Back/myproject/myapp/models.py` | 사용자, 관리자, 근무 기록, 급여, 재무, Refresh Token 모델 |
+| `Back/myproject/myapp/serializers.py` | API 요청/응답 직렬화 및 생성/수정 검증 |
+| `Back/myproject/myapp/views.py` | 기존 import 호환을 위한 API view export 파일 |
+| `Back/myproject/myapp/urls.py` | `myapp` API endpoint 라우팅 |
+| `Back/myproject/myapp/salary.py` | 급여 계산, 시급 조회, 급여 지출 동기화 도메인 로직 |
+| `Back/myproject/myapp/api_views/` | REST API view를 도메인별로 분리한 패키지 |
+| `Back/myproject/myapp/ws/` | WebSocket consumer, routing, signal 패키지 |
 | `Back/myproject/myapp/migrations/` | DB 스키마 변경 이력 |
 
-### Frontend
+## API View 구조
 
-| 파일/폴더 | 용도 |
+| 파일/폴더 | 역할 |
 | --- | --- |
-| `front/package.json` | 프론트엔드 의존성 및 실행 스크립트 |
-| `front/vercel.json` | Vercel 배포 설정 |
-| `front/public/index.html` | React 앱이 마운트되는 HTML 템플릿 |
-| `front/src/index.js` | React 앱 진입점 |
-| `front/src/index.css` | 전역 스타일 |
-| `front/src/app/AppRoutes.js` | 로그인, 사용자, 관리자 페이지 라우팅 |
-| `front/src/requireauth.js` | 인증이 필요한 페이지 접근 제어 |
-| `front/src/pages/LoginPage/` | 로그인 페이지 |
-| `front/src/pages/UserPage/CalendarPage.js` | 사용자 근무 입력/조회 캘린더 페이지 |
-| `front/src/pages/dashboard.js` | 관리자 대시보드 레이아웃 및 하위 라우팅 |
-| `front/src/pages/AdminPage/EmployeeList.js` | 직원 관리 화면 |
-| `front/src/pages/AdminPage/ApprovalPage.js` | 근무 승인/반려 화면 |
-| `front/src/pages/AdminPage/DailyPayPage.js` | 일급 관리 화면 |
-| `front/src/pages/AdminPage/TotalSalesPage.js` | 매출/지출 통계 화면 |
-| `front/src/services/api/` | 공통 API 호출, 토큰 처리, 인증 요청 로직 |
-| `front/src/services/ws/useNotifySocket.js` | WebSocket 알림 연결 훅 |
-| `front/src/feactures/auth/` | 로그인 사용자 상태 Context |
-| `front/src/feactures/alarm/` | 알림 상태와 알림 UI |
-| `front/src/feactures/login/` | 로그인 폼, 검증, 로그인 API, 로그인 레이아웃 |
-| `front/src/feactures/user/` | 사용자 캘린더, 근무 입력 폼, 근무 시간/날짜 유틸리티 |
-| `front/src/feactures/admin/` | 관리자 직원 관리, 근무 승인, 근무지 시급, 재무 통계, Google 연동 기능 |
-| `front/src/common/` | 공통 버튼, 캘린더, 테이블, 날짜 선택 컴포넌트 |
-| `front/src/assets/` | 이미지 등 정적 리소스 |
+| `api_views/__init__.py` | API view export |
+| `api_views/admin/admin_auth.py` | 관리자 로그인/로그아웃 API |
+| `api_views/admin/user_management.py` | 관리자의 직원 조회/추가/수정/삭제/필터링 API |
+| `api_views/admin/finance.py` | 수입/지출 조회, 추가, 수정, 삭제, 집계 API |
+| `api_views/admin/work.py` | 근무 승인/반려, 근무지, 시급 관리 API |
+| `api_views/user/user.py` | 사용자 로그인, 비밀번호 변경, 근무 입력, 월별 근무 요약 API |
+| `api_views/google/google.py` | Google OAuth, Calendar, Drive Excel export API |
+| `api_views/google/excel_utils.py` | Google export용 Excel Workbook 생성 유틸 |
+| `api_views/google/google_drive_utils.py` | Google Drive 파일 조회, 다운로드, 업로드 유틸 |
+| `api_views/token/jwt_utils.py` | `CustomRefreshToken`, 관리자/사용자 JWT 인증 클래스 |
+| `api_views/token/token.py` | 토큰 재발급 API, 로그인 credential 확인, Refresh Token 저장/갱신 |
+| `api_views/shared/utils.py` | 날짜 범위, 월 계산, 근무 타입 정규화 공용 유틸 |
+| `api_views/shared/common.py` | shared 확장용 빈 파일 |
 
-## 프론트/백엔드 필드명 약속
+## WebSocket 구조
 
-### WorkPlaceRate 필드명
-
-프론트와 백엔드는 아래 변수명을 그대로 맞춰서 사용합니다.
-
-| 필드명 | 의미 |
+| 파일 | 역할 |
 | --- | --- |
-| `user_uuid` | 사용자 UUID |
-| `work_place` | 근무지명 |
-| `base_hourly_wage` | 주간 기본 단가 |
-| `overtime_hourly_wage` | 평일 잔업 단가 |
-| `meal_ot_hourly_wage` | 중식연장 단가 |
-| `day_special_hourly_wage` | 주간 특근 단가 |
-| `night_special_hourly_wage` | 야간 특근 단가 |
-| `overnight_hourly_wage` | 야간 기본 단가 |
-| `overnight_ot_hourly_wage` | 야간 잔업 단가 |
-| `early_hourly_wage` | 조기출근 단가 |
+| `Back/myproject/myapp/ws/consumers.py` | 관리자 승인 대기 알림, 사용자 반려 알림 WebSocket Consumer |
+| `Back/myproject/myapp/ws/routing.py` | WebSocket URL 라우팅 |
+| `Back/myproject/myapp/ws/signals.py` | 근무 기록 변경 시 WebSocket 알림 전송 트리거 |
+| `Back/myproject/myproject/asgi.py` | `myapp.ws.routing.websocket_urlpatterns`를 ASGI에 연결 |
 
-`special_hourly_wage`는 기존 호환용 필드입니다. 새로 주고받는 값은 `day_special_hourly_wage`, `night_special_hourly_wage`를 사용합니다.
+WebSocket endpoint:
 
-```json
-{
-  "user_uuid": "00000000-0000-0000-0000-000000000000",
-  "work_place": "A현장",
-  "base_hourly_wage": 100000,
-  "overtime_hourly_wage": 50000,
-  "meal_ot_hourly_wage": 30000,
-  "day_special_hourly_wage": 120000,
-  "night_special_hourly_wage": 150000,
-  "overnight_hourly_wage": 130000,
-  "overnight_ot_hourly_wage": 60000,
-  "early_hourly_wage": 30000
-}
+```text
+ws/admin/request-monitor/
+ws/user/request-monitor/
 ```
 
-### work_type 표준 이름
+## 주요 API 분류
 
-근무 상세 `work_type`은 아래 문자열을 기준으로 사용합니다.
-
-| work_type | 적용 단가 |
+| 분류 | Endpoint 예시 |
 | --- | --- |
-| `주간` | `base_hourly_wage` |
-| `평일 잔업` | `overtime_hourly_wage` |
-| `중식연장` | `meal_ot_hourly_wage` |
-| `주간 특근` | `day_special_hourly_wage` |
-| `야간 특근` | `night_special_hourly_wage` |
-| `야간` | `overnight_hourly_wage` |
-| `야간 잔업` | `overnight_ot_hourly_wage` |
-| `조기출근` | `early_hourly_wage` |
-
-사용하지 않을 이름:
-
-- `잔업` 대신 `평일 잔업`
-- `철야` 대신 `야간`
-- `철야연장` 대신 `야간 잔업`
-- `철야 잔업` 대신 `야간 잔업`
-- `특근` 대신 `주간 특근` 또는 `야간 특근`
-
-## 중요 라이브러리
-
-### Backend
-
-| 라이브러리 | 용도 |
-| --- | --- |
-| `Django` | 백엔드 웹 프레임워크 |
-| `djangorestframework` | REST API 구현 |
-| `djangorestframework-simplejwt` | JWT 기반 인증 |
-| `django-cors-headers` | React 개발 서버와의 CORS 처리 |
-| `django-environ` | `.env` 환경변수 관리 |
-| `psycopg2-binary` | PostgreSQL 연결 |
-| `django-redis` | Redis 캐시 연결 |
-| `channels`, `channels-redis`, `daphne` | WebSocket 실시간 알림 |
-| `google-auth`, `google-auth-oauthlib` | Google OAuth 인증 |
-| `requests` | 외부 HTTP 요청 |
-| `django-apscheduler` | 예약 작업 처리 |
-| `openpyxl` | Excel 파일 생성/처리 |
-| `gunicorn`, `whitenoise` | 배포 서버 및 정적 파일 처리 |
-| `black` | Python 코드 포맷팅 |
-
-### Frontend
-
-| 라이브러리 | 용도 |
-| --- | --- |
-| `react`, `react-dom` | UI 구성 |
-| `react-router-dom` | SPA 라우팅 |
-| `@chakra-ui/react`, `@chakra-ui/icons` | 관리자 화면 등 UI 컴포넌트 |
-| `@emotion/react`, `@emotion/styled` | Chakra UI 스타일 엔진 |
-| `framer-motion` | UI 애니메이션 |
-| `axios` | API 통신 |
-| `@fullcalendar/react`, `@fullcalendar/daygrid`, `@fullcalendar/timegrid`, `@fullcalendar/interaction` | 캘린더 UI |
-| `react-big-calendar`, `react-calendar`, `react-day-picker`, `react-date-range` | 날짜/캘린더 선택 UI |
-| `date-fns`, `moment` | 날짜 및 시간 처리 |
-| `recharts` | 매출/지출 차트 시각화 |
-| `react-icons` | 아이콘 |
-| `concurrently` | 프론트엔드와 백엔드 동시 실행 |
+| 로그인/로그아웃 | `check-admin-login/`, `check-user-login/`, `admin-logout/`, `user-logout/`, `refresh-token/` |
+| 직원 관리 | `user-info-list/`, `user-info-add/`, `user-info-update/`, `user-info-delete/`, `user-info-filtering/` |
+| 근무 기록 | `user-work-info/`, `user-monthly-work-summary/`, `admin-page-workday/`, `admin-workday-status-update/` |
+| 근무지/시급 | `work-place-list-create/`, `work-place-update-delete/`, `work-place-rate-list-create/`, `work-place-rate-update-delete/` |
+| 재무 관리 | `finance-table-date-filtered/`, `income-date-filtered/`, `expense-date-filtered/`, `income-add/`, `expense-add/` |
+| Google 연동 | `google-login/`, `google-callback/`, `google-calendar-events/`, Google Drive Excel export 관련 endpoint |
 
 ## 실행 방법
 
-### 1. Backend 실행
+### Backend
 
 ```bash
 cd Back/myproject
@@ -257,7 +179,7 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-### 2. Frontend 실행
+### Frontend
 
 ```bash
 cd front
@@ -265,11 +187,16 @@ npm install
 npm start
 ```
 
-React 개발 서버는 기본적으로 `http://localhost:3000`에서 실행되고, Django 개발 서버는 `http://localhost:8000`에서 실행됩니다.
+기본 개발 서버:
 
-## 환경변수
+```text
+Frontend: http://localhost:3000
+Backend:  http://localhost:8000
+```
 
-백엔드는 `Back/myproject/.env` 파일을 사용합니다. `settings.py` 기준으로 아래 값들이 필요합니다.
+## 환경 변수
+
+Backend는 `Back/myproject/.env`를 사용합니다.
 
 ```env
 SECRET_KEY=
@@ -289,39 +216,12 @@ GOOGLE_REDIRECT_URI=
 FRONTEND_URL=http://localhost:3000
 ```
 
-프론트엔드는 WebSocket 주소가 필요할 때 `front/.env`에 아래 값을 둘 수 있습니다.
+Frontend WebSocket 주소 예시:
 
 ```env
 REACT_APP_WS_BASE_URL=ws://localhost:8000/ws
 ```
 
-## WebSocket 사용 구조
-
-이 프로젝트는 일반 API 요청은 Django REST API로 처리하고, 실시간 알림은 WebSocket으로 분리해서 처리합니다.
-
-| 구분 | 설명 |
-| --- | --- |
-| 연결 방식 | React 클라이언트가 WebSocket 주소로 연결 |
-| 프론트 연결 파일 | `front/src/services/ws/useNotifySocket.js` |
-| 백엔드 Consumer | `Back/myproject/myapp/consumers.py` |
-| WebSocket 라우팅 | `Back/myproject/myapp/routing.py` |
-| ASGI 진입점 | `Back/myproject/myproject/asgi.py` |
-| Channel Layer | Redis, `channels-redis` 사용 |
-| 환경변수 | `REACT_APP_WS_BASE_URL=ws://localhost:8000/ws` |
-
-Django Channels와 Redis Channel Layer를 사용해 클라이언트별 알림 그룹을 관리합니다. 서버에서 승인 대기 또는 반려 상태 변경 메시지를 그룹으로 보내면, 프론트엔드는 수신한 데이터를 알림 상태에 반영합니다.
-
-## 주요 API 분류
-
-| 분류 | 엔드포인트 예시 |
-| --- | --- |
-| 로그인/로그아웃 | `check_admin_login/`, `check_user_login/`, `admin_logout/`, `user_logout/`, `refresh_token/` |
-| 직원 관리 | `user_info_list/`, `user_info_add/`, `user_info_update/`, `user_info_delete/`, `user_info_filtering/` |
-| 근무 기록 | `user_work_info/`, `user_monthly_work_summary/`, `admin_page_workday/`, `admin_workday_status_update/` |
-| 근무지 시급 | `work_place_rate_list_create/`, `work_place_rate_update_delete/`, `work_place_rate_list_filtering/` |
-| 재무 관리 | `finance_total/`, `income_filtered/`, `expense_filtered/`, `income_add/`, `expense_add/`, `income_update/`, `expense_update/`, `income_delete/`, `expense_delete/` |
-| Google 연동 | `google_calendar_auth/`, `google_calendar_auth/callback/`, `google_calendar_auth/events/`, `google_drive_excel_export/`, `google_drive_salary_excel_export/` |
-
 ## 참고 문서
 
-세부 구현 기록과 기능별 코드 리뷰는 `Readme/Code_Review/` 폴더에 정리되어 있습니다.
+구현 기록과 코드 리뷰 문서는 `Readme/Code_Review/` 폴더에 정리합니다.

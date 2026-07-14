@@ -1,31 +1,26 @@
-"""Compatibility exports for API views.
-
-The concrete view implementations live in ``myapp.api_views``.
-Keeping these imports here preserves existing URL imports.
-"""
-
-from .api_views.token import (
+# API view export
+from .token import (
     TokenRefreshAPIView,
 )
-from .api_views.user import (
+from .user import (
     CheckUserLoginAPIView,
     UserPasswordChangeAPIView,
     UserLogoutAPIView,
     UserWorkInfoAPIView,
     UserMonthlyWorkSummaryAPIView,
 )
-from .api_views.admin.admin_auth import (
+from .admin.admin_auth import (
     CheckAdminLoginAPIView,
     AdminLogoutAPIView,
 )
-from .api_views.admin.user_management import (
+from .admin.user_management import (
     UserInfoListAPIView,
     UserInfoDeleteAPIView,
     UserInfoUpdateAPIView,
     UserInfoAddAPIView,
     UserInfoFilteringAPIView,
 )
-from .api_views.google import (
+from .google import (
     GoogleLoginAPIView,
     GoogleCallbackAPIView,
     GoogleCalendarEventsAPIView,
@@ -33,7 +28,7 @@ from .api_views.google import (
     GoogleDriveSalaryExcelExportAPIView,
     GoogleDriveUserPayExcelExportAPIView,
 )
-from .api_views.admin.finance import (
+from .admin.finance import (
     FinanceTableDateFilteredAPIView,
     IncomeDateFilteredAPIView,
     ExpenseDateFilteredAPIView,
@@ -45,7 +40,7 @@ from .api_views.admin.finance import (
     IncomeDeleteAPIView,
     ExpenseDeleteAPIView,
 )
-from .api_views.admin.work import (
+from .admin.work import (
     AdminPageWorkDayListAPIView,
     AdminWorkDayStatusUpdateAPIView,
     AdminWorkPlaceListCreateAPIView,

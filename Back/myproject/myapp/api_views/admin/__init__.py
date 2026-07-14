@@ -1,39 +1,16 @@
-"""Compatibility exports for API views.
-
-The concrete view implementations live in ``myapp.api_views``.
-Keeping these imports here preserves existing URL imports.
-"""
-
-from .api_views.token import (
-    TokenRefreshAPIView,
-)
-from .api_views.user import (
-    CheckUserLoginAPIView,
-    UserPasswordChangeAPIView,
-    UserLogoutAPIView,
-    UserWorkInfoAPIView,
-    UserMonthlyWorkSummaryAPIView,
-)
-from .api_views.admin.admin_auth import (
+# 관리자 API view export
+from .admin_auth import (
     CheckAdminLoginAPIView,
     AdminLogoutAPIView,
 )
-from .api_views.admin.user_management import (
+from .user_management import (
     UserInfoListAPIView,
     UserInfoDeleteAPIView,
     UserInfoUpdateAPIView,
     UserInfoAddAPIView,
     UserInfoFilteringAPIView,
 )
-from .api_views.google import (
-    GoogleLoginAPIView,
-    GoogleCallbackAPIView,
-    GoogleCalendarEventsAPIView,
-    GoogleDriveWorkplaceExcelExportAPIView,
-    GoogleDriveSalaryExcelExportAPIView,
-    GoogleDriveUserPayExcelExportAPIView,
-)
-from .api_views.admin.finance import (
+from .finance import (
     FinanceTableDateFilteredAPIView,
     IncomeDateFilteredAPIView,
     ExpenseDateFilteredAPIView,
@@ -45,7 +22,7 @@ from .api_views.admin.finance import (
     IncomeDeleteAPIView,
     ExpenseDeleteAPIView,
 )
-from .api_views.admin.work import (
+from .work import (
     AdminPageWorkDayListAPIView,
     AdminWorkDayStatusUpdateAPIView,
     AdminWorkPlaceListCreateAPIView,
@@ -56,12 +33,6 @@ from .api_views.admin.work import (
 )
 
 __all__ = [
-    "TokenRefreshAPIView",
-    "CheckUserLoginAPIView",
-    "UserPasswordChangeAPIView",
-    "UserLogoutAPIView",
-    "UserWorkInfoAPIView",
-    "UserMonthlyWorkSummaryAPIView",
     "CheckAdminLoginAPIView",
     "AdminLogoutAPIView",
     "UserInfoListAPIView",
@@ -69,12 +40,6 @@ __all__ = [
     "UserInfoUpdateAPIView",
     "UserInfoAddAPIView",
     "UserInfoFilteringAPIView",
-    "GoogleLoginAPIView",
-    "GoogleCallbackAPIView",
-    "GoogleCalendarEventsAPIView",
-    "GoogleDriveWorkplaceExcelExportAPIView",
-    "GoogleDriveSalaryExcelExportAPIView",
-    "GoogleDriveUserPayExcelExportAPIView",
     "FinanceTableDateFilteredAPIView",
     "IncomeDateFilteredAPIView",
     "ExpenseDateFilteredAPIView",

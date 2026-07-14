@@ -6,7 +6,7 @@ from myapp.serializers import WorkPlaceRateSerializer
 from collections import OrderedDict
 from django.core.exceptions import ObjectDoesNotExist
 from datetime import date
-from .work_types import normalize_work_type
+from .api_views.shared import normalize_work_type
 
 
 FULL_DAY_MINUTES = 480

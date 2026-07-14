@@ -9,10 +9,10 @@ from .models import (
     WorkPlaceRate,
     AdminWorkPlace,
 )
-from .work_types import normalize_work_type
+from .api_views.shared import normalize_work_type
 
 
-DEFAULT_WORK_PLACE = "\ubbf8\uc9c0\uc815"
+DEFAULT_WORK_PLACE = "\ubbf8\uc9c0\uc815" #\ubbf8\uc9c0\uc815 = "미지정"
 
 
 class User_Login_InfoSerializer(serializers.ModelSerializer):

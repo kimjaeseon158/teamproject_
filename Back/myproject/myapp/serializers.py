@@ -11,10 +11,29 @@ from .models import (
 )
 from .work_types import normalize_work_type
 
+
+DEFAULT_WORK_PLACE = "\ubbf8\uc9c0\uc815"
+
+
 class User_Login_InfoSerializer(serializers.ModelSerializer):
     class Meta:
         model  = User_Login_Info
         fields = '__all__'
+
+    @transaction.atomic
+    def create(self, validated_data):
+        user = super().create(validated_data)
+        WorkPlaceRate.objects.get_or_create(
+            user=user,
+            work_place=DEFAULT_WORK_PLACE,
+        )
+        return user
+
+    def update(self, instance, validated_data):
+        if validated_data.get("password"):
+            validated_data["must_change_password"] = True
+
+        return super().update(instance, validated_data)
         
 class User_InfoSerializer(serializers.ModelSerializer):
     class Meta:

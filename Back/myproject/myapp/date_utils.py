@@ -1,4 +1,20 @@
-from datetime import date
+from datetime import date, datetime
+
+
+DATE_FORMAT = "%Y-%m-%d"
+
+
+def parse_date(date_str):
+    return datetime.strptime(date_str, DATE_FORMAT).date()
+
+
+def get_date_range(params):
+    start_date_str = params.get("start_date")
+    end_date_str = params.get("end_date")
+    if not start_date_str or not end_date_str:
+        return None, None
+
+    return parse_date(start_date_str), parse_date(end_date_str)
 
 def month_start_end(year: int, month: int):
     start = date(year, month, 1)

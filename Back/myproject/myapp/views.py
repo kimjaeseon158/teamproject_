@@ -29,7 +29,6 @@ from .models import (
     AdminRefreshToken,
     UserRefreshToken,
     User_WorkDay,
-    User_WorkDetail,
     WorkPlaceRate,
     AdminWorkPlace,
 )
@@ -37,16 +36,11 @@ from django.db.models import Sum
 from django.db import transaction
 from django.db.utils import IntegrityError
 from django.db.models.functions import Coalesce
-from django.http import HttpResponse
-from django.utils import timezone
 from django.conf import settings
 from django.shortcuts import redirect
 from django.contrib.auth.hashers import check_password
 from datetime import datetime
-from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import Flow
-from google.oauth2 import credentials
-from rest_framework_simplejwt.tokens import RefreshToken
 from .auth_utils import (
     save_or_update_admin_refresh_token,
     save_or_update_user_refresh_token,
@@ -55,7 +49,6 @@ from .excel_utils import (
     generate_workplace_excel,
     generate_salary_excel,
     generate_users_pay_excel,
-    generate_user_record_excel
 )
 from .google_drive_utils import (
     GoogleDriveService,
@@ -73,13 +66,22 @@ from .salary import (
     get_rates_for_workday
 
 )
-from .date_utils import month_start_end, add_months
+from .date_utils import month_start_end, add_months, get_date_range
 from .work_types import normalize_work_type
 import requests
-import os
-import json
-import io
-import urllib.parse
+import logging
+
+
+logger = logging.getLogger(__name__)
+
+
+def _date_filtered_queryset(model, start_date, end_date):
+    return model.objects.filter(date__gte=start_date, date__lte=end_date)
+
+
+def _serialize_date_filtered(model, serializer_class, start_date, end_date):
+    queryset = _date_filtered_queryset(model, start_date, end_date)
+    return serializer_class(queryset, many=True).data
 
 
 # ------------------- Refresh API -------------------
@@ -430,7 +432,7 @@ class CheckAdminLoginAPIView(APIView):
             key="refresh_token",
             value=raw_refresh_token,
             httponly=True,
-            secure=False,  # 로컬 개발: False / 배포: True
+            secure=not settings.DEBUG,
             samesite="Lax",
             path="/",
             max_age=60 * 60 * 24 * 7,  # 7일
@@ -459,9 +461,9 @@ class AdminLogoutAPIView(APIView):
             
             # 삭제 개수와 상관없이(0개여도) 로그아웃 절차 진행
             success = True
-        except Exception as e:
+        except Exception:
             # 2. 예외 처리: DB 에러 등 예상치 못한 상황
-            print(f"Logout Error: {e}")
+            logger.exception("Admin logout failed")
             return Response({"success": False})
    
         # 3. 마무리: 성공 응답과 함께 쿠키 삭제
@@ -520,7 +522,7 @@ class CheckUserLoginAPIView(APIView):
             "refresh_token",
             raw_refresh_token,
             httponly=True,
-            secure=False,  # 배포 시 True 권장
+            secure=not settings.DEBUG,
             samesite="Lax",
             path="/",
             max_age=60 * 60 * 24 * 7,
@@ -576,9 +578,9 @@ class UserLogoutAPIView(APIView):
             
             # 삭제 개수와 상관없이(0개여도) 로그아웃 절차 진행
             success = True
-        except Exception as e:
+        except Exception:
             # 2. 예외 처리: DB 에러 등 예상치 못한 상황
-            print(f"Logout Error: {e}")
+            logger.exception("User logout failed")
             return Response({"success": False})
    
         # 3. 마무리: 성공 응답과 함께 쿠키 삭제
@@ -644,10 +646,7 @@ class UserInfoUpdateAPIView(APIView):
                 user_instance, data=request.data, partial=True
             )
             if serializer.is_valid():
-                if "password" in request.data and request.data.get("password"):
-                    serializer.save(must_change_password=True)
-                else:
-                    serializer.save()
+                serializer.save()
                 # 업데이트 후 전체 유저 데이터 가져오기
                 all_data = User_Login_Info.objects.all()
                 user_data = User_InfoSerializer(all_data, many=True)
@@ -678,13 +677,7 @@ class UserInfoAddAPIView(APIView):
         serializer = User_Login_InfoSerializer(data=request.data)
         if serializer.is_valid():
             # 유저 생성
-            user = serializer.save()
-
-            # 자동 Rate 생성
-            WorkPlaceRate.objects.create(
-                user=user,
-                work_place="미지정",   # 기본 근무지
-            )
+            serializer.save()
             all_data = User_Login_Info.objects.all()
             user_data = User_InfoSerializer(all_data, many=True)
             result = user_data.data
@@ -736,10 +729,9 @@ class FinanceTableDateFilteredAPIView(APIView):
 
     def get(self, request):
         # 프론트에서 날짜 범위 받기
-        start_date_str = request.query_params.get("start_date")
-        end_date_str = request.query_params.get("end_date")
+        start_date, end_date = get_date_range(request.query_params)
 
-        if not start_date_str or not end_date_str:
+        if not start_date or not end_date:
             return Response(
                 {
                     "success": False,
@@ -747,12 +739,9 @@ class FinanceTableDateFilteredAPIView(APIView):
                 }
             )
 
-        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-
         # Expense 합계 (날짜 필터링)
         expense_qs = (
-            Expense.objects.filter(date__gte=start_date, date__lte=end_date)
+            _date_filtered_queryset(Expense, start_date, end_date)
             .values("expense_name")
             .annotate(total_amount=Sum("amount"))
         )
@@ -762,7 +751,7 @@ class FinanceTableDateFilteredAPIView(APIView):
 
         # Income 합계 (날짜 필터링)
         income_qs = (
-            Income.objects.filter(date__gte=start_date, date__lte=end_date)
+            _date_filtered_queryset(Income, start_date, end_date)
             .values("company_name")
             .annotate(total_amount=Sum("amount"))
         )
@@ -782,19 +771,15 @@ class IncomeDateFilteredAPIView(APIView):
 
     def get(self, request):
         # 프론트에서 날짜 범위 받기
-        start_date_str = request.query_params.get("start_date")
-        end_date_str = request.query_params.get("end_date")
+        start_date, end_date = get_date_range(request.query_params)
 
-        if not start_date_str or not end_date_str:
+        if not start_date or not end_date:
             return Response({"success": False})
 
-        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-
         # 지정 날짜 범위의 모든 수입 가져오기
-        incomes = Income.objects.filter(
-            date__gte=start_date, date__lte=end_date
-        ).values("Income_uuid", "date", "company_name", "company_detail", "amount")
+        incomes = _date_filtered_queryset(Income, start_date, end_date).values(
+            "Income_uuid", "date", "company_name", "company_detail", "amount"
+        )
         result = list(incomes)
 
         return Response({"success": True, "data": result})
@@ -807,19 +792,15 @@ class ExpenseDateFilteredAPIView(APIView):
 
     def get(self, request):
         # 프론트에서 날짜 범위 받기
-        start_date_str = request.query_params.get("start_date")
-        end_date_str = request.query_params.get("end_date")
+        start_date, end_date = get_date_range(request.query_params)
 
-        if not start_date_str or not end_date_str:
+        if not start_date or not end_date:
             return Response({"success": False})
 
-        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-
         # 지정 날짜 범위의 모든 지출 가져오기
-        expenses = Expense.objects.filter(
-            date__gte=start_date, date__lte=end_date
-        ).values("expense_uuid", "date", "expense_name", "expense_detail", "amount")
+        expenses = _date_filtered_queryset(Expense, start_date, end_date).values(
+            "expense_uuid", "date", "expense_name", "expense_detail", "amount"
+        )
         result = list(expenses)
 
         return Response({"success": True, "data": result})
@@ -918,8 +899,7 @@ class IncomeUpdateAPIView(APIView):
     def patch(self, request):
         # 필수: Income_uuid 및 날짜 범위
         Income_uuid = request.data["Income_uuid"]
-        start_date = datetime.strptime(request.data["start_date"], "%Y-%m-%d").date()
-        end_date = datetime.strptime(request.data["end_date"], "%Y-%m-%d").date()
+        start_date, end_date = get_date_range(request.data)
 
         # 레코드 업데이트
         income_instance = Income.objects.get(Income_uuid=Income_uuid)
@@ -928,10 +908,11 @@ class IncomeUpdateAPIView(APIView):
             serializer.save()
 
             # 날짜 범위 필터링된 데이터 반환
-            income_qs = Income.objects.filter(date__gte=start_date, date__lte=end_date)
-            income_data = IncomeSerializer(income_qs, many=True)
+            income_data = _serialize_date_filtered(
+                Income, IncomeSerializer, start_date, end_date
+            )
 
-            return Response({"success": True, "income_data": income_data.data})
+            return Response({"success": True, "income_data": income_data})
         else:
             return Response({"success": False})
 
@@ -944,8 +925,7 @@ class ExpenseUpdateAPIView(APIView):
     def patch(self, request):
         # 필수: expense_uuid 및 날짜 범위
         expense_uuid = request.data["expense_uuid"]
-        start_date = datetime.strptime(request.data["start_date"], "%Y-%m-%d").date()
-        end_date = datetime.strptime(request.data["end_date"], "%Y-%m-%d").date()
+        start_date, end_date = get_date_range(request.data)
 
         # 레코드 업데이트
         expense_instance = Expense.objects.get(expense_uuid=expense_uuid)
@@ -956,12 +936,11 @@ class ExpenseUpdateAPIView(APIView):
             serializer.save()
 
             # 날짜 범위 필터링된 데이터 반환
-            expense_qs = Expense.objects.filter(
-                date__gte=start_date, date__lte=end_date
+            expense_data = _serialize_date_filtered(
+                Expense, ExpenseSerializer, start_date, end_date
             )
-            expense_data = ExpenseSerializer(expense_qs, many=True)
 
-            return Response({"success": True, "expense_data": expense_data.data})
+            return Response({"success": True, "expense_data": expense_data})
         else:
             return Response({"success": False})
 
@@ -974,8 +953,7 @@ class IncomeDeleteAPIView(APIView):
     def delete(self, request):
         # 필수: Income_uuid 및 날짜 범위
         Income_uuid = request.data["Income_uuid"]
-        start_date = datetime.strptime(request.data["start_date"], "%Y-%m-%d").date()
-        end_date = datetime.strptime(request.data["end_date"], "%Y-%m-%d").date()
+        start_date, end_date = get_date_range(request.data)
 
         try:
             # 레코드 삭제
@@ -983,10 +961,11 @@ class IncomeDeleteAPIView(APIView):
             income_instance.delete()
 
             # 삭제 후 날짜 범위 필터링된 데이터 반환
-            income_qs = Income.objects.filter(date__gte=start_date, date__lte=end_date)
-            income_data = IncomeSerializer(income_qs, many=True)
+            income_data = _serialize_date_filtered(
+                Income, IncomeSerializer, start_date, end_date
+            )
 
-            return Response({"success": True, "income_data": income_data.data})
+            return Response({"success": True, "income_data": income_data})
 
         except Income.DoesNotExist:
             return Response({"success": False})
@@ -1001,8 +980,7 @@ class ExpenseDeleteAPIView(APIView):
 
         # 필수: expense_uuid 및 날짜 범위
         expense_uuid = request.data["expense_uuid"]
-        start_date = datetime.strptime(request.data["start_date"], "%Y-%m-%d").date()
-        end_date = datetime.strptime(request.data["end_date"], "%Y-%m-%d").date()
+        start_date, end_date = get_date_range(request.data)
 
         try:
             # 레코드 삭제
@@ -1010,12 +988,11 @@ class ExpenseDeleteAPIView(APIView):
             expense_instance.delete()
 
             # 삭제 후 날짜 범위 필터링된 데이터 반환
-            expense_qs = Expense.objects.filter(
-                date__gte=start_date, date__lte=end_date
+            expense_data = _serialize_date_filtered(
+                Expense, ExpenseSerializer, start_date, end_date
             )
-            expense_data = ExpenseSerializer(expense_qs, many=True)
 
-            return Response({"success": True, "expense_data": expense_data.data})
+            return Response({"success": True, "expense_data": expense_data})
 
         except Expense.DoesNotExist:
             return Response({"success": False})

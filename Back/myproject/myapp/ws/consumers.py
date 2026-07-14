@@ -27,7 +27,7 @@ class RequestMonitorConsumer(AsyncWebsocketConsumer):
             await self.accept()
 
         # 5. 최초 연결 시 현재 카운트 조회 및 전송
-        from .models import User_WorkDay
+        from ..models import User_WorkDay
 
         # DB 조회는 비동기적으로 처리
         initial_count = await sync_to_async(
@@ -85,7 +85,7 @@ class UserRejectMonitorConsumer(AsyncWebsocketConsumer):
         else:
             await self.accept()
 
-        from .models import User_WorkDay
+        from ..models import User_WorkDay
 
         def _initial_payload():
             qs = (

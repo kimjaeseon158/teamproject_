@@ -2,7 +2,7 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-from .models import User_WorkDay
+from ..models import User_WorkDay
 from django.db import transaction
 
 @receiver([post_save, post_delete], sender=User_WorkDay)

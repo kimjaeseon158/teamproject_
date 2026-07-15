@@ -17,9 +17,11 @@ REFRESH_TOKEN_HASH_SECRET = env('REFRESH_TOKEN_HASH_SECRET')
 DEBUG = env('DEBUG')
 
 DEBUG = True
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost"])
 
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -28,6 +30,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "myapp",
+    "django_apscheduler",
+    "channels"
 ]
 
 # --------------------------
@@ -49,8 +53,7 @@ SIMPLE_JWT = {
 
 GOOGLE_CLIENT_ID     = env('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET')
-GOOGLE_REDIRECT_URI  = "http://localhost:8000/api/google_calendar_auth/callback/"
-
+GOOGLE_REDIRECT_URI  = env('GOOGLE_REDIRECT_URI')
 GOOGLE_OAUTH2_CLIENT_CONFIG = {
     "web": {
         "client_id": GOOGLE_CLIENT_ID,
@@ -69,6 +72,7 @@ GOOGLE_OAUTH2_CLIENT_CONFIG = {
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",  # ✅ 맨 위 유지
     "django.middleware.security.SecurityMiddleware",
+    'whitenoise.middleware.WhiteNoiseMiddleware', # 외부 배포 설정
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     # "django.middleware.csrf.CsrfViewMiddleware",  # 쿠키 기반 CSRF를 쓰려면 추후 활성화 고려
@@ -81,16 +85,16 @@ MIDDLEWARE = [
 # CORS
 # --------------------------
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+CORS_ALLOWED_ORIGINS = env.list(
+    "CORS_ALLOWED_ORIGINS",
+    default=["http://127.0.0.1:3000", "http://localhost:3000"]
+)
 
 # 프런트 도메인을 CSRF 신뢰 도메인으로 등록 (쿠키 기반 요청 허용)
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS",
+    default=["http://127.0.0.1:3000", "http://localhost:3000"]
+)
 
 # (선택) 개발 편의용 쿠키 옵션 — 운영 배포 시 True/더 엄격하게 바꾸기
 SESSION_COOKIE_SAMESITE = "Lax"
@@ -114,11 +118,35 @@ DATABASES = {
     }
 }
 
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": env("UPSTASH_REDIS_REST_URL"),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "CONNECTION_POOL_KWARGS": {
+                "ssl_cert_reqs": None  # Upstash TLS 연결 허용
+            }
+        }
+    }
+}
+
+# 2. Django Channels 설정 (WebSocket용)
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [env("UPSTASH_REDIS_REST_URL")],
+        },
+    },
+}
+
 # --------------------------
 # Other
 # --------------------------
 ROOT_URLCONF = "myproject.urls"
 WSGI_APPLICATION = "myproject.wsgi.application"
+ASGI_APPLICATION = "myproject.asgi.application"
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Seoul"
 USE_I18N = True

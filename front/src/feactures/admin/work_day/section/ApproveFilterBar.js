@@ -1,0 +1,103 @@
+import {
+  Flex,
+  Select,
+  Button,
+  Box,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverBody,
+  PopoverCloseButton,
+  Text,
+  HStack,
+} from "@chakra-ui/react";
+import { DayPicker } from "react-day-picker";
+import "react-day-picker/dist/style.css";
+
+export default function ApproveFilterBar({
+  status,
+  setStatus,
+  range,
+  setRange,
+  rangeLabel,
+  onSearch,
+  loading,
+}) {
+  return (
+    <Flex mt={4} gap={3} align="center">
+      <Select
+        size="sm"
+        w="160px"
+        value={status}
+        onChange={(e) => setStatus(e.target.value)}
+        isDisabled={loading}
+      >
+        <option value="전체">전체</option>
+        <option value="승인">승인</option>
+        <option value="대기">대기</option>
+        <option value="거절">거절</option>
+      </Select>
+
+      <Button
+        size="sm"
+        colorScheme="blue"
+        onClick={onSearch}
+        isLoading={loading}
+      >
+        조회
+      </Button>
+
+      <Box ml="auto">
+        <Popover placement="bottom-end">
+          <PopoverTrigger>
+            <Button size="sm" variant="outline">
+              {rangeLabel}
+            </Button>
+          </PopoverTrigger>
+
+          <PopoverContent w="auto" p={4}>
+            {/* 🔥 Arrow 제거해서 겹침 해결 */}
+            <PopoverCloseButton top="8px" right="8px" />
+
+            <PopoverBody>
+              {/* 🔥 선택 기간 표시 */}
+              <Text fontSize="sm" mb={3} fontWeight="medium">
+                선택 기간: {rangeLabel}
+              </Text>
+
+              <DayPicker
+                mode="range"
+                selected={range}
+                onSelect={setRange}
+              />
+
+              {/* 🔥 Today 버튼 */}
+              <HStack mt={4} justify="space-between">
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  onClick={() => {
+                    const today = new Date();
+                    setRange({ from: today, to: today });
+                  }}
+                >
+                  Today
+                </Button>
+
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  onClick={() =>
+                    setRange({ from: undefined, to: undefined })
+                  }
+                >
+                  초기화
+                </Button>
+              </HStack>
+            </PopoverBody>
+          </PopoverContent>
+        </Popover>
+      </Box>
+    </Flex>
+  );
+}

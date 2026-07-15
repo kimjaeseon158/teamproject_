@@ -72,6 +72,8 @@ class CheckAdminLoginAPIView(APIView):
 
 
 class AdminLogoutAPIView(APIView):
+
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def delete(self, request):
@@ -85,17 +87,17 @@ class AdminLogoutAPIView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         try:
-            # 1. 시도: 개수 정보만 받고 상세내역(_)은 무시
-            deleted_count, _ = AdminRefreshToken.objects.filter(admin_uuid_id=admin).delete()
+            AdminRefreshToken.objects.filter(
+                admin_uuid__admin_uuid=admin.admin_uuid
+            ).delete()
             
-            # 삭제 개수와 상관없이(0개여도) 로그아웃 절차 진행
             success = True
         except Exception:
-            # 2. 예외 처리: DB 에러 등 예상치 못한 상황
+            # 예외 처리: DB 에러 등 예상치 못한 상황
             logger.exception("Admin logout failed")
             return Response({"success": False})
    
-        # 3. 마무리: 성공 응답과 함께 쿠키 삭제
+        # 마무리: 성공 응답과 함께 쿠키 삭제
         response = Response({"success": success})
         response.delete_cookie("refresh_token", path="/")
         return response

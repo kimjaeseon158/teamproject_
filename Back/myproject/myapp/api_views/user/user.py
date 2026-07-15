@@ -107,6 +107,7 @@ class UserPasswordChangeAPIView(APIView):
 
 
 class UserLogoutAPIView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def delete(self, request):
@@ -120,13 +121,14 @@ class UserLogoutAPIView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
             
         try:
-            # 1. 시도: 개수 정보만 받고 상세내역(_)은 무시
-            deleted_count, _ = UserRefreshToken.objects.filter(user_uuid=user).delete()
+
+            UserRefreshToken.objects.filter(
+                user_uuid__user_uuid=user.user_uuid
+            ).delete()
             
-            # 삭제 개수와 상관없이(0개여도) 로그아웃 절차 진행
             success = True
         except Exception:
-            # 2. 예외 처리: DB 에러 등 예상치 못한 상황
+            # 예외 처리: DB 에러 등 예상치 못한 상황
             logger.exception("User logout failed")
             return Response({"success": False})
    

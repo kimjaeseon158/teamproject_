@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { WS_BASE } from "../../config/api/apiEnv";
+import { WS_BASE, WS_ENABLED } from "../../config/api/apiEnv";
 
 export function useNotifySocket({ token, uuid, loginType, onMessage }) {
   const wsRef = useRef(null);
@@ -10,12 +10,15 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
 
   const [connected, setConnected] = useState(false);
 
-  // 최신 onMessage 유지
   useEffect(() => {
     onMessageRef.current = onMessage;
   }, [onMessage]);
+
   useEffect(() => {
-    if (!token || !uuid || !loginType || !WS_BASE) return;
+    if (!token || !uuid || !loginType || !WS_BASE || !WS_ENABLED) {
+      setConnected(false);
+      return;
+    }
 
     let closedByCleanup = false;
 
@@ -31,13 +34,21 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
           ? `${WS_BASE}/ws/admin/request-monitor/?admin_uuid=${uuid}`
           : `${WS_BASE}/ws/user/request-monitor/?user_uuid=${uuid}`;
 
-      const ws = new WebSocket(wsUrl, [token]);
+      let ws;
+      try {
+        ws = new WebSocket(wsUrl, [token]);
+      } catch (error) {
+        console.warn("WebSocket connection skipped", error);
+        setConnected(false);
+        return;
+      }
+
       wsRef.current = ws;
 
       ws.onopen = () => {
         retryRef.current = 0;
         setConnected(true);
-      }; 
+      };
 
       ws.onmessage = (e) => {
         try {
@@ -79,7 +90,7 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
       wsRef.current = null;
       setConnected(false);
     };
-  }, [token, uuid, loginType]); // 🔥 여기 추가
+  }, [token, uuid, loginType]);
 
   return { connected };
 }

@@ -7,6 +7,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from ...models import UserRefreshToken
+from ...models import WorkPlaceRate
 from ...serializers import UserWorkDaySerializer
 from ...models import User_Login_Info
 from ...models import User_WorkDay
@@ -24,6 +25,7 @@ from rest_framework import status
 logger = logging.getLogger(__name__)
 
 class CheckUserLoginAPIView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -53,6 +55,11 @@ class CheckUserLoginAPIView(APIView):
             lifetime_days=7,
         )
 
+        work_places = WorkPlaceRate.objects.filter(user=user_instance).order_by("work_place")
+        work_places_data = list(
+            work_places.values("rate_uuid", "work_place")
+        )
+
         # (4) 응답 구성
         response = Response(
             {
@@ -61,6 +68,7 @@ class CheckUserLoginAPIView(APIView):
                 "user_uuid": user_uuid,
                 "access": str(access),
                 "must_change_password": user_instance.must_change_password,
+                "work_places": work_places_data,
             }
         )
 

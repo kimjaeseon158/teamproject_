@@ -154,6 +154,130 @@ WebSocket endpoint:
 ws/admin/request-monitor/
 ws/user/request-monitor/
 ```
+### Frontend
+
+| 파일/폴더 | 용도 |
+| --- | --- |
+| `front/package.json` | 프론트엔드 의존성 및 실행 스크립트 |
+| `front/vercel.json` | Vercel 배포 설정 |
+| `front/public/index.html` | React 앱이 마운트되는 HTML 템플릿 |
+| `front/src/index.js` | React 앱 진입점 |
+| `front/src/index.css` | 전역 스타일 |
+| `front/src/app/AppRoutes.js` | 로그인, 사용자, 관리자 페이지 라우팅 |
+| `front/src/requireauth.js` | 인증이 필요한 페이지 접근 제어 |
+| `front/src/pages/LoginPage/` | 로그인 페이지 |
+| `front/src/pages/UserPage/CalendarPage.js` | 사용자 근무 입력/조회 캘린더 페이지 |
+| `front/src/pages/dashboard.js` | 관리자 대시보드 레이아웃 및 하위 라우팅 |
+| `front/src/pages/AdminPage/EmployeeList.js` | 직원 관리 화면 |
+| `front/src/pages/AdminPage/ApprovalPage.js` | 근무 승인/반려 화면 |
+| `front/src/pages/AdminPage/DailyPayPage.js` | 일급 관리 화면 |
+| `front/src/pages/AdminPage/TotalSalesPage.js` | 매출/지출 통계 화면 |
+| `front/src/services/api/` | 공통 API 호출, 토큰 처리, 인증 요청 로직 |
+| `front/src/services/ws/useNotifySocket.js` | WebSocket 알림 연결 훅 |
+| `front/src/feactures/auth/` | 로그인 사용자 상태 Context |
+| `front/src/feactures/alarm/` | 알림 상태와 알림 UI |
+| `front/src/feactures/login/` | 로그인 폼, 검증, 로그인 API, 로그인 레이아웃 |
+| `front/src/feactures/user/` | 사용자 캘린더, 근무 입력 폼, 근무 시간/날짜 유틸리티 |
+| `front/src/feactures/admin/` | 관리자 직원 관리, 근무 승인, 근무지 시급, 재무 통계, Google 연동 기능 |
+| `front/src/common/` | 공통 버튼, 캘린더, 테이블, 날짜 선택 컴포넌트 |
+| `front/src/assets/` | 이미지 등 정적 리소스 |
+
+## 프론트/백엔드 필드명 약속
+
+### WorkPlaceRate 필드명
+
+프론트와 백엔드는 아래 변수명을 그대로 맞춰서 사용합니다.
+
+| 필드명 | 의미 |
+| --- | --- |
+| `user_uuid` | 사용자 UUID |
+| `work_place` | 근무지명 |
+| `base_hourly_wage` | 주간 기본 단가 |
+| `overtime_hourly_wage` | 평일 잔업 단가 |
+| `meal_ot_hourly_wage` | 중식연장 단가 |
+| `day_special_hourly_wage` | 주간 특근 단가 |
+| `night_special_hourly_wage` | 야간 특근 단가 |
+| `overnight_hourly_wage` | 야간 기본 단가 |
+| `overnight_ot_hourly_wage` | 야간 잔업 단가 |
+| `early_hourly_wage` | 조기출근 단가 |
+
+`special_hourly_wage`는 기존 호환용 필드입니다. 새로 주고받는 값은 `day_special_hourly_wage`, `night_special_hourly_wage`를 사용합니다.
+
+```json
+{
+  "user_uuid": "00000000-0000-0000-0000-000000000000",
+  "work_place": "A현장",
+  "base_hourly_wage": 100000,
+  "overtime_hourly_wage": 50000,
+  "meal_ot_hourly_wage": 30000,
+  "day_special_hourly_wage": 120000,
+  "night_special_hourly_wage": 150000,
+  "overnight_hourly_wage": 130000,
+  "overnight_ot_hourly_wage": 60000,
+  "early_hourly_wage": 30000
+}
+```
+
+### work_type 표준 이름
+
+근무 상세 `work_type`은 아래 문자열을 기준으로 사용합니다.
+
+| work_type | 적용 단가 |
+| --- | --- |
+| `주간` | `base_hourly_wage` |
+| `평일 잔업` | `overtime_hourly_wage` |
+| `중식연장` | `meal_ot_hourly_wage` |
+| `주간 특근` | `day_special_hourly_wage` |
+| `야간 특근` | `night_special_hourly_wage` |
+| `야간` | `overnight_hourly_wage` |
+| `야간 잔업` | `overnight_ot_hourly_wage` |
+| `조기출근` | `early_hourly_wage` |
+
+사용하지 않을 이름:
+
+- `잔업` 대신 `평일 잔업`
+- `철야` 대신 `야간`
+- `철야연장` 대신 `야간 잔업`
+- `철야 잔업` 대신 `야간 잔업`
+- `특근` 대신 `주간 특근` 또는 `야간 특근`
+
+## 중요 라이브러리
+
+### Backend
+
+| 라이브러리 | 용도 |
+| --- | --- |
+| `Django` | 백엔드 웹 프레임워크 |
+| `djangorestframework` | REST API 구현 |
+| `djangorestframework-simplejwt` | JWT 기반 인증 |
+| `django-cors-headers` | React 개발 서버와의 CORS 처리 |
+| `django-environ` | `.env` 환경변수 관리 |
+| `psycopg2-binary` | PostgreSQL 연결 |
+| `django-redis` | Redis 캐시 연결 |
+| `channels`, `channels-redis`, `daphne` | WebSocket 실시간 알림 |
+| `google-auth`, `google-auth-oauthlib` | Google OAuth 인증 |
+| `requests` | 외부 HTTP 요청 |
+| `django-apscheduler` | 예약 작업 처리 |
+| `openpyxl` | Excel 파일 생성/처리 |
+| `gunicorn`, `whitenoise` | 배포 서버 및 정적 파일 처리 |
+| `black` | Python 코드 포맷팅 |
+
+### Frontend
+
+| 라이브러리 | 용도 |
+| --- | --- |
+| `react`, `react-dom` | UI 구성 |
+| `react-router-dom` | SPA 라우팅 |
+| `@chakra-ui/react`, `@chakra-ui/icons` | 관리자 화면 등 UI 컴포넌트 |
+| `@emotion/react`, `@emotion/styled` | Chakra UI 스타일 엔진 |
+| `framer-motion` | UI 애니메이션 |
+| `axios` | API 통신 |
+| `@fullcalendar/react`, `@fullcalendar/daygrid`, `@fullcalendar/timegrid`, `@fullcalendar/interaction` | 캘린더 UI |
+| `react-big-calendar`, `react-calendar`, `react-day-picker`, `react-date-range` | 날짜/캘린더 선택 UI |
+| `date-fns`, `moment` | 날짜 및 시간 처리 |
+| `recharts` | 매출/지출 차트 시각화 |
+| `react-icons` | 아이콘 |
+| `concurrently` | 프론트엔드와 백엔드 동시 실행 |
 
 ## 주요 API 분류
 

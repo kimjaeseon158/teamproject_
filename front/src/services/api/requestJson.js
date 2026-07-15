@@ -1,3 +1,4 @@
+import { resolveApiUrl } from "../../config/api/apiEnv";
 import { fetchWithAuth } from "./fetchWithAuth";
 
 export const cleanParams = (params = {}) =>
@@ -47,7 +48,7 @@ export async function requestApiResponse(
     options.body = JSON.stringify(body);
   }
 
-  return await fetchWithAuth(url, options, { toast });
+  return await fetchWithAuth(resolveApiUrl(url), options, { toast });
 }
 
 export const ApiGet = (url, { toast, headers } = {}) =>

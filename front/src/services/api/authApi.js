@@ -1,10 +1,11 @@
+import { resolveApiUrl } from "../../config/api/apiEnv";
 import { setAccessToken } from "./token";
 
 const getAccessFromRefresh = (data = {}) =>
   data.access || data.access_token || data.accessToken;
 
 export async function refreshAuthSession() {
-  const res = await fetch("/api/refresh-token/", {
+  const res = await fetch(resolveApiUrl("/api/refresh-token/"), {
     method: "POST",
     credentials: "include",
   });

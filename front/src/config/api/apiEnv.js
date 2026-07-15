@@ -25,3 +25,17 @@ export const WS_BASE_URL =
 
 export const WS_BASE = WS_BASE_URL;
 export const WS_ENABLED = Boolean(WS_BASE_URL);
+
+const isAbsoluteHttpUrl = (value) => /^https?:\/\//i.test(value);
+
+export const resolveApiUrl = (url = "") => {
+  if (!url || isAbsoluteHttpUrl(url) || !url.startsWith("/api/")) {
+    return url;
+  }
+
+  if (API_BASE === API_PROXY_BASE) {
+    return `${API_PROXY_BASE}${url}`;
+  }
+
+  return API_BASE ? `${API_BASE}${url}` : url;
+};

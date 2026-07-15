@@ -1,0 +1,113 @@
+import {
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  FormControl,
+  FormLabel,
+  Input,
+  Select,
+  Button,
+  VStack,
+  HStack,
+} from "@chakra-ui/react";
+
+import { CARRIER_OPTIONS } from "../constants/carrierConstants";
+import { useAdminInformationLogic } from "../hook/useAdminInformationLogic";
+
+const AdminInformation = ({ person, onClose, onSave, toast }) => {
+  const {
+    formData,
+    handleChange,
+    handleSubmit,
+  } = useAdminInformationLogic(person, onClose, onSave, toast);
+
+  return (
+    <Modal isOpen={!!person} onClose={onClose} isCentered size="lg">
+      <ModalOverlay />
+      <ModalContent borderRadius="lg" p={5}>
+        <ModalHeader fontSize="xl" fontWeight="bold" color="teal.500">
+          정보 수정
+        </ModalHeader>
+        <ModalCloseButton />
+
+        <form onSubmit={handleSubmit}>
+          <ModalBody>
+            <VStack spacing={4} align="stretch">
+              <FormControl>
+                <FormLabel>이름</FormLabel>
+                <Input
+                  name="user_name"
+                  value={formData.user_name || ""}
+                  onChange={handleChange}
+                  placeholder="이름 입력"
+                />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>주민등록번호</FormLabel>
+                <Input
+                  name="resident_number"
+                  value={formData.resident_number || ""}
+                  onChange={handleChange}
+                  placeholder="000000-0000000"
+                />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>주소</FormLabel>
+                <Input
+                  name="address"
+                  value={formData.address || ""}
+                  onChange={handleChange}
+                  placeholder="주소 입력"
+                />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>전화번호</FormLabel>
+                <HStack spacing={2}>
+                  <Select
+                    name="mobile_carrier"
+                    value={formData.mobile_carrier || ""}
+                    onChange={handleChange}
+                    w="120px"
+                  >
+                    <option value="">통신사 선택</option>
+                    {CARRIER_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </Select>
+                  <Input
+                    name="phone_number"
+                    value={formData.phone_number || ""}
+                    onChange={handleChange}
+                    placeholder="010-1234-5678"
+                  />
+                </HStack>
+              </FormControl>
+            </VStack>
+          </ModalBody>
+
+          <ModalFooter>
+            <HStack spacing={2} w="full">
+              <Button type="submit" colorScheme="teal" w="full">
+                저장
+              </Button>
+              <Button variant="ghost" w="full" onClick={onClose}>
+                취소
+              </Button>
+            </HStack>
+          </ModalFooter>
+        </form>
+      </ModalContent>
+    </Modal>
+  );
+};
+
+export default AdminInformation;

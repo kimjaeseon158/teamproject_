@@ -1,11 +1,39 @@
 from rest_framework import serializers
 from django.db import transaction
-from .models import User_Login_Info, Expense, Income, User_WorkDay, User_WorkDetail, WorkPlaceRate
+from .models import (
+    User_Login_Info,
+    Expense,
+    Income,
+    User_WorkDay,
+    User_WorkDetail,
+    WorkPlaceRate,
+    AdminWorkPlace,
+)
+from .api_views.shared import normalize_work_type
+
+
+DEFAULT_WORK_PLACE = "\ubbf8\uc9c0\uc815" #\ubbf8\uc9c0\uc815 = "미지정"
+
 
 class User_Login_InfoSerializer(serializers.ModelSerializer):
     class Meta:
         model  = User_Login_Info
         fields = '__all__'
+
+    @transaction.atomic
+    def create(self, validated_data):
+        user = super().create(validated_data)
+        WorkPlaceRate.objects.get_or_create(
+            user=user,
+            work_place=DEFAULT_WORK_PLACE,
+        )
+        return user
+
+    def update(self, instance, validated_data):
+        if validated_data.get("password"):
+            validated_data["must_change_password"] = True
+
+        return super().update(instance, validated_data)
         
 class User_InfoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -53,10 +81,12 @@ class UserWorkDaySerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         details_data = validated_data.pop("details")
+        work_shift = validated_data["work_shift"]
+        for detail in details_data:
+            detail["work_type"] = normalize_work_type(detail.get("work_type"), work_shift)
     
         user = validated_data["user_uuid"]
         work_date = validated_data["work_date"]
-        work_shift = validated_data["work_shift"]
     
         with transaction.atomic():
             rejected = (
@@ -115,16 +145,57 @@ class WorkPlaceRateSerializer(serializers.ModelSerializer):
 
 class WorkPlaceRateCreateSerializer(serializers.ModelSerializer):
     user_uuid = serializers.UUIDField(write_only=True)
+    admin_work_place_uuid = serializers.UUIDField(write_only=True, required=False)
 
     class Meta:
         model = WorkPlaceRate
         fields = [
             "user_uuid",            
+            "admin_work_place_uuid",
             "work_place",
             "base_hourly_wage",
             "overtime_hourly_wage",
             "meal_ot_hourly_wage",
             "special_hourly_wage",
+            "day_special_hourly_wage",
+            "night_special_hourly_wage",
             "overnight_hourly_wage",
             "overnight_ot_hourly_wage",
+            "early_hourly_wage",
+        ]
+
+
+class AdminWorkPlaceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdminWorkPlace
+        fields = [
+            "admin_work_place_uuid",
+            "work_place",
+            "base_hourly_wage",
+            "overtime_hourly_wage",
+            "meal_ot_hourly_wage",
+            "special_hourly_wage",
+            "day_special_hourly_wage",
+            "night_special_hourly_wage",
+            "overnight_hourly_wage",
+            "overnight_ot_hourly_wage",
+            "early_hourly_wage",
+        ]
+        read_only_fields = ("admin_work_place_uuid",)
+
+
+class AdminWorkPlaceCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdminWorkPlace
+        fields = [
+            "work_place",
+            "base_hourly_wage",
+            "overtime_hourly_wage",
+            "meal_ot_hourly_wage",
+            "special_hourly_wage",
+            "day_special_hourly_wage",
+            "night_special_hourly_wage",
+            "overnight_hourly_wage",
+            "overnight_ot_hourly_wage",
+            "early_hourly_wage",
         ]

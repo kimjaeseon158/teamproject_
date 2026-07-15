@@ -12,6 +12,7 @@ class User_Login_Info(models.Model):
     user_name       = models.CharField(max_length=50, default='홍길동')   # 유저 이름
     user_id         = models.CharField(max_length=50,unique=True)
     password        = models.CharField(max_length=100, default='1234')
+    must_change_password = models.BooleanField(default=True)
     phone_number    = models.CharField(max_length=20)
     mobile_carrier  = models.CharField(max_length=20)
     resident_number = models.CharField(max_length=14)
@@ -93,8 +94,11 @@ class WorkPlaceRate(models.Model):
     overtime_hourly_wage      = models.PositiveIntegerField(null=True, blank=True)  # 잔업(연장)
     meal_ot_hourly_wage       = models.PositiveIntegerField(null=True, blank=True)  # 중식연장
     special_hourly_wage       = models.PositiveIntegerField(null=True, blank=True)  # 특근
-    overnight_hourly_wage     = models.PositiveIntegerField(null=True, blank=True)  # 철야(기본)
-    overnight_ot_hourly_wage  = models.PositiveIntegerField(null=True, blank=True)  # 철야 연장(OT)
+    day_special_hourly_wage   = models.PositiveIntegerField(null=True, blank=True)  # 주간 특근
+    night_special_hourly_wage = models.PositiveIntegerField(null=True, blank=True)  # 야간 특근
+    overnight_hourly_wage     = models.PositiveIntegerField(null=True, blank=True)  # 야간(기본)
+    overnight_ot_hourly_wage  = models.PositiveIntegerField(null=True, blank=True)  # 야간 잔업(OT)
+    early_hourly_wage         = models.PositiveIntegerField(null=True, blank=True)  # 조기출근
 
     class Meta:
         constraints = [
@@ -135,6 +139,37 @@ class Admin_Login_Info(models.Model):
         return True
 
 # 수입 매출 관련 테이블
+
+class AdminWorkPlace(models.Model):
+    admin_work_place_uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    admin = models.ForeignKey(
+        Admin_Login_Info,
+        to_field="admin_uuid",
+        on_delete=models.CASCADE,
+        related_name="work_places",
+    )
+    work_place = models.CharField(max_length=100)
+
+    base_hourly_wage          = models.PositiveIntegerField(null=True, blank=True)
+    overtime_hourly_wage      = models.PositiveIntegerField(null=True, blank=True)
+    meal_ot_hourly_wage       = models.PositiveIntegerField(null=True, blank=True)
+    special_hourly_wage       = models.PositiveIntegerField(null=True, blank=True)
+    day_special_hourly_wage   = models.PositiveIntegerField(null=True, blank=True)
+    night_special_hourly_wage = models.PositiveIntegerField(null=True, blank=True)
+    overnight_hourly_wage     = models.PositiveIntegerField(null=True, blank=True)
+    overnight_ot_hourly_wage  = models.PositiveIntegerField(null=True, blank=True)
+    early_hourly_wage         = models.PositiveIntegerField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["admin", "work_place"], name="uniq_admin_work_place")
+        ]
+        ordering = ["work_place"]
+
+    @property
+    def admin_uuid_str(self):
+        return str(self.admin_id) if self.admin_id else None
+
 
 class Income(models.Model):
     Income_uuid    = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)

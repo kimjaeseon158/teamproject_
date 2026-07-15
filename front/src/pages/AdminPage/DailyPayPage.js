@@ -1,134 +1,87 @@
-import { useEffect, useState, useMemo } from "react";
-import { useDailyPay } from "../../feactures/admin/work_palce/hook/useWorkList";
-import { useToast, Button } from "@chakra-ui/react";
-import { userPlace_listColmns } from "./DailyPayColmns";
+import { Box, useDisclosure } from "@chakra-ui/react";
 
-import CommonTable from "../../feactures/common/mytable";
-import AddRateModal from "../../feactures/admin/work_palce/components/AddRateModal";
-import SearchRateModal from "../../feactures/admin/work_palce/components/SearchRateModal";
+import ExcelExportModal from "../../features/admin/total_pay/section/ExcelExportModal";
+import AddRateModal from "../../features/admin/work_place/components/AddRateModal";
+import AdminWorkPlaceModal from "../../features/admin/work_place/components/AdminWorkPlaceModal";
+import DailyPayFilterBar from "../../features/admin/work_place/components/DailyPayFilterBar";
+import DailyPayPageHeader from "../../features/admin/work_place/components/DailyPayPageHeader";
+import DailyPaySummaryCards from "../../features/admin/work_place/components/DailyPaySummaryCards";
+import DailyPayTableSection from "../../features/admin/work_place/components/DailyPayTableSection";
+import useDailyPayPage from "../../features/admin/work_place/hook/useDailyPayPage";
 
 export default function DailyPayPage() {
-  const toast = useToast();
-  const { data, fetchDailyPay } = useDailyPay();
+  const exportDisclosure = useDisclosure();
+  const adminWorkPlaceDisclosure = useDisclosure();
+  const dailyPay = useDailyPayPage({
+    onExcelExportClose: exportDisclosure.onClose,
+  });
 
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  
-
-  /**
-   * ✅ 최초 1회만 실행됨
-   * fetchDailyPay가 고정되어 있으므로 무한루프 없음
-   */
-  useEffect(() => {
-    fetchDailyPay({}, toast);
-  }, [fetchDailyPay, toast]);
-
-  const mergedData = useMemo(() => {
-    return (
-      data?.map((user) => {
-        const rates = user.rates || [];
-
-        const workPlaces = rates
-          .map((r) => r.work_place)
-          .filter(Boolean);
-
-        const average = (arr) => {
-          if (!arr.length) return null;
-          const valid = arr.filter((v) => v != null);
-          if (!valid.length) return null;
-
-          return Math.round(
-            valid.reduce((a, b) => a + Number(b), 0) /
-              valid.length
-          );
-        };
-
-        return {
-          user_uuid: user.user_uuid,
-          user_name: user.user_name,
-          work_place: workPlaces.join(" / "),
-          base_hourly_wage: average(
-            rates.map((r) => r.base_hourly_wage)
-          ),
-          overtime_hourly_wage: average(
-            rates.map((r) => r.overtime_hourly_wage)
-          ),
-          overnight_hourly_wage: average(
-            rates.map((r) => r.overnight_hourly_wage)
-          ),
-        };
-      }) || []
-    );
-  }, [data]);
-
-  const columnsWithEdit = useMemo(
-    () => [
-      ...userPlace_listColmns,
-      {
-        key: "edit",
-        label: "관리",
-        render: (_, row) => (
-          <Button
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              const user = data.find(
-                (u) => u.user_uuid === row.user_uuid
-              );
-              setSelectedUser(user);
-            }}
-          >
-            edit
-          </Button>
-        ),
-      },
-    ],
-    [data]
-  );
+  const statCards = dailyPay.statCards.map((card) => (
+    card.label === "근무지 수"
+      ? { ...card, action: adminWorkPlaceDisclosure.onOpen }
+      : card
+  ));
 
   return (
-    <div>
-      <div style={{ display: "flex", gap: "10px" }}>
-        <Button
-          colorScheme="blue"
-          onClick={() => setIsSearchOpen(true)}
-        >
-          검색
-        </Button>
-
-        <Button
-          onClick={() => fetchDailyPay({}, toast)}
-        >
-          전체보기
-        </Button>
-      </div>
-
-      <CommonTable
-        columns={columnsWithEdit}
-        data={mergedData}
-        rowKey="user_uuid"
+    <Box minH="100%" bg="gray.50" p={{ base: 4, md: 6 }} maxW="100%" overflowX="hidden">
+      <DailyPayPageHeader
+        loading={dailyPay.loading}
+        onExcelOpen={exportDisclosure.onOpen}
+        onResetSearch={dailyPay.handleResetSearch}
       />
 
-      {selectedUser && (
+      <DailyPaySummaryCards cards={statCards} />
+
+      <DailyPayFilterBar
+        adminWorkPlaces={dailyPay.adminWorkPlaces}
+        loading={dailyPay.loading}
+        searchUserName={dailyPay.searchUserName}
+        searchWorkPlace={dailyPay.searchWorkPlace}
+        workPlacesLoading={dailyPay.workPlacesLoading}
+        onSearch={dailyPay.handleSearch}
+        onUserNameChange={dailyPay.setSearchUserName}
+        onWorkPlaceChange={dailyPay.setSearchWorkPlace}
+      />
+
+      <DailyPayTableSection
+        columns={dailyPay.displayColumns}
+        currentPage={dailyPay.currentPage}
+        data={dailyPay.pagedData}
+        totalCount={dailyPay.mergedData.length}
+        totalPages={dailyPay.totalPages}
+        onEdit={dailyPay.handleEdit}
+        onPageChange={dailyPay.setCurrentPage}
+        onSort={dailyPay.handleSort}
+        sortField={dailyPay.sortField}
+        sortOrder={dailyPay.sortOrder}
+      />
+
+      {dailyPay.selectedUser && (
         <AddRateModal
           isOpen
           mode="edit"
-          user={selectedUser}
-          onClose={() => setSelectedUser(null)}
-          onSuccess={() => {
-            fetchDailyPay({}, toast);
-            setSelectedUser(null);
-          }}
+          user={dailyPay.selectedUser}
+          onClose={() => dailyPay.setSelectedUser(null)}
+          onSuccess={dailyPay.handleRateSuccess}
+          initialAdminWorkPlaces={dailyPay.adminWorkPlaces}
         />
       )}
 
-      <SearchRateModal
-        isOpen={isSearchOpen}
-        onClose={() => setIsSearchOpen(false)}
-        onSearch={(params) =>
-          fetchDailyPay(params, toast)
-        }
+      <AdminWorkPlaceModal
+        isOpen={adminWorkPlaceDisclosure.isOpen}
+        onClose={adminWorkPlaceDisclosure.onClose}
+        workPlaceCount={dailyPay.adminWorkPlaces.length}
+        workPlaces={dailyPay.adminWorkPlaces}
+        onSuccess={dailyPay.handleAdminWorkPlaceSuccess}
       />
-    </div>
+
+      <ExcelExportModal
+        isOpen={exportDisclosure.isOpen}
+        onClose={exportDisclosure.onClose}
+        onConfirm={dailyPay.handleExcelExport}
+        loading={dailyPay.exportLoading}
+        showWorkPlace={false}
+      />
+    </Box>
   );
 }

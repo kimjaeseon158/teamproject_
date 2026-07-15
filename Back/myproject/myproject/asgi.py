@@ -17,7 +17,7 @@ django.setup()
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from myproject.middlewares import TokenAuthMiddleware
-import myapp.routing
+import myapp.ws.routing
 
 # 2. application 설정
 application = ProtocolTypeRouter({
@@ -27,7 +27,7 @@ application = ProtocolTypeRouter({
     # 웹소켓 요청은 우리가 만든 미들웨어와 루팅으로 처리
     "websocket": TokenAuthMiddleware(
         URLRouter(
-            myapp.routing.websocket_urlpatterns
+            myapp.ws.routing.websocket_urlpatterns
         )
     ),
 })

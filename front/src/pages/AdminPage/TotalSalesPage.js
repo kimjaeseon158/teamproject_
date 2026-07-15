@@ -1,116 +1,83 @@
-// TotalSalesPage.js
+import { Box, Flex } from "@chakra-ui/react";
 
-import {
-  Box,
-  Flex,
-  Heading,
-  Card,
-  CardBody,
-  useToast,
-} from "@chakra-ui/react";
-
-import MonthPicker from "../../feactures/common/MonthPicker";
-import { useTotalFinance } from "../../feactures/admin/total_pay/hook/useTotalFinance";
-import ThreeMonthBarSection from "../../feactures/admin/total_pay/section/ThreeMonthBarSection";
+import ExcelExportModal from "../../features/admin/total_pay/section/ExcelExportModal";
+import PayDetailSection from "../../features/admin/total_pay/section/PayDetailSection";
+import ThreeMonthBarSection from "../../features/admin/total_pay/section/ThreeMonthBarSection";
+import TotalSalesHeader from "../../features/admin/total_pay/section/TotalSalesHeader";
+import TotalSalesSummaryCards from "../../features/admin/total_pay/section/TotalSalesSummaryCards";
+import WorkerPaySummarySection from "../../features/admin/total_pay/section/WorkerPaySummarySection";
+import useTotalSalesPage from "../../features/admin/total_pay/hook/useTotalSalesPage";
 
 export default function TotalSalesPage() {
-  const toast = useToast();
+  const totalSales = useTotalSalesPage();
 
-    const {
-      apiMonth,
-      setApiMonth,
-      selectedDetailMonth,
-      setSelectedDetailMonth,
-      threeMonthData,
-      detailData,
-      totalExpense,
-    } = useTotalFinance({ toast });
+  return (
+    <Box
+      h="calc(100vh - 92px)"
+      bg="gray.50"
+      p={{ base: 4, md: 5 }}
+      display="flex"
+      flexDirection="column"
+      overflowX="hidden"
+      overflowY="auto"
+    >
+      <TotalSalesHeader
+        apiMonth={totalSales.apiMonth}
+        onMonthChange={totalSales.setApiMonth}
+        onExcelOpen={totalSales.exportDisclosure.onOpen}
+      />
 
-    return (
-    <Box p={6} bg="gray.50" minH="100vh">
+      <TotalSalesSummaryCards
+        selectedMonthTotal={totalSales.selectedMonthTotal}
+        threeMonthTotal={totalSales.threeMonthTotal}
+        detailCount={totalSales.detailData.length}
+      />
 
-      {/* 상단 */}
-      <Flex justify="space-between" mb={6} align="center">
-        <Heading>일급 현황</Heading>
+      <Flex
+        gap={5}
+        align="stretch"
+        direction={{ base: "column", xl: "row" }}
+        flex="none"
+        minH="auto"
+        overflow="visible"
+      >
+        <Box flex="1.6" minW={0} display="flex" flexDirection="column" gap={3}>
+          <Box
+            h={{ base: "360px", md: "420px", xl: "460px" }}
+            minH={{ base: "360px", md: "420px", xl: "460px" }}
+            flexShrink={0}
+          >
+            <ThreeMonthBarSection
+              data={totalSales.threeMonthData}
+              selectedMonth={totalSales.selectedDetailMonth}
+              height="100%"
+              onMonthClick={(month) => {
+                totalSales.setSelectedDetailMonth(String(month).trim());
+              }}
+            />
+          </Box>
 
-        <MonthPicker
-          value={apiMonth}
-          onChange={(ym) => setApiMonth(ym)}
+          <WorkerPaySummarySection
+            selectedMonthTotal={totalSales.selectedMonthTotal}
+            workerSummary={totalSales.workerSummary}
+          />
+        </Box>
+
+        <PayDetailSection
+          apiMonth={totalSales.apiMonth}
+          detailData={totalSales.detailData}
+          selectedDetailMonth={totalSales.selectedDetailMonth}
+          selectedMonthTotal={totalSales.selectedMonthTotal}
+          totalExpense={totalSales.totalExpense}
         />
       </Flex>
 
-      <Flex gap={8}>
-
-        {/* 왼쪽 영역 */}
-        <Flex direction="column" flex="2" gap={6}>
-
-          {/* 3개월 그래프 */}
-          <ThreeMonthBarSection
-            data={threeMonthData}
-            selectedMonth={selectedDetailMonth}
-            onMonthClick={(month) => {
-              setSelectedDetailMonth(String(month).trim());
-            }}
-          />
-          {/* 선택월 상세 */}
-         <Card>
-          <CardBody>
-            <Heading size="sm" mb={3}>
-              {selectedDetailMonth &&
-                selectedDetailMonth.replace(
-                  /^(\d{4})-(\d{2})$/,
-                  "$1년 $2월"
-                )} 상세 급여
-            </Heading>
-
-            {detailData.length === 0 ? (
-              <Box textAlign="center" py={6} color="gray.400">
-                급여 내역이 없습니다.
-              </Box>
-            ) : (
-              detailData.map((item, i) => (
-                <Flex key={i} justify="space-between">
-                  <Box>{item.name}</Box>
-                  <Box>{item.amount.toLocaleString()} 원</Box>
-                </Flex>
-              ))
-            )}
-
-            <Flex justify="space-between" fontWeight="bold" mt={4}>
-              <Box>총 일급 지출</Box>
-              <Box>{(totalExpense ?? 0).toLocaleString()} 원</Box>
-            </Flex>
-          </CardBody>
-        </Card>
-
-        </Flex>
-
-        {/* 오른쪽 요약 */}
-        <Card flex="1" border="1px dashed gray">
-          <CardBody>
-            <Heading size="sm" mb={3}>
-              최근 3개월 요약
-            </Heading>
-
-            {threeMonthData.map((item, i) => (
-              <Flex key={i} justify="space-between">
-                <Box>{item.label}</Box>
-                <Box>{item.total.toLocaleString()} 원</Box>
-              </Flex>
-            ))}
-
-            <Flex justify="space-between" fontWeight="bold" mt={4}>
-              <Box>3개월 총 합계</Box>
-              <Box>
-                {threeMonthData
-                  .reduce((sum, m) => sum + m.total, 0)
-                  .toLocaleString()} 원
-              </Box>
-            </Flex>
-          </CardBody>
-        </Card>
-
-      </Flex>
+      <ExcelExportModal
+        isOpen={totalSales.exportDisclosure.isOpen}
+        onClose={totalSales.exportDisclosure.onClose}
+        onConfirm={totalSales.handleExport}
+        loading={totalSales.exportLoading}
+      />
     </Box>
   );
 }

@@ -2,9 +2,13 @@ import { useState } from "react";
 
 const initialSearchForm = {
   user_name: "",
-  phone_number: "",
+  phone_number: "010-",
   resident_number: "",
+  mobile_carrier: "",
+  user_uuid: "",
   address: "",
+  sorting: "",
+  direction: "",
 };
 
 export function useAdminState() {

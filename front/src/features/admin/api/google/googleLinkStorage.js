@@ -7,3 +7,6 @@ export const markGoogleLinked = () => {
 export const clearGoogleLinked = () => {
   localStorage.removeItem(GOOGLE_LINKED_KEY);
 };
+
+export const isGoogleLinked = () =>
+  localStorage.getItem(GOOGLE_LINKED_KEY) === "1";

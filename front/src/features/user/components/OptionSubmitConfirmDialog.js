@@ -47,7 +47,7 @@ export default function OptionSubmitConfirmDialog({
                           {item.baseWorkType || item.baseShift}
                         </Badge>
                         <Badge colorScheme={extraDetails.length > 0 ? "orange" : "gray"}>
-                          {extraDetails.length > 0 ? `야업 ${extraDetails.length}건` : "야업 없음"}
+                          {extraDetails.length > 0 ? `잔업 ${extraDetails.length}건` : "잔업 없음"}
                         </Badge>
                       </HStack>
                       <IconButton

@@ -41,7 +41,7 @@ export default function OverviewHeader({
       </Box>
 
       <HStack spacing={2}>
-        {googleStatus.loading ? (
+        {googleStatus.loading && !googleStatus.linked ? (
           <Spinner size="sm" color="blue.500" />
         ) : googleStatus.linked ? (
           <Tag colorScheme="green" borderRadius="full" px={3} py={2}>

@@ -88,6 +88,7 @@ export default function ApproveDetailModal({
               time={employee.workTime}
               tag={employee.workType}
               duration={employee.dayHM}
+              colorScheme={String(employee.workType || "").includes("특근") ? "orange" : "blue"}
             />
             {(employee.extraWorkDetails || []).map((detail) => (
               <Box key={detail.type} mt={1}>

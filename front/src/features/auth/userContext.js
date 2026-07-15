@@ -16,6 +16,30 @@ const UserContext = createContext(null);
 const MUST_CHANGE_PASSWORD_KEY = "mustChangePassword";
 const SKIP_REFRESH_ONCE_KEY = "skipRefreshOnce";
 const LOGGED_OUT_KEY = "loggedOut";
+const USER_WORK_PLACES_KEY = "userWorkPlaces";
+
+const normalizeWorkPlaces = (workPlaces) => {
+  if (!Array.isArray(workPlaces)) return [];
+
+  const names = workPlaces
+    .map((workPlace) => {
+      if (typeof workPlace === "string") return workPlace;
+      return workPlace?.work_place ?? "";
+    })
+    .filter(Boolean);
+
+  return Array.from(new Set(names));
+};
+
+const getStoredWorkPlaces = () => {
+  try {
+    return normalizeWorkPlaces(
+      JSON.parse(sessionStorage.getItem(USER_WORK_PLACES_KEY) || "[]")
+    );
+  } catch (err) {
+    return [];
+  }
+};
 
 export function UserProvider({ children, loginType: initialLoginType }) {
   const [loading, setLoading] = useState(true);
@@ -24,9 +48,24 @@ export function UserProvider({ children, loginType: initialLoginType }) {
   const [loginType, setLoginType] = useState(initialLoginType);
   const [userUuid, setUserUuid] = useState(null);
   const [userName, setUserName] = useState(null);
+  const [workPlaces, setWorkPlacesState] = useState(getStoredWorkPlaces);
   const [mustChangePassword, setMustChangePasswordState] = useState(
     () => sessionStorage.getItem(MUST_CHANGE_PASSWORD_KEY) === "true"
   );
+
+  const setUserWorkPlaces = useCallback((nextWorkPlaces) => {
+    const normalizedWorkPlaces = normalizeWorkPlaces(nextWorkPlaces);
+    setWorkPlacesState(normalizedWorkPlaces);
+
+    if (normalizedWorkPlaces.length > 0) {
+      sessionStorage.setItem(
+        USER_WORK_PLACES_KEY,
+        JSON.stringify(normalizedWorkPlaces)
+      );
+    } else {
+      sessionStorage.removeItem(USER_WORK_PLACES_KEY);
+    }
+  }, []);
 
   const setMustChangePassword = useCallback((value) => {
     const nextValue = !!value;
@@ -64,6 +103,7 @@ export function UserProvider({ children, loginType: initialLoginType }) {
       setUserUuid(null);
       setUserName(null);
       setLoginType(null);
+      setUserWorkPlaces([]);
       setMustChangePassword(false);
       setAlarms([]);
       setAlarmCount(0);
@@ -79,8 +119,14 @@ export function UserProvider({ children, loginType: initialLoginType }) {
       const serverMustChangePassword = json?.must_change_password;
 
       if (serverRole) setLoginType(serverRole);
+      if (serverRole === "admin") {
+        setUserWorkPlaces([]);
+      }
       if (typeof serverMustChangePassword === "boolean") {
         setMustChangePassword(serverMustChangePassword);
+      }
+      if (Array.isArray(json?.work_places)) {
+        setUserWorkPlaces(json.work_places);
       }
       
       const payload = JSON.parse(atob(access.split(".")[1]));
@@ -93,6 +139,7 @@ export function UserProvider({ children, loginType: initialLoginType }) {
       clearAccessToken();
       setUserUuid(null);
       setUserName(null);
+      setUserWorkPlaces([]);
       setMustChangePassword(false);
       setAlarms([]);
       setAlarmCount(0);
@@ -100,7 +147,7 @@ export function UserProvider({ children, loginType: initialLoginType }) {
     } finally {
       setLoading(false);
     }
-  }, [setMustChangePassword]);
+  }, [setMustChangePassword, setUserWorkPlaces]);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -109,6 +156,7 @@ export function UserProvider({ children, loginType: initialLoginType }) {
       setUserUuid(null);
       setUserName(null);
       setLoginType(null);
+      setUserWorkPlaces([]);
       setMustChangePassword(false);
       setAlarms([]);
       setAlarmCount(0);
@@ -126,7 +174,7 @@ export function UserProvider({ children, loginType: initialLoginType }) {
     } else {
       setLoading(false);
     }
-  }, [revalidate, setMustChangePassword]);
+  }, [revalidate, setMustChangePassword, setUserWorkPlaces]);
 
   const token = getAccessToken();
 
@@ -191,12 +239,14 @@ export function UserProvider({ children, loginType: initialLoginType }) {
         loading,
         userUuid,
         userName,
+        workPlaces,
         alarms,
         alarmCount,
         wsConnected,
         loginType, // Alarm에서 사용
         mustChangePassword,
         setUserName,
+        setUserWorkPlaces,
         setLoginType,
         setMustChangePassword,
         revalidate,
@@ -209,6 +259,7 @@ export function UserProvider({ children, loginType: initialLoginType }) {
           setUserUuid(null);
           setUserName(null);
           setLoginType(null);
+          setUserWorkPlaces([]);
           setMustChangePassword(false);
           setAlarms([]);
           setAlarmCount(0);

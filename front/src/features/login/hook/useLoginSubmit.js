@@ -14,6 +14,7 @@ export default function useLoginSubmit({
   setLoginType,
   setMustChangePassword,
   setUserName,
+  setUserWorkPlaces,
   storageKey,
   toast,
   values,
@@ -79,6 +80,9 @@ export default function useLoginSubmit({
 
       setUserName(userName);
       setLoginType(userRole);
+      setUserWorkPlaces(
+        userRole === "user" ? response?.work_places : []
+      );
       setMustChangePassword(
         userRole === "user" && response?.must_change_password === true
       );

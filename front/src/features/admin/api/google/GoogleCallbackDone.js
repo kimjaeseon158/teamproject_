@@ -1,14 +1,14 @@
 import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useUser } from "../../../auth/userContext"; // ✅ 변경 포인트
+
+import { useUser } from "../../../auth/userContext";
 
 export default function GoogleCallbackDone() {
-  const { revalidate } = useUser(); // ✅ context 직접 접근 ❌
+  const { revalidate } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    // ✅ StrictMode / 중복 실행 방지
     if (sessionStorage.getItem("oauthDone")) return;
     sessionStorage.setItem("oauthDone", "1");
 
@@ -24,8 +24,9 @@ export default function GoogleCallbackDone() {
 
         const params = new URLSearchParams(location.search);
         const to = params.get("to") || "/dashboard";
+        const separator = to.includes("?") ? "&" : "?";
 
-        navigate(to, { replace: true });
+        navigate(`${to}${separator}google_auth=success`, { replace: true });
       } catch (err) {
         console.error(err);
 
@@ -41,5 +42,5 @@ export default function GoogleCallbackDone() {
     };
   }, [revalidate, navigate, location.search]);
 
-  return <div>로그인 완료 처리 중...</div>;
+  return <div>Google 연동 완료 처리 중...</div>;
 }

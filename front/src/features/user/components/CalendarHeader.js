@@ -9,10 +9,10 @@ import {
 import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import { useNavigate } from "react-router-dom";
 
-import { ApiDelete } from "../../../services/api/requestJson";
 import { Alarm } from "../../alarm";
 import { useUser } from "../../auth/userContext";
 import MonthPicker from "../../common/MonthPicker";
+import { logoutUser } from "../api/userLogoutApi";
 import StatusLegend from "./StatusLegend";
 
 const formatKoreanMonth = (title) => {
@@ -39,11 +39,11 @@ export default function CalendarHeader({
 
   const handleLogout = async () => {
     try {
-      await ApiDelete("/api/user-logout/", { user_uuid: userUuid });
+      await logoutUser(userUuid);
     } catch (err) {
-      console.error("Logout failed");
+      console.error("Logout failed", err);
     } finally {
-      logout();
+      logout({ skipRefresh: true });
       navigate("/", { replace: true });
     }
   };

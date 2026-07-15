@@ -2,7 +2,6 @@ import { useRef } from "react";
 import { Badge, HStack, Stack, Text, useToast, VStack } from "@chakra-ui/react";
 
 import { useUser } from "../../auth/userContext";
-import locationsList from "../../common/work_placeColumns/locationsList";
 import OptionActionButtons from "./OptionActionButtons";
 import OptionExtraWorkSection from "./OptionExtraWorkSection";
 import OptionLocationSection from "./OptionLocationSection";
@@ -24,7 +23,7 @@ const getDisplayDate = (selectedDate) => {
 };
 
 const Option = ({ selectedDate, onRefresh, onClose, isMobile = false }) => {
-  const { userUuid, userName } = useUser();
+  const { userUuid, userName, workPlaces } = useUser();
   const toast = useToast();
   const cancelRef = useRef();
   const displayDate = getDisplayDate(selectedDate);
@@ -75,7 +74,7 @@ const Option = ({ selectedDate, onRefresh, onClose, isMobile = false }) => {
 
       <OptionLocationSection
         location={form.location}
-        locations={locationsList}
+        locations={workPlaces}
         onChange={form.setLocation}
       />
 

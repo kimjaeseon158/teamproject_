@@ -9,17 +9,17 @@ export const userPlaceListColumns = [
   },
   {
     key: "base_hourly_wage",
-    label: "기본일급(평균)",
+    label: "주간(평균)",
     render: (value) => value ?? "-",
   },
   {
     key: "overtime_hourly_wage",
-    label: "연장일급(평균)",
+    label: "평일 잔업(평균)",
     render: (value) => value ?? "-",
   },
   {
     key: "meal_ot_hourly_wage",
-    label: "식대연장(평균)",
+    label: "중식연장(평균)",
     render: (value) => value ?? "-",
   },
   {
@@ -34,17 +34,17 @@ export const userPlaceListColumns = [
   },
   {
     key: "overnight_hourly_wage",
-    label: "철야(평균)",
+    label: "야간(평균)",
     render: (value) => value ?? "-",
   },
   {
     key: "overnight_ot_hourly_wage",
-    label: "야간연장(평균)",
+    label: "야간 잔업(평균)",
     render: (value) => value ?? "-",
   },
   {
     key: "early_hourly_wage",
-    label: "조기 출근(평균)",
+    label: "조기출근(평균)",
     render: (value) => value ?? "-",
   },
 ];

@@ -3,11 +3,11 @@ import { Avatar, Badge, Box, Flex, HStack, ModalCloseButton, SimpleGrid, Text } 
 import RateSummaryCard from "./RateSummaryCard";
 
 const SUMMARY_CARDS = [
-  { key: "base", label: "평균 기본시급", color: "gray.900" },
-  { key: "overtime", label: "평균 연장시급", color: "green.600" },
+  { key: "base", label: "평균 주간", color: "gray.900" },
+  { key: "overtime", label: "평균 평일 잔업", color: "green.600" },
   { key: "daySpecial", label: "평균 주간 특근", color: "orange.500" },
   { key: "nightSpecial", label: "평균 야간 특근", color: "blue.600" },
-  { key: "early", label: "평균 조기 출근", color: "purple.600" },
+  { key: "early", label: "평균 조기출근", color: "purple.600" },
 ];
 
 export default function RateEditModalHeader({ summary, user }) {
@@ -26,7 +26,7 @@ export default function RateEditModalHeader({ summary, user }) {
               </Badge>
             </HStack>
             <Text fontSize="sm" color="gray.600">
-              근무지별 기본 시급과 연장, 주간/야간 특근 수당을 관리합니다.
+              근무지별 주간, 평일 잔업, 주간/야간 특근 수당을 관리합니다.
             </Text>
           </Box>
         </HStack>

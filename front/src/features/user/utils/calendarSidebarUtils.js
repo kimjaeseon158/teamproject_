@@ -17,6 +17,9 @@ export const formatWon = (value) => {
   return `${Number(value).toLocaleString()}원`;
 };
 
+export const isOvertimeType = (workType) =>
+  String(workType || "").includes("잔업") || String(workType || "").includes("연장");
+
 export const getWorkType = (item = {}) =>
   item.details?.[0]?.work_type ||
   item.detail_amounts?.[0]?.work_type ||
@@ -26,13 +29,13 @@ export const getWorkType = (item = {}) =>
 
 export const getOvertimeAmount = (item = {}) => {
   const detailAmount = (item.detail_amounts || [])
-    .filter((detail) => String(detail.work_type || "").includes("연장"))
+    .filter((detail) => isOvertimeType(detail.work_type))
     .reduce((sum, detail) => sum + (Number(detail.amount) || 0), 0);
 
   if (detailAmount > 0) return detailAmount;
 
   return Object.entries(item.amount_breakdown || {})
-    .filter(([key]) => key.includes("연장"))
+    .filter(([key]) => isOvertimeType(key))
     .reduce((sum, [, value]) => sum + (Number(value) || 0), 0);
 };
 
@@ -41,7 +44,7 @@ export const getBaseAmount = (item = {}) => {
   const baseDetail =
     (item.detail_amounts || []).find((detail) => detail.work_type === workType) ||
     (item.detail_amounts || []).find(
-      (detail) => !String(detail.work_type || "").includes("연장")
+      (detail) => !isOvertimeType(detail.work_type)
     );
 
   return (

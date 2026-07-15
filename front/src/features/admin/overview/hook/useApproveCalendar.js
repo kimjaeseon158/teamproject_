@@ -2,6 +2,14 @@ import { useEffect, useState } from "react";
 
 import { fetchOverviewPendingWorkDays } from "../api/overviewApi";
 
+const getDisplayWorkType = (item) => {
+  const specialType = (item.details || [])
+    .map((detail) => String(detail.work_type || "").trim())
+    .find((type) => type.includes("특근"));
+
+  return specialType || item.work_shift || "";
+};
+
 export default function useApproveCalendar(currentDate, toast) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -20,7 +28,7 @@ export default function useApproveCalendar(currentDate, toast) {
         setEvents(
           pendingOnly.map((item) => ({
             id: `${item.user_uuid}-${item.work_date}`,
-            title: `${item.user_name} (${item.work_shift || ""})`,
+            title: `${item.user_name} (${getDisplayWorkType(item)})`,
             start: item.work_start,
             end: item.work_end,
             backgroundColor: "#ffc107",

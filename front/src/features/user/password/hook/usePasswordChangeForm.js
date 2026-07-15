@@ -2,9 +2,9 @@ import { useMemo, useState } from "react";
 import { useToast } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
-import { ApiDelete } from "../../../../services/api/requestJson";
 import { useUser } from "../../../auth/userContext";
 import { changeUserPassword } from "../../api/changePassword";
+import { logoutUser } from "../../api/userLogoutApi";
 import {
   canSubmitPasswordChange,
   getPasswordChecks,
@@ -89,7 +89,7 @@ export default function usePasswordChangeForm() {
         return;
       }
 
-      await ApiDelete("/api/user-logout/", { user_uuid: userUuid }, { toast }).catch(() => null);
+      await logoutUser(userUuid, { toast }).catch(() => null);
       logout({ skipRefresh: true });
 
       toast({

@@ -119,7 +119,7 @@ export default function useOverviewPage() {
         path: "/dashboard/daily-pay",
       },
       {
-        label: "평균 기본시급(원)",
+        label: "평균 주간(원)",
         value: formatNumber(dailyPaySummary.averageBasePay),
         color: "purple.400",
         path: "/dashboard/daily-pay",

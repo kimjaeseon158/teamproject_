@@ -18,7 +18,14 @@ export function useEmployeeListPage(toast) {
   );
 
   const hasSearchFilter = useMemo(() => {
-    return state.isSearchActive || Object.values(state.searchForm).some((value) => String(value || "").trim());
+    return (
+      state.isSearchActive ||
+      Object.entries(state.searchForm).some(([key, value]) => {
+        const trimmed = String(value || "").trim();
+        if (key === "phone_number") return trimmed && trimmed !== "010-";
+        return trimmed;
+      })
+    );
   }, [state.isSearchActive, state.searchForm]);
 
   const selectableIds = useMemo(

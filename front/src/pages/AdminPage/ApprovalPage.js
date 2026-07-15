@@ -36,6 +36,8 @@ export default function ApprovePage() {
           setStatus={approval.setStatus}
           workPlace={approval.workPlace}
           setWorkPlace={approval.setWorkPlace}
+          workPlaces={approval.workPlaces}
+          workPlacesLoading={approval.workPlacesLoading}
           workType={approval.workType}
           setWorkType={approval.setWorkType}
           userName={approval.userName}
@@ -61,7 +63,7 @@ export default function ApprovePage() {
               승인 내역
             </Heading>
             <Text fontSize="sm" color="gray.500" mt={1}>
-              주간 {approval.summary.day} · 야간 {approval.summary.night} · 특근 {approval.summary.special}
+              주간 {approval.summary.day}건 · 야간 {approval.summary.night}건 · 특근 {approval.summary.special}건
             </Text>
           </Box>
           <HStack spacing={3}>

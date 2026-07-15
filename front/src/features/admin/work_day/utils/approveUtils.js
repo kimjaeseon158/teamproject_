@@ -19,6 +19,15 @@ export const getWorkDurationLabel = (details = []) =>
     .map((detail) => `${detail.work_type} ${minutesToHM(detail.minutes)}`)
     .join(" · ");
 
+export const getDisplayWorkType = (workDay) => {
+  const detailTypes = (workDay?.details || [])
+    .map((detail) => String(detail.work_type || "").trim())
+    .filter(Boolean);
+  const specialType = detailTypes.find((type) => type.includes("특근"));
+
+  return specialType || workDay?.work_shift || detailTypes[0] || "-";
+};
+
 export const toDateOnly = (value) =>
   typeof value === "string" && value.includes("T") ? value.split("T")[0] : value ?? "";
 

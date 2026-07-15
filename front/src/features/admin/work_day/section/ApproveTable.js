@@ -10,7 +10,7 @@ const getStatusColor = (status) => {
 };
 
 const getWorkTypeColor = (type) => {
-  if (type === "야간") return "purple";
+  if (String(type || "").includes("야간")) return "purple";
   if (String(type || "").includes("특근")) return "orange";
   return "blue";
 };

@@ -30,9 +30,7 @@ export default function useGoogleLinkStatus() {
       const params = new URLSearchParams(window.location.search);
       const authResult = params.get("google_auth");
 
-      if (authResult === "success") {
-        markGoogleLinked();
-      } else if (authResult === "failed" || authResult === "invalid_state") {
+      if (authResult === "failed" || authResult === "invalid_state") {
         clearGoogleLinked();
       }
 
@@ -54,20 +52,18 @@ export default function useGoogleLinkStatus() {
           return;
         }
 
-        if (res?.status === 401 || res?.status === 403) {
-          clearGoogleLinked();
-        }
-
+        clearGoogleLinked();
         setState({
           loading: false,
           linked: false,
-          reason: res?.status >= 500 ? "server" : "unauthenticated",
+          reason: res?.status >= 500 ? "server" : "unverified",
           lastCheckedAt: Date.now(),
           events: [],
         });
       } catch {
         if (!alive) return;
 
+        clearGoogleLinked();
         setState({
           loading: false,
           linked: false,

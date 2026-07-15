@@ -4,6 +4,7 @@ import {
   getMinutesByType,
   getTotalWorkMinutes,
   getWorkDurationLabel,
+  getDisplayWorkType,
   toDateOnly,
   toTimeHM,
   deriveStatus,
@@ -11,6 +12,26 @@ import {
 import { addMinutesToTime } from "../../../common/workTimeUtils";
 import { EXTRA_WORK_TYPES, getExtraWorkTypeByLabel } from "../../../common/workTypes";
 import { getAdminWorkDays } from "../api/adminWorkday";
+
+const SPECIAL_WORK_SHIFT_MAP = {
+  "주간 특근": { workShift: "주간", extraWork: "주간 특근" },
+  "야간 특근": { workShift: "야간", extraWork: "야간 특근" },
+};
+
+const getWorkFilterPayload = (workType, extraWork) => {
+  const specialFilter = SPECIAL_WORK_SHIFT_MAP[workType];
+  if (!specialFilter) {
+    return {
+      work_shift: workType,
+      extra_work: extraWork,
+    };
+  }
+
+  return {
+    work_shift: specialFilter.workShift,
+    extra_work: specialFilter.extraWork,
+  };
+};
 
 const getExtraWorkTimeRange = (type, minutes, workStartHM, workEndHM) => {
   if (type === "lunch_ext") {
@@ -62,6 +83,7 @@ export function useApproveList(toast) {
   }) => {
     try {
       setLoading(true);
+      const workFilters = getWorkFilterPayload(workType, extraWork);
 
       const workDays = await getAdminWorkDays(
         {
@@ -69,9 +91,9 @@ export function useApproveList(toast) {
           start_date: startDate,
           end_date: endDate,
           work_place: workPlace === "__NULL__" ? "" : workPlace,
-          work_shift: workType === "__NULL__" ? "" : workType,
+          work_shift: workFilters.work_shift,
           user_name: userName.trim(),
-          extra_work: extraWork,
+          extra_work: workFilters.extra_work,
         },
         { toast }
       );
@@ -101,7 +123,7 @@ export function useApproveList(toast) {
             name: workDay.user_name,
             date: toDateOnly(workDay.work_date),
             workShift: workDay.work_shift ?? "",
-            workType: workDay.work_shift ?? workDay.details?.[0]?.work_type ?? "-",
+            workType: getDisplayWorkType(workDay),
             workTime:
               workStartHM && workEndHM
                 ? `${workStartHM}~${workEndHM}`

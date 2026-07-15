@@ -1,5 +1,8 @@
 import { useMemo } from "react";
 
+const hasSpecialWorkType = (item) =>
+  (item.details || []).some((detail) => String(detail.work_type || "").includes("특근"));
+
 export default function useApproveSummary(workDays = []) {
   return useMemo(() => {
     const summary = {
@@ -17,7 +20,7 @@ export default function useApproveSummary(workDays = []) {
 
       if (item.work_shift === "주간") summary.day += 1;
       if (item.work_shift === "야간") summary.night += 1;
-      if (String(item.work_shift || "").includes("특근")) summary.special += 1;
+      if (hasSpecialWorkType(item)) summary.special += 1;
 
       const key = item.user_uuid;
 

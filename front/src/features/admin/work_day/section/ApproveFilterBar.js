@@ -1,22 +1,22 @@
 import {
-  Flex,
-  Select,
-  Button,
-  Input,
   Box,
+  Button,
+  Flex,
+  HStack,
+  Input,
   Popover,
-  PopoverTrigger,
-  PopoverContent,
   PopoverBody,
   PopoverCloseButton,
+  PopoverContent,
+  PopoverTrigger,
+  Select,
   Text,
-  HStack,
 } from "@chakra-ui/react";
 import { DayPicker } from "react-day-picker";
 import { ko } from "date-fns/locale";
 import { useEffect, useRef, useState } from "react";
 import "react-day-picker/dist/style.css";
-import locationsList from "../../../common/work_placeColumns/locationsList";
+
 import MonthPicker from "../../../common/MonthPicker";
 import { EXTRA_WORK_TYPES } from "../../../common/workTypes";
 import { APPROVAL_STATUS } from "../constants/approvalConstants";
@@ -35,6 +35,8 @@ export default function ApproveFilterBar({
   setStatus,
   workPlace,
   setWorkPlace,
+  workPlaces = [],
+  workPlacesLoading = false,
   workType,
   setWorkType,
   userName,
@@ -55,6 +57,7 @@ export default function ApproveFilterBar({
     getDisplayMonth(selectedMonth, range)
   );
   const previousSelectedMonthRef = useRef(selectedMonth);
+  const isFilterDisabled = loading || workPlacesLoading;
 
   const handleTodayClick = () => {
     const today = new Date();
@@ -90,11 +93,12 @@ export default function ApproveFilterBar({
         w={{ base: "100%", md: "220px" }}
         value={workPlace}
         onChange={(e) => setWorkPlace(e.target.value)}
-        isDisabled={loading}
+        isDisabled={isFilterDisabled}
       >
-        <option value="">근무지 전체</option>
-        <option value="__NULL__">근무지 미지정</option>
-        {locationsList.map((loc) => (
+        <option value="">
+          {workPlacesLoading ? "근무지 불러오는 중..." : "근무지 전체"}
+        </option>
+        {workPlaces.map((loc) => (
           <option key={loc} value={loc}>
             {loc}
           </option>
@@ -103,7 +107,7 @@ export default function ApproveFilterBar({
 
       <Select
         size="sm"
-        w={{ base: "100%", md: "160px" }}
+        w={{ base: "100%", md: "180px" }}
         value={workType}
         onChange={(e) => setWorkType(e.target.value)}
         isDisabled={loading}
@@ -111,8 +115,8 @@ export default function ApproveFilterBar({
         <option value="">근무구분 전체</option>
         <option value="주간">주간</option>
         <option value="야간">야간</option>
-        <option value="특근">특근</option>
-        <option value="__NULL__">근무구분 미지정</option>
+        <option value="주간 특근">주간 특근</option>
+        <option value="야간 특근">야간 특근</option>
       </Select>
 
       <Select
@@ -175,7 +179,9 @@ export default function ApproveFilterBar({
                   MonthCaption: ({ calendarMonth, ...props }) => (
                     <HStack {...props} justify="flex-start" spacing={3} mb={2}>
                       <Text fontSize="sm" fontWeight="800" color="gray.800">
-                        {`${calendarMonth.date.getFullYear()}년 ${calendarMonth.date.getMonth() + 1}월`}
+                        {`${calendarMonth.date.getFullYear()}년 ${
+                          calendarMonth.date.getMonth() + 1
+                        }월`}
                       </Text>
                       <MonthPicker
                         value={selectedMonth}

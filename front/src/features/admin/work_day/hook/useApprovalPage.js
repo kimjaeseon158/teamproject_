@@ -8,6 +8,7 @@ import useApprovalFilters from "./useApprovalFilters";
 import useApprovalSelection from "./useApprovalSelection";
 import useApprovalSummary from "./useApprovalSummary";
 import useApprovalTableState from "./useApprovalTableState";
+import useAdminWorkPlaceOptions from "../../../common/hooks/useAdminWorkPlaceOptions";
 import { APPROVAL_INITIAL_STATUS } from "../constants/approvalConstants";
 import { toYMD } from "../utils/approveUtils";
 
@@ -21,6 +22,7 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
   const summary = useApprovalSummary(rows);
   const table = useApprovalTableState(rows);
   const approvalExport = useApprovalExport({ onExcelExportClose, toast });
+  const workPlaceOptions = useAdminWorkPlaceOptions(toast);
 
   const searchWithFilters = (nextFilters = {}) => {
     const searchParams = filters.getSearchParams(nextFilters);
@@ -131,6 +133,8 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
     updateBulkStatus: actions.updateBulkStatus,
     userName: filters.userName,
     workPlace: filters.workPlace,
+    workPlaces: workPlaceOptions.workPlaceNames,
+    workPlacesLoading: workPlaceOptions.loading,
     workType: filters.workType,
   };
 }

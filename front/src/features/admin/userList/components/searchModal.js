@@ -69,9 +69,10 @@ export default function SearchModal({
                 </Select>
                 <Input
                   name="phone_number"
-                  value={searchForm.phone_number || ""}
+                  value={searchForm.phone_number || "010-"}
                   onChange={onChange}
                   focusBorderColor="blue.400"
+                  placeholder="010-1234-5678"
                 />
               </HStack>
             </Box>
@@ -93,6 +94,7 @@ export default function SearchModal({
               <Select
                 placeholder="정렬 필드"
                 name="sorting"
+                value={searchForm.sorting || ""}
                 onChange={onChange}
               >
                 <option value="user_name">이름</option>
@@ -102,6 +104,7 @@ export default function SearchModal({
               <Select
                 placeholder="정렬 방향"
                 name="direction"
+                value={searchForm.direction || ""}
                 onChange={onChange}
               >
                 <option value="asc">오름차순</option>

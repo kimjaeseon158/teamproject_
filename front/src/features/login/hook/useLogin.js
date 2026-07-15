@@ -16,6 +16,7 @@ export const useLogin = () => {
     mustChangePassword,
     revalidate,
     setUserName,
+    setUserWorkPlaces,
     setLoginType,
     setMustChangePassword,
   } = useUser();
@@ -39,6 +40,7 @@ export const useLogin = () => {
     setLoginType,
     setMustChangePassword,
     setUserName,
+    setUserWorkPlaces,
     storageKey: form.storageKey,
     toast,
     values: form.values,

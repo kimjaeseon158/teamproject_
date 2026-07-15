@@ -6,7 +6,7 @@ import { formatResidentNumber, formatPhoneNumber } from "../utils/format";
 
 const initialSearchForm = {
   user_name: "",
-  phone_number: "",
+  phone_number: "010-",
   resident_number: "",
   mobile_carrier: "",
   user_uuid: "",
@@ -99,7 +99,13 @@ export function useAdminHandlers(state, toast) {
     let nextValue = value;
 
     if (name === "resident_number") nextValue = formatResidentNumber(value);
-    if (name === "phone_number") nextValue = formatPhoneNumber(value);
+    if (name === "phone_number") {
+      let numeric = value.replace(/[^0-9]/g, "");
+      if (!numeric.startsWith("010")) {
+        numeric = "010";
+      }
+      nextValue = formatPhoneNumber(numeric);
+    }
 
     setSearchForm((prev) => ({
       ...prev,
@@ -120,6 +126,7 @@ export function useAdminHandlers(state, toast) {
 
     allowedFilterKeys.forEach((key) => {
       if (searchForm[key]?.trim()) {
+        if (key === "phone_number" && searchForm[key].trim() === "010-") return;
         filters[key] = searchForm[key].trim();
       }
     });

@@ -2,29 +2,35 @@ import uuid
 from django.db import models
 from django.contrib.auth.hashers import make_password
 from django.db.models import Q
+from .encryption.crypto import resident_number_blind_index
+from .encryption.fields import EncryptedTextField
 
 
 
 # fmt:off
 # User 관련 테이블
 class User_Login_Info(models.Model):
-    user_uuid       = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user_name       = models.CharField(max_length=50, default='홍길동')   # 유저 이름
-    user_id         = models.CharField(max_length=50,unique=True)
-    password        = models.CharField(max_length=100, default='1234')
+    user_uuid            = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user_name            = models.CharField(max_length=50, default='홍길동')   # 유저 이름
+    user_id              = models.CharField(max_length=50,unique=True)
+    password             = models.CharField(max_length=100, default='1234')
     must_change_password = models.BooleanField(default=True)
-    phone_number    = models.CharField(max_length=20)
-    mobile_carrier  = models.CharField(max_length=20)
-    resident_number = models.CharField(max_length=14)
-    address         = models.CharField(max_length=200)
+    phone_number         = models.CharField(max_length=20)
+    mobile_carrier       = models.CharField(max_length=20)
+    resident_number      = EncryptedTextField()
+    resident_number_hash = models.CharField(max_length=64, unique=True, editable=False)
+    address              = EncryptedTextField()
     
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['resident_number'], name='unique_resident_number'),
             models.UniqueConstraint(fields=['phone_number'],    name='unique_phone_number'),
         ]
 
     def save(self, *args, **kwargs):
+        self.resident_number_hash = resident_number_blind_index(self.resident_number)
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None:
+            kwargs["update_fields"] = set(update_fields) | {"resident_number_hash"}
         # 비밀번호가 해시되지 않은 상태일 때만 해시
         if not self.password.startswith('pbkdf2_'):  # Django 기본 prefix 체크
             self.password = make_password(self.password)

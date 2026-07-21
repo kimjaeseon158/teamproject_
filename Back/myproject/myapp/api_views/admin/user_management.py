@@ -7,6 +7,7 @@ from ...serializers import User_InfoSerializer
 from ...models import User_Login_Info
 from ...serializers import User_Login_InfoSerializer
 from ..token import AdminJWTAuthentication
+from ...encryption.crypto import resident_number_blind_index
 
 class UserInfoListAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
@@ -115,12 +116,30 @@ class UserInfoFilteringAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-
         filtering = request.query_params.dict()
-        sorting = request.query_params.get("sorting")
+        sorting = filtering.pop("sorting", None)
+
+        sensitive_filter_keys = {
+            key for key in filtering if key == "address" or key.startswith("address__")
+            or key.startswith("resident_number__") or key.startswith("resident_number_hash")
+        }
+        if sensitive_filter_keys:
+            return Response(
+                {"success": False, "error": "Encrypted fields do not support partial filtering."},
+                status=400,
+            )
+        sort_field = sorting.lstrip("-") if sorting else ""
+        if sort_field == "address" or sort_field.startswith("address__") or sort_field.startswith("resident_number"):
+            return Response(
+                {"success": False, "error": "Encrypted fields do not support sorting."},
+                status=400,
+            )
 
         filters = {}
         for key, value in filtering.items():
+            if key == "resident_number":
+                filters["resident_number_hash"] = resident_number_blind_index(value)
+                continue
             if isinstance(value, str):
                 filters[f"{key}__icontains"] = value
             elif isinstance(value, (int, float)):
@@ -132,7 +151,7 @@ class UserInfoFilteringAPIView(APIView):
         if sorting:
             queryset = queryset.order_by(sorting)
 
-        result = list(queryset.values())
+        result = User_InfoSerializer(queryset, many=True).data
 
         return Response({"success": True, "data": result})
 

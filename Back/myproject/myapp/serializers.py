@@ -10,6 +10,7 @@ from .models import (
     AdminWorkPlace,
 )
 from .api_views.shared import normalize_work_type
+from .encryption.crypto import resident_number_blind_index
 
 
 DEFAULT_WORK_PLACE = "\ubbf8\uc9c0\uc815" #\ubbf8\uc9c0\uc815 = "미지정"
@@ -18,7 +19,16 @@ DEFAULT_WORK_PLACE = "\ubbf8\uc9c0\uc815" #\ubbf8\uc9c0\uc815 = "미지정"
 class User_Login_InfoSerializer(serializers.ModelSerializer):
     class Meta:
         model  = User_Login_Info
-        fields = '__all__'
+        exclude = ("resident_number_hash",)
+
+    def validate_resident_number(self, value):
+        resident_hash = resident_number_blind_index(value)
+        queryset = User_Login_Info.objects.filter(resident_number_hash=resident_hash)
+        if self.instance is not None:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise serializers.ValidationError("A user with this resident number already exists.")
+        return value
 
     @transaction.atomic
     def create(self, validated_data):
@@ -38,7 +48,7 @@ class User_Login_InfoSerializer(serializers.ModelSerializer):
 class User_InfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = User_Login_Info
-        exclude = ('user_id', 'password')
+        exclude = ('user_id', 'password', 'resident_number_hash')
 
 class ExpenseSerializer(serializers.ModelSerializer):
     class Meta:

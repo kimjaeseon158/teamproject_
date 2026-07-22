@@ -1,7 +1,5 @@
-import { googleAuthStartUrl } from "./googleApiConfig";
+import { googleLoginUrl } from "./googleApiConfig";
 
 export function login() {
-  sessionStorage.setItem("oauthInFlight", "1");
-  sessionStorage.removeItem("oauthDone");
-  window.location.href = googleAuthStartUrl;
+  window.location.assign(`${googleLoginUrl}/`);
 }

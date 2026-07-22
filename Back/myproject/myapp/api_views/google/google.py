@@ -21,6 +21,9 @@ from django.conf import settings
 from .google_drive_utils import workbook_download_response
 
 class GoogleLoginAPIView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
     def get(self, request):
         flow = Flow.from_client_config(
             settings.GOOGLE_OAUTH2_CLIENT_CONFIG,
@@ -40,6 +43,7 @@ class GoogleLoginAPIView(APIView):
 
 
 class GoogleCallbackAPIView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def get(self, request):
@@ -103,6 +107,9 @@ class GoogleCallbackAPIView(APIView):
 
 
 class GoogleCalendarEventsAPIView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
     def get(self, request):
         access_token = request.COOKIES.get("google_access_token")
 

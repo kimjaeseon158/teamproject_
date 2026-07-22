@@ -64,10 +64,10 @@ urlpatterns = [
     
 
 
-    # Dashboard-google-calendar
-    path('google-calendar-auth/',             GoogleLoginAPIView.as_view(),                     name='google-calendar-auth'),
-    path('google-calendar-auth/callback/',    GoogleCallbackAPIView.as_view(),                  name='google-calendar-auth-back'),
-    path('google-calendar-auth/events/',      GoogleCalendarEventsAPIView.as_view(),            name='google-calendar-auth-events'),
+    # Google OAuth / Calendar
+    path('google/login/',           GoogleLoginAPIView.as_view(),          name='google-login'),
+    path('google/callback/',        GoogleCallbackAPIView.as_view(),       name='google-callback'),
+    path('google/calendar/events/', GoogleCalendarEventsAPIView.as_view(), name='google-calendar-events'),
     path('google-drive-excel-export/',        GoogleDriveWorkplaceExcelExportAPIView.as_view(), name='google-drive-excel-export'),
     path('google-drive-salary-excel-export/', GoogleDriveSalaryExcelExportAPIView.as_view(), name='google-drive-salary-excel-export'),
     path('google-drive-user-pay-excel-export/', GoogleDriveUserPayExcelExportAPIView.as_view(), name='google-drive-user-pay-excel-export'),

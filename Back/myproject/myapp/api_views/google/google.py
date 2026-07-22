@@ -167,7 +167,7 @@ class GoogleLogoutAPIView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
 
-    def post(self, request):
+    def delete(self, request):
         refresh_token = request.COOKIES.get("google_refresh_token")
         access_token = request.COOKIES.get("google_access_token")
         token = refresh_token or access_token

@@ -27,6 +27,7 @@ from .api_views.admin.user_management import (
 )
 from .api_views.google import (
     GoogleLoginAPIView,
+    GoogleLogoutAPIView,
     GoogleCallbackAPIView,
     GoogleCalendarEventsAPIView,
     GoogleDriveWorkplaceExcelExportAPIView,
@@ -70,6 +71,7 @@ __all__ = [
     "UserInfoAddAPIView",
     "UserInfoFilteringAPIView",
     "GoogleLoginAPIView",
+    "GoogleLogoutAPIView",
     "GoogleCallbackAPIView",
     "GoogleCalendarEventsAPIView",
     "GoogleDriveWorkplaceExcelExportAPIView",

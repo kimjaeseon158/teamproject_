@@ -22,6 +22,7 @@ from .admin.user_management import (
 )
 from .google import (
     GoogleLoginAPIView,
+    GoogleLogoutAPIView,
     GoogleCallbackAPIView,
     GoogleCalendarEventsAPIView,
     GoogleDriveWorkplaceExcelExportAPIView,
@@ -65,6 +66,7 @@ __all__ = [
     "UserInfoAddAPIView",
     "UserInfoFilteringAPIView",
     "GoogleLoginAPIView",
+    "GoogleLogoutAPIView",
     "GoogleCallbackAPIView",
     "GoogleCalendarEventsAPIView",
     "GoogleDriveWorkplaceExcelExportAPIView",

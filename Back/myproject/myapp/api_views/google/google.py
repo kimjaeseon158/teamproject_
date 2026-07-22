@@ -163,6 +163,40 @@ class GoogleCalendarEventsAPIView(APIView):
         return Response({"events": events})
 
 
+class GoogleLogoutAPIView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        refresh_token = request.COOKIES.get("google_refresh_token")
+        access_token = request.COOKIES.get("google_access_token")
+        token = refresh_token or access_token
+        token_revoked = False
+
+        if token:
+            try:
+                revoke_response = requests.post(
+                    "https://oauth2.googleapis.com/revoke",
+                    data={"token": token},
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
+                    timeout=10,
+                )
+                token_revoked = revoke_response.status_code == 200
+            except requests.RequestException:
+                # Local logout must still complete if Google's endpoint is unavailable.
+                token_revoked = False
+
+        response = Response(
+            {
+                "success": True,
+                "google_token_revoked": token_revoked,
+            }
+        )
+        response.delete_cookie("google_access_token", path="/")
+        response.delete_cookie("google_refresh_token", path="/")
+        return response
+
+
 class GoogleDriveWorkplaceExcelExportAPIView(APIView):
     """
     workload 폴더에서 템플릿을 찾고, workload/YYYY-MM 폴더에 근무현황 파일을 저장합니다.

@@ -219,35 +219,15 @@ class UserMonthlyWorkSummaryAPIView(APIView):
             elif wd.work_shift == "야간":
                 night_shift_count += 1
 
-            if is_approved is True: # 승인된 경우: Expense에서 급여 가져오기
-                # wd.salary_expense는 OneToOneField로 연결된 Expense 객체
-                if hasattr(wd, 'salary_expense') and wd.salary_expense:
-                    day_amount = wd.salary_expense.amount
-                else:
-                    # 승인되었으나 Expense가 없는 경우는 로직상 발생하지 않음을 가정하고,
-                    # 해당 경우 발생 시 ValueError를 그대로 발생시킴.
-                    rates = get_rates_for_workday(wd) # WorkPlaceRate가 있을 것으로 가정
-                    breakdown = calculate_daily_salary_breakdown(details, rates, wd.work_shift)
-                    day_amount = breakdown["total_amount"]
-                    amount_breakdown = breakdown["by_work_type"]
-                    detail_amounts = breakdown["detail_amounts"]
-            elif is_approved is None: # 대기 중인 경우: 실시간으로 급여 계산 (WorkPlaceRate가 있을 것으로 가정)
-                # WorkPlaceRate가 없을 경우 ValueError 발생
+            # 승인 여부와 관계없이 현재 시급표를 기준으로 같은 방식으로 계산한다.
+            # Expense는 승인 시점의 저장값이라 시급 변경 후 상세 합계와 달라질 수 있다.
+            if is_approved is not False:
                 rates = get_rates_for_workday(wd)
                 breakdown = calculate_daily_salary_breakdown(details, rates, wd.work_shift)
                 day_amount = breakdown["total_amount"]
                 amount_breakdown = breakdown["by_work_type"]
                 detail_amounts = breakdown["detail_amounts"]
             # is_approved가 False (반려됨)인 경우 day_amount는 기본값 0으로 유지됨
-
-            if amount_breakdown is None and details and is_approved is not False:
-                try:
-                    rates = get_rates_for_workday(wd)
-                    breakdown = calculate_daily_salary_breakdown(details, rates, wd.work_shift)
-                    amount_breakdown = breakdown["by_work_type"]
-                    detail_amounts = breakdown["detail_amounts"]
-                except ValueError:
-                    pass
 
             daily_list.append({
                 "date": wd.work_date,

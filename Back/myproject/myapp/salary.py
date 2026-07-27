@@ -2,14 +2,20 @@ from __future__ import annotations
 from dataclasses import dataclass
 from django.db import transaction
 from myapp.models import WorkPlaceRate, Expense
-from myapp.serializers import WorkPlaceRateSerializer
 from collections import OrderedDict
 from django.core.exceptions import ObjectDoesNotExist
 from datetime import date
-from .api_views.shared import normalize_work_type
 
 
+MINUTES_PER_HOUR = 60
 FULL_DAY_MINUTES = 480
+
+
+def _normalize_work_type(work_type: str, work_shift: str | None = None) -> str:
+    # api_views 패키지는 뷰를 즉시 import하므로 모듈 로드 시 순환 import를 피한다.
+    from .api_views.shared import normalize_work_type
+
+    return normalize_work_type(work_type, work_shift)
 
 @dataclass(frozen=True)
 class WageRates:
@@ -23,18 +29,24 @@ class WageRates:
     overnight_ot_hourly_wage: int
     early_hourly_wage: int
 
-def minutes_to_amount(daily_wage_8h: int, minutes: int) -> int:
+def minutes_to_amount(hourly_wage: int, minutes: int) -> int:
     """
-    daily_wage_8h: 8시간(480분) 기준 일급
+    hourly_wage: 시간당 단가
     minutes: 실제 근무 분
     """
-    if daily_wage_8h <= 0 or minutes <= 0:
+    if hourly_wage <= 0 or minutes <= 0:
         return 0
 
-    # (minutes / 480) * daily_wage_8h 를 반올림해서 정수로
-    # 반올림: +240 (480의 절반)
-    return (daily_wage_8h * minutes) // FULL_DAY_MINUTES
-    # 예) 일급 100,000원, 240분 근무 (100000 * 240 + 240) // 480 = 50,000원 (정상)
+    # 분 단위 근무 시간을 시급으로 환산한다.
+    return (hourly_wage * minutes) // MINUTES_PER_HOUR
+
+
+def minutes_to_daily_amount(daily_wage: int, minutes: int) -> int:
+    """8시간 기준 일급을 실제 근무 분에 비례해 계산한다."""
+    if daily_wage <= 0 or minutes <= 0:
+        return 0
+
+    return (daily_wage * minutes) // FULL_DAY_MINUTES
 
 def get_detail_salary_amount(
     work_type: str,
@@ -42,11 +54,11 @@ def get_detail_salary_amount(
     rates: WageRates,
     work_shift: str | None = None,
 ) -> int:
-    wt = normalize_work_type(work_type, work_shift).upper()
+    wt = _normalize_work_type(work_type, work_shift).upper()
     mins = int(minutes or 0)
 
     if wt in ["주간"]:
-        return minutes_to_amount(rates.base_hourly_wage, mins)
+        return minutes_to_daily_amount(rates.base_hourly_wage, mins)
 
     if wt in ["평일 잔업"]:
         return minutes_to_amount(rates.overtime_hourly_wage, mins)
@@ -55,16 +67,16 @@ def get_detail_salary_amount(
         return minutes_to_amount(rates.meal_ot_hourly_wage, mins)
 
     if wt in ["주간 특근"]:
-        return minutes_to_amount(rates.day_special_hourly_wage, mins)
+        return minutes_to_daily_amount(rates.day_special_hourly_wage, mins)
 
     if wt in ["야간 특근"]:
-        return minutes_to_amount(rates.night_special_hourly_wage, mins)
+        return minutes_to_daily_amount(rates.night_special_hourly_wage, mins)
 
     if wt in ["특근"]:
-        return minutes_to_amount(rates.special_hourly_wage, mins)
+        return minutes_to_daily_amount(rates.special_hourly_wage, mins)
 
     if wt in ["야간"]:
-        return minutes_to_amount(rates.overnight_hourly_wage, mins)
+        return minutes_to_daily_amount(rates.overnight_hourly_wage, mins)
 
     if wt in ["야간 잔업"]:
         return minutes_to_amount(rates.overnight_ot_hourly_wage, mins)
@@ -107,7 +119,7 @@ def calculate_daily_salary_breakdown(
 
     for d in details:
         work_type = d.work_type or ""
-        amount_type = normalize_work_type(work_type, work_shift)
+        amount_type = _normalize_work_type(work_type, work_shift)
         minutes = int(d.minutes or 0)
         amount = get_detail_salary_amount(work_type, minutes, rates, work_shift)
 
@@ -183,6 +195,9 @@ def sync_salary_expense_for_workday(work_day):
 RATE_REMOVE_KEYS = {"user", "user_uuid", "user_name"}
 
 def group_rates_by_user(qs):
+    # serializers가 salary를 참조하므로 모듈 로드 시의 순환 import를 피한다.
+    from myapp.serializers import WorkPlaceRateSerializer
+
     rate_list = WorkPlaceRateSerializer(qs, many=True).data
     grouped = OrderedDict()
 

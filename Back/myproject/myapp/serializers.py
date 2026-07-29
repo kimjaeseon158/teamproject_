@@ -143,6 +143,35 @@ class UserWorkDaySerializer(serializers.ModelSerializer):
             ])
             return work_day
 
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        details_data = validated_data.pop("details")
+        work_shift = validated_data["work_shift"]
+
+        for detail in details_data:
+            detail["work_type"] = normalize_work_type(
+                detail.get("work_type"),
+                work_shift,
+            )
+
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+
+        instance.is_approved = None
+        instance.reject_reason = None
+        instance.save()
+
+        instance.details.all().delete()
+        User_WorkDetail.objects.bulk_create([
+            User_WorkDetail(
+                work_date=instance,
+                user_uuid=instance.user_uuid_id,
+                **detail,
+            )
+            for detail in details_data
+        ])
+        return instance
+
 
 class WorkPlaceRateSerializer(serializers.ModelSerializer):
     user_uuid = serializers.CharField(source="user_uuid_str", read_only=True)

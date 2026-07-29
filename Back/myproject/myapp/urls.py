@@ -10,6 +10,7 @@ from .views import (
     UserInfoFilteringAPIView,
     UserInfoListAPIView,
     UserInfoAddAPIView,
+    UserWorkPlaceListAPIView,
     TokenRefreshAPIView,
     FinanceTableDateFilteredAPIView,
     IncomeDateFilteredAPIView,
@@ -90,7 +91,7 @@ urlpatterns = [
     # User-page
     path('user-work-info/',              UserWorkInfoAPIView.as_view(),           name='user-work-info'),
     path('user-monthly-work-summary/',   UserMonthlyWorkSummaryAPIView.as_view(), name='user-monthly-work-summary'),
-
+    path('user-work-places/',            UserWorkPlaceListAPIView.as_view(), name='user-work-places'),
 
     # Refresh-Token
     path('refresh-token/',   TokenRefreshAPIView.as_view(), name='refresh-token')

@@ -55,11 +55,6 @@ class CheckUserLoginAPIView(APIView):
             lifetime_days=7,
         )
 
-        work_places = WorkPlaceRate.objects.filter(user=user_instance).order_by("work_place")
-        work_places_data = list(
-            work_places.values("rate_uuid", "work_place")
-        )
-
         # (4) 응답 구성
         response = Response(
             {
@@ -68,7 +63,6 @@ class CheckUserLoginAPIView(APIView):
                 "user_uuid": user_uuid,
                 "access": str(access),
                 "must_change_password": user_instance.must_change_password,
-                "work_places": work_places_data,
             }
         )
 
@@ -83,6 +77,25 @@ class CheckUserLoginAPIView(APIView):
         )
 
         return response
+
+
+class UserWorkPlaceListAPIView(APIView):
+    authentication_classes = [UserJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        work_places = (
+            WorkPlaceRate.objects.filter(user=request.user)
+            .order_by("work_place")
+            .values("rate_uuid", "work_place")
+        )
+
+        return Response(
+            {
+                "success": True,
+                "work_places": list(work_places),
+            }
+        )
 
 
 class UserPasswordChangeAPIView(APIView):

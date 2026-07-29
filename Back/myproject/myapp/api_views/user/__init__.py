@@ -4,6 +4,7 @@ from .user import (
     UserLogoutAPIView,
     UserMonthlyWorkSummaryAPIView,
     UserPasswordChangeAPIView,
+    UserWorkPlaceListAPIView,
     UserWorkInfoAPIView,
 )
 
@@ -12,5 +13,6 @@ __all__ = [
     "UserLogoutAPIView",
     "UserMonthlyWorkSummaryAPIView",
     "UserPasswordChangeAPIView",
+    "UserWorkPlaceListAPIView",
     "UserWorkInfoAPIView",
 ]

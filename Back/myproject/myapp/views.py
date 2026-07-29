@@ -10,6 +10,7 @@ from .api_views.token import (
 from .api_views.user import (
     CheckUserLoginAPIView,
     UserPasswordChangeAPIView,
+    UserWorkPlaceListAPIView,
     UserLogoutAPIView,
     UserWorkInfoAPIView,
     UserMonthlyWorkSummaryAPIView,
@@ -60,6 +61,7 @@ __all__ = [
     "TokenRefreshAPIView",
     "CheckUserLoginAPIView",
     "UserPasswordChangeAPIView",
+    "UserWorkPlaceListAPIView",
     "UserLogoutAPIView",
     "UserWorkInfoAPIView",
     "UserMonthlyWorkSummaryAPIView",

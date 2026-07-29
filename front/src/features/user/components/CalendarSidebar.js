@@ -12,6 +12,7 @@ export default function CalendarSidebar({
   userName,
   selectedDate,
   onClose,
+  onEditWork,
   onRefresh,
   onDateChange,
   events = [],
@@ -94,6 +95,7 @@ export default function CalendarSidebar({
                 event={existingEvent}
                 isMobile={isMobile}
                 onClose={onClose}
+                onEditWork={onEditWork}
                 onRefresh={onRefresh}
                 selectedDate={selectedDate}
               />
@@ -105,7 +107,11 @@ export default function CalendarSidebar({
                   onClose={onClose}
                   isMobile={isMobile}
                 />
-                <DesktopWorkSummary event={existingEvent} />
+                <DesktopWorkSummary
+                  event={existingEvent}
+                  onRefresh={onRefresh}
+                  selectedDate={selectedDate}
+                />
               </>
             )
           ) : (

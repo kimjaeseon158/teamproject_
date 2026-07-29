@@ -10,6 +10,8 @@ import {
 import CalendarView from "../../../common/CalendarView";
 import CalendarHeader from "../components/CalendarHeader";
 import CalendarSidebar from "../components/CalendarSidebar";
+import EditPendingWorkModal from "../components/calendarSidebar/EditPendingWorkModal";
+import PendingWorkSelectModal from "../components/calendarSidebar/PendingWorkSelectModal";
 import StatusLegend from "../components/StatusLegend";
 
 export default function CalendarMobileLayout({
@@ -18,16 +20,42 @@ export default function CalendarMobileLayout({
   calendar,
   goToday,
   calendarTitle,
+  editingWork,
+  onCloseEditWork,
+  onCloseSelectWork,
+  onEditWork,
+  onEventClick,
+  onSelectPendingWork,
   onTitleChange,
+  selectableWorks,
   isMobile,
 }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
     <Box minH="100vh" bg="gray.50" overflowX="hidden">
+      <PendingWorkSelectModal
+        forceBottomSheet={isMobile}
+        isOpen={selectableWorks.length > 0}
+        items={selectableWorks}
+        onClose={onCloseSelectWork}
+        onSelect={onSelectPendingWork}
+      />
+
+      <EditPendingWorkModal
+        forceBottomSheet={isMobile}
+        isOpen={Boolean(editingWork)}
+        onClose={onCloseEditWork}
+        onRefresh={calendar.loadMonthlyData}
+        selectedDate={calendar.selectedDate}
+        work={editingWork}
+      />
+
       <Drawer isOpen={isOpen} placement="bottom" onClose={onClose}>
         <DrawerOverlay backdropFilter="blur(4px)" />
         <DrawerContent
+          bg="#1c1c1e"
+          color="white"
           h="94dvh"
           borderTopRadius="30px"
           boxShadow="0 -10px 20px rgba(0,0,0,0.1)"
@@ -45,6 +73,10 @@ export default function CalendarMobileLayout({
             userName={userName}
             selectedDate={calendar.selectedDate}
             onClose={onClose}
+            onEditWork={(work) => {
+              onClose();
+              onEditWork(work);
+            }}
             onRefresh={calendar.loadMonthlyData}
             onDateChange={calendar.handleDateClick}
             events={calendar.events}
@@ -91,6 +123,10 @@ export default function CalendarMobileLayout({
             onDateClick={(arg) => {
               calendar.handleDateClick(arg);
               onOpen();
+            }}
+            onEventClick={(event) => {
+              const openedEdit = onEventClick(event);
+              if (!openedEdit) onOpen();
             }}
             onTitleChange={onTitleChange}
             isMobile={isMobile}

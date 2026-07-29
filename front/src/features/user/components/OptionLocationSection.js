@@ -21,7 +21,7 @@ export default function OptionLocationSection({
   return (
     <VStack align="stretch" spacing={2}>
       <Text fontSize="xs" fontWeight="bold" color="gray.500" ml={1}>
-        업체 및 장소
+        업체 및 근무지
       </Text>
       <Menu>
         <MenuButton
@@ -37,7 +37,7 @@ export default function OptionLocationSection({
         >
           <HStack justify="space-between" w="100%">
             <Text color={location ? "white" : "gray.500"} fontSize="md" fontWeight="600" isTruncated>
-              {location || (isLoading ? "근무지 불러오는 중..." : "근무 장소를 선택하세요")}
+              {location || (isLoading ? "근무지 불러오는 중..." : "근무지를 선택하세요.")}
             </Text>
             <ChevronDownIcon color="gray.500" />
           </HStack>

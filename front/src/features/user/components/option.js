@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge, HStack, Stack, Text, useToast, VStack } from "@chakra-ui/react";
 
 import { useUser } from "../../auth/userContext";
@@ -8,6 +8,7 @@ import OptionLocationSection from "./OptionLocationSection";
 import OptionSegmentedControl from "./OptionSegmentedControl";
 import OptionSubmitConfirmDialog from "./OptionSubmitConfirmDialog";
 import OptionTimeSection from "./OptionTimeSection";
+import { fetchUserWorkPlaces } from "../api/userWorkPlaces";
 import useOptionForm from "../hook/useOptionForm";
 import "./activity.css";
 
@@ -23,9 +24,10 @@ const getDisplayDate = (selectedDate) => {
 };
 
 const Option = ({ selectedDate, onRefresh, onClose, isMobile = false }) => {
-  const { userUuid, userName, workPlaces } = useUser();
+  const { userUuid, userName, workPlaces, setUserWorkPlaces } = useUser();
   const toast = useToast();
   const cancelRef = useRef();
+  const [workPlacesLoading, setWorkPlacesLoading] = useState(false);
   const displayDate = getDisplayDate(selectedDate);
   const form = useOptionForm({
     isMobile,
@@ -36,6 +38,34 @@ const Option = ({ selectedDate, onRefresh, onClose, isMobile = false }) => {
     userName,
     userUuid,
   });
+
+  useEffect(() => {
+    if (!userUuid) return;
+
+    let ignore = false;
+    setWorkPlacesLoading(true);
+
+    fetchUserWorkPlaces({ toast })
+      .then((places) => {
+        if (!ignore) setUserWorkPlaces(places);
+      })
+      .catch((error) => {
+        if (!ignore) {
+          toast({
+            title: "근무지를 불러오지 못했습니다.",
+            description: error?.message,
+            status: "error",
+          });
+        }
+      })
+      .finally(() => {
+        if (!ignore) setWorkPlacesLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [setUserWorkPlaces, toast, userUuid]);
 
   return (
     <Stack spacing={5} color="white" w="100%" pb={10}>
@@ -73,6 +103,7 @@ const Option = ({ selectedDate, onRefresh, onClose, isMobile = false }) => {
       />
 
       <OptionLocationSection
+        isLoading={workPlacesLoading}
         location={form.location}
         locations={workPlaces}
         onChange={form.setLocation}

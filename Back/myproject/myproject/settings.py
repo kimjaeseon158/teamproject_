@@ -152,4 +152,20 @@ TIME_ZONE = "Asia/Seoul"
 USE_I18N = True
 USE_TZ = False
 STATIC_URL = "static/"
+_media_root = Path(env("MEDIA_ROOT", default=r"C:\Users\User"))
+MEDIA_ROOT = _media_root if _media_root.is_absolute() else BASE_DIR / _media_root
+MEDIA_URL = "/media/"
+
+WORK_SCHEDULE_MAX_UPLOAD_SIZE = env.int(
+    "WORK_SCHEDULE_MAX_UPLOAD_SIZE",
+    default=20 * 1024 * 1024,
+)
+WORK_SCHEDULE_CONVERSION_TIMEOUT = env.int(
+    "WORK_SCHEDULE_CONVERSION_TIMEOUT",
+    default=180,
+)
+WORK_SCHEDULE_PREVIEW_DPI = env.int("WORK_SCHEDULE_PREVIEW_DPI", default=150)
+LIBREOFFICE_PATH = env("LIBREOFFICE_PATH", default="soffice")
+PDFTOPPM_PATH = env("PDFTOPPM_PATH", default="pdftoppm")
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

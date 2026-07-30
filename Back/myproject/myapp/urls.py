@@ -38,7 +38,12 @@ from .views import (
     WorkPlaceRateUpdateDeleteAPIView,
     WorkPlaceRateListfilteringAPIView,
     Expense3MonthsTotalsAPIView,
-    UserMonthlyWorkSummaryAPIView
+    UserMonthlyWorkSummaryAPIView,
+    AdminWorkScheduleDetailAPIView,
+    AdminWorkScheduleDownloadAPIView,
+    AdminWorkScheduleListCreateAPIView,
+    UserWorkScheduleAPIView,
+    UserWorkSchedulePreviewPageAPIView,
 )
 
 # fmt:off
@@ -63,6 +68,9 @@ urlpatterns = [
     path('work-place-rate-list-create/',     WorkPlaceRateListCreateAPIView.as_view(),     name='work-place-rate-list-create'),
     path('work-place-rate-update-delete/',   WorkPlaceRateUpdateDeleteAPIView.as_view(),   name='work-place-rate-update-delete'),
     path('work-place-rate-list-filtering/',  WorkPlaceRateListfilteringAPIView.as_view(),  name='work-place-rate-list-filtering'),
+    path('admin-work-schedules/',             AdminWorkScheduleListCreateAPIView.as_view(), name='admin-work-schedules'),
+    path('admin-work-schedules/<uuid:schedule_uuid>/', AdminWorkScheduleDetailAPIView.as_view(), name='admin-work-schedule-detail'),
+    path('admin-work-schedules/<uuid:schedule_uuid>/download/', AdminWorkScheduleDownloadAPIView.as_view(), name='admin-work-schedule-download'),
     
 
 
@@ -92,6 +100,8 @@ urlpatterns = [
     path('user-work-info/',              UserWorkInfoAPIView.as_view(),           name='user-work-info'),
     path('user-monthly-work-summary/',   UserMonthlyWorkSummaryAPIView.as_view(), name='user-monthly-work-summary'),
     path('user-work-places/',            UserWorkPlaceListAPIView.as_view(), name='user-work-places'),
+    path('user-work-schedule/',           UserWorkScheduleAPIView.as_view(), name='user-work-schedule'),
+    path('user-work-schedules/<uuid:schedule_uuid>/pages/<int:page_number>/', UserWorkSchedulePreviewPageAPIView.as_view(), name='user-work-schedule-preview-page'),
 
     # Refresh-Token
     path('refresh-token/',   TokenRefreshAPIView.as_view(), name='refresh-token')

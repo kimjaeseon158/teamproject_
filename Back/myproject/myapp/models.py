@@ -1,4 +1,5 @@
 import uuid
+from pathlib import Path
 from django.db import models
 from django.contrib.auth.hashers import make_password
 from django.db.models import Q
@@ -175,6 +176,63 @@ class AdminWorkPlace(models.Model):
     @property
     def admin_uuid_str(self):
         return str(self.admin_id) if self.admin_id else None
+
+
+def work_schedule_original_upload_to(instance, filename):
+    extension = Path(filename).suffix.lower()
+    schedule_date = instance.schedule_date
+    return (
+        f"work_schedules/{schedule_date:%Y}/{schedule_date:%Y-%m}/"
+        f"originals/{uuid.uuid4()}{extension}"
+    )
+
+
+def work_schedule_preview_upload_to(instance, filename):
+    schedule_date = instance.schedule.schedule_date
+    return (
+        f"work_schedules/{schedule_date:%Y}/{schedule_date:%Y-%m}/"
+        f"previews/{uuid.uuid4()}.png"
+    )
+
+
+class WorkSchedule(models.Model):
+    schedule_uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    schedule_date = models.DateField(unique=True, db_index=True)
+    original_file = models.FileField(upload_to=work_schedule_original_upload_to)
+    original_file_name = models.CharField(max_length=255)
+    original_file_size = models.PositiveBigIntegerField()
+    uploaded_by = models.ForeignKey(
+        Admin_Login_Info,
+        to_field="admin_uuid",
+        on_delete=models.PROTECT,
+        related_name="work_schedules",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-schedule_date"]
+
+
+class WorkSchedulePreviewPage(models.Model):
+    schedule = models.ForeignKey(
+        WorkSchedule,
+        on_delete=models.CASCADE,
+        related_name="preview_pages",
+    )
+    page_number = models.PositiveIntegerField()
+    image = models.FileField(upload_to=work_schedule_preview_upload_to)
+    width = models.PositiveIntegerField()
+    height = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = ["page_number"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["schedule", "page_number"],
+                name="uniq_work_schedule_preview_page",
+            )
+        ]
 
 
 class Income(models.Model):

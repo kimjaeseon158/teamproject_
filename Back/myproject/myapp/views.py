@@ -56,6 +56,13 @@ from .api_views.admin.work import (
     WorkPlaceRateUpdateDeleteAPIView,
     WorkPlaceRateListfilteringAPIView,
 )
+from .api_views.work_schedule import (
+    AdminWorkScheduleDetailAPIView,
+    AdminWorkScheduleDownloadAPIView,
+    AdminWorkScheduleListCreateAPIView,
+    UserWorkScheduleAPIView,
+    UserWorkSchedulePreviewPageAPIView,
+)
 
 __all__ = [
     "TokenRefreshAPIView",
@@ -96,4 +103,9 @@ __all__ = [
     "WorkPlaceRateListCreateAPIView",
     "WorkPlaceRateUpdateDeleteAPIView",
     "WorkPlaceRateListfilteringAPIView",
+    "AdminWorkScheduleDetailAPIView",
+    "AdminWorkScheduleDownloadAPIView",
+    "AdminWorkScheduleListCreateAPIView",
+    "UserWorkScheduleAPIView",
+    "UserWorkSchedulePreviewPageAPIView",
 ]

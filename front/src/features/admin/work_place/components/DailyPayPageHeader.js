@@ -1,5 +1,25 @@
-import { Badge, Box, Button, Flex, Heading, HStack, Image, Text, Tooltip } from "@chakra-ui/react";
-import { DownloadIcon, RepeatIcon } from "@chakra-ui/icons";
+import {
+  Badge,
+  Box,
+  Button,
+  Flex,
+  Heading,
+  HStack,
+  Image,
+  Menu,
+  MenuButton,
+  MenuDivider,
+  MenuGroup,
+  MenuItem,
+  MenuList,
+  Text,
+} from "@chakra-ui/react";
+import {
+  ChevronDownIcon,
+  DownloadIcon,
+  RepeatIcon,
+  SmallAddIcon,
+} from "@chakra-ui/icons";
 
 import excelIcon from "../../../../assets/img/excel.png";
 
@@ -7,6 +27,7 @@ export default function DailyPayPageHeader({
   loading,
   onExcelOpen,
   onResetSearch,
+  onWorkplaceAssignmentOpen,
 }) {
   return (
     <Flex
@@ -31,19 +52,58 @@ export default function DailyPayPageHeader({
       </Box>
 
       <HStack spacing={2} justify={{ base: "flex-start", md: "flex-end" }}>
-        <Tooltip label="일급관리 엑셀 생성" hasArrow>
-          <Button
-            leftIcon={<DownloadIcon />}
-            rightIcon={<Image src={excelIcon} w="22px" h="22px" alt="excel" />}
+        <Menu placement="bottom-end">
+          <MenuButton
+            as={Button}
+            rightIcon={<ChevronDownIcon />}
             colorScheme="green"
-            variant="outline"
             size="sm"
-            minW="92px"
-            onClick={onExcelOpen}
+            minW="112px"
           >
-            Excel
-          </Button>
-        </Tooltip>
+            <HStack spacing={2} justify="center">
+              <Text>Excel</Text>
+              <Image src={excelIcon} w="18px" h="18px" alt="excel" />
+            </HStack>
+          </MenuButton>
+          <MenuList minW="250px" p={2} borderColor="gray.200" boxShadow="xl">
+            <MenuGroup title="일급 관리">
+              <MenuItem
+                icon={<SmallAddIcon />}
+                borderRadius="md"
+                fontSize="sm"
+                fontWeight="700"
+                onClick={onExcelOpen}
+              >
+                일급 엑셀 업로드
+              </MenuItem>
+            </MenuGroup>
+            <MenuDivider />
+            <MenuGroup title="날짜별 근무표">
+              <MenuItem
+                icon={<DownloadIcon />}
+                borderRadius="md"
+                fontSize="sm"
+                fontWeight="700"
+                onClick={onWorkplaceAssignmentOpen}
+              >
+                근무표 업로드·관리
+              </MenuItem>
+              <MenuItem
+                icon={<SmallAddIcon />}
+                borderRadius="md"
+                bg="green.50"
+                color="green.700"
+                fontSize="sm"
+                fontWeight="800"
+                onClick={onWorkplaceAssignmentOpen}
+                _hover={{ bg: "green.100" }}
+              >
+                원본 다운로드·교체
+              </MenuItem>
+            </MenuGroup>
+          </MenuList>
+        </Menu>
+
         <Button
           leftIcon={<RepeatIcon />}
           variant="outline"

@@ -35,16 +35,20 @@ export async function requestApiResponse(
   url,
   { method = "GET", body, headers, toast } = {}
 ) {
+  const isFormData =
+    typeof FormData !== "undefined" && body instanceof FormData;
   const options = {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      ...(headers || {}),
-    },
+    headers: isFormData
+      ? { ...(headers || {}) }
+      : {
+          "Content-Type": "application/json",
+          ...(headers || {}),
+        },
   };
 
   if (body !== undefined) {
-    options.body = JSON.stringify(body);
+    options.body = isFormData ? body : JSON.stringify(body);
   }
 
   return await fetchWithAuth(url, options, { toast });

@@ -26,8 +26,10 @@ export default function CalendarHeader({
   userUuid,
   goToday,
   calendarTitle,
+  onWorkScheduleOpen,
   setCalendarTitle,
   summary,
+  hideActions = false,
   hideSummaryOnMobile = false,
 }) {
   const navigate = useNavigate();
@@ -61,15 +63,20 @@ export default function CalendarHeader({
         <>
           <HStack justify="space-between" mb={2}>
             {!hideSummaryOnMobile && <StatusLegend summary={summary} />}
-            <HStack
-              flex={hideSummaryOnMobile ? 1 : undefined}
-              justify={hideSummaryOnMobile ? "flex-end" : undefined}
-            >
-              <Alarm />
-              <Button size="xs" colorScheme="red" onClick={handleLogout}>
-                로그아웃
-              </Button>
-            </HStack>
+            {!hideActions && (
+              <HStack
+                flex={hideSummaryOnMobile ? 1 : undefined}
+                justify={hideSummaryOnMobile ? "flex-end" : undefined}
+              >
+                <Alarm />
+                <Button size="xs" colorScheme="blue" variant="outline" onClick={onWorkScheduleOpen}>
+                  근무표 조회
+                </Button>
+                <Button size="xs" colorScheme="red" onClick={handleLogout}>
+                  로그아웃
+                </Button>
+              </HStack>
+            )}
           </HStack>
 
           <HStack justify="center" spacing={2} w="100%">
@@ -110,12 +117,17 @@ export default function CalendarHeader({
             <StatusLegend summary={summary} />
           </Box>
 
-          <HStack position="absolute" right="0" zIndex="9999">
-            <Alarm />
-            <Button size="sm" colorScheme="red" onClick={handleLogout}>
-              로그아웃
-            </Button>
-          </HStack>
+          {!hideActions && (
+            <HStack position="absolute" right="0" zIndex="1">
+              <Alarm />
+              <Button size="sm" colorScheme="blue" variant="outline" onClick={onWorkScheduleOpen}>
+                근무표 조회
+              </Button>
+              <Button size="sm" colorScheme="red" onClick={handleLogout}>
+                로그아웃
+              </Button>
+            </HStack>
+          )}
 
           <IconButton
             aria-label="이전 달"

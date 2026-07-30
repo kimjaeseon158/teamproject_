@@ -1,10 +1,11 @@
-import { Box } from "@chakra-ui/react";
+import { Box, useDisclosure } from "@chakra-ui/react";
 
 import CalendarView from "../../../common/CalendarView";
 import CalendarHeader from "../components/CalendarHeader";
 import CalendarSidebar from "../components/CalendarSidebar";
 import EditPendingWorkModal from "../components/calendarSidebar/EditPendingWorkModal";
 import PendingWorkSelectModal from "../components/calendarSidebar/PendingWorkSelectModal";
+import WorkSchedulePreviewPanel from "../components/WorkSchedulePreviewPanel";
 
 export default function CalendarDesktopLayout({
   userName,
@@ -23,6 +24,8 @@ export default function CalendarDesktopLayout({
   selectableWorks,
   isMobile,
 }) {
+  const workScheduleDisclosure = useDisclosure();
+
   return (
     <Box display="flex" height="100vh" overflow="hidden">
       <PendingWorkSelectModal
@@ -42,6 +45,12 @@ export default function CalendarDesktopLayout({
         work={editingWork}
       />
 
+      <WorkSchedulePreviewPanel
+        isOpen={workScheduleDisclosure.isOpen}
+        onClose={workScheduleDisclosure.onClose}
+        selectedDate={calendar.selectedDate}
+      />
+
       <Box w="18%" minW="250px">
         <CalendarSidebar
           userName={userName}
@@ -59,8 +68,10 @@ export default function CalendarDesktopLayout({
           goToday={goToday}
           goToDate={goToDate}
           calendarTitle={calendarTitle}
+          onWorkScheduleOpen={workScheduleDisclosure.onOpen}
           setCalendarTitle={onTitleChange}
           summary={calendar.summary}
+          hideActions={workScheduleDisclosure.isOpen}
         />
 
         <Box flex="1" mt={2} overflow="hidden">

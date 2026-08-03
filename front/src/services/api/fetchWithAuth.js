@@ -1,5 +1,6 @@
 import { refreshAccessToken } from "./authApi";
 import { getAccessToken, clearAccessToken } from "./token";
+import { ERROR_MESSAGES } from "../../constants/errorMessages";
 
 let refreshPromise = null;
 
@@ -43,7 +44,7 @@ export async function fetchWithAuth(url, options = {}, { toast } = {}) {
       clearAccessToken();
 
       if (toast) {
-        toast({ title: "세션이 만료되었습니다.", status: "error" });
+        toast({ title: ERROR_MESSAGES.common.sessionExpired, status: "error" });
       }
 
       return res;

@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 
 import { adminWorkdayBulkStatusUpdate } from "../api/adminWorkdayBulkStatusUpdate";
 import { adminWorkdayStatusUpdate } from "../api/adminWorkdayStatusUpdate";
+import { ERROR_MESSAGES, getErrorMessage } from "../../../../constants/errorMessages";
 
 const toStatusPayload = (employee) => ({
   user_uuid: employee.user_uuid,
@@ -35,7 +36,7 @@ export default function useApproveActions({ toast, refresh, closeDetail, clearSe
       } catch (err) {
         toast({
           title: "승인 중 오류 발생",
-          description: err.message,
+          description: getErrorMessage(err, ERROR_MESSAGES.approval.approveFailed),
           status: "error",
         });
       } finally {
@@ -49,7 +50,7 @@ export default function useApproveActions({ toast, refresh, closeDetail, clearSe
     async (employee, rejectReason) => {
       if (!rejectReason.trim()) {
         toast({
-          title: "반려 사유를 입력해주세요.",
+          title: ERROR_MESSAGES.approval.rejectReasonRequired,
           status: "warning",
         });
         return false;
@@ -77,7 +78,7 @@ export default function useApproveActions({ toast, refresh, closeDetail, clearSe
       } catch (err) {
         toast({
           title: "반려 중 오류 발생",
-          description: err.message,
+          description: getErrorMessage(err, ERROR_MESSAGES.approval.rejectFailed),
           status: "error",
         });
         return false;
@@ -110,7 +111,7 @@ export default function useApproveActions({ toast, refresh, closeDetail, clearSe
       } catch (err) {
         toast({
           title: "일괄 처리 실패",
-          description: err.message,
+          description: getErrorMessage(err, ERROR_MESSAGES.approval.bulkFailed),
           status: "error",
           duration: 3000,
         });

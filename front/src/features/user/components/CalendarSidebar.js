@@ -102,6 +102,7 @@ export default function CalendarSidebar({
             ) : (
               <>
                 <Option
+                  existingWorks={existingEvent.extendedProps.grouped_items}
                   selectedDate={selectedDate}
                   onRefresh={onRefresh}
                   onClose={onClose}
@@ -116,6 +117,7 @@ export default function CalendarSidebar({
             )
           ) : (
             <Option
+              existingWorks={[]}
               selectedDate={selectedDate}
               onRefresh={onRefresh}
               onClose={onClose}

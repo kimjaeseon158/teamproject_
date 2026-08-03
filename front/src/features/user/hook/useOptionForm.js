@@ -7,6 +7,7 @@ import useOptionWorkTime from "./useOptionWorkTime";
 import useWorkCartState from "./useWorkCartState";
 
 export default function useOptionForm({
+  existingWorks,
   isMobile,
   onClose,
   onRefresh,
@@ -35,6 +36,7 @@ export default function useOptionForm({
   };
 
   const handlers = useOptionHandlers({
+    existingWorks,
     selectedDate,
     userUuid,
     userName,

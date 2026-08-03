@@ -207,6 +207,7 @@ export default function WorkDetailView({
               {TEXT.addWork}
             </Text>
             <Option
+              existingWorks={groupedItems}
               selectedDate={selectedDate}
               onRefresh={onRefresh}
               onClose={onClose}

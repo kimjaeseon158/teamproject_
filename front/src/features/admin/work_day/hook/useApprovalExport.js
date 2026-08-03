@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { exportApprovalSalaryExcel } from "../../api/google/GoogleDrive";
+import { ERROR_MESSAGES, getErrorMessage } from "../../../../constants/errorMessages";
 
 export default function useApprovalExport({ onExcelExportClose, toast } = {}) {
   const [exportLoading, setExportLoading] = useState(false);
@@ -11,7 +12,7 @@ export default function useApprovalExport({ onExcelExportClose, toast } = {}) {
       const result = await exportApprovalSalaryExcel(date);
 
       if (!result.success) {
-        throw new Error(result.message || "문서 생성에 실패했습니다.");
+        throw new Error(result.message || ERROR_MESSAGES.document.documentFailed);
       }
 
       toast({
@@ -24,7 +25,7 @@ export default function useApprovalExport({ onExcelExportClose, toast } = {}) {
     } catch (err) {
       toast({
         title: "문서 생성 실패",
-        description: err.message || "잠시 후 다시 시도해주세요.",
+        description: getErrorMessage(err, ERROR_MESSAGES.document.documentFailed),
         status: "error",
         duration: 3000,
       });

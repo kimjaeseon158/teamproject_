@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useDisclosure, useToast } from "@chakra-ui/react";
 
 import { exportToGoogleExcel } from "../../api/google/GoogleDrive";
+import { ERROR_MESSAGES, getErrorMessage } from "../../../../constants/errorMessages";
 import { useTotalFinance } from "./useTotalFinance";
 
 export default function useTotalSalesPage() {
@@ -48,7 +49,7 @@ export default function useTotalSalesPage() {
       const result = await exportToGoogleExcel(workPlace, date);
 
       if (!result.success) {
-        throw new Error(result.message || "엑셀 생성에 실패했습니다.");
+        throw new Error(result.message || ERROR_MESSAGES.document.excelFailed);
       }
 
       toast({
@@ -61,7 +62,7 @@ export default function useTotalSalesPage() {
     } catch (err) {
       toast({
         title: "엑셀 생성 실패",
-        description: err.message || "잠시 후 다시 시도해주세요.",
+        description: getErrorMessage(err, ERROR_MESSAGES.document.excelFailed),
         status: "error",
         duration: 3000,
       });

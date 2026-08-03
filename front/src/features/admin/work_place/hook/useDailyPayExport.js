@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 
 import { exportUserPayExcel } from "../../api/google/GoogleDrive";
+import { ERROR_MESSAGES, getErrorMessage } from "../../../../constants/errorMessages";
 
 export default function useDailyPayExport({ onExcelExportClose, toast } = {}) {
   const [exportLoading, setExportLoading] = useState(false);
@@ -11,7 +12,7 @@ export default function useDailyPayExport({ onExcelExportClose, toast } = {}) {
       const result = await exportUserPayExcel(date);
 
       if (!result.success) {
-        throw new Error(result.message || "엑셀 생성에 실패했습니다.");
+        throw new Error(result.message || ERROR_MESSAGES.document.excelFailed);
       }
 
       toast({
@@ -24,7 +25,7 @@ export default function useDailyPayExport({ onExcelExportClose, toast } = {}) {
     } catch (err) {
       toast({
         title: "엑셀 생성 실패",
-        description: err.message || "잠시 후 다시 시도해주세요.",
+        description: getErrorMessage(err, ERROR_MESSAGES.document.excelFailed),
         status: "error",
         duration: 3000,
       });

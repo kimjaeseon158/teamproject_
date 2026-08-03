@@ -1,4 +1,5 @@
 import { fetchWithAuth } from "./fetchWithAuth";
+import { ERROR_MESSAGES } from "../../constants/errorMessages";
 
 export const cleanParams = (params = {}) =>
   Object.fromEntries(
@@ -24,8 +25,10 @@ export async function requestJson(
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const message =
-      data.detail || data.message || data.error || "API 요청에 실패했습니다.";
-    throw new Error(message);
+      data.detail || data.message || data.error || ERROR_MESSAGES.common.requestFailed;
+    const error = new Error(message);
+    error.status = res.status;
+    throw error;
   }
 
   return data;

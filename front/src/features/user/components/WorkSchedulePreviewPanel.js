@@ -123,7 +123,7 @@ export default function WorkSchedulePreviewPanel({
       isOpen={isOpen}
       onClose={onClose}
       placement={placement || "right"}
-      size={placement === "bottom" ? "full" : "xl"}
+      size="full"
     >
       <DrawerOverlay />
       <DrawerContent
@@ -213,12 +213,19 @@ export default function WorkSchedulePreviewPanel({
                     borderRadius="lg"
                     overflow="auto"
                     bg="gray.50"
-                    maxH="760px"
+                    maxH="calc(100dvh - 230px)"
                   >
                     <Box px={3} py={2} bg="gray.100" borderBottom="1px solid" borderColor="gray.200">
                       <Text fontSize="sm" fontWeight="800">페이지 {index + 1}</Text>
                     </Box>
-                    <Image src={url} alt={`근무표 페이지 ${index + 1}`} w="100%" minW="720px" />
+                    <Image
+                      src={url}
+                      alt={`근무표 페이지 ${index + 1}`}
+                      display="block"
+                      w="auto"
+                      maxW="none"
+                      minW={{ base: "960px", md: "1280px" }}
+                    />
                   </Box>
                 ))}
               </VStack>

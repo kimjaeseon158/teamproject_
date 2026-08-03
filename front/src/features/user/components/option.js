@@ -23,13 +23,20 @@ const getDisplayDate = (selectedDate) => {
   );
 };
 
-const Option = ({ selectedDate, onRefresh, onClose, isMobile = false }) => {
+const Option = ({
+  existingWorks = [],
+  selectedDate,
+  onRefresh,
+  onClose,
+  isMobile = false,
+}) => {
   const { userUuid, userName, workPlaces, setUserWorkPlaces } = useUser();
   const toast = useToast();
   const cancelRef = useRef();
   const [workPlacesLoading, setWorkPlacesLoading] = useState(false);
   const displayDate = getDisplayDate(selectedDate);
   const form = useOptionForm({
+    existingWorks,
     isMobile,
     onClose,
     onRefresh,

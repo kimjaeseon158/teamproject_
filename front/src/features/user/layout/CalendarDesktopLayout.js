@@ -6,6 +6,7 @@ import CalendarSidebar from "../components/CalendarSidebar";
 import EditPendingWorkModal from "../components/calendarSidebar/EditPendingWorkModal";
 import PendingWorkSelectModal from "../components/calendarSidebar/PendingWorkSelectModal";
 import WorkSchedulePreviewPanel from "../components/WorkSchedulePreviewPanel";
+import MonthlyComparisonDrawer from "../components/MonthlyComparisonDrawer";
 
 export default function CalendarDesktopLayout({
   userName,
@@ -23,6 +24,10 @@ export default function CalendarDesktopLayout({
   onTitleChange,
   selectableWorks,
   isMobile,
+  comparison,
+  isComparisonOpen,
+  onCloseComparison,
+  onOpenComparison,
 }) {
   const workScheduleDisclosure = useDisclosure();
 
@@ -51,6 +56,12 @@ export default function CalendarDesktopLayout({
         selectedDate={calendar.selectedDate}
       />
 
+      <MonthlyComparisonDrawer
+        comparison={comparison}
+        isOpen={isComparisonOpen}
+        onClose={onCloseComparison}
+      />
+
       <Box w="18%" minW="250px">
         <CalendarSidebar
           userName={userName}
@@ -72,6 +83,8 @@ export default function CalendarDesktopLayout({
           setCalendarTitle={onTitleChange}
           summary={calendar.summary}
           hideActions={workScheduleDisclosure.isOpen}
+          onMonthlyCompareOpen={onOpenComparison}
+          comparisonLoading={comparison.isLoading}
         />
 
         <Box flex="1" mt={2} overflow="hidden">

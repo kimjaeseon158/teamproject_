@@ -28,42 +28,47 @@ export default function OptionTimeSection({
 }) {
   return (
     <VStack align="stretch" spacing={2}>
-      <Text fontSize="xs" fontWeight="bold" color="gray.500" ml={1}>
+      <Text
+        fontSize={isMobile ? "sm" : "xs"}
+        fontWeight="bold"
+        color={isMobile ? "white" : "gray.500"}
+        ml={1}
+      >
         근무 시간
       </Text>
 
       {isMobile ? (
         <HStack
           justify="center"
-          spacing={6}
-          p={4}
-          bg="whiteAlpha.100"
+          spacing={3}
+          p={3}
+          bg="blackAlpha.200"
           borderRadius="24px"
-          border="1px solid"
-          borderColor="whiteAlpha.100"
         >
           <VStack spacing={1}>
-            <Text fontSize="10px" color="gray.500" fontWeight="bold">
+            <Text w="100%" textAlign="center" fontSize="10px" color="gray.300" fontWeight="bold">
               시작 시간
             </Text>
             <TimeWheelPicker
               value={startTime || "08:00"}
+              variant="compact"
               onChange={onStartTimeChange}
             />
           </VStack>
 
-          <Box mt={6}>
-            <Text fontSize="xl" fontWeight="bold" color="blue.400">
-              ~
+          <Box mt={5}>
+            <Text fontSize="md" fontWeight="bold" color="orange.300">
+              →
             </Text>
           </Box>
 
           <VStack spacing={1}>
-            <Text fontSize="10px" color="gray.500" fontWeight="bold">
+            <Text w="100%" textAlign="center" fontSize="10px" color="gray.300" fontWeight="bold">
               종료 시간
             </Text>
             <TimeWheelPicker
               value={finishTime || "17:00"}
+              variant="compact"
               onChange={onFinishTimeChange}
             />
           </VStack>

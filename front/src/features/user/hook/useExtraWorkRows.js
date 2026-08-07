@@ -26,7 +26,7 @@ export default function useExtraWorkRows({ finishTime, startTime }) {
   }, [extraEnabled, extraWorks.length, startTime, finishTime]);
 
   useEffect(() => {
-    if (!extraEnabled || extraWorks.length === 0) return;
+    if (!extraEnabled) return;
 
     setExtraWorks((prev) =>
       prev.map((row) => {
@@ -40,7 +40,7 @@ export default function useExtraWorkRows({ finishTime, startTime }) {
         };
       })
     );
-  }, [startTime, finishTime, extraEnabled, extraWorks.length]);
+  }, [startTime, finishTime, extraEnabled]);
 
   const extraWorkMinutes = useMemo(() => {
     if (!extraEnabled) return 0;
@@ -74,6 +74,13 @@ export default function useExtraWorkRows({ finishTime, startTime }) {
     setExtraWorks((prev) => prev.filter((_, rowIndex) => rowIndex !== index));
   };
 
+  const handleAddExtraRow = () => {
+    setExtraWorks((prev) => [
+      ...prev,
+      createExtraWorkRow("weekday_ot", startTime, finishTime),
+    ]);
+  };
+
   const resetExtraWorks = () => {
     setExtraEnabled(false);
     setExtraWorks([]);
@@ -83,6 +90,7 @@ export default function useExtraWorkRows({ finishTime, startTime }) {
     extraEnabled,
     extraWorkMinutes,
     extraWorks,
+    handleAddExtraRow,
     handleRemoveExtraRow,
     resetExtraWorks,
     setExtraEnabled,

@@ -1,13 +1,22 @@
 import {
   Box,
   Button,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerOverlay,
   HStack,
   IconButton,
   Text,
   useBreakpointValue,
+  useDisclosure,
+  VStack,
 } from "@chakra-ui/react";
-import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
+import { ChevronLeftIcon, ChevronRightIcon, HamburgerIcon } from "@chakra-ui/icons";
 import { useNavigate } from "react-router-dom";
+import { FiBarChart2, FiCalendar, FiLogOut } from "react-icons/fi";
 
 import { Alarm } from "../../alarm";
 import { useUser } from "../../auth/userContext";
@@ -31,9 +40,12 @@ export default function CalendarHeader({
   summary,
   hideActions = false,
   hideSummaryOnMobile = false,
+  onMonthlyCompareOpen,
+  comparisonLoading = false,
 }) {
   const navigate = useNavigate();
   const { logout } = useUser();
+  const mobileMenu = useDisclosure();
   const isMobile = useBreakpointValue({
     base: true,
     md: false,
@@ -57,24 +69,29 @@ export default function CalendarHeader({
     setCalendarTitle?.(ym);
   };
 
+  const runMenuAction = (action) => {
+    mobileMenu.onClose();
+    action?.();
+  };
+
   return (
     <Box mb={4}>
       {isMobile ? (
         <>
           <HStack justify="space-between" mb={2}>
+            {!hideActions && (
+              <IconButton
+                aria-label="메뉴 열기"
+                size="sm"
+                variant="ghost"
+                icon={<HamburgerIcon boxSize={5} />}
+                onClick={mobileMenu.onOpen}
+              />
+            )}
             {!hideSummaryOnMobile && <StatusLegend summary={summary} />}
             {!hideActions && (
-              <HStack
-                flex={hideSummaryOnMobile ? 1 : undefined}
-                justify={hideSummaryOnMobile ? "flex-end" : undefined}
-              >
+              <HStack>
                 <Alarm />
-                <Button size="xs" colorScheme="blue" variant="outline" onClick={onWorkScheduleOpen}>
-                  근무표 조회
-                </Button>
-                <Button size="xs" colorScheme="red" onClick={handleLogout}>
-                  로그아웃
-                </Button>
               </HStack>
             )}
           </HStack>
@@ -109,7 +126,56 @@ export default function CalendarHeader({
               onClick={() => window.calendarRef?.getApi()?.next()}
               minW="32px"
             />
+
           </HStack>
+
+          <Drawer
+            isOpen={mobileMenu.isOpen}
+            placement="left"
+            onClose={mobileMenu.onClose}
+            size="xs"
+          >
+            <DrawerOverlay />
+            <DrawerContent maxW="82vw">
+              <DrawerHeader borderBottomWidth="1px">메뉴</DrawerHeader>
+              <DrawerBody px={3} py={4}>
+                <VStack align="stretch" spacing={1}>
+                  <Button
+                    justifyContent="flex-start"
+                    leftIcon={<FiCalendar />}
+                    variant="ghost"
+                    size="lg"
+                    onClick={() => runMenuAction(onWorkScheduleOpen)}
+                  >
+                    근무표 조회
+                  </Button>
+                  <Button
+                    justifyContent="flex-start"
+                    leftIcon={<FiBarChart2 />}
+                    variant="ghost"
+                    size="lg"
+                    isLoading={comparisonLoading}
+                    onClick={() => runMenuAction(onMonthlyCompareOpen)}
+                  >
+                    지난달 비교
+                  </Button>
+                </VStack>
+              </DrawerBody>
+              <DrawerFooter borderTopWidth="1px">
+                <Button
+                  w="100%"
+                  justifyContent="flex-start"
+                  leftIcon={<FiLogOut />}
+                  colorScheme="red"
+                  variant="ghost"
+                  size="lg"
+                  onClick={() => runMenuAction(handleLogout)}
+                >
+                  로그아웃
+                </Button>
+              </DrawerFooter>
+            </DrawerContent>
+          </Drawer>
         </>
       ) : (
         <HStack justify="center" spacing={3} position="relative">
@@ -165,6 +231,16 @@ export default function CalendarHeader({
             variant="outline"
             borderRadius="xl"
           />
+
+          <Button
+            size="sm"
+            colorScheme="blue"
+            variant="outline"
+            isLoading={comparisonLoading}
+            onClick={onMonthlyCompareOpen}
+          >
+            지난달 비교
+          </Button>
         </HStack>
       )}
     </Box>

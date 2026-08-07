@@ -110,6 +110,7 @@ const Option = ({
       />
 
       <OptionLocationSection
+        isMobile={isMobile}
         isLoading={workPlacesLoading}
         location={form.location}
         locations={workPlaces}
@@ -121,6 +122,7 @@ const Option = ({
         rows={form.extraWorks}
         isMobile={isMobile}
         onEnabledChange={form.setExtraEnabled}
+        onAdd={form.handleAddExtraRow}
         onUpdate={form.updateExtraWork}
         onRemove={form.handleRemoveExtraRow}
       />

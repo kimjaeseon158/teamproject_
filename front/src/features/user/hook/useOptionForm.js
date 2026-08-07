@@ -66,6 +66,7 @@ export default function useOptionForm({
     filteredWorkTimeList: workTimeForm.filteredWorkTimeList,
     finishTime: workTimeForm.finishTime,
     handleFinishTimeChange: workTimeForm.handleFinishTimeChange,
+    handleAddExtraRow: extraWorkRows.handleAddExtraRow,
     handleRemoveExtraRow: extraWorkRows.handleRemoveExtraRow,
     handleSelectWorkTime: workTimeForm.handleSelectWorkTime,
     handleShiftChange: workTimeForm.handleShiftChange,

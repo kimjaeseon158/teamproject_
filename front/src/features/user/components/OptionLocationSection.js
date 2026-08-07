@@ -11,6 +11,7 @@ import {
 import { ChevronDownIcon } from "@chakra-ui/icons";
 
 export default function OptionLocationSection({
+  isMobile = false,
   isLoading = false,
   location,
   locations = [],
@@ -20,7 +21,12 @@ export default function OptionLocationSection({
 
   return (
     <VStack align="stretch" spacing={2}>
-      <Text fontSize="xs" fontWeight="bold" color="gray.500" ml={1}>
+      <Text
+        fontSize={isMobile ? "sm" : "xs"}
+        fontWeight="bold"
+        color={isMobile ? "white" : "gray.500"}
+        ml={1}
+      >
         업체 및 근무지
       </Text>
       <Menu>

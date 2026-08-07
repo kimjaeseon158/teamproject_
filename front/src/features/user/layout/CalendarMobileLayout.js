@@ -14,6 +14,7 @@ import EditPendingWorkModal from "../components/calendarSidebar/EditPendingWorkM
 import PendingWorkSelectModal from "../components/calendarSidebar/PendingWorkSelectModal";
 import StatusLegend from "../components/StatusLegend";
 import WorkSchedulePreviewPanel from "../components/WorkSchedulePreviewPanel";
+import MonthlyComparisonDrawer from "../components/MonthlyComparisonDrawer";
 
 export default function CalendarMobileLayout({
   userName,
@@ -30,6 +31,10 @@ export default function CalendarMobileLayout({
   onTitleChange,
   selectableWorks,
   isMobile,
+  comparison,
+  isComparisonOpen,
+  onCloseComparison,
+  onOpenComparison,
 }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const workScheduleDisclosure = useDisclosure();
@@ -57,6 +62,12 @@ export default function CalendarMobileLayout({
         isOpen={workScheduleDisclosure.isOpen}
         onClose={workScheduleDisclosure.onClose}
         selectedDate={calendar.selectedDate}
+      />
+
+      <MonthlyComparisonDrawer
+        comparison={comparison}
+        isOpen={isComparisonOpen}
+        onClose={onCloseComparison}
       />
 
       <Drawer isOpen={isOpen} placement="bottom" onClose={onClose}>
@@ -104,6 +115,8 @@ export default function CalendarMobileLayout({
             summary={calendar.summary}
             hideActions={workScheduleDisclosure.isOpen}
             hideSummaryOnMobile
+            onMonthlyCompareOpen={onOpenComparison}
+            comparisonLoading={comparison.isLoading}
           />
         </Box>
 

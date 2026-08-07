@@ -17,6 +17,7 @@ export default function useOptionForm({
   userUuid,
 }) {
   const [location, setLocation] = useState("");
+  const [note, setNote] = useState("");
   const workTimeForm = useOptionWorkTime(isMobile);
   const extraWorkRows = useExtraWorkRows({
     finishTime: workTimeForm.finishTime,
@@ -31,6 +32,7 @@ export default function useOptionForm({
 
   const resetForm = () => {
     setLocation("");
+    setNote("");
     workTimeForm.resetWorkTime();
     extraWorkRows.resetExtraWorks();
   };
@@ -49,6 +51,7 @@ export default function useOptionForm({
     startTime: workTimeForm.startTime,
     finishTime: workTimeForm.finishTime,
     location,
+    note,
     extraEnabled: extraWorkRows.extraEnabled,
     extraWorks: extraWorkRows.extraWorks,
     setIsSubmitConfirmOpen: cartState.setIsSubmitConfirmOpen,
@@ -74,10 +77,12 @@ export default function useOptionForm({
     isSpecial: workTimeForm.isSpecial,
     isSubmitConfirmOpen: cartState.isSubmitConfirmOpen,
     location,
+    note,
     setExtraEnabled: extraWorkRows.setExtraEnabled,
     setIsSpecial: workTimeForm.setIsSpecial,
     setIsSubmitConfirmOpen: cartState.setIsSubmitConfirmOpen,
     setLocation,
+    setNote,
     startTime: workTimeForm.startTime,
     totalWorkTimeHM,
     updateExtraWork: extraWorkRows.updateExtraWork,

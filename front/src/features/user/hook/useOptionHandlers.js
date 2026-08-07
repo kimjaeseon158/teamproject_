@@ -17,6 +17,7 @@ export function useOptionHandlers({
   startTime,
   finishTime,
   location,
+  note,
   extraEnabled,
   extraWorks,
   setIsSubmitConfirmOpen,
@@ -77,6 +78,7 @@ export function useOptionHandlers({
         id: crypto.randomUUID(),
         work_date: { ...selectedDate },
         location,
+        note,
         startTime,
         finishTime,
         baseShift,
@@ -113,6 +115,7 @@ export function useOptionHandlers({
         finishTime: item.finishTime,
         work_shift: item.baseShift,
         location: item.location,
+        note: item.note,
         details: item.details,
       }));
 

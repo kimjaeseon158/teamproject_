@@ -62,6 +62,11 @@ export default function OptionSubmitConfirmDialog({
                     <Text fontSize="sm" color="gray.400">
                       {item.startTime} ~ {item.finishTime} | {item.location}
                     </Text>
+                    {item.note && (
+                      <Text mt={2} fontSize="xs" color="orange.200">
+                        비고 · {item.note}
+                      </Text>
+                    )}
 
                     {extraDetails.length > 0 && (
                       <VStack align="stretch" spacing={1} mt={2}>

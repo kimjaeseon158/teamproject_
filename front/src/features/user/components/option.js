@@ -5,6 +5,7 @@ import { useUser } from "../../auth/userContext";
 import OptionActionButtons from "./OptionActionButtons";
 import OptionExtraWorkSection from "./OptionExtraWorkSection";
 import OptionLocationSection from "./OptionLocationSection";
+import OptionNoteSection from "./OptionNoteSection";
 import OptionSegmentedControl from "./OptionSegmentedControl";
 import OptionSubmitConfirmDialog from "./OptionSubmitConfirmDialog";
 import OptionTimeSection from "./OptionTimeSection";
@@ -115,6 +116,12 @@ const Option = ({
         location={form.location}
         locations={workPlaces}
         onChange={form.setLocation}
+      />
+
+      <OptionNoteSection
+        isMobile={isMobile}
+        note={form.note}
+        onChange={form.setNote}
       />
 
       <OptionExtraWorkSection

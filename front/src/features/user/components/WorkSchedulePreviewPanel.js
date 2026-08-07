@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Badge,
   Box,
@@ -11,264 +11,306 @@ import {
   DrawerHeader,
   DrawerOverlay,
   HStack,
-  Image,
   Input,
-  SimpleGrid,
-  Skeleton,
+  Select,
+  Table,
+  Tbody,
+  Td,
   Text,
+  Th,
+  Thead,
+  Tr,
   VStack,
-  useToast,
   useBreakpointValue,
 } from "@chakra-ui/react";
 import { RepeatIcon } from "@chakra-ui/icons";
 
-import {
-  fetchUserWorkSchedule,
-  fetchUserWorkScheduleImageUrl,
-  fetchUserWorkSchedulePageImage,
-} from "../api/userWorkSchedule";
-
 const todayValue = () => new Date().toISOString().slice(0, 10);
 
-const getScheduleUuid = (schedule) =>
-  schedule?.schedule_uuid || schedule?.uuid || schedule?.id;
-
-const DEFAULT_REGIONS = [
-  { id: 1, name: "구역 1", start: 0, end: 25, color: "blue.400" },
-  { id: 2, name: "구역 2", start: 25, end: 50, color: "orange.400" },
-  { id: 3, name: "구역 3", start: 50, end: 75, color: "green.400" },
-  { id: 4, name: "구역 4", start: 75, end: 100, color: "purple.400" },
+const DAYS = [
+  { key: "mon", label: "월", date: "13" },
+  { key: "tue", label: "화", date: "14" },
+  { key: "wed", label: "수", date: "15" },
+  { key: "thu", label: "목", date: "16" },
+  { key: "fri", label: "금", date: "17" },
+  { key: "sat", label: "토", date: "18" },
+  { key: "sun", label: "일", date: "19" },
 ];
 
-const REGION_COLORS = ["blue.400", "orange.400", "green.400", "purple.400", "pink.400"];
+const DUMMY_SCHEDULE = [
+  {
+    id: 1,
+    name: "김민수",
+    workplace: "삼성전자",
+    team: "제조 1팀",
+    schedule: [
+      { status: "주간", location: "삼성전자 P1" },
+      { status: "주간", location: "삼성전자 P1" },
+      { status: "휴무", location: "-" },
+      { status: "주간", location: "삼성전자 P2" },
+      { status: "주간", location: "삼성전자 P2" },
+      { status: "휴무", location: "-" },
+      { status: "휴무", location: "-" },
+    ],
+  },
+  {
+    id: 2,
+    name: "박서준",
+    workplace: "삼성전자",
+    team: "제조 2팀",
+    schedule: [
+      { status: "주간", location: "삼성전자 P1" },
+      { status: "야간", location: "삼성전자 P1" },
+      { status: "야간", location: "삼성전자 P1" },
+      { status: "휴무", location: "-" },
+      { status: "주간", location: "삼성전자 P2" },
+      { status: "주간", location: "삼성전자 P2" },
+      { status: "휴무", location: "-" },
+    ],
+  },
+  {
+    id: 3,
+    name: "이하늘",
+    workplace: "삼성디스플레이",
+    team: "모듈 공정",
+    schedule: [
+      { status: "휴무", location: "-" },
+      { status: "주간", location: "디스플레이 A동" },
+      { status: "주간", location: "디스플레이 A동" },
+      { status: "주간", location: "디스플레이 B동" },
+      { status: "휴무", location: "-" },
+      { status: "야간", location: "디스플레이 B동" },
+      { status: "야간", location: "디스플레이 B동" },
+    ],
+  },
+  {
+    id: 4,
+    name: "최유진",
+    workplace: "삼성디스플레이",
+    team: "검사 공정",
+    schedule: [
+      { status: "야간", location: "디스플레이 검사동" },
+      { status: "야간", location: "디스플레이 검사동" },
+      { status: "휴무", location: "-" },
+      { status: "주간", location: "디스플레이 검사동" },
+      { status: "주간", location: "디스플레이 검사동" },
+      { status: "휴무", location: "-" },
+      { status: "주간", location: "디스플레이 검사동" },
+    ],
+  },
+  {
+    id: 5,
+    name: "정도윤",
+    workplace: "신규자 교육장",
+    team: "신규자 교육",
+    schedule: [
+      { status: "교육", location: "교육센터 1관", note: "안전화 지참" },
+      { status: "교육", location: "디스플레이 교육장" },
+      { status: "교육", location: "안전체험관", note: "08:30까지 집결" },
+      { status: "주간", location: "삼성전자 P2" },
+      { status: "주간", location: "삼성전자 P2" },
+      { status: "휴무", location: "-" },
+      { status: "휴무", location: "-" },
+    ],
+  },
+  {
+    id: 6,
+    name: "윤서아",
+    workplace: "제닉스",
+    team: "생산 지원",
+    schedule: [
+      { status: "주간", location: "제닉스 본관" },
+      { status: "주간", location: "제닉스 본관" },
+      { status: "주간", location: "제닉스 생산동" },
+      { status: "휴무", location: "-" },
+      { status: "야간", location: "제닉스 생산동" },
+      { status: "야간", location: "제닉스 생산동" },
+      { status: "휴무", location: "-" },
+    ],
+  },
+  {
+    id: 7,
+    name: "한지우",
+    workplace: "제닉스",
+    team: "품질 지원",
+    schedule: [
+      { status: "휴무", location: "-" },
+      { status: "주간", location: "제닉스 품질동" },
+      { status: "주간", location: "제닉스 품질동" },
+      { status: "야간", location: "제닉스 품질동" },
+      { status: "야간", location: "제닉스 품질동" },
+      { status: "휴무", location: "-" },
+      { status: "주간", location: "제닉스 본관" },
+    ],
+  },
+];
 
-const loadBrowserImage = (url) =>
-  new Promise((resolve, reject) => {
-    const image = new window.Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("근무표 이미지를 읽을 수 없습니다."));
-    image.src = url;
-  });
-
-const cropWhiteImageMargins = async (url) => {
-  const image = await loadBrowserImage(url);
-  const canvas = document.createElement("canvas");
-  canvas.width = image.naturalWidth;
-  canvas.height = image.naturalHeight;
-
-  const context = canvas.getContext("2d", { willReadFrequently: true });
-  if (!context) return url;
-
-  context.drawImage(image, 0, 0);
-  const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
-  let left = canvas.width;
-  let top = canvas.height;
-  let right = -1;
-  let bottom = -1;
-
-  for (let y = 0; y < canvas.height; y += 1) {
-    for (let x = 0; x < canvas.width; x += 1) {
-      const offset = (y * canvas.width + x) * 4;
-      const isContent =
-        data[offset + 3] > 16 &&
-        (data[offset] < 248 || data[offset + 1] < 248 || data[offset + 2] < 248);
-
-      if (isContent) {
-        left = Math.min(left, x);
-        top = Math.min(top, y);
-        right = Math.max(right, x);
-        bottom = Math.max(bottom, y);
-      }
-    }
-  }
-
-  if (right < left || bottom < top) return url;
-
-  const padding = 8;
-  left = Math.max(0, left - padding);
-  top = Math.max(0, top - padding);
-  right = Math.min(canvas.width - 1, right + padding);
-  bottom = Math.min(canvas.height - 1, bottom + padding);
-
-  const croppedCanvas = document.createElement("canvas");
-  croppedCanvas.width = right - left + 1;
-  croppedCanvas.height = bottom - top + 1;
-  croppedCanvas
-    .getContext("2d")
-    ?.drawImage(
-      canvas,
-      left,
-      top,
-      croppedCanvas.width,
-      croppedCanvas.height,
-      0,
-      0,
-      croppedCanvas.width,
-      croppedCanvas.height
-    );
-
-  const croppedBlob = await new Promise((resolve) =>
-    croppedCanvas.toBlob(resolve, "image/png")
-  );
-  if (!croppedBlob) return url;
-
-  const croppedUrl = URL.createObjectURL(croppedBlob);
-  URL.revokeObjectURL(url);
-  return croppedUrl;
+const statusStyle = (status) => {
+  if (status === "주간") return { bg: "green.50", color: "green.700" };
+  if (status === "야간") return { bg: "blue.50", color: "blue.700" };
+  if (status === "교육") return { bg: "orange.50", color: "orange.700" };
+  return { bg: "yellow.50", color: "yellow.700" };
 };
 
-export default function WorkSchedulePreviewPanel({
-  isOpen,
-  onClose,
-  selectedDate,
-}) {
-  const toast = useToast();
-  const placement = useBreakpointValue({ base: "bottom", md: "right" });
-  const imageUrlsRef = useRef([]);
-  const [date, setDate] = useState(selectedDate?.formatted || "");
-  const [schedule, setSchedule] = useState(null);
-  const [imageUrls, setImageUrls] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [notFound, setNotFound] = useState(false);
-  const [viewMode, setViewMode] = useState("split");
-  const [regions, setRegions] = useState(DEFAULT_REGIONS);
-  const [selectedRegionId, setSelectedRegionId] = useState(1);
-  const [isRegionEditing, setIsRegionEditing] = useState(false);
-  const [draftRegion, setDraftRegion] = useState(null);
-
-  const pageCount = useMemo(() => schedule?.pages?.length || 0, [schedule]);
-  const selectedRegionIndex = Math.max(
-    0,
-    regions.findIndex((region) => region.id === selectedRegionId)
+function DesktopScheduleTable({ rows }) {
+  return (
+    <Box overflowX="auto" border="1px solid" borderColor="gray.200" borderRadius="lg">
+      <Table size="sm" minW="920px" bg="white">
+        <Thead bg="gray.100">
+          <Tr>
+            <Th position="sticky" left="0" zIndex="1" bg="gray.100" minW="150px">
+              직원
+            </Th>
+            <Th minW="130px">근무지</Th>
+            <Th minW="110px">소속</Th>
+            {DAYS.map((day) => (
+              <Th key={day.key} textAlign="center" minW="76px">
+                {day.label} {day.date}
+              </Th>
+            ))}
+          </Tr>
+        </Thead>
+        <Tbody>
+          {rows.map((person) => (
+            <Tr key={person.id} _hover={{ bg: "gray.50" }}>
+              <Td position="sticky" left="0" zIndex="1" bg="white" fontWeight="800">
+                {person.name}
+              </Td>
+              <Td>{person.workplace}</Td>
+              <Td color="gray.600">{person.team}</Td>
+              {person.schedule.map((work, index) => (
+                <Td key={DAYS[index].key} textAlign="center" p={1.5}>
+                  <VStack
+                    spacing={0.5}
+                    minH="58px"
+                    justify="center"
+                    px={1}
+                    py={1.5}
+                    borderRadius="md"
+                    {...statusStyle(work.status)}
+                  >
+                    <Text fontSize="xs" fontWeight="900">
+                      {work.status}
+                    </Text>
+                    {work.location !== "-" && (
+                      <Text fontSize="10px" lineHeight="short" whiteSpace="normal">
+                        {work.location}
+                      </Text>
+                    )}
+                  </VStack>
+                </Td>
+              ))}
+            </Tr>
+          ))}
+        </Tbody>
+      </Table>
+    </Box>
   );
-  const selectedRegion = regions[selectedRegionIndex] || DEFAULT_REGIONS[0];
+}
+
+function MobileScheduleCards({ rows }) {
+  return (
+    <VStack align="stretch" spacing={3}>
+      {rows.map((person) => (
+        <Box key={person.id} border="1px solid" borderColor="gray.200" borderRadius="lg" overflow="hidden">
+          <HStack justify="space-between" px={3} py={2.5} bg="gray.100">
+            <Box minW={0}>
+              <Text fontWeight="900">{person.name}</Text>
+              <Text fontSize="xs" color="gray.500" noOfLines={1}>
+                {person.workplace} · {person.team}
+              </Text>
+            </Box>
+          </HStack>
+          <Box display="grid" gridTemplateColumns="repeat(2, minmax(0, 1fr))" gap={2} p={2}>
+            {person.schedule.map((work, index) => (
+              <VStack
+                key={DAYS[index].key}
+                spacing={1.5}
+                align="stretch"
+                minH="120px"
+                p={3}
+                border="1px solid"
+                borderColor="blackAlpha.100"
+                borderRadius="lg"
+                {...statusStyle(work.status)}
+              >
+                <HStack justify="space-between">
+                  <Text fontSize="sm" fontWeight="900">
+                    {DAYS[index].label} {DAYS[index].date}
+                  </Text>
+                  <Badge colorScheme={work.status === "교육" ? "orange" : work.status === "주간" ? "green" : "blue"}>
+                    {work.status}
+                  </Badge>
+                </HStack>
+                {work.location !== "-" && (
+                  <Text fontSize="xs" lineHeight="short" color="gray.700">
+                    {work.location}
+                  </Text>
+                )}
+                {work.note && (
+                  <Text
+                    mt="auto"
+                    pt={2}
+                    borderTop="1px solid"
+                    borderColor="blackAlpha.100"
+                    fontSize="xs"
+                    color="orange.700"
+                  >
+                    비고 · {work.note}
+                  </Text>
+                )}
+              </VStack>
+            ))}
+          </Box>
+        </Box>
+      ))}
+    </VStack>
+  );
+}
+
+export default function WorkSchedulePreviewPanel({ isOpen, onClose, selectedDate }) {
+  const placement = useBreakpointValue({ base: "bottom", md: "right" });
+  const isMobile = placement === "bottom";
+  const [date, setDate] = useState(selectedDate?.formatted || todayValue());
+  const [selectedPerson, setSelectedPerson] = useState("전체 직원");
+  const [selectedWorkplace, setSelectedWorkplace] = useState("전체");
+  const [mobileView, setMobileView] = useState("fit");
 
   useEffect(() => {
-    setDate(selectedDate?.formatted || "");
+    setDate(selectedDate?.formatted || todayValue());
   }, [selectedDate?.formatted]);
 
-  const clearImageUrls = useCallback(() => {
-    imageUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-    imageUrlsRef.current = [];
-    setImageUrls([]);
-  }, []);
+  const people = useMemo(
+    () => ["전체 직원", ...DUMMY_SCHEDULE.map((item) => item.name)],
+    []
+  );
 
-  useEffect(() => () => {
-    imageUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-  }, []);
-
-  const loadSchedule = useCallback(async (targetDate) => {
-    try {
-      setLoading(true);
-      setNotFound(false);
-      clearImageUrls();
-
-      const data = await fetchUserWorkSchedule(targetDate, { toast });
-      const scheduleUuid = getScheduleUuid(data);
-      const pages = data.pages || [];
-
-      if (pages.length === 0) {
-        setSchedule(data);
-        setNotFound(true);
-        return;
-      }
-
-      const sourceUrls = await Promise.all(
-        pages.map((page) => {
-          if (page.image_url) {
-            return fetchUserWorkScheduleImageUrl(page.image_url, { toast });
-          }
-
-          if (!scheduleUuid) {
-            throw new Error("근무표 이미지 식별자가 없습니다.");
-          }
-
-          return fetchUserWorkSchedulePageImage(scheduleUuid, page.page_number, { toast });
-        })
-      );
-      const urls = await Promise.all(
-        sourceUrls.map(async (url) => {
-          try {
-            return await cropWhiteImageMargins(url);
-          } catch {
-            return url;
-          }
-        })
-      );
-
-      imageUrlsRef.current = urls;
-      setImageUrls(urls);
-      setSchedule(data);
-    } catch (error) {
-      setSchedule(null);
-      setNotFound(true);
-      if (!String(error.message || "").includes("404")) {
-        toast({
-          title: "근무표를 불러오지 못했습니다.",
-          description: error.message,
-          status: "error",
-        });
-      }
-    } finally {
-      setLoading(false);
+  const workplaces = useMemo(() => {
+    if (selectedPerson === "전체 직원") {
+      return ["전체", ...new Set(DUMMY_SCHEDULE.map((item) => item.workplace))];
     }
-  }, [clearImageUrls, toast]);
 
-  useEffect(() => {
-    if (isOpen) loadSchedule();
-  }, [isOpen, loadSchedule]);
+    const person = DUMMY_SCHEDULE.find((item) => item.name === selectedPerson);
+    return person ? ["전체", person.workplace] : ["전체"];
+  }, [selectedPerson]);
 
-  const handleSearch = () => {
-    setSelectedRegionId(regions[0]?.id || 1);
-    loadSchedule(date || todayValue());
-  };
-
-  const isSplitView = viewMode === "split";
-
-  const selectRegionByIndex = (index) => {
-    const region = regions[index];
-    if (region) setSelectedRegionId(region.id);
-  };
-
-  const getPointerPercent = (event) => {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    return Math.min(100, Math.max(0, ((event.clientX - bounds.left) / bounds.width) * 100));
-  };
-
-  const finishRegionDrawing = (event) => {
-    if (!draftRegion) return;
-
-    const pointer = getPointerPercent(event);
-    const start = Math.min(draftRegion.anchor, pointer);
-    const end = Math.max(draftRegion.anchor, pointer);
-    setDraftRegion(null);
-
-    if (end - start < 3) return;
-
-    const id = Date.now();
-    const nextRegion = {
-      id,
-      name: `구역 ${regions.length + 1}`,
-      start,
-      end,
-      color: REGION_COLORS[regions.length % REGION_COLORS.length],
-    };
-    setRegions((current) => [...current, nextRegion].sort((a, b) => a.start - b.start));
-    setSelectedRegionId(id);
-  };
+  const visibleRows = useMemo(
+    () =>
+      DUMMY_SCHEDULE.filter(
+        (item) =>
+          (selectedPerson === "전체 직원" || item.name === selectedPerson) &&
+          (selectedWorkplace === "전체" || item.workplace === selectedWorkplace)
+      ),
+    [selectedPerson, selectedWorkplace]
+  );
 
   return (
-    <Drawer
-      isOpen={isOpen}
-      onClose={onClose}
-      placement={placement || "right"}
-      size="full"
-    >
+    <Drawer isOpen={isOpen} onClose={onClose} placement={placement || "right"} size="full">
       <DrawerOverlay />
       <DrawerContent
         bg="white"
-        maxH={placement === "bottom" ? "92dvh" : undefined}
-        borderTopRadius={placement === "bottom" ? "28px" : undefined}
+        maxH={isMobile ? "92dvh" : undefined}
+        borderTopRadius={isMobile ? "24px" : undefined}
         overflow="hidden"
       >
         <DrawerCloseButton top={4} right={4} />
@@ -284,321 +326,117 @@ export default function WorkSchedulePreviewPanel({
               flexDirection={{ base: "column", lg: "row" }}
               gap={3}
             >
-              <Box minW={0}>
-                <HStack flexWrap="wrap" gap={2}>
-                  <Text fontSize="lg" fontWeight="900" color="gray.800">
+              <Box>
+                <HStack flexWrap="wrap">
+                  <Text fontSize="lg" fontWeight="900">
                     읽기 전용 근무표
                   </Text>
-                  {schedule?.schedule_date && (
-                    <Badge colorScheme="blue" borderRadius="full">
-                      {schedule.schedule_date}
-                    </Badge>
-                  )}
+                  <Badge colorScheme="blue" borderRadius="full">
+                    더미 데이터
+                  </Badge>
                 </HStack>
                 <Text fontSize="sm" color="gray.500" mt={1}>
-                  최신 근무표를 기본으로 표시하고, 날짜를 선택하면 해당 날짜 근무표를 조회합니다.
+                  엑셀 데이터를 JSON으로 변환했을 때의 화면을 먼저 확인합니다.
                 </Text>
               </Box>
-
-              <HStack
-                w={{ base: "100%", lg: "auto" }}
-                justify={{ base: "stretch", lg: "flex-end" }}
-                spacing={2}
-              >
+              <HStack>
                 <Input
                   type="date"
                   value={date}
                   onChange={(event) => setDate(event.target.value)}
+                  h="42px"
                   maxW={{ base: "none", lg: "170px" }}
-                  size="sm"
-                  flex="1"
                 />
                 <Button
                   leftIcon={<RepeatIcon />}
                   colorScheme="blue"
-                  size="sm"
-                  onClick={handleSearch}
-                  isLoading={loading}
-                  minW="76px"
+                  h="42px"
+                  minW={{ base: "96px", md: "110px" }}
+                  px={5}
+                  fontSize="sm"
+                  borderRadius="lg"
                 >
                   조회
                 </Button>
               </HStack>
             </HStack>
 
-            {loading && (
-              <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={4}>
-                <Skeleton h="360px" borderRadius="lg" />
-                <Skeleton h="360px" borderRadius="lg" />
-              </SimpleGrid>
+            {isMobile && (
+              <ButtonGroup size="sm" isAttached w="100%">
+                <Button
+                  flex="1"
+                  colorScheme={mobileView === "fit" ? "blue" : "gray"}
+                  variant={mobileView === "fit" ? "solid" : "outline"}
+                  onClick={() => setMobileView("fit")}
+                >
+                  모바일 맞춤 보기
+                </Button>
+                <Button
+                  flex="1"
+                  colorScheme={mobileView === "desktop" ? "blue" : "gray"}
+                  variant={mobileView === "desktop" ? "solid" : "outline"}
+                  onClick={() => setMobileView("desktop")}
+                >
+                  데스크톱 표 보기
+                </Button>
+              </ButtonGroup>
             )}
 
-            {!loading && notFound && (
-              <Box bg="gray.50" borderRadius="lg" p={6} textAlign="center" color="gray.500">
-                해당 날짜의 근무표가 없습니다.
-              </Box>
-            )}
-
-            {!loading && imageUrls.length > 0 && (
-              <VStack align="stretch" spacing={4}>
-                <HStack justify="space-between" align="center" flexWrap="wrap" gap={2}>
-                  <Text fontSize="sm" color="gray.500">
-                    총 {pageCount}개 페이지가 읽기 전용 이미지로 표시됩니다.
-                  </Text>
-                  <ButtonGroup size="xs" isAttached variant="outline">
-                    <Button
-                      colorScheme={viewMode === "split" ? "blue" : "gray"}
-                      variant={viewMode === "split" ? "solid" : "outline"}
-                      onClick={() => setViewMode("split")}
-                    >
-                      구역 보기
-                    </Button>
-                    <Button
-                      colorScheme={viewMode === "full" ? "blue" : "gray"}
-                      variant={viewMode === "full" ? "solid" : "outline"}
-                      onClick={() => setViewMode("full")}
-                    >
-                      전체 보기
-                    </Button>
-                  </ButtonGroup>
-                </HStack>
-
-                {isSplitView && (
-                  <Box
-                    position="sticky"
-                    top="0"
-                    zIndex="2"
-                    w="100%"
-                    maxW={{ base: "100%", md: "1280px" }}
-                    mx="auto"
-                    bg="white"
-                    border="1px solid"
-                    borderColor="gray.200"
-                    borderRadius="lg"
-                    p={2}
-                  >
-                    {placement === "bottom" ? (
-                      <HStack justify="space-between">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          isDisabled={selectedRegionIndex === 0}
-                          onClick={() => selectRegionByIndex(selectedRegionIndex - 1)}
-                        >
-                          이전
-                        </Button>
-                        <Text fontSize="sm" fontWeight="800">
-                          {selectedRegion.name} · {selectedRegionIndex + 1} / {regions.length}
-                        </Text>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          isDisabled={selectedRegionIndex === regions.length - 1}
-                          onClick={() => selectRegionByIndex(selectedRegionIndex + 1)}
-                        >
-                          다음
-                        </Button>
-                      </HStack>
-                    ) : (
-                      <VStack spacing={2}>
-                        <ButtonGroup size="sm" isAttached variant="outline" w="100%">
-                          {regions.map((region) => (
-                            <Button
-                              key={region.id}
-                              flex="1"
-                              colorScheme={selectedRegionId === region.id ? "blue" : "gray"}
-                              variant={selectedRegionId === region.id ? "solid" : "outline"}
-                              onClick={() => setSelectedRegionId(region.id)}
-                            >
-                              {region.name}
-                            </Button>
-                          ))}
-                        </ButtonGroup>
-                        <HStack justify="space-between" w="100%">
-                          <Text fontSize="sm" fontWeight="800">
-                            {selectedRegion.name} · {Math.round(selectedRegion.end - selectedRegion.start)}%
-                          </Text>
-                          <ButtonGroup size="xs" variant="outline">
-                            <Button
-                              colorScheme={isRegionEditing ? "blue" : "gray"}
-                              onClick={() => {
-                                setIsRegionEditing((current) => !current);
-                                setDraftRegion(null);
-                              }}
-                            >
-                              {isRegionEditing ? "설정 완료" : "영역 설정"}
-                            </Button>
-                            {isRegionEditing && (
-                              <Button
-                                onClick={() => {
-                                  setRegions([]);
-                                  setSelectedRegionId(null);
-                                }}
-                              >
-                                모두 지우기
-                              </Button>
-                            )}
-                            <Button
-                              onClick={() => {
-                                setRegions(DEFAULT_REGIONS);
-                                setSelectedRegionId(1);
-                                setDraftRegion(null);
-                              }}
-                            >
-                              4등분 복원
-                            </Button>
-                          </ButtonGroup>
-                        </HStack>
-                      </VStack>
-                    )}
-                  </Box>
-                )}
-
-                {imageUrls.map((url, index) => (
-                  <Box
-                    key={url}
-                    w="100%"
-                    maxW={isSplitView ? { base: "100%", md: "1280px" } : "100%"}
-                    mx="auto"
-                    border="1px solid"
-                    borderColor="gray.200"
-                    borderRadius="lg"
-                    overflow={isSplitView ? "hidden" : "auto"}
-                    bg="gray.50"
-                    maxH={
-                      isSplitView && placement !== "bottom"
-                        ? "none"
-                        : "calc(100dvh - 230px)"
-                    }
-                  >
-                    <Box px={3} py={2} bg="gray.100" borderBottom="1px solid" borderColor="gray.200">
-                      <Text fontSize="sm" fontWeight="800">
-                        페이지 {index + 1}
-                        {isSplitView ? ` · ${selectedRegion.name}` : ""}
-                      </Text>
-                    </Box>
-                    {isSplitView ? (
-                      <Box
-                        overflowX="hidden"
-                        overflowY="auto"
-                        maxH={{
-                          base: "calc(100dvh - 285px)",
-                          md: "calc(100dvh - 430px)",
-                        }}
-                      >
-                        <Image
-                          src={url}
-                          alt={`근무표 페이지 ${index + 1} ${selectedRegion.name}`}
-                          display="block"
-                          w={`${10000 / Math.max(3, selectedRegion.end - selectedRegion.start)}%`}
-                          maxW="none"
-                          transform={`translateX(-${selectedRegion.start}%)`}
-                          transformOrigin="top left"
-                        />
-                      </Box>
-                    ) : (
-                      <Image
-                        src={url}
-                        alt={`근무표 페이지 ${index + 1}`}
-                        display="block"
-                        w="auto"
-                        maxW="none"
-                        minW={{ base: "960px", md: "1280px" }}
-                      />
-                    )}
-                    {isSplitView && placement !== "bottom" && (
-                      <Box p={3} bg="white" borderTop="1px solid" borderColor="gray.200">
-                        <Box
-                          position="relative"
-                          overflow="hidden"
-                          borderRadius="md"
-                          cursor={isRegionEditing ? "crosshair" : "default"}
-                          touchAction="none"
-                          onPointerDown={(event) => {
-                            if (!isRegionEditing) return;
-                            event.currentTarget.setPointerCapture(event.pointerId);
-                            const anchor = getPointerPercent(event);
-                            setDraftRegion({ anchor, current: anchor });
-                          }}
-                          onPointerMove={(event) => {
-                            if (!draftRegion) return;
-                            setDraftRegion((current) => ({
-                              ...current,
-                              current: getPointerPercent(event),
-                            }));
-                          }}
-                          onPointerUp={(event) => {
-                            finishRegionDrawing(event);
-                            if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-                              event.currentTarget.releasePointerCapture(event.pointerId);
-                            }
-                          }}
-                          onPointerCancel={() => setDraftRegion(null)}
-                        >
-                          <Image
-                            src={url}
-                            alt={`근무표 페이지 ${index + 1} 전체 위치`}
-                            display="block"
-                            w="100%"
-                          />
-                          {regions.map((region) => (
-                            <Box
-                              key={region.id}
-                              position="absolute"
-                              top="0"
-                              bottom="0"
-                              left={`${region.start}%`}
-                              w={`${region.end - region.start}%`}
-                              border="3px solid"
-                              borderColor={
-                                selectedRegionId === region.id ? "blue.600" : region.color
-                              }
-                              bg={region.color}
-                              opacity={selectedRegionId === region.id ? 0.45 : 0.2}
-                              cursor={isRegionEditing ? "crosshair" : "pointer"}
-                              onPointerDown={(event) => {
-                                if (isRegionEditing) return;
-                                event.stopPropagation();
-                                setSelectedRegionId(region.id);
-                              }}
-                            >
-                              <Text
-                                position="absolute"
-                                top="2px"
-                                left="4px"
-                                fontSize="10px"
-                                fontWeight="900"
-                                color="gray.900"
-                              >
-                                {region.name}
-                              </Text>
-                            </Box>
-                          ))}
-                          {draftRegion && (
-                            <Box
-                              position="absolute"
-                              top="0"
-                              bottom="0"
-                              left={`${Math.min(draftRegion.anchor, draftRegion.current)}%`}
-                              w={`${Math.abs(draftRegion.current - draftRegion.anchor)}%`}
-                              border="3px dashed"
-                              borderColor="red.500"
-                              bg="red.100"
-                              opacity="0.55"
-                              pointerEvents="none"
-                            />
-                          )}
-                        </Box>
-                        <Text mt={2} fontSize="xs" color="gray.500">
-                          {isRegionEditing
-                            ? "전체표 위에서 원하는 구간을 좌우로 드래그해 영역을 추가하세요."
-                            : "색상 영역을 선택하면 해당 범위를 확대해서 표시합니다."}
-                        </Text>
-                      </Box>
-                    )}
-                  </Box>
+            <Box maxW={{ base: "100%", md: "340px" }}>
+              <Text mb={2} fontSize="sm" fontWeight="800" color="gray.700">
+                직원 선택
+              </Text>
+              <Select
+                value={selectedPerson}
+                onChange={(event) => {
+                  setSelectedPerson(event.target.value);
+                  setSelectedWorkplace("전체");
+                }}
+                bg="white"
+                borderRadius="lg"
+              >
+                {people.map((person) => (
+                  <option key={person} value={person}>
+                    {person}
+                  </option>
                 ))}
-              </VStack>
+              </Select>
+            </Box>
+
+            <Box>
+              <Text mb={2} fontSize="sm" fontWeight="800" color="gray.700">
+                근무지
+              </Text>
+              <HStack overflowX="auto" spacing={2} pb={1}>
+                {workplaces.map((workplace) => (
+                  <Button
+                    key={workplace}
+                    size="sm"
+                    flex="0 0 auto"
+                    borderRadius="full"
+                    colorScheme={selectedWorkplace === workplace ? "blue" : "gray"}
+                    variant={selectedWorkplace === workplace ? "solid" : "outline"}
+                    onClick={() => setSelectedWorkplace(workplace)}
+                  >
+                    {workplace}
+                  </Button>
+                ))}
+              </HStack>
+            </Box>
+
+            <HStack justify="space-between">
+              <Text fontWeight="900">
+                {selectedPerson} · {selectedWorkplace} 근무표
+              </Text>
+              <Text fontSize="sm" color="gray.500">
+                {visibleRows.length}명
+              </Text>
+            </HStack>
+
+            {isMobile && mobileView === "fit" ? (
+              <MobileScheduleCards rows={visibleRows} />
+            ) : (
+              <DesktopScheduleTable rows={visibleRows} />
             )}
           </VStack>
         </DrawerBody>

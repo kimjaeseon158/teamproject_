@@ -6,8 +6,6 @@ from django.db.models import Q
 from .encryption.crypto import resident_number_blind_index
 from .encryption.fields import EncryptedTextField
 
-
-
 # fmt:off
 # User 관련 테이블
 class User_Login_Info(models.Model):
@@ -179,6 +177,70 @@ class AdminWorkPlace(models.Model):
         return str(self.admin_id) if self.admin_id else None
 
 
+class EmployeeWorkSchedule(models.Model):
+    class Status(models.TextChoices):
+        DAY = "DAY", "주간"
+        NIGHT = "NIGHT", "야간"
+        OFF = "OFF", "휴무"
+        TRAINING = "TRAINING", "교육"
+
+    schedule_uuid = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+    user = models.ForeignKey(
+        User_Login_Info,
+        to_field="user_uuid",
+        on_delete=models.CASCADE,
+        related_name="work_schedules",
+    )
+    work_date = models.DateField(db_index=True)
+    status = models.CharField(max_length=10, choices=Status.choices)
+    admin_work_place = models.ForeignKey(
+        AdminWorkPlace,
+        to_field="admin_work_place_uuid",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="employee_schedules",
+    )
+    work_place_name = models.CharField(max_length=100, blank=True, default="")
+    work_place_detail = models.CharField(max_length=200, blank=True, default="")
+    created_by = models.ForeignKey(
+        Admin_Login_Info,
+        to_field="admin_uuid",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="created_employee_schedules",
+    )
+    updated_by = models.ForeignKey(
+        Admin_Login_Info,
+        to_field="admin_uuid",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="updated_employee_schedules",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["work_date", "user__user_name", "created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "user",
+                    "work_date",
+                    "status",
+                    "work_place_name",
+                    "work_place_detail",
+                ],
+                name="uniq_employee_schedule_exact",
+            )
+        ]
+
+
+# Historical migration helpers used by migration 0033.
 def work_schedule_original_upload_to(instance, filename):
     extension = Path(filename).suffix.lower()
     schedule_date = instance.schedule_date
@@ -194,46 +256,6 @@ def work_schedule_preview_upload_to(instance, filename):
         f"work_schedules/{schedule_date:%Y}/{schedule_date:%Y-%m}/"
         f"previews/{uuid.uuid4()}.png"
     )
-
-
-class WorkSchedule(models.Model):
-    schedule_uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    schedule_date = models.DateField(unique=True, db_index=True)
-    original_file = models.FileField(upload_to=work_schedule_original_upload_to)
-    original_file_name = models.CharField(max_length=255)
-    original_file_size = models.PositiveBigIntegerField()
-    uploaded_by = models.ForeignKey(
-        Admin_Login_Info,
-        to_field="admin_uuid",
-        on_delete=models.PROTECT,
-        related_name="work_schedules",
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ["-schedule_date"]
-
-
-class WorkSchedulePreviewPage(models.Model):
-    schedule = models.ForeignKey(
-        WorkSchedule,
-        on_delete=models.CASCADE,
-        related_name="preview_pages",
-    )
-    page_number = models.PositiveIntegerField()
-    image = models.FileField(upload_to=work_schedule_preview_upload_to)
-    width = models.PositiveIntegerField()
-    height = models.PositiveIntegerField()
-
-    class Meta:
-        ordering = ["page_number"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["schedule", "page_number"],
-                name="uniq_work_schedule_preview_page",
-            )
-        ]
 
 
 class Income(models.Model):

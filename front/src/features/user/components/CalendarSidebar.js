@@ -92,6 +92,7 @@ export default function CalendarSidebar({
           {existingEvent ? (
             isMobile ? (
               <WorkDetailView
+                events={events}
                 event={existingEvent}
                 isMobile={isMobile}
                 onClose={onClose}
@@ -102,6 +103,7 @@ export default function CalendarSidebar({
             ) : (
               <>
                 <Option
+                  events={events}
                   existingWorks={existingEvent.extendedProps.grouped_items}
                   selectedDate={selectedDate}
                   onRefresh={onRefresh}
@@ -117,6 +119,7 @@ export default function CalendarSidebar({
             )
           ) : (
             <Option
+              events={events}
               existingWorks={[]}
               selectedDate={selectedDate}
               onRefresh={onRefresh}

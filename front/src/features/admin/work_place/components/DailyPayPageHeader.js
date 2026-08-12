@@ -8,15 +8,12 @@ import {
   Image,
   Menu,
   MenuButton,
-  MenuDivider,
-  MenuGroup,
   MenuItem,
   MenuList,
   Text,
 } from "@chakra-ui/react";
 import {
   ChevronDownIcon,
-  DownloadIcon,
   RepeatIcon,
   SmallAddIcon,
 } from "@chakra-ui/icons";
@@ -27,7 +24,6 @@ export default function DailyPayPageHeader({
   loading,
   onExcelOpen,
   onResetSearch,
-  onWorkplaceAssignmentOpen,
 }) {
   return (
     <Flex
@@ -66,41 +62,15 @@ export default function DailyPayPageHeader({
             </HStack>
           </MenuButton>
           <MenuList minW="250px" p={2} borderColor="gray.200" boxShadow="xl">
-            <MenuGroup title="일급 관리">
-              <MenuItem
-                icon={<SmallAddIcon />}
-                borderRadius="md"
-                fontSize="sm"
-                fontWeight="700"
-                onClick={onExcelOpen}
-              >
-                일급 엑셀 업로드
-              </MenuItem>
-            </MenuGroup>
-            <MenuDivider />
-            <MenuGroup title="날짜별 근무표">
-              <MenuItem
-                icon={<DownloadIcon />}
-                borderRadius="md"
-                fontSize="sm"
-                fontWeight="700"
-                onClick={onWorkplaceAssignmentOpen}
-              >
-                근무표 업로드·관리
-              </MenuItem>
-              <MenuItem
-                icon={<SmallAddIcon />}
-                borderRadius="md"
-                bg="green.50"
-                color="green.700"
-                fontSize="sm"
-                fontWeight="800"
-                onClick={onWorkplaceAssignmentOpen}
-                _hover={{ bg: "green.100" }}
-              >
-                원본 다운로드·교체
-              </MenuItem>
-            </MenuGroup>
+            <MenuItem
+              icon={<SmallAddIcon />}
+              borderRadius="md"
+              fontSize="sm"
+              fontWeight="700"
+              onClick={onExcelOpen}
+            >
+              일급 엑셀 업로드
+            </MenuItem>
           </MenuList>
         </Menu>
 

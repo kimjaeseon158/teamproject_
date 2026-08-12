@@ -24,7 +24,7 @@ export default function SearchModal({
   onSearch,
 }) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isCentered>
+    <Modal isOpen={isOpen} onClose={onClose} isCentered closeOnOverlayClick={false} closeOnEsc={false}>
       <ModalOverlay backdropFilter="blur(4px)" />
       <ModalContent borderRadius="xl" p={2}>
         <ModalHeader fontSize="lg" fontWeight="bold">

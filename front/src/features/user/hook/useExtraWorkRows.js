@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { getExtraWorkTimes } from "../../common/workTimeUtils";
 import { diffMinutes, minutesToHM } from "../utils/timeUtils";
@@ -13,6 +13,7 @@ const createExtraWorkRow = (type = "weekday_ot", startTime = "", finishTime = ""
 };
 
 export default function useExtraWorkRows({ finishTime, startTime }) {
+  const skipNextTimeRebaseRef = useRef(false);
   const [extraEnabled, setExtraEnabled] = useState(false);
   const [extraWorks, setExtraWorks] = useState([]);
 
@@ -27,6 +28,10 @@ export default function useExtraWorkRows({ finishTime, startTime }) {
 
   useEffect(() => {
     if (!extraEnabled) return;
+    if (skipNextTimeRebaseRef.current) {
+      skipNextTimeRebaseRef.current = false;
+      return;
+    }
 
     setExtraWorks((prev) =>
       prev.map((row) => {
@@ -86,10 +91,17 @@ export default function useExtraWorkRows({ finishTime, startTime }) {
     setExtraWorks([]);
   };
 
+  const applyExtraWorks = (rows = []) => {
+    skipNextTimeRebaseRef.current = rows.length > 0;
+    setExtraWorks(rows);
+    setExtraEnabled(rows.length > 0);
+  };
+
   return {
     extraEnabled,
     extraWorkMinutes,
     extraWorks,
+    applyExtraWorks,
     handleAddExtraRow,
     handleRemoveExtraRow,
     resetExtraWorks,

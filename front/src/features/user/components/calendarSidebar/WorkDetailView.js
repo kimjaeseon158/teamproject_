@@ -50,6 +50,7 @@ const EditAction = ({ canEdit, onEdit }) =>
   );
 
 export default function WorkDetailView({
+  events = [],
   event,
   isMobile,
   onClose,
@@ -207,6 +208,7 @@ export default function WorkDetailView({
               {TEXT.addWork}
             </Text>
             <Option
+              events={events}
               existingWorks={groupedItems}
               selectedDate={selectedDate}
               onRefresh={onRefresh}

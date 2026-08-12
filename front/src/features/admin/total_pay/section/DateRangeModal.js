@@ -18,7 +18,7 @@ export default function DateRangeModal({
   onApply,
 }) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={onClose} closeOnOverlayClick={false} closeOnEsc={false}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>날짜 선택</ModalHeader>

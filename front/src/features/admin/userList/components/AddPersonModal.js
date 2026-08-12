@@ -49,7 +49,7 @@ const AddPersonModal = ({ isOpen, onClose, onSave, toast }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered closeOnOverlayClick={false} closeOnEsc={false}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>직원 추가</ModalHeader>

@@ -20,7 +20,7 @@ export default function SubmitConfirmDialog({
   cancelRef,
 }) {
   return (
-    <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef} onClose={onClose}>
+    <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef} onClose={onClose} closeOnOverlayClick={false} closeOnEsc={false}>
       <AlertDialogOverlay>
         <AlertDialogContent>
           <AlertDialogHeader>전체 등록 확인</AlertDialogHeader>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Badge, HStack, Stack, Text, useToast, VStack } from "@chakra-ui/react";
+import { Badge, Button, HStack, Stack, Text, useDisclosure, useToast, VStack } from "@chakra-ui/react";
+import { RepeatIcon } from "@chakra-ui/icons";
 
 import { useUser } from "../../auth/userContext";
 import OptionActionButtons from "./OptionActionButtons";
@@ -9,6 +10,7 @@ import OptionNoteSection from "./OptionNoteSection";
 import OptionSegmentedControl from "./OptionSegmentedControl";
 import OptionSubmitConfirmDialog from "./OptionSubmitConfirmDialog";
 import OptionTimeSection from "./OptionTimeSection";
+import PreviousWorkApplyModal from "./PreviousWorkApplyModal";
 import { fetchUserWorkPlaces } from "../api/userWorkPlaces";
 import useOptionForm from "../hook/useOptionForm";
 import "./activity.css";
@@ -25,6 +27,7 @@ const getDisplayDate = (selectedDate) => {
 };
 
 const Option = ({
+  events = [],
   existingWorks = [],
   selectedDate,
   onRefresh,
@@ -35,6 +38,7 @@ const Option = ({
   const toast = useToast();
   const cancelRef = useRef();
   const [workPlacesLoading, setWorkPlacesLoading] = useState(false);
+  const previousWorkModal = useDisclosure();
   const displayDate = getDisplayDate(selectedDate);
   const form = useOptionForm({
     existingWorks,
@@ -46,6 +50,20 @@ const Option = ({
     userName,
     userUuid,
   });
+
+  const previousWork = events
+    .flatMap((event) => {
+      const data = event.extendedProps || {};
+      return data.grouped_items?.length ? data.grouped_items : [data];
+    })
+    .filter(
+      (work) =>
+        (work.work_date || work.date) < selectedDate?.formatted &&
+        work.work_shift === form.baseShift
+    )
+    .sort((a, b) =>
+      String(b.work_date || b.date).localeCompare(String(a.work_date || a.date))
+    )[0];
 
   useEffect(() => {
     if (!userUuid) return;
@@ -98,6 +116,22 @@ const Option = ({
         onSpecialToggle={() => form.setIsSpecial((prev) => !prev)}
       />
 
+      <Button
+        leftIcon={<RepeatIcon />}
+        variant="outline"
+        colorScheme="blue"
+        borderRadius="12px"
+        onClick={previousWorkModal.onOpen}
+        isDisabled={!previousWork}
+      >
+        이전 근무 적용
+      </Button>
+      <Text mt={-3} textAlign="center" fontSize="xs" color="gray.500">
+        {previousWork
+          ? "가장 최근 동일 근무를 불러옵니다."
+          : "이전에 등록된 동일 근무가 없습니다."}
+      </Text>
+
       <OptionTimeSection
         isMobile={isMobile}
         startTime={form.startTime}
@@ -147,6 +181,19 @@ const Option = ({
         onClose={() => form.setIsSubmitConfirmOpen(false)}
         onDelete={form.handleDeleteFromCart}
         onConfirm={form.handleConfirmSubmitAll}
+      />
+
+      <PreviousWorkApplyModal
+        isOpen={previousWorkModal.isOpen}
+        onClose={previousWorkModal.onClose}
+        previousWork={previousWork}
+        isMobile={isMobile}
+        workPlaces={workPlaces}
+        onApply={(values) => {
+          form.applyPreviousWork(values);
+          previousWorkModal.onClose();
+          toast({ title: "이전 근무를 적용했습니다.", status: "success" });
+        }}
       />
     </Stack>
   );

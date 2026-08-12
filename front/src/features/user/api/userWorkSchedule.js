@@ -1,44 +1,15 @@
-import { ApiGet, ApiRawGet, toQueryString } from "../../../services/api/requestJson";
+import { ApiGet, toQueryString } from "../../../services/api/requestJson";
 
-const normalizeProtectedImageUrl = (imageUrl) => {
-  if (!imageUrl) return imageUrl;
-
-  try {
-    const url = new URL(imageUrl, window.location.origin);
-    return `${url.pathname}${url.search}`;
-  } catch {
-    return imageUrl;
-  }
-};
-
-export const fetchUserWorkSchedule = (date, { toast } = {}) =>
-  ApiGet(`/api/user-work-schedule/${toQueryString({ date })}`, { toast });
-
-export const fetchUserWorkSchedulePageImage = async (
-  scheduleUuid,
-  pageNumber,
+export const fetchUserWorkSchedule = (
+  { date, user_name = "", work_place = "", work_place_detail = "" },
   { toast } = {}
-) => {
-  const response = await ApiRawGet(
-    `/api/user-work-schedules/${scheduleUuid}/pages/${pageNumber}/`,
+) =>
+  ApiGet(
+    `/api/user-work-schedule/${toQueryString({
+      date,
+      user_name: user_name.trim(),
+      work_place: work_place.trim(),
+      work_place_detail: work_place_detail.trim(),
+    })}`,
     { toast }
   );
-
-  if (!response.ok) {
-    throw new Error("근무표 이미지 조회에 실패했습니다.");
-  }
-
-  const blob = await response.blob();
-  return URL.createObjectURL(blob);
-};
-
-export const fetchUserWorkScheduleImageUrl = async (imageUrl, { toast } = {}) => {
-  const response = await ApiRawGet(normalizeProtectedImageUrl(imageUrl), { toast });
-
-  if (!response.ok) {
-    throw new Error("근무표 이미지 조회에 실패했습니다.");
-  }
-
-  const blob = await response.blob();
-  return URL.createObjectURL(blob);
-};

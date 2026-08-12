@@ -68,7 +68,7 @@ export default function ExcelExportModal({
   const months = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0"));
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isCentered size="sm">
+    <Modal isOpen={isOpen} onClose={onClose} isCentered size="sm" closeOnOverlayClick={false} closeOnEsc={false}>
       <ModalOverlay backdropFilter="blur(10px) saturate(180%)" />
       <ModalContent
         borderRadius="30px"

@@ -18,6 +18,7 @@ import {
   Select,
   Switch,
   Text,
+  Textarea,
   VStack,
   useBreakpointValue,
   useToast,
@@ -46,6 +47,8 @@ const TEXT = {
   invalidForm: "\uadfc\ubb34\uc9c0\uc640\u0020\uadfc\ubb34\uc2dc\uac04\uc744\u0020\uc120\ud0dd\ud558\uc138\uc694\u002e",
   location: "\uadfc\ubb34\uc9c0",
   locationPlaceholder: "\uadfc\ubb34\uc9c0\u0020\uc120\ud0dd",
+  note: "\ube44\uace0",
+  notePlaceholder: "\uc804\ub2ec\ud560 \ub0b4\uc6a9\uc744 \uc785\ub825\ud558\uc138\uc694. (\uc120\ud0dd)",
   pending: "\uc2b9\uc778\u0020\ub300\uae30",
   pendingOnly: "\uc2b9\uc778\u0020\ub300\uae30\u0020\uc0c1\ud0dc\uc758\u0020\uadfc\ubb34\ub9cc\u0020\uc218\uc815\ud560\u0020\uc218\u0020\uc788\uc2b5\ub2c8\ub2e4\u002e",
   save: "\uc218\uc815\u0020\uc800\uc7a5",
@@ -134,6 +137,7 @@ export default function EditPendingWorkModal({
   const [baseShift, setBaseShift] = useState(DAY_SHIFT);
   const [isSpecial, setIsSpecial] = useState(false);
   const [location, setLocation] = useState("");
+  const [note, setNote] = useState("");
   const [startTime, setStartTime] = useState("09:00");
   const [finishTime, setFinishTime] = useState("18:00");
   const [extraEnabled, setExtraEnabled] = useState(false);
@@ -162,6 +166,7 @@ export default function EditPendingWorkModal({
     setBaseShift(getInitialShift(work));
     setIsSpecial(primaryWorkType.includes(SPECIAL));
     setLocation(work.work_place || "");
+    setNote(work.note || "");
     setStartTime(nextStartTime);
     setFinishTime(nextFinishTime);
     setExtraRows(nextExtraRows);
@@ -285,6 +290,7 @@ export default function EditPendingWorkModal({
           details,
           finishTime,
           location,
+          note,
           selectedDate: work?.date || selectedDate,
           startTime,
           userName,
@@ -313,6 +319,8 @@ export default function EditPendingWorkModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      closeOnOverlayClick={false}
+      closeOnEsc={false}
       size="md"
       isCentered={!isBottomSheet}
       motionPreset={isBottomSheet ? "slideInBottom" : "scale"}
@@ -406,6 +414,22 @@ export default function EditPendingWorkModal({
                       </option>
                     ))}
                   </Select>
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel fontSize="xs" color="gray.400">
+                    {TEXT.note} · {note.length}/200
+                  </FormLabel>
+                  <Textarea
+                    value={note}
+                    onChange={(e) => setNote(e.target.value.slice(0, 200))}
+                    placeholder={TEXT.notePlaceholder}
+                    resize="vertical"
+                    minH="88px"
+                    {...fieldStyle}
+                    h="auto"
+                    py={3}
+                  />
                 </FormControl>
               </VStack>
             </Box>

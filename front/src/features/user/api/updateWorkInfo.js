@@ -25,6 +25,7 @@ export const buildUpdateWorkInfoPayload = ({
   details,
   finishTime,
   location,
+  note = "",
   selectedDate,
   startTime,
   userName,
@@ -44,6 +45,7 @@ export const buildUpdateWorkInfoPayload = ({
       work_start: toDateTime(workDate, startTime),
       work_end: toDateTime(workDate, finishTime),
       work_place: location,
+      note,
       details,
     },
   };

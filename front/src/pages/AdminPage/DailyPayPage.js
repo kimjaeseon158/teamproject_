@@ -7,13 +7,11 @@ import DailyPayFilterBar from "../../features/admin/work_place/components/DailyP
 import DailyPayPageHeader from "../../features/admin/work_place/components/DailyPayPageHeader";
 import DailyPaySummaryCards from "../../features/admin/work_place/components/DailyPaySummaryCards";
 import DailyPayTableSection from "../../features/admin/work_place/components/DailyPayTableSection";
-import WorkplaceAssignmentExcelDrawer from "../../features/admin/work_place/components/WorkplaceAssignmentExcelDrawer";
 import useDailyPayPage from "../../features/admin/work_place/hook/useDailyPayPage";
 
 export default function DailyPayPage() {
   const exportDisclosure = useDisclosure();
   const adminWorkPlaceDisclosure = useDisclosure();
-  const workplaceAssignmentDisclosure = useDisclosure();
   const dailyPay = useDailyPayPage({
     onExcelExportClose: exportDisclosure.onClose,
   });
@@ -30,7 +28,6 @@ export default function DailyPayPage() {
         loading={dailyPay.loading}
         onExcelOpen={exportDisclosure.onOpen}
         onResetSearch={dailyPay.handleResetSearch}
-        onWorkplaceAssignmentOpen={workplaceAssignmentDisclosure.onOpen}
       />
 
       <DailyPaySummaryCards cards={statCards} />
@@ -86,10 +83,6 @@ export default function DailyPayPage() {
         showWorkPlace={false}
       />
 
-      <WorkplaceAssignmentExcelDrawer
-        isOpen={workplaceAssignmentDisclosure.isOpen}
-        onClose={workplaceAssignmentDisclosure.onClose}
-      />
     </Box>
   );
 }

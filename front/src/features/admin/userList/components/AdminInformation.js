@@ -26,7 +26,7 @@ const AdminInformation = ({ person, onClose, onSave, toast }) => {
   } = useAdminInformationLogic(person, onClose, onSave, toast);
 
   return (
-    <Modal isOpen={!!person} onClose={onClose} isCentered size="lg">
+    <Modal isOpen={!!person} onClose={onClose} isCentered size="lg" closeOnOverlayClick={false} closeOnEsc={false}>
       <ModalOverlay />
       <ModalContent borderRadius="lg" p={5}>
         <ModalHeader fontSize="xl" fontWeight="bold" color="teal.500">

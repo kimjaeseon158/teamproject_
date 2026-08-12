@@ -68,7 +68,7 @@ export default function ApproveDetailModal({
   if (!employee) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered closeOnOverlayClick={false} closeOnEsc={false}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>근무 상세 정보</ModalHeader>
@@ -106,6 +106,15 @@ export default function ApproveDetailModal({
                 총 시간: {employee.totalWorkHM || employee.dayHM}
               </Text>
             </Box>
+          </InfoCard>
+
+          <InfoCard title="비고">
+            <Text
+              whiteSpace="pre-wrap"
+              color={employee.note ? "gray.800" : "gray.400"}
+            >
+              {employee.note || "등록된 비고가 없습니다."}
+            </Text>
           </InfoCard>
 
           <InfoCard title="반려 사유">

@@ -74,6 +74,23 @@ export default function useOptionForm({
     handleSelectWorkTime: workTimeForm.handleSelectWorkTime,
     handleShiftChange: workTimeForm.handleShiftChange,
     handleStartTimeChange: workTimeForm.handleStartTimeChange,
+    applyPreviousWork: ({
+      startTime,
+      finishTime,
+      location: nextLocation,
+      includeNote,
+      note: previousNote,
+      includeExtraWork,
+      extraWorks: previousExtraWorks,
+    }) => {
+      workTimeForm.handleSelectWorkTime(startTime, finishTime);
+      setLocation(nextLocation);
+      if (includeNote) setNote(previousNote || "");
+
+      if (includeExtraWork) {
+        extraWorkRows.applyExtraWorks(previousExtraWorks || []);
+      }
+    },
     isSpecial: workTimeForm.isSpecial,
     isSubmitConfirmOpen: cartState.isSubmitConfirmOpen,
     location,

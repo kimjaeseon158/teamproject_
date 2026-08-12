@@ -129,6 +129,7 @@ export function useApproveList(toast) {
                 ? `${workStartHM}~${workEndHM}`
                 : "",
             location: workDay.work_place ?? "",
+            note: workDay.note ?? "",
             dayHM: minutesToHM(baseWorkMinutes),
             totalWorkMinutes,
             totalWorkHM,

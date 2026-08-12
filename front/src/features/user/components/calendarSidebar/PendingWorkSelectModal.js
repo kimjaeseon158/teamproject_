@@ -48,6 +48,8 @@ export default function PendingWorkSelectModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      closeOnOverlayClick={false}
+      closeOnEsc={false}
       size="md"
       isCentered={!isBottomSheet}
       motionPreset={isBottomSheet ? "slideInBottom" : "scale"}

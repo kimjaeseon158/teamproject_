@@ -155,7 +155,7 @@ export default function ApproveBulkActionBar({
         </Button>
       </HStack>
 
-      <Modal isOpen={isOpen} onClose={saving ? undefined : onClose} isCentered>
+      <Modal isOpen={isOpen} onClose={saving ? undefined : onClose} isCentered closeOnOverlayClick={false} closeOnEsc={false}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>{action.title}</ModalHeader>

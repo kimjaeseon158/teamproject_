@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Badge,
   Box,
   Button,
-  ButtonGroup,
   Drawer,
   DrawerBody,
   DrawerCloseButton,
@@ -12,7 +11,10 @@ import {
   DrawerOverlay,
   HStack,
   Input,
+  InputGroup,
+  InputLeftElement,
   Select,
+  Spinner,
   Table,
   Tbody,
   Td,
@@ -22,421 +24,352 @@ import {
   Tr,
   VStack,
   useBreakpointValue,
+  useToast,
 } from "@chakra-ui/react";
 import { RepeatIcon } from "@chakra-ui/icons";
+import { FiChevronLeft, FiChevronRight, FiSearch } from "react-icons/fi";
 
-const todayValue = () => new Date().toISOString().slice(0, 10);
+import { fetchUserWorkSchedule } from "../api/userWorkSchedule";
+import { addDaysToDateValue, toLocalDateValue } from "../../common/utils/dateValue";
 
-const DAYS = [
-  { key: "mon", label: "월", date: "13" },
-  { key: "tue", label: "화", date: "14" },
-  { key: "wed", label: "수", date: "15" },
-  { key: "thu", label: "목", date: "16" },
-  { key: "fri", label: "금", date: "17" },
-  { key: "sat", label: "토", date: "18" },
-  { key: "sun", label: "일", date: "19" },
-];
+const statusColor = { DAY: "green", NIGHT: "blue", OFF: "gray", TRAINING: "orange" };
 
-const DUMMY_SCHEDULE = [
-  {
-    id: 1,
-    name: "김민수",
-    workplace: "삼성전자",
-    team: "제조 1팀",
-    schedule: [
-      { status: "주간", location: "삼성전자 P1" },
-      { status: "주간", location: "삼성전자 P1" },
-      { status: "휴무", location: "-" },
-      { status: "주간", location: "삼성전자 P2" },
-      { status: "주간", location: "삼성전자 P2" },
-      { status: "휴무", location: "-" },
-      { status: "휴무", location: "-" },
-    ],
-  },
-  {
-    id: 2,
-    name: "박서준",
-    workplace: "삼성전자",
-    team: "제조 2팀",
-    schedule: [
-      { status: "주간", location: "삼성전자 P1" },
-      { status: "야간", location: "삼성전자 P1" },
-      { status: "야간", location: "삼성전자 P1" },
-      { status: "휴무", location: "-" },
-      { status: "주간", location: "삼성전자 P2" },
-      { status: "주간", location: "삼성전자 P2" },
-      { status: "휴무", location: "-" },
-    ],
-  },
-  {
-    id: 3,
-    name: "이하늘",
-    workplace: "삼성디스플레이",
-    team: "모듈 공정",
-    schedule: [
-      { status: "휴무", location: "-" },
-      { status: "주간", location: "디스플레이 A동" },
-      { status: "주간", location: "디스플레이 A동" },
-      { status: "주간", location: "디스플레이 B동" },
-      { status: "휴무", location: "-" },
-      { status: "야간", location: "디스플레이 B동" },
-      { status: "야간", location: "디스플레이 B동" },
-    ],
-  },
-  {
-    id: 4,
-    name: "최유진",
-    workplace: "삼성디스플레이",
-    team: "검사 공정",
-    schedule: [
-      { status: "야간", location: "디스플레이 검사동" },
-      { status: "야간", location: "디스플레이 검사동" },
-      { status: "휴무", location: "-" },
-      { status: "주간", location: "디스플레이 검사동" },
-      { status: "주간", location: "디스플레이 검사동" },
-      { status: "휴무", location: "-" },
-      { status: "주간", location: "디스플레이 검사동" },
-    ],
-  },
-  {
-    id: 5,
-    name: "정도윤",
-    workplace: "신규자 교육장",
-    team: "신규자 교육",
-    schedule: [
-      { status: "교육", location: "교육센터 1관", note: "안전화 지참" },
-      { status: "교육", location: "디스플레이 교육장" },
-      { status: "교육", location: "안전체험관", note: "08:30까지 집결" },
-      { status: "주간", location: "삼성전자 P2" },
-      { status: "주간", location: "삼성전자 P2" },
-      { status: "휴무", location: "-" },
-      { status: "휴무", location: "-" },
-    ],
-  },
-  {
-    id: 6,
-    name: "윤서아",
-    workplace: "제닉스",
-    team: "생산 지원",
-    schedule: [
-      { status: "주간", location: "제닉스 본관" },
-      { status: "주간", location: "제닉스 본관" },
-      { status: "주간", location: "제닉스 생산동" },
-      { status: "휴무", location: "-" },
-      { status: "야간", location: "제닉스 생산동" },
-      { status: "야간", location: "제닉스 생산동" },
-      { status: "휴무", location: "-" },
-    ],
-  },
-  {
-    id: 7,
-    name: "한지우",
-    workplace: "제닉스",
-    team: "품질 지원",
-    schedule: [
-      { status: "휴무", location: "-" },
-      { status: "주간", location: "제닉스 품질동" },
-      { status: "주간", location: "제닉스 품질동" },
-      { status: "야간", location: "제닉스 품질동" },
-      { status: "야간", location: "제닉스 품질동" },
-      { status: "휴무", location: "-" },
-      { status: "주간", location: "제닉스 본관" },
-    ],
-  },
-];
-
-const statusStyle = (status) => {
-  if (status === "주간") return { bg: "green.50", color: "green.700" };
-  if (status === "야간") return { bg: "blue.50", color: "blue.700" };
-  if (status === "교육") return { bg: "orange.50", color: "orange.700" };
-  return { bg: "yellow.50", color: "yellow.700" };
-};
-
-function DesktopScheduleTable({ rows }) {
+function ScheduleItems({ items, compact = false, dark = false }) {
+  if (!items.length) return <Text fontSize="xs" color="gray.400">-</Text>;
   return (
-    <Box overflowX="auto" border="1px solid" borderColor="gray.200" borderRadius="lg">
-      <Table size="sm" minW="920px" bg="white">
-        <Thead bg="gray.100">
-          <Tr>
-            <Th position="sticky" left="0" zIndex="1" bg="gray.100" minW="150px">
-              직원
-            </Th>
-            <Th minW="130px">근무지</Th>
-            <Th minW="110px">소속</Th>
-            {DAYS.map((day) => (
-              <Th key={day.key} textAlign="center" minW="76px">
-                {day.label} {day.date}
-              </Th>
-            ))}
-          </Tr>
-        </Thead>
-        <Tbody>
-          {rows.map((person) => (
-            <Tr key={person.id} _hover={{ bg: "gray.50" }}>
-              <Td position="sticky" left="0" zIndex="1" bg="white" fontWeight="800">
-                {person.name}
-              </Td>
-              <Td>{person.workplace}</Td>
-              <Td color="gray.600">{person.team}</Td>
-              {person.schedule.map((work, index) => (
-                <Td key={DAYS[index].key} textAlign="center" p={1.5}>
-                  <VStack
-                    spacing={0.5}
-                    minH="58px"
-                    justify="center"
-                    px={1}
-                    py={1.5}
-                    borderRadius="md"
-                    {...statusStyle(work.status)}
-                  >
-                    <Text fontSize="xs" fontWeight="900">
-                      {work.status}
-                    </Text>
-                    {work.location !== "-" && (
-                      <Text fontSize="10px" lineHeight="short" whiteSpace="normal">
-                        {work.location}
-                      </Text>
-                    )}
-                  </VStack>
-                </Td>
-              ))}
-            </Tr>
-          ))}
-        </Tbody>
-      </Table>
-    </Box>
-  );
-}
-
-function MobileScheduleCards({ rows }) {
-  return (
-    <VStack align="stretch" spacing={3}>
-      {rows.map((person) => (
-        <Box key={person.id} border="1px solid" borderColor="gray.200" borderRadius="lg" overflow="hidden">
-          <HStack justify="space-between" px={3} py={2.5} bg="gray.100">
-            <Box minW={0}>
-              <Text fontWeight="900">{person.name}</Text>
-              <Text fontSize="xs" color="gray.500" noOfLines={1}>
-                {person.workplace} · {person.team}
+    <VStack align="stretch" spacing={compact ? 1 : 2}>
+      {items.map((item, index) => (
+        <Box
+          key={`${item.status}-${item.work_place}-${item.work_place_detail}-${index}`}
+          px={compact ? 1.5 : 2}
+          py={compact ? 1 : 2}
+          borderRadius="md"
+          bg={dark
+            ? ({ DAY: "#4a3a18", NIGHT: "#12345a", OFF: "#29313b", TRAINING: "#173f31" }[item.status] || "#29313b")
+            : compact ? "transparent" : `${statusColor[item.status] || "gray"}.50`}
+          color={dark ? "white" : undefined}
+          minH={dark ? "62px" : undefined}
+          display={dark ? "flex" : undefined}
+          flexDirection={dark ? "column" : undefined}
+          justifyContent={dark ? "center" : undefined}
+          textAlign={dark ? "center" : undefined}
+        >
+          {dark ? (
+            <>
+              <Text fontSize="sm" fontWeight="900">{item.status_label}</Text>
+              <Text mt={1} fontSize="xs" color="whiteAlpha.800" noOfLines={1}>
+                {[item.work_place, item.work_place_detail].filter(Boolean).join(" ") || "-"}
               </Text>
-            </Box>
-          </HStack>
-          <Box display="grid" gridTemplateColumns="repeat(2, minmax(0, 1fr))" gap={2} p={2}>
-            {person.schedule.map((work, index) => (
-              <VStack
-                key={DAYS[index].key}
-                spacing={1.5}
-                align="stretch"
-                minH="120px"
-                p={3}
-                border="1px solid"
-                borderColor="blackAlpha.100"
-                borderRadius="lg"
-                {...statusStyle(work.status)}
-              >
-                <HStack justify="space-between">
-                  <Text fontSize="sm" fontWeight="900">
-                    {DAYS[index].label} {DAYS[index].date}
-                  </Text>
-                  <Badge colorScheme={work.status === "교육" ? "orange" : work.status === "주간" ? "green" : "blue"}>
-                    {work.status}
-                  </Badge>
-                </HStack>
-                {work.location !== "-" && (
-                  <Text fontSize="xs" lineHeight="short" color="gray.700">
-                    {work.location}
-                  </Text>
-                )}
-                {work.note && (
-                  <Text
-                    mt="auto"
-                    pt={2}
-                    borderTop="1px solid"
-                    borderColor="blackAlpha.100"
-                    fontSize="xs"
-                    color="orange.700"
-                  >
-                    비고 · {work.note}
-                  </Text>
-                )}
-              </VStack>
-            ))}
-          </Box>
+            </>
+          ) : compact ? (
+            <>
+              <HStack spacing={1.5} minW={0}>
+                <Badge colorScheme={statusColor[item.status] || "gray"} fontSize="9px" px={1}>{item.status_label}</Badge>
+                <Text fontSize="11px" fontWeight="800" noOfLines={1}>{item.work_place || "-"}</Text>
+              </HStack>
+              {item.work_place_detail && <Text mt={0.5} fontSize="9px" color="gray.500" noOfLines={1}>{item.work_place_detail}</Text>}
+            </>
+          ) : (
+            <>
+              <Badge colorScheme={statusColor[item.status] || "gray"}>{item.status_label}</Badge>
+              {item.work_place && <Text mt={1} fontSize="xs" fontWeight="700">{item.work_place}</Text>}
+              {item.work_place_detail && <Text fontSize="10px" color="gray.600">{item.work_place_detail}</Text>}
+            </>
+          )}
         </Box>
       ))}
     </VStack>
   );
 }
 
+const getDayMeta = (target, selected) => {
+  const day = new Date(`${target}T00:00:00`).getDay();
+  const weekday = ["일", "월", "화", "수", "목", "금", "토"][day];
+  const prefix = target === selected
+    ? "오늘 · "
+    : target === addDaysToDateValue(selected, 1)
+      ? "내일 · "
+      : "";
+  return {
+    label: `${prefix}${weekday} ${target.slice(5).replace("-", "/")}`,
+    bg: day === 0 ? "red.50" : day === 6 ? "blue.50" : target === selected ? "blue.50" : "gray.50",
+    color: day === 0 ? "red.600" : day === 6 ? "blue.600" : target === selected ? "blue.700" : "gray.700",
+  };
+};
+
+function DesktopTable({ dates, selectedDate, users }) {
+  return (
+    <Box overflowX="auto" borderWidth="1px" borderRadius="lg">
+      <Table size="sm" minW="1380px" sx={{ tableLayout: "fixed" }}>
+        <Thead bg="gray.100">
+          <Tr>
+            <Th w="140px">직원</Th>
+            <Th w="170px">근무지</Th>
+            <Th w="180px">세부 근무지</Th>
+            {dates.map((date) => {
+              const meta = getDayMeta(date, selectedDate);
+              return <Th key={date} textAlign="center" color={meta.color} bg={date === selectedDate ? "blue.50" : meta.bg}>{meta.label}</Th>;
+            })}
+          </Tr>
+        </Thead>
+        <Tbody>
+          {users.map((user, userIndex) => {
+            const schedules = dates.flatMap((target) => user.days?.[target] || []);
+            const places = Array.from(new Set(schedules.map((item) => item.work_place).filter(Boolean)));
+            const details = Array.from(new Set(schedules.map((item) => item.work_place_detail).filter(Boolean)));
+            return (
+              <Tr key={`${user.user_name}-${userIndex}`} _hover={{ bg: "gray.50" }}>
+                <Td fontWeight="900">{user.user_name}</Td>
+                <Td fontSize="sm" color="gray.700" noOfLines={2}>{places.join(" / ") || "-"}</Td>
+                <Td fontSize="sm" color="gray.600" noOfLines={2}>{details.join(" / ") || "-"}</Td>
+                {dates.map((date) => {
+                  const meta = getDayMeta(date, selectedDate);
+                  const day = new Date(`${date}T00:00:00`).getDay();
+                  return (
+                    <Td key={date} p={1.5} h="70px" verticalAlign="middle" bg={date === selectedDate || [0, 6].includes(day) ? meta.bg : "white"}>
+                      <ScheduleItems items={user.days?.[date] || []} />
+                    </Td>
+                  );
+                })}
+              </Tr>
+            );
+          })}
+        </Tbody>
+      </Table>
+    </Box>
+  );
+}
+
+function MobileCards({ dates, selectedDate, users }) {
+  return <VStack align="stretch" spacing={3}>{users.map((user, userIndex) => (
+    <Box key={`${user.user_name}-${userIndex}`} borderWidth="1px" borderRadius="lg" overflow="hidden">
+      <Text px={4} py={3} fontWeight="900" bg="gray.50">{user.user_name}</Text>
+      <VStack p={3} align="stretch">{dates.map((date) => {
+        const meta = getDayMeta(date, selectedDate);
+        return <HStack key={date} align="flex-start" p={2} borderRadius="md" bg={meta.bg}><Text minW="104px" fontSize="sm" fontWeight="800" color={meta.color}>{meta.label}</Text><Box flex={1}><ScheduleItems items={user.days?.[date] || []} /></Box></HStack>;
+      })}</VStack>
+    </Box>
+  ))}</VStack>;
+}
+
 export default function WorkSchedulePreviewPanel({ isOpen, onClose, selectedDate }) {
+  const toast = useToast();
   const placement = useBreakpointValue({ base: "bottom", md: "right" });
   const isMobile = placement === "bottom";
-  const [date, setDate] = useState(selectedDate?.formatted || todayValue());
-  const [selectedPerson, setSelectedPerson] = useState("전체 직원");
-  const [selectedWorkplace, setSelectedWorkplace] = useState("전체");
-  const [mobileView, setMobileView] = useState("fit");
+  const [date, setDate] = useState(selectedDate?.formatted || toLocalDateValue());
+  const [data, setData] = useState({ dates: [], users: [] });
+  const [searchType, setSearchType] = useState("user_name");
+  const [keyword, setKeyword] = useState("");
+  const [appliedKeyword, setAppliedKeyword] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [workPlaceOptions, setWorkPlaceOptions] = useState([]);
+  const [selectedWorkPlace, setSelectedWorkPlace] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(async (targetDate, filterType = "", filterKeyword = "") => {
+    if (!targetDate) return;
+    setLoading(true);
+    try {
+      const filters = {
+        date: targetDate,
+        ...(filterType && filterKeyword.trim()
+          ? { [filterType]: filterKeyword.trim() }
+          : {}),
+      };
+      const response = await fetchUserWorkSchedule(
+          {
+            ...filters,
+          },
+          { toast }
+        );
+      const targetDates = Array.from({ length: 7 }, (_, index) =>
+        addDaysToDateValue(targetDate, index - 5)
+      );
+      let missingDates = targetDates.filter((item) => !(response?.dates || []).includes(item));
+      const adjacentResponses = [];
+      let adjacentRequestCount = 0;
+      while (missingDates.length && adjacentRequestCount < 2) {
+        const beforeCount = missingDates.length;
+        const adjacentResponse = await fetchUserWorkSchedule({ date: missingDates[0] }, { toast });
+        adjacentResponses.push(adjacentResponse);
+        const receivedDates = new Set(adjacentResponse?.dates || []);
+        missingDates = missingDates.filter((item) => !receivedDates.has(item));
+        adjacentRequestCount += 1;
+        if (missingDates.length === beforeCount) break;
+      }
+      const occurrenceKeys = (users = []) => {
+        const counts = new Map();
+        return users.map((user) => {
+          const count = counts.get(user.user_name) || 0;
+          counts.set(user.user_name, count + 1);
+          return [`${user.user_name}::${count}`, user];
+        });
+      };
+      const extraSources = adjacentResponses.map((item) => ({
+        dates: new Set(item?.dates || []),
+        users: new Map(occurrenceKeys(item?.users)),
+      }));
+      const users = occurrenceKeys(response?.users).map(([key, user]) => ({
+        ...user,
+        days: targetDates.reduce((days, target) => {
+          if (days[target] !== undefined) return days;
+          const source = extraSources.find((item) => item.dates.has(target));
+          return { ...days, [target]: source?.users.get(key)?.days?.[target] || [] };
+        }, { ...user.days }),
+      }));
+      setData({ ...(response || { dates: [] }), users });
+      if (!filterKeyword.trim()) {
+        setWorkPlaceOptions(Array.from(new Set(
+          users.flatMap((user) => targetDates.flatMap((target) =>
+            (user.days?.[target] || []).map((item) => item.work_place).filter(Boolean)
+          ))
+        )));
+      }
+      setAppliedKeyword(filterKeyword.trim());
+    } catch (error) {
+      toast({ title: "근무표 조회에 실패했습니다.", description: error.message, status: "error" });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
 
   useEffect(() => {
-    setDate(selectedDate?.formatted || todayValue());
-  }, [selectedDate?.formatted]);
+    const nextDate = selectedDate?.formatted || toLocalDateValue();
+    setDate(nextDate);
+    setKeyword("");
+    setAppliedKeyword("");
+    setSelectedWorkPlace("");
+    if (isOpen) load(nextDate);
+  }, [isOpen, load, selectedDate?.formatted]);
 
-  const people = useMemo(
-    () => ["전체 직원", ...DUMMY_SCHEDULE.map((item) => item.name)],
-    []
+  const displayedDates = useMemo(
+    () => Array.from({ length: 7 }, (_, index) => addDaysToDateValue(date, index - 5)),
+    [date]
   );
+  const visibleUsers = useMemo(() => {
+    const users = data.users || [];
+    if (statusFilter === "ALL") return users;
+    return users.filter((user) => displayedDates.some((target) =>
+      (user.days?.[target] || []).some((schedule) => schedule.status === statusFilter)
+    ));
+  }, [data.users, displayedDates, statusFilter]);
+  const scheduleCount = useMemo(() => visibleUsers.reduce(
+    (count, user) => count + displayedDates.reduce(
+      (dayCount, target) => dayCount + (user.days?.[target] || []).length,
+      0
+    ),
+    0
+  ), [displayedDates, visibleUsers]);
+  const rangeLabel = `${displayedDates[0]?.slice(5).replace("-", ".")} — ${displayedDates[6]?.slice(5).replace("-", ".")}`;
 
-  const workplaces = useMemo(() => {
-    if (selectedPerson === "전체 직원") {
-      return ["전체", ...new Set(DUMMY_SCHEDULE.map((item) => item.workplace))];
-    }
-
-    const person = DUMMY_SCHEDULE.find((item) => item.name === selectedPerson);
-    return person ? ["전체", person.workplace] : ["전체"];
-  }, [selectedPerson]);
-
-  const visibleRows = useMemo(
-    () =>
-      DUMMY_SCHEDULE.filter(
-        (item) =>
-          (selectedPerson === "전체 직원" || item.name === selectedPerson) &&
-          (selectedWorkplace === "전체" || item.workplace === selectedWorkplace)
-      ),
-    [selectedPerson, selectedWorkplace]
-  );
+  const handleSearch = () => {
+    if (searchType !== "work_place") setSelectedWorkPlace("");
+    load(date, searchType, keyword);
+  };
+  const handleWorkPlaceFilter = (workPlace) => {
+    setSelectedWorkPlace(workPlace);
+    setSearchType("work_place");
+    setKeyword(workPlace);
+    load(date, workPlace ? "work_place" : "", workPlace);
+  };
+  const moveDate = (amount) => {
+    const nextDate = addDaysToDateValue(date, amount);
+    setDate(nextDate);
+    load(nextDate, searchType, keyword);
+  };
 
   return (
     <Drawer isOpen={isOpen} onClose={onClose} placement={placement || "right"} size="full">
       <DrawerOverlay />
-      <DrawerContent
-        bg="white"
-        maxH={isMobile ? "92dvh" : undefined}
-        borderTopRadius={isMobile ? "24px" : undefined}
-        overflow="hidden"
-      >
+      <DrawerContent bg="white" color="gray.800" maxH={isMobile ? "92dvh" : undefined} borderTopRadius={isMobile ? "24px" : undefined}>
         <DrawerCloseButton top={4} right={4} />
-        <DrawerHeader borderBottomWidth="1px" py={5} pr={14}>
-          근무표 조회
-        </DrawerHeader>
-
+        <DrawerHeader borderBottomWidth="1px" borderColor="gray.200">근무표 조회</DrawerHeader>
         <DrawerBody px={{ base: 4, md: 6 }} py={5}>
           <VStack align="stretch" spacing={4}>
-            <HStack
-              justify="space-between"
-              align={{ base: "stretch", lg: "center" }}
-              flexDirection={{ base: "column", lg: "row" }}
-              gap={3}
-            >
-              <Box>
-                <HStack flexWrap="wrap">
-                  <Text fontSize="lg" fontWeight="900">
-                    읽기 전용 근무표
-                  </Text>
-                  <Badge colorScheme="blue" borderRadius="full">
-                    더미 데이터
-                  </Badge>
-                </HStack>
-                <Text fontSize="sm" color="gray.500" mt={1}>
-                  엑셀 데이터를 JSON으로 변환했을 때의 화면을 먼저 확인합니다.
-                </Text>
-              </Box>
-              <HStack>
-                <Input
-                  type="date"
-                  value={date}
-                  onChange={(event) => setDate(event.target.value)}
-                  h="42px"
-                  maxW={{ base: "none", lg: "170px" }}
-                />
-                <Button
-                  leftIcon={<RepeatIcon />}
-                  colorScheme="blue"
-                  h="42px"
-                  minW={{ base: "96px", md: "110px" }}
-                  px={5}
-                  fontSize="sm"
-                  borderRadius="lg"
-                >
-                  조회
-                </Button>
+            {isMobile ? (
+              <>
+                <HStack justify="center" flexWrap="wrap">
+                <Button aria-label="이전 날짜" variant="outline" onClick={() => moveDate(-1)}><FiChevronLeft /></Button>
+                <Text minW={{ base: "160px", md: "260px" }} textAlign="center" fontSize={{ base: "lg", md: "2xl" }} fontWeight="900">{rangeLabel}</Text>
+                <Button aria-label="다음 날짜" variant="outline" onClick={() => moveDate(1)}><FiChevronRight /></Button>
+                <Button variant="outline" onClick={() => { const today = toLocalDateValue(); setDate(today); load(today, searchType, keyword); }}>오늘</Button>
+                <Input type="date" value={date} onChange={(event) => setDate(event.target.value)} maxW="160px" bg="white" />
               </HStack>
-            </HStack>
-
-            {isMobile && (
-              <ButtonGroup size="sm" isAttached w="100%">
-                <Button
-                  flex="1"
-                  colorScheme={mobileView === "fit" ? "blue" : "gray"}
-                  variant={mobileView === "fit" ? "solid" : "outline"}
-                  onClick={() => setMobileView("fit")}
-                >
-                  모바일 맞춤 보기
-                </Button>
-                <Button
-                  flex="1"
-                  colorScheme={mobileView === "desktop" ? "blue" : "gray"}
-                  variant={mobileView === "desktop" ? "solid" : "outline"}
-                  onClick={() => setMobileView("desktop")}
-                >
-                  데스크톱 표 보기
-                </Button>
-              </ButtonGroup>
-            )}
-
-            <Box maxW={{ base: "100%", md: "340px" }}>
-              <Text mb={2} fontSize="sm" fontWeight="800" color="gray.700">
-                직원 선택
-              </Text>
-              <Select
-                value={selectedPerson}
-                onChange={(event) => {
-                  setSelectedPerson(event.target.value);
-                  setSelectedWorkplace("전체");
-                }}
-                bg="white"
-                borderRadius="lg"
-              >
-                {people.map((person) => (
-                  <option key={person} value={person}>
-                    {person}
-                  </option>
-                ))}
-              </Select>
-            </Box>
-
-            <Box>
-              <Text mb={2} fontSize="sm" fontWeight="800" color="gray.700">
-                근무지
-              </Text>
-              <HStack overflowX="auto" spacing={2} pb={1}>
-                {workplaces.map((workplace) => (
+                <HStack align="stretch" flexDirection="column">
+                  <Select value={searchType} onChange={(event) => setSearchType(event.target.value)} bg="white">
+                    <option value="user_name">전체 직원</option>
+                    <option value="work_place">전체 근무지</option>
+                    <option value="work_place_detail">세부 근무지</option>
+                  </Select>
+                  <Select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} bg="white">
+                    <option value="ALL">전체 상태</option>
+                    <option value="DAY">주간</option>
+                    <option value="NIGHT">야간</option>
+                    <option value="OFF">휴무</option>
+                    <option value="TRAINING">교육</option>
+                  </Select>
+                  <InputGroup>
+                    <InputLeftElement pointerEvents="none"><FiSearch color="#A0AEC0" /></InputLeftElement>
+                    <Input value={keyword} onChange={(event) => setKeyword(event.target.value)} onKeyDown={(event) => event.key === "Enter" && handleSearch()} placeholder="검색어를 입력하세요" />
+                  </InputGroup>
+                  <Button leftIcon={<RepeatIcon />} colorScheme="blue" onClick={handleSearch} isLoading={loading}>조회</Button>
+                </HStack>
+                <Text fontSize="sm" color="gray.500">직원 {visibleUsers.length}명 · 일정 {scheduleCount}건</Text>
+                {appliedKeyword && <Badge alignSelf="flex-start" colorScheme="blue">검색어 · {appliedKeyword}</Badge>}
+              </>
+            ) : (
+              <>
+                <HStack justify="space-between" align="flex-start">
+                  <Box>
+                    <HStack>
+                      <Text fontSize="lg" fontWeight="900">읽기 전용 근무표</Text>
+                      <Badge colorScheme="blue" borderRadius="full">DB 데이터</Badge>
+                    </HStack>
+                    <Text mt={1} fontSize="sm" color="gray.500">저장된 예정 근무표를 직원·근무지별로 확인합니다.</Text>
+                  </Box>
+                  <HStack>
+                    <Input type="date" value={date} onChange={(event) => setDate(event.target.value)} maxW="170px" />
+                    <Button leftIcon={<RepeatIcon />} colorScheme="blue" onClick={() => load(date)} isLoading={loading}>조회</Button>
+                  </HStack>
+                </HStack>
+                <HStack spacing={2} overflowX="auto" pb={1}>
                   <Button
-                    key={workplace}
                     size="sm"
                     flex="0 0 auto"
                     borderRadius="full"
-                    colorScheme={selectedWorkplace === workplace ? "blue" : "gray"}
-                    variant={selectedWorkplace === workplace ? "solid" : "outline"}
-                    onClick={() => setSelectedWorkplace(workplace)}
-                  >
-                    {workplace}
-                  </Button>
-                ))}
-              </HStack>
-            </Box>
-
-            <HStack justify="space-between">
-              <Text fontWeight="900">
-                {selectedPerson} · {selectedWorkplace} 근무표
-              </Text>
-              <Text fontSize="sm" color="gray.500">
-                {visibleRows.length}명
-              </Text>
-            </HStack>
-
-            {isMobile && mobileView === "fit" ? (
-              <MobileScheduleCards rows={visibleRows} />
+                    colorScheme="blue"
+                    variant={!selectedWorkPlace ? "solid" : "outline"}
+                    onClick={() => handleWorkPlaceFilter("")}
+                  >전체</Button>
+                  {workPlaceOptions.map((workPlace) => (
+                    <Button
+                      key={workPlace}
+                      size="sm"
+                      flex="0 0 auto"
+                      borderRadius="full"
+                      colorScheme="blue"
+                      variant={selectedWorkPlace === workPlace ? "solid" : "outline"}
+                      onClick={() => handleWorkPlaceFilter(workPlace)}
+                    >{workPlace}</Button>
+                  ))}
+                </HStack>
+                <HStack justify="space-between">
+                  <Text fontSize="md" fontWeight="900">전체 근무표</Text>
+                  <Text fontSize="sm" color="gray.500">{visibleUsers.length}명</Text>
+                </HStack>
+              </>
+            )}
+            {loading ? (
+              <Spinner alignSelf="center" my={12} />
+            ) : !visibleUsers.length ? (
+              <Box py={14} textAlign="center" borderWidth="1px" borderStyle="dashed" borderRadius="lg" bg="gray.50">
+                <Text fontWeight="800" color="gray.600">조회된 근무표가 없습니다.</Text>
+                <Text mt={1} fontSize="sm" color="gray.500">검색 조건을 변경하거나 다른 날짜를 선택해주세요.</Text>
+              </Box>
+            ) : isMobile ? (
+              <MobileCards dates={displayedDates} selectedDate={date} users={visibleUsers} />
             ) : (
-              <DesktopScheduleTable rows={visibleRows} />
+              <DesktopTable dates={displayedDates} selectedDate={date} users={visibleUsers} />
             )}
           </VStack>
         </DrawerBody>

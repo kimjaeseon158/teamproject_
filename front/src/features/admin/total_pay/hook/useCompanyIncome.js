@@ -32,7 +32,7 @@ export function useCompanyIncome({ user, loading, toast }) {
 
   const saveFinalList = async (finalList) => {
     for (const item of finalList) {
-      await income_Data(
+      const result = await income_Data(
         {
           date: item.date.toISOString().split("T")[0],
           company_name: item.name,
@@ -41,6 +41,7 @@ export function useCompanyIncome({ user, loading, toast }) {
         },
         toast
       );
+      if (!result) throw new Error("수입 저장에 실패했습니다.");
     }
   };
 

@@ -27,7 +27,7 @@ export default function OptionSubmitConfirmDialog({
   onConfirm,
 }) {
   return (
-    <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef} onClose={onClose} isCentered>
+    <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef} onClose={onClose} isCentered closeOnOverlayClick={false} closeOnEsc={false}>
       <AlertDialogOverlay backdropFilter="blur(4px)">
         <AlertDialogContent bg="#1c1c1e" color="white" borderRadius="24px" m={4}>
           <AlertDialogHeader fontSize="lg" fontWeight="bold">

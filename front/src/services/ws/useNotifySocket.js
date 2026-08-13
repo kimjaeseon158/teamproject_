@@ -1,5 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { WS_BASE } from "../../config/api/apiEnv";
+import { WS_BASE, WS_ENABLED } from "../../config/api/apiEnv";
+
+const buildSocketUrl = (loginType, uuid) => {
+  const baseUrl = WS_BASE.replace(/\/$/, "");
+  const wsPrefix = baseUrl.endsWith("/ws") ? "" : "/ws";
+  const path =
+    loginType === "admin"
+      ? `/admin/request-monitor/?admin_uuid=${uuid}`
+      : `/user/request-monitor/?user_uuid=${uuid}`;
+
+  return `${baseUrl}${wsPrefix}${path}`;
+};
 
 export function useNotifySocket({ token, uuid, loginType, onMessage }) {
   const wsRef = useRef(null);
@@ -7,15 +18,17 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
   const retryRef = useRef(0);
   const retryTimerRef = useRef(null);
   const messageSeqRef = useRef(0);
-
   const [connected, setConnected] = useState(false);
 
-  // 최신 onMessage 유지
   useEffect(() => {
     onMessageRef.current = onMessage;
   }, [onMessage]);
+
   useEffect(() => {
-    if (!token || !uuid || !loginType || !WS_BASE) return;
+    if (!token || !uuid || !loginType || !WS_BASE || !WS_ENABLED) {
+      setConnected(false);
+      return;
+    }
 
     let closedByCleanup = false;
 
@@ -26,22 +39,25 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
 
       wsRef.current = null;
 
-      const wsUrl =
-        loginType === "admin"
-          ? `${WS_BASE}/ws/admin/request-monitor/?admin_uuid=${uuid}`
-          : `${WS_BASE}/ws/user/request-monitor/?user_uuid=${uuid}`;
+      let ws;
+      try {
+        ws = new WebSocket(buildSocketUrl(loginType, uuid), [token]);
+      } catch (error) {
+        console.warn("WebSocket connection skipped", error);
+        setConnected(false);
+        return;
+      }
 
-      const ws = new WebSocket(wsUrl, [token]);
       wsRef.current = ws;
 
       ws.onopen = () => {
         retryRef.current = 0;
         setConnected(true);
-      }; 
+      };
 
-      ws.onmessage = (e) => {
+      ws.onmessage = (event) => {
         try {
-          const data = JSON.parse(e.data);
+          const data = JSON.parse(event.data);
           messageSeqRef.current += 1;
           onMessageRef.current?.(data);
         } catch {
@@ -49,15 +65,14 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
         }
       };
 
-      ws.onclose = (e) => {
+      ws.onclose = (event) => {
         setConnected(false);
 
         if (closedByCleanup) return;
-        if (e.code === 1000 || e.code === 1008) return;
+        if (event.code === 1000 || event.code === 1008) return;
 
         const delay = Math.min(1000 * 2 ** retryRef.current, 30000);
         retryRef.current += 1;
-
         retryTimerRef.current = setTimeout(connect, delay);
       };
 
@@ -79,7 +94,7 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
       wsRef.current = null;
       setConnected(false);
     };
-  }, [token, uuid, loginType]); // 🔥 여기 추가
+  }, [token, uuid, loginType]);
 
   return { connected };
 }

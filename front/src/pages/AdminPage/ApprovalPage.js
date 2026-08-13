@@ -1,93 +1,118 @@
-import { Box, Text, useDisclosure, useToast } from "@chakra-ui/react";
-import { useState, useMemo } from "react";
-import { useApproveList } from "../../feactures/admin/work_day/hook/useApproveList";
-import ApproveFilterBar from "../../feactures/admin/work_day/section/ApproveFilterBar";
-import ApproveTable from "../../feactures/admin/work_day/section/ApproveTable";
-import ApproveDetailModal from "../../feactures/admin/work_day/section/ApproveDetailModal";
-import { toYMD } from "../../feactures/admin/work_day/utils/approveUtils";
+import { Box, Flex, Heading, HStack, Text, useDisclosure } from "@chakra-ui/react";
+
+import ApproveBulkActionBar from "../../features/admin/work_day/section/ApproveBulkActionBar";
+import ApproveDetailModal from "../../features/admin/work_day/section/ApproveDetailModal";
+import ApproveFilterBar from "../../features/admin/work_day/section/ApproveFilterBar";
+import ApprovePagination from "../../features/admin/work_day/section/ApprovePagination";
+import ApproveTable from "../../features/admin/work_day/section/ApproveTable";
+import ApprovalPageHeader from "../../features/admin/work_day/section/ApprovalPageHeader";
+import ApprovalSummaryCards from "../../features/admin/work_day/section/ApprovalSummaryCards";
+import ExcelExportModal from "../../features/admin/total_pay/section/ExcelExportModal";
+import useApprovalPage from "../../features/admin/work_day/hook/useApprovalPage";
+import { APPROVAL_PAGE_SIZE } from "../../features/admin/work_day/constants/approvalConstants";
 
 export default function ApprovePage() {
-  const toast = useToast();
-  const { isOpen, onOpen, onClose } = useDisclosure();
-
-  const { rows, loading, fetchList } = useApproveList(toast);
-
-  const [status, setStatus] = useState("대기");
-  const [selectedIds, setSelectedIds] = useState(new Set());
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
-
-  // 🔥 range 초기값을 undefined로
-  const [range, setRange] = useState({
-    from: undefined,
-    to: undefined,
+  const exportDisclosure = useDisclosure();
+  const approval = useApprovalPage({
+    onExcelExportClose: exportDisclosure.onClose,
   });
 
-  // 🔥 rangeLabel 정상 처리
-  const rangeLabel = useMemo(() => {
-    if (!range?.from) return "날짜 선택";
-    if (!range?.to) return toYMD(range.from);
-    return `${toYMD(range.from)} ~ ${toYMD(range.to)}`;
-  }, [range]);
-
-  const handleSearch = () => {
-    if (!range?.from) {
-      toast({
-        title: "날짜를 선택해주세요",
-        status: "warning",
-        duration: 2000,
-      });
-      return;
-    }
-
-    fetchList({
-      status,
-      startDate: toYMD(range.from),
-      endDate: toYMD(range.to ?? range.from),
-    });
-  };
-
   return (
-    <Box p={6}>
-      <Text fontSize="20px" fontWeight="bold" mb={4}>
-        사원 승인 페이지
-      </Text>
-
-      <ApproveFilterBar
-        status={status}
-        setStatus={setStatus}
-        range={range}
-        setRange={setRange}
-        rangeLabel={rangeLabel}
-        loading={loading}
-        onSearch={handleSearch}
+    <Box minH="100vh" bg="gray.50" p={{ base: 4, md: 6 }}>
+      <ApprovalPageHeader
+        loading={approval.loading}
+        totalCount={approval.summary.total}
+        onExcelOpen={exportDisclosure.onOpen}
       />
 
-      <Box mt={6}>
+      <ApprovalSummaryCards
+        summary={approval.summary}
+        selectedCount={approval.selectedIds.size}
+      />
+
+      <Box bg="white" border="1px solid" borderColor="gray.100" borderRadius="lg" p={4} boxShadow="sm">
+        <ApproveFilterBar
+          status={approval.status}
+          setStatus={approval.setStatus}
+          workPlace={approval.workPlace}
+          setWorkPlace={approval.setWorkPlace}
+          workPlaces={approval.workPlaces}
+          workPlacesLoading={approval.workPlacesLoading}
+          workType={approval.workType}
+          setWorkType={approval.setWorkType}
+          userName={approval.userName}
+          setUserName={approval.setUserName}
+          extraWork={approval.extraWork}
+          setExtraWork={approval.setExtraWork}
+          range={approval.range}
+          setRange={approval.handleRangeChange}
+          rangeLabel={approval.rangeLabel}
+          selectedMonth={approval.selectedMonth}
+          onMonthChange={approval.handleMonthChange}
+          onRangeReset={approval.handleRangeReset}
+          onReset={approval.handleResetFilters}
+          loading={approval.loading}
+          onSearch={approval.handleSearch}
+        />
+      </Box>
+
+      <Box mt={4} bg="white" border="1px solid" borderColor="gray.100" borderRadius="lg" boxShadow="sm" overflow="hidden">
+        <Flex justify="space-between" align="center" px={5} py={4} borderBottom="1px solid" borderColor="gray.100">
+          <Box>
+            <Heading size="sm" color="gray.800">
+              승인 내역
+            </Heading>
+            <Text fontSize="sm" color="gray.500" mt={1}>
+              주간 {approval.summary.day}건 · 야간 {approval.summary.night}건 · 특근 {approval.summary.special}건
+            </Text>
+          </Box>
+          <HStack spacing={3}>
+            <ApproveBulkActionBar
+              selectedRows={approval.selectedRows}
+              toast={approval.toast}
+              clearSelection={approval.clearSelection}
+              isDisabled={approval.loading}
+              onBulkUpdate={approval.updateBulkStatus}
+              saving={approval.bulkSaving}
+            />
+          </HStack>
+        </Flex>
+
         <ApproveTable
-          rows={rows}
-          selectedIds={selectedIds}
-          toggleAll={(c) =>
-            setSelectedIds(c ? new Set(rows.map((r) => r.id)) : new Set())
-          }
-          toggleOne={(id, c) => {
-            const next = new Set(selectedIds);
-            c ? next.add(id) : next.delete(id);
-            setSelectedIds(next);
-          }}
-          onRowClick={(emp) => {
-            setSelectedEmployee(emp);
-            onOpen();
-          }}
-          pb="40px"
+          rows={approval.paginatedRows}
+          selectedIds={approval.selectedIds}
+          toggleAll={approval.handleTogglePage}
+          toggleOne={approval.toggleOne}
+          onRowClick={approval.openDetail}
+          sortField={approval.sortField}
+          sortOrder={approval.sortOrder}
+          onSort={approval.handleSort}
+        />
+
+        <ApprovePagination
+          currentPage={approval.currentPage}
+          totalPages={approval.totalPages}
+          totalCount={approval.sortedRows.length}
+          pageSize={APPROVAL_PAGE_SIZE}
+          onChange={approval.handlePageChange}
         />
       </Box>
 
       <ApproveDetailModal
-        employee={selectedEmployee}
-        isOpen={isOpen}
-        onClose={onClose}
-        toast={toast}
-        refresh={handleSearch}
+        employee={approval.selectedEmployee}
+        isOpen={approval.detailDisclosure.isOpen}
+        onClose={approval.detailDisclosure.onClose}
+        onApprove={approval.approveEmployee}
+        onReject={approval.rejectEmployee}
+        saving={approval.detailSaving}
+      />
+
+      <ExcelExportModal
+        isOpen={exportDisclosure.isOpen}
+        onClose={exportDisclosure.onClose}
+        onConfirm={approval.handleExcelExport}
+        loading={approval.exportLoading}
+        showWorkPlace={false}
       />
     </Box>
   );

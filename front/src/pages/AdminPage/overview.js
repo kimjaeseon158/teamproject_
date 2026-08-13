@@ -1,94 +1,95 @@
-import {
-  Box,
-  Flex,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  Button,
-  Input,
-  FormControl,
-  FormLabel,
-  useDisclosure,
-} from "@chakra-ui/react";
-import { useState } from "react";
-import CalendarSection from "../../feactures/admin/overview/section/CalendarSection";
-import PendingApproveSection from "../../feactures/admin/overview/section/PendingApproveSection";
+import { Box, Flex, Grid } from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
+
+import useOverviewPage from "../../features/admin/overview/hook/useOverviewPage";
+import OverviewApprovalQueueSection from "../../features/admin/overview/section/OverviewApprovalQueueSection";
+import OverviewCalendarSection from "../../features/admin/overview/section/OverviewCalendarSection";
+import OverviewEmployeeSnapshotSection from "../../features/admin/overview/section/OverviewEmployeeSnapshotSection";
+import OverviewFinanceSection from "../../features/admin/overview/section/OverviewFinanceSection";
+import OverviewHeader from "../../features/admin/overview/section/OverviewHeader";
+import OverviewKpiSection from "../../features/admin/overview/section/OverviewKpiSection";
+import WidgetRestoreBar from "../../features/admin/overview/section/WidgetRestoreBar";
 
 export default function OverviewPage() {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [modalEvent, setModalEvent] = useState(null);
+  const navigate = useNavigate();
+  const overview = useOverviewPage();
 
-  // 🔥 승인 대기 원본 데이터 (건별 리스트)
-  const [pendingList, setPendingList] = useState([]);
+  const goApproval = () => navigate("/dashboard/approval");
 
   return (
-    <Box p={6} height="100vh" display="flex" flexDirection="column">
-      <Flex flex="1" gap={4} overflow="hidden">
-        
-        {/* 📅 왼쪽 캘린더 */}
-        <Box flex="2" minW="0">
-          <CalendarSection
-            onUpdatePendingList={setPendingList} // 🔥 여기서 월 변경 시 리스트 업데이트
-            onSelectEvent={(event) => {
-              setModalEvent(event);
-              onOpen();
-            }}
+    <Box h="100%" minH="calc(100vh - 80px)" bg="gray.50" overflow="hidden">
+      <Flex h="100%" direction="column" gap={3}>
+        <OverviewHeader
+          currentDate={overview.currentDate}
+          googleStatus={overview.googleStatus}
+          isLoading={overview.dailyPayLoading || overview.approvalLoading}
+          onGoogleLogin={overview.handleGoogleLogin}
+          onMonthChange={overview.handleMonthChange}
+          onRefresh={overview.refresh}
+        />
+
+        <WidgetRestoreBar
+          hiddenWidgets={overview.hiddenWidgets}
+          onShow={overview.showWidget}
+        />
+
+        {overview.widgets.kpis && (
+          <OverviewKpiSection
+            kpis={overview.kpis}
+            onNavigate={navigate}
+            onRemove={() => overview.hideWidget("kpis")}
           />
-        </Box>
+        )}
 
-        {/* 📊 오른쪽 승인 대기 요약 */}
-        <Box flex="1" minW="300px">
-          <PendingApproveSection workDays={pendingList} />
-        </Box>
-      </Flex>
-
-      {/* 📌 일정 상세 모달 */}
-      {modalEvent && (
-        <Modal
-          isOpen={isOpen}
-          onClose={() => {
-            setModalEvent(null);
-            onClose();
+        <Grid
+          flex="1"
+          minH={0}
+          gap={3}
+          templateColumns={{
+            base: "1fr",
+            xl: overview.widgets.calendar ? "minmax(0, 1.45fr) minmax(340px, 0.85fr)" : "1fr",
           }}
-          isCentered
         >
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>일정 정보</ModalHeader>
+          {overview.widgets.calendar && (
+            <OverviewCalendarSection
+              currentDate={overview.currentDate}
+              events={overview.events}
+              loading={overview.approvalLoading}
+              onMoveMonth={overview.moveMonth}
+              onNavigateApproval={goApproval}
+              onRemove={() => overview.hideWidget("calendar")}
+            />
+          )}
 
-            <ModalBody>
-              <FormControl mb={3}>
-                <FormLabel>제목</FormLabel>
-                <Input value={modalEvent.title} isReadOnly />
-              </FormControl>
+          <Grid minH={0} gap={3} templateRows={overview.rightPanelRows}>
+            {overview.widgets.approvalQueue && (
+              <OverviewApprovalQueueSection
+                summary={overview.approvalSummary}
+                pendingPreview={overview.pendingPreview}
+                onNavigateApproval={goApproval}
+                onRemove={() => overview.hideWidget("approvalQueue")}
+              />
+            )}
 
-              <FormControl mb={3}>
-                <FormLabel>시작</FormLabel>
-                <Input value={modalEvent.start} isReadOnly />
-              </FormControl>
+            {overview.widgets.finance && (
+              <OverviewFinanceSection
+                threeMonthData={overview.threeMonthData}
+                financeTotal={overview.financeTotal}
+                onNavigateFinance={() => navigate("/dashboard/total-sales")}
+                onRemove={() => overview.hideWidget("finance")}
+              />
+            )}
 
-              <FormControl mb={3}>
-                <FormLabel>종료</FormLabel>
-                <Input value={modalEvent.end} isReadOnly />
-              </FormControl>
-            </ModalBody>
-
-            <ModalFooter>
-              <Button
-                onClick={() => {
-                  setModalEvent(null);
-                  onClose();
-                }}
-              >
-                닫기
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+            {overview.widgets.employeeSnapshot && (
+              <OverviewEmployeeSnapshotSection
+                dailyPaySummary={overview.dailyPaySummary}
+                onNavigateEmployee={() => navigate("/dashboard/admin")}
+                onRemove={() => overview.hideWidget("employeeSnapshot")}
+              />
+            )}
+          </Grid>
+        </Grid>
+      </Flex>
     </Box>
   );
 }

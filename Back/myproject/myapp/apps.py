@@ -6,4 +6,4 @@ class MyappConfig(AppConfig):
     name = "myapp"
     
     def ready(self):
-        import myapp.signals
+        import myapp.ws.signals

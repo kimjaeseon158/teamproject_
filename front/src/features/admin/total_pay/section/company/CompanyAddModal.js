@@ -1,0 +1,64 @@
+import {
+  Modal, ModalOverlay, ModalContent, ModalHeader,
+  ModalBody, ModalFooter, Button, VStack, Input, NumberInput, NumberInputField
+} from "@chakra-ui/react";
+import { useState } from "react";
+
+export default function CompanyAddModal({ isOpen, onClose, onSave }) {
+  const [saving, setSaving] = useState(false);
+  const [input, setInput] = useState({
+    name: "",
+    detail: "",
+    amount: "",
+    date: new Date(),
+  });
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered closeOnOverlayClick={false} closeOnEsc={false}>
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>업체 추가</ModalHeader>
+        <ModalBody>
+          <VStack spacing={3}>
+            <Input
+              placeholder="업체명"
+              value={input.name}
+              onChange={(e) => setInput({ ...input, name: e.target.value })}
+            />
+            <Input
+              placeholder="상세"
+              value={input.detail}
+              onChange={(e) => setInput({ ...input, detail: e.target.value })}
+            />
+            <NumberInput
+              value={input.amount}
+              onChange={(v) => setInput({ ...input, amount: v })}
+            >
+              <NumberInputField placeholder="금액" />
+            </NumberInput>
+          </VStack>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            colorScheme="green"
+            isLoading={saving}
+            onClick={async () => {
+              try {
+                setSaving(true);
+                await onSave([input]);
+                onClose();
+              } catch {
+                // API 오류는 요청 함수의 토스트에서 안내하며 모달은 유지합니다.
+              } finally {
+                setSaving(false);
+              }
+            }}
+          >
+            저장
+          </Button>
+          <Button ml={2} onClick={onClose} isDisabled={saving}>취소</Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+}

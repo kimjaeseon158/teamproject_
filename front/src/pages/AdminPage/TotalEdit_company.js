@@ -1,13 +1,13 @@
 import { Box, Flex, useDisclosure, useToast } from "@chakra-ui/react";
-import { useUser } from "../../feactures/auth/userContext";
-import { useCompanyIncome } from "../../feactures/admin/total_pay/hook/useCompanyIncome";
+import { useUser } from "../../features/auth/userContext";
+import { useCompanyIncome } from "../../features/admin/total_pay/hook/useCompanyIncome";
 import { useState } from "react";
 
-import CompanyTableSection from "../../feactures/admin/total_pay/section/company/CompanyTableSection";
-import CompanyChartSection from "../../feactures/admin/total_pay/section/CompanyChartSection";
-import CompanyAddModal from "../../feactures/admin/total_pay/section/company/CompanyAddModal";
-import CompanyEditModal from "../../feactures/admin/total_pay/section/company/CompanyEditModal";
-import DateRangeModal from "../../feactures/admin/total_pay/section/DateRangeModal";
+import CompanyTableSection from "../../features/admin/total_pay/section/company/CompanyTableSection";
+import CompanyChartSection from "../../features/admin/total_pay/section/CompanyChartSection";
+import CompanyAddModal from "../../features/admin/total_pay/section/company/CompanyAddModal";
+import CompanyEditModal from "../../features/admin/total_pay/section/company/CompanyEditModal";
+import DateRangeModal from "../../features/admin/total_pay/section/DateRangeModal";
 
 export default function TotalEditCompanyPage() {
   const toast = useToast();

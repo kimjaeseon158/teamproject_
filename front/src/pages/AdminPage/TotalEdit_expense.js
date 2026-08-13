@@ -1,12 +1,12 @@
 import { Box, Flex, useDisclosure, useToast } from "@chakra-ui/react";
 import { useState } from "react";
-import { useExpenseData } from "../../feactures/admin/total_pay/hook/useExpenseData";
+import { useExpenseData } from "../../features/admin/total_pay/hook/useExpenseData";
 
-import ExpenseTableSection from "../../feactures/admin/total_pay/section/expense/ExpenseTableSection";
-import ExpenseChartSection from "../../feactures/admin/total_pay/section/ExpenseChartSection";
-import ExpenseAddModal from "../../feactures/admin/total_pay/section/expense/ExpenseAddModal";
-import ExpenseEditModal from "../../feactures/admin/total_pay/section/expense/ExpenseEditModal";
-import ExpenseRangeModal from "../../feactures/admin/total_pay/section/expense/ExpenseRangeModal";
+import ExpenseTableSection from "../../features/admin/total_pay/section/expense/ExpenseTableSection";
+import ExpenseChartSection from "../../features/admin/total_pay/section/ExpenseChartSection";
+import ExpenseAddModal from "../../features/admin/total_pay/section/expense/ExpenseAddModal";
+import ExpenseEditModal from "../../features/admin/total_pay/section/expense/ExpenseEditModal";
+import ExpenseRangeModal from "../../features/admin/total_pay/section/expense/ExpenseRangeModal";
 
 export default function ExpensePage() {
   const toast = useToast();

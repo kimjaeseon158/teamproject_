@@ -29,11 +29,16 @@ const LoginMobileLayout = ({ login }) => {
                                 role={login.role}
                                 values={login.values}
                                 errors={login.errors}
+                                loginError={login.loginError}
                                 onChange={login.onChange}
                                 onSubmit={login.handleSubmit}
                                 isLoading={login.isLoading}
                                 rememberId={login.rememberId}
                                 onRememberIdChange={login.onRememberIdChange}
+                                failureCount={login.failureCount}
+                                isLoginLocked={login.isLoginLocked}
+                                onClearLoginError={login.clearLoginError}
+                                onRetryAfterApproval={login.retryAfterApproval}
                             />
                         </Box>
                     </Box>

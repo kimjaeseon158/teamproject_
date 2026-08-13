@@ -4,6 +4,7 @@ import { setAccessToken } from "../../../services/api/token";
 import { adminLoginAPI, userLoginAPI } from "../api/loginApi";
 import { validation } from "../utils/validation";
 import { ERROR_MESSAGES, getErrorMessage } from "../../../constants/errorMessages";
+import { clearLoginFailures, incrementLoginFailures } from "../utils/loginFailureStorage";
 
 export default function useLoginSubmit({
   navigate,
@@ -19,6 +20,8 @@ export default function useLoginSubmit({
   storageKey,
   toast,
   values,
+  onFailureCountChange,
+  clearPassword,
 }) {
   const [fadeOut, setFadeOut] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,15 +52,11 @@ export default function useLoginSubmit({
 
       if (!response?.success) {
         const message = response?.message || ERROR_MESSAGES.login.invalidCredentials;
+        if (role === "user" && response?.status === 400) {
+          onFailureCountChange(incrementLoginFailures(values.id));
+        }
         setLoginError(message);
-        toast({
-          title: "로그인 실패",
-          description: message,
-          status: "error",
-          duration: 3000,
-          isClosable: true,
-          position: "top",
-        });
+        clearPassword();
         setIsLoading(false);
         return;
       }
@@ -69,6 +68,11 @@ export default function useLoginSubmit({
       }
 
       setAccessToken(response.access);
+
+      if (role === "user") {
+        clearLoginFailures(values.id);
+        onFailureCountChange(0);
+      }
 
       if (rememberId) {
         localStorage.setItem(storageKey, values.id);
@@ -111,6 +115,7 @@ export default function useLoginSubmit({
       console.error("로그인 오류", err);
       const message = getErrorMessage(err, ERROR_MESSAGES.login.failed);
       setLoginError(message);
+      clearPassword();
       toast({
         title: "연결 오류",
         description: message,

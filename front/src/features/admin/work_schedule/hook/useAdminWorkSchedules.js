@@ -14,25 +14,15 @@ export default function useAdminWorkSchedules() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [copying, setCopying] = useState(false);
+  const [pendingWorkDate, setPendingWorkDate] = useState("");
 
   const load = useCallback(async (targetDate = date) => {
     setLoading(true);
     try {
       const response = await fetchAdminWorkSchedules(targetDate, { toast });
-      const previousDate = addDaysToDateValue(targetDate, -1);
-      if (response && !response.dates?.includes(previousDate)) {
-        const previousWeek = await fetchAdminWorkSchedules(previousDate, { toast });
-        const previousByUser = new Map(
-          (previousWeek?.users || []).map((user) => [user.user_uuid, user.days?.[previousDate] || []])
-        );
-        response.users = (response.users || []).map((user) => ({
-          ...user,
-          days: { ...user.days, [previousDate]: previousByUser.get(user.user_uuid) || [] },
-        }));
-        response.dates = [previousDate, ...(response.dates || [])];
-      }
       setData(response || { dates: [], users: [] });
       setDeleted([]);
+      setPendingWorkDate("");
     } catch (error) {
       toast({ title: "주간 근무표 조회에 실패했습니다.", description: error.message, status: "error" });
     } finally {
@@ -47,6 +37,7 @@ export default function useAdminWorkSchedules() {
   };
 
   const upsertSchedule = ({ userUuid, workDate, schedule }) => {
+    setPendingWorkDate((current) => current || workDate);
     setData((current) => ({
       ...current,
       users: current.users.map((user) => {
@@ -78,6 +69,7 @@ export default function useAdminWorkSchedules() {
   };
 
   const removeSchedule = ({ userUuid, workDate, schedule }) => {
+    setPendingWorkDate((current) => current || workDate);
     if (schedule.schedule_uuid) {
       setDeleted((current) => Array.from(new Set([...current, schedule.schedule_uuid])));
     }
@@ -88,8 +80,8 @@ export default function useAdminWorkSchedules() {
         days: {
           ...user.days,
           [workDate]: (user.days?.[workDate] || []).filter((item) =>
-            (item.schedule_uuid || item.__client_uuid) !==
-            (schedule.schedule_uuid || schedule.__client_uuid)
+            (item.schedule_uuid || item.__client_uuid || item.__draft_id) !==
+            (schedule.schedule_uuid || schedule.__client_uuid || schedule.__draft_id)
           ),
         },
       }),
@@ -117,7 +109,7 @@ export default function useAdminWorkSchedules() {
 
   const changeCount = changes.create.length + changes.update.length + changes.delete.length;
 
-  const copyPreviousDay = async (mode = "keep") => {
+  const copyPreviousDay = async (mode = "replace") => {
     const previousDate = addDaysToDateValue(date, -1);
     setCopying(true);
     try {
@@ -129,6 +121,7 @@ export default function useAdminWorkSchedules() {
       );
 
       if (mode === "replace") {
+        setPendingWorkDate((current) => current || date);
         const persistedTargetUuids = data.users.flatMap((user) =>
           (user.days?.[date] || []).map((item) => item.schedule_uuid).filter(Boolean)
         );
@@ -192,9 +185,10 @@ export default function useAdminWorkSchedules() {
     if (!changeCount) return;
     setSaving(true);
     try {
-      const response = await saveAdminWorkSchedules({ date, ...changes }, { toast });
-      setData(response || { dates: [], users: [] });
+      await saveAdminWorkSchedules({ date: pendingWorkDate || date, ...changes }, { toast });
       setDeleted([]);
+      setPendingWorkDate("");
+      await load(date);
       toast({ title: "주간 근무표를 저장했습니다.", status: "success" });
     } catch (error) {
       toast({ title: "주간 근무표 저장에 실패했습니다.", description: error.message, status: "error" });
@@ -205,6 +199,7 @@ export default function useAdminWorkSchedules() {
 
   return {
     changeCount,
+    changeDate: pendingWorkDate,
     copying,
     copyEmployeePrevious,
     copyPreviousDay,

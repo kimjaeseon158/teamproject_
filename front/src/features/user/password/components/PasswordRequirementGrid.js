@@ -14,8 +14,8 @@ export default function PasswordRequirementGrid({ checks }) {
         columnGap={4}
         rowGap={2}
       >
-        <PasswordCheck isValid={checks.isInitialPasswordValid}>
-          초기 비밀번호 확인
+        <PasswordCheck isValid={checks.hasCurrentPassword}>
+          현재 비밀번호 입력
         </PasswordCheck>
         <PasswordCheck isValid={checks.minLength}>8자 이상</PasswordCheck>
         <PasswordCheck isValid={checks.hasLetter}>영문 포함</PasswordCheck>

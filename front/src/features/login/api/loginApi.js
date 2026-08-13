@@ -4,6 +4,7 @@ import { ERROR_MESSAGES, getErrorMessage } from "../../../constants/errorMessage
 const normalizeLoginError = (error) => ({
   success: false,
   message: getErrorMessage(error, ERROR_MESSAGES.login.invalidCredentials),
+  status: error?.status,
 });
 
 export const adminLoginAPI = async (id, password, admin_code) => {

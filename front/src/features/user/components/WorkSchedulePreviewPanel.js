@@ -14,6 +14,7 @@ import {
   InputGroup,
   InputLeftElement,
   Select,
+  SimpleGrid,
   Spinner,
   Table,
   Tbody,
@@ -33,26 +34,52 @@ import { fetchUserWorkSchedule } from "../api/userWorkSchedule";
 import { addDaysToDateValue, toLocalDateValue } from "../../common/utils/dateValue";
 
 const statusColor = { DAY: "green", NIGHT: "blue", OFF: "gray", TRAINING: "orange" };
+const PAGE_SIZE = 8;
+const getMonthValue = (dateValue) => dateValue?.slice(0, 7) || "";
+const getMonthWeeks = (monthValue) => {
+  if (!monthValue) return [];
+  const [year, month] = monthValue.split("-").map(Number);
+  const firstDay = `${monthValue}-01`;
+  const lastDay = toLocalDateValue(new Date(year, month, 0));
+  const firstWeekday = new Date(`${firstDay}T00:00:00`).getDay();
+  const daysToMonday = (8 - firstWeekday) % 7;
+  const firstMonday = addDaysToDateValue(firstDay, daysToMonday);
+  const weeks = [];
+  for (let monday = firstMonday; monday <= lastDay; monday = addDaysToDateValue(monday, 7)) {
+    weeks.push({ start: monday, end: addDaysToDateValue(monday, 6) });
+  }
+  return weeks;
+};
+const addMonths = (monthValue, amount) => {
+  const [year, month] = monthValue.split("-").map(Number);
+  return toLocalDateValue(new Date(year, month - 1 + amount, 1)).slice(0, 7);
+};
 
-function ScheduleItems({ items, compact = false, dark = false }) {
+function ScheduleItems({ items, compact = false, dark = false, horizontal = false }) {
   if (!items.length) return <Text fontSize="xs" color="gray.400">-</Text>;
+  const Container = horizontal && items.length > 1 ? SimpleGrid : VStack;
+  const containerProps = horizontal && items.length > 1
+    ? { columns: 2, spacing: 1 }
+    : { align: "stretch", spacing: compact ? 1 : 2 };
   return (
-    <VStack align="stretch" spacing={compact ? 1 : 2}>
+    <Container {...containerProps}>
       {items.map((item, index) => (
         <Box
           key={`${item.status}-${item.work_place}-${item.work_place_detail}-${index}`}
-          px={compact ? 1.5 : 2}
-          py={compact ? 1 : 2}
+          px={horizontal && items.length > 1 ? 1.5 : compact ? 1.5 : 2}
+          py={horizontal ? 1.5 : compact ? 1 : 2}
           borderRadius="md"
           bg={dark
             ? ({ DAY: "#4a3a18", NIGHT: "#12345a", OFF: "#29313b", TRAINING: "#173f31" }[item.status] || "#29313b")
             : compact ? "transparent" : `${statusColor[item.status] || "gray"}.50`}
           color={dark ? "white" : undefined}
-          minH={dark ? "62px" : undefined}
+          minW={0}
+          minH={dark ? "62px" : horizontal ? "58px" : undefined}
           display={dark ? "flex" : undefined}
           flexDirection={dark ? "column" : undefined}
           justifyContent={dark ? "center" : undefined}
           textAlign={dark ? "center" : undefined}
+          title={!dark ? [item.status_label, item.work_place, item.work_place_detail].filter(Boolean).join(" · ") : undefined}
         >
           {dark ? (
             <>
@@ -67,67 +94,59 @@ function ScheduleItems({ items, compact = false, dark = false }) {
                 <Badge colorScheme={statusColor[item.status] || "gray"} fontSize="9px" px={1}>{item.status_label}</Badge>
                 <Text fontSize="11px" fontWeight="800" noOfLines={1}>{item.work_place || "-"}</Text>
               </HStack>
-              {item.work_place_detail && <Text mt={0.5} fontSize="9px" color="gray.500" noOfLines={1}>{item.work_place_detail}</Text>}
+              {item.work_place_detail && <Text mt={0.5} fontSize="12px" lineHeight="1.35" color="gray.700" fontWeight="600" noOfLines={2}>{item.work_place_detail}</Text>}
             </>
           ) : (
             <>
-              <Badge colorScheme={statusColor[item.status] || "gray"}>{item.status_label}</Badge>
-              {item.work_place && <Text mt={1} fontSize="xs" fontWeight="700">{item.work_place}</Text>}
-              {item.work_place_detail && <Text fontSize="10px" color="gray.600">{item.work_place_detail}</Text>}
+              <HStack spacing={2} minW={0} align="center">
+                <Badge flex="0 0 auto" minW="30px" textAlign="center" px={1.5} py={0.5} colorScheme={statusColor[item.status] || "gray"} fontSize="11px" lineHeight="1.2">{item.status_label}</Badge>
+                {item.work_place && <Text minW={0} fontSize="13px" lineHeight="1.25" fontWeight="800" noOfLines={1}>{item.work_place}</Text>}
+              </HStack>
+              {item.work_place_detail && <Text mt={1.5} pt={1} borderTopWidth="1px" borderColor={`${statusColor[item.status] || "gray"}.200`} fontSize="12px" lineHeight="1.4" color="gray.700" fontWeight="600" noOfLines={2}>{item.work_place_detail}</Text>}
             </>
           )}
         </Box>
       ))}
-    </VStack>
+    </Container>
   );
 }
 
-const getDayMeta = (target, selected) => {
+const getDayMeta = (target, today) => {
   const day = new Date(`${target}T00:00:00`).getDay();
   const weekday = ["일", "월", "화", "수", "목", "금", "토"][day];
-  const prefix = target === selected
-    ? "오늘 · "
-    : target === addDaysToDateValue(selected, 1)
-      ? "내일 · "
-      : "";
+  const prefix = target === today ? "오늘 · " : "";
   return {
     label: `${prefix}${weekday} ${target.slice(5).replace("-", "/")}`,
-    bg: day === 0 ? "red.50" : day === 6 ? "blue.50" : target === selected ? "blue.50" : "gray.50",
-    color: day === 0 ? "red.600" : day === 6 ? "blue.600" : target === selected ? "blue.700" : "gray.700",
+    bg: target === today ? "cyan.50" : "gray.50",
+    color: target === today ? "cyan.800" : day === 0 ? "red.600" : day === 6 ? "blue.600" : "gray.700",
   };
 };
 
-function DesktopTable({ dates, selectedDate, users }) {
+function DesktopTable({ dates, users }) {
+  const today = toLocalDateValue();
   return (
     <Box overflowX="auto" borderWidth="1px" borderRadius="lg">
-      <Table size="sm" minW="1380px" sx={{ tableLayout: "fixed" }}>
+      <Table size="sm" minW="1180px" sx={{ tableLayout: "fixed" }}>
         <Thead bg="gray.100">
           <Tr>
-            <Th w="140px">직원</Th>
-            <Th w="170px">근무지</Th>
-            <Th w="180px">세부 근무지</Th>
+             <Th w="140px">직원</Th>
             {dates.map((date) => {
-              const meta = getDayMeta(date, selectedDate);
-              return <Th key={date} textAlign="center" color={meta.color} bg={date === selectedDate ? "blue.50" : meta.bg}>{meta.label}</Th>;
+              const meta = getDayMeta(date, today);
+              const baseline = date === today;
+              return <Th key={date} textAlign="center" color={meta.color} bg={meta.bg} borderTopWidth={baseline ? "3px" : undefined} borderLeftWidth={baseline ? "2px" : undefined} borderRightWidth={baseline ? "2px" : undefined} borderColor={baseline ? "cyan.400" : undefined}>{meta.label}</Th>;
             })}
           </Tr>
         </Thead>
         <Tbody>
           {users.map((user, userIndex) => {
-            const schedules = dates.flatMap((target) => user.days?.[target] || []);
-            const places = Array.from(new Set(schedules.map((item) => item.work_place).filter(Boolean)));
-            const details = Array.from(new Set(schedules.map((item) => item.work_place_detail).filter(Boolean)));
             return (
               <Tr key={`${user.user_name}-${userIndex}`} _hover={{ bg: "gray.50" }}>
                 <Td fontWeight="900">{user.user_name}</Td>
-                <Td fontSize="sm" color="gray.700" noOfLines={2}>{places.join(" / ") || "-"}</Td>
-                <Td fontSize="sm" color="gray.600" noOfLines={2}>{details.join(" / ") || "-"}</Td>
                 {dates.map((date) => {
-                  const meta = getDayMeta(date, selectedDate);
-                  const day = new Date(`${date}T00:00:00`).getDay();
+                  const baseline = date === today;
                   return (
-                    <Td key={date} p={1.5} h="70px" verticalAlign="middle" bg={date === selectedDate || [0, 6].includes(day) ? meta.bg : "white"}>
-                      <ScheduleItems items={user.days?.[date] || []} />
+                    <Td key={date} p={1.5} h="72px" verticalAlign="middle" bg={baseline ? "cyan.50" : "white"} borderLeftWidth={baseline ? "2px" : undefined} borderRightWidth={baseline ? "2px" : undefined} borderColor={baseline ? "cyan.300" : undefined}>
+                       <ScheduleItems items={user.days?.[date] || []} horizontal />
                     </Td>
                   );
                 })}
@@ -138,6 +157,16 @@ function DesktopTable({ dates, selectedDate, users }) {
       </Table>
     </Box>
   );
+}
+
+function Pagination({ currentPage, totalPages, totalCount, onChange }) {
+  if (totalPages <= 1) return null;
+  return <HStack justify="center" py={3} borderTopWidth="1px" position="relative">
+    <Text position="absolute" left={4} fontSize="xs" color="gray.500">{(currentPage - 1) * PAGE_SIZE + 1}-{Math.min(currentPage * PAGE_SIZE, totalCount)} / {totalCount}명</Text>
+    <Button size="sm" variant="ghost" isDisabled={currentPage === 1} onClick={() => onChange(currentPage - 1)}>이전</Button>
+    {Array.from({ length: totalPages }, (_, index) => index + 1).slice(Math.max(0, currentPage - 3), Math.max(5, currentPage + 2)).map((page) => <Button key={page} size="sm" minW="32px" px={2} colorScheme="blue" variant={page === currentPage ? "solid" : "ghost"} onClick={() => onChange(page)}>{page}</Button>)}
+    <Button size="sm" variant="ghost" isDisabled={currentPage === totalPages} onClick={() => onChange(currentPage + 1)}>다음</Button>
+  </HStack>;
 }
 
 function MobileCards({ dates, selectedDate, users }) {
@@ -162,9 +191,9 @@ export default function WorkSchedulePreviewPanel({ isOpen, onClose, selectedDate
   const [keyword, setKeyword] = useState("");
   const [appliedKeyword, setAppliedKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const [workPlaceOptions, setWorkPlaceOptions] = useState([]);
-  const [selectedWorkPlace, setSelectedWorkPlace] = useState("");
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedMonth, setSelectedMonth] = useState(getMonthValue(selectedDate?.formatted || toLocalDateValue()));
 
   const load = useCallback(async (targetDate, filterType = "", filterKeyword = "") => {
     if (!targetDate) return;
@@ -182,50 +211,9 @@ export default function WorkSchedulePreviewPanel({ isOpen, onClose, selectedDate
           },
           { toast }
         );
-      const targetDates = Array.from({ length: 7 }, (_, index) =>
-        addDaysToDateValue(targetDate, index - 5)
-      );
-      let missingDates = targetDates.filter((item) => !(response?.dates || []).includes(item));
-      const adjacentResponses = [];
-      let adjacentRequestCount = 0;
-      while (missingDates.length && adjacentRequestCount < 2) {
-        const beforeCount = missingDates.length;
-        const adjacentResponse = await fetchUserWorkSchedule({ date: missingDates[0] }, { toast });
-        adjacentResponses.push(adjacentResponse);
-        const receivedDates = new Set(adjacentResponse?.dates || []);
-        missingDates = missingDates.filter((item) => !receivedDates.has(item));
-        adjacentRequestCount += 1;
-        if (missingDates.length === beforeCount) break;
-      }
-      const occurrenceKeys = (users = []) => {
-        const counts = new Map();
-        return users.map((user) => {
-          const count = counts.get(user.user_name) || 0;
-          counts.set(user.user_name, count + 1);
-          return [`${user.user_name}::${count}`, user];
-        });
-      };
-      const extraSources = adjacentResponses.map((item) => ({
-        dates: new Set(item?.dates || []),
-        users: new Map(occurrenceKeys(item?.users)),
-      }));
-      const users = occurrenceKeys(response?.users).map(([key, user]) => ({
-        ...user,
-        days: targetDates.reduce((days, target) => {
-          if (days[target] !== undefined) return days;
-          const source = extraSources.find((item) => item.dates.has(target));
-          return { ...days, [target]: source?.users.get(key)?.days?.[target] || [] };
-        }, { ...user.days }),
-      }));
-      setData({ ...(response || { dates: [] }), users });
-      if (!filterKeyword.trim()) {
-        setWorkPlaceOptions(Array.from(new Set(
-          users.flatMap((user) => targetDates.flatMap((target) =>
-            (user.days?.[target] || []).map((item) => item.work_place).filter(Boolean)
-          ))
-        )));
-      }
+      setData(response || { dates: [], users: [] });
       setAppliedKeyword(filterKeyword.trim());
+      setCurrentPage(1);
     } catch (error) {
       toast({ title: "근무표 조회에 실패했습니다.", description: error.message, status: "error" });
     } finally {
@@ -236,16 +224,13 @@ export default function WorkSchedulePreviewPanel({ isOpen, onClose, selectedDate
   useEffect(() => {
     const nextDate = selectedDate?.formatted || toLocalDateValue();
     setDate(nextDate);
+    setSelectedMonth(getMonthValue(nextDate));
     setKeyword("");
     setAppliedKeyword("");
-    setSelectedWorkPlace("");
     if (isOpen) load(nextDate);
   }, [isOpen, load, selectedDate?.formatted]);
 
-  const displayedDates = useMemo(
-    () => Array.from({ length: 7 }, (_, index) => addDaysToDateValue(date, index - 5)),
-    [date]
-  );
+  const displayedDates = useMemo(() => data.dates || [], [data.dates]);
   const visibleUsers = useMemo(() => {
     const users = data.users || [];
     if (statusFilter === "ALL") return users;
@@ -261,21 +246,34 @@ export default function WorkSchedulePreviewPanel({ isOpen, onClose, selectedDate
     0
   ), [displayedDates, visibleUsers]);
   const rangeLabel = `${displayedDates[0]?.slice(5).replace("-", ".")} — ${displayedDates[6]?.slice(5).replace("-", ".")}`;
+  const totalPages = Math.max(1, Math.ceil(visibleUsers.length / PAGE_SIZE));
+  const monthWeeks = useMemo(() => getMonthWeeks(selectedMonth), [selectedMonth]);
+  const pagedUsers = useMemo(() => visibleUsers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE), [currentPage, visibleUsers]);
+
+  useEffect(() => { setCurrentPage(1); }, [statusFilter]);
+  useEffect(() => { setCurrentPage((page) => Math.min(page, totalPages)); }, [totalPages]);
 
   const handleSearch = () => {
-    if (searchType !== "work_place") setSelectedWorkPlace("");
     load(date, searchType, keyword);
   };
-  const handleWorkPlaceFilter = (workPlace) => {
-    setSelectedWorkPlace(workPlace);
-    setSearchType("work_place");
-    setKeyword(workPlace);
-    load(date, workPlace ? "work_place" : "", workPlace);
+  const selectMonth = (monthValue) => {
+    const firstMonday = getMonthWeeks(monthValue)[0]?.start;
+    if (!firstMonday) return;
+    setSelectedMonth(monthValue);
+    setDate(firstMonday);
+    load(firstMonday, searchType, keyword);
   };
-  const moveDate = (amount) => {
-    const nextDate = addDaysToDateValue(date, amount);
-    setDate(nextDate);
-    load(nextDate, searchType, keyword);
+  const selectWeek = (weekStart) => {
+    setDate(weekStart);
+    load(weekStart, searchType, keyword);
+  };
+  const moveMonth = (amount) => selectMonth(addMonths(selectedMonth, amount));
+  const moveToCurrentWeek = () => {
+    const today = toLocalDateValue();
+    const weekday = new Date(`${today}T00:00:00`).getDay();
+    const monday = addDaysToDateValue(today, -((weekday + 6) % 7));
+    setSelectedMonth(getMonthValue(today));
+    selectWeek(monday);
   };
 
   return (
@@ -289,11 +287,14 @@ export default function WorkSchedulePreviewPanel({ isOpen, onClose, selectedDate
             {isMobile ? (
               <>
                 <HStack justify="center" flexWrap="wrap">
-                <Button aria-label="이전 날짜" variant="outline" onClick={() => moveDate(-1)}><FiChevronLeft /></Button>
+                <Button aria-label="이전 달" variant="outline" onClick={() => moveMonth(-1)}><FiChevronLeft /></Button>
                 <Text minW={{ base: "160px", md: "260px" }} textAlign="center" fontSize={{ base: "lg", md: "2xl" }} fontWeight="900">{rangeLabel}</Text>
-                <Button aria-label="다음 날짜" variant="outline" onClick={() => moveDate(1)}><FiChevronRight /></Button>
-                <Button variant="outline" onClick={() => { const today = toLocalDateValue(); setDate(today); load(today, searchType, keyword); }}>오늘</Button>
-                <Input type="date" value={date} onChange={(event) => setDate(event.target.value)} maxW="160px" bg="white" />
+                <Button aria-label="다음 달" variant="outline" onClick={() => moveMonth(1)}><FiChevronRight /></Button>
+                <Button variant="outline" onClick={moveToCurrentWeek}>이번 주</Button>
+                <Input type="month" value={selectedMonth} onChange={(event) => selectMonth(event.target.value)} maxW="160px" bg="white" />
+                <Select maxW="190px" value={data.week_start || date} onChange={(event) => selectWeek(event.target.value)} bg="white">
+                  {monthWeeks.map((week, index) => <option key={week.start} value={week.start}>{index + 1}주차 · {week.start.slice(5)}~{week.end.slice(5)}</option>)}
+                </Select>
               </HStack>
                 <HStack align="stretch" flexDirection="column">
                   <Select value={searchType} onChange={(event) => setSearchType(event.target.value)} bg="white">
@@ -319,43 +320,43 @@ export default function WorkSchedulePreviewPanel({ isOpen, onClose, selectedDate
               </>
             ) : (
               <>
-                <HStack justify="space-between" align="flex-start">
-                  <Box>
-                    <HStack>
-                      <Text fontSize="lg" fontWeight="900">읽기 전용 근무표</Text>
-                      <Badge colorScheme="blue" borderRadius="full">DB 데이터</Badge>
+                <HStack justify="space-between" align="flex-end" spacing={4} flexWrap="wrap">
+                  <Box flex="0 0 auto"><HStack><Text fontSize="lg" fontWeight="900">주간 근무표</Text><Badge colorScheme="cyan">오늘 기준</Badge></HStack><Text mt={1} fontSize="sm" color="gray.500">{rangeLabel} · 직원 {visibleUsers.length}명 · 일정 {scheduleCount}건</Text></Box>
+                  <HStack spacing={2} flex="1" justify="flex-end" flexWrap="wrap">
+                    <HStack spacing={0} borderWidth="1px" borderRadius="md" overflow="hidden" bg="white">
+                      <Button size="sm" borderRadius="0" variant="ghost" aria-label="이전 달" onClick={() => moveMonth(-1)}><FiChevronLeft /></Button>
+                      <Input size="sm" type="month" value={selectedMonth} onChange={(event) => selectMonth(event.target.value)} w="135px" borderWidth="0" borderLeftWidth="1px" borderRightWidth="1px" borderRadius="0" />
+                      <Button size="sm" borderRadius="0" variant="ghost" aria-label="다음 달" onClick={() => moveMonth(1)}><FiChevronRight /></Button>
                     </HStack>
-                    <Text mt={1} fontSize="sm" color="gray.500">저장된 예정 근무표를 직원·근무지별로 확인합니다.</Text>
-                  </Box>
-                  <HStack>
-                    <Input type="date" value={date} onChange={(event) => setDate(event.target.value)} maxW="170px" />
-                    <Button leftIcon={<RepeatIcon />} colorScheme="blue" onClick={() => load(date)} isLoading={loading}>조회</Button>
+                    <Button size="sm" variant="outline" onClick={moveToCurrentWeek}>이번 주</Button>
+                    <HStack spacing={0} borderWidth="1px" borderRadius="md" overflow="hidden" bg="white">
+                      <Select size="sm" w="90px" borderWidth="0" borderRightWidth="1px" borderRadius="0" value={searchType} onChange={(event) => setSearchType(event.target.value)}><option value="user_name">직원</option><option value="work_place">근무지</option><option value="work_place_detail">세부</option></Select>
+                      <InputGroup size="sm" w="165px"><InputLeftElement pointerEvents="none"><FiSearch color="#A0AEC0" /></InputLeftElement><Input borderWidth="0" value={keyword} onChange={(event) => setKeyword(event.target.value)} onKeyDown={(event) => event.key === "Enter" && handleSearch()} placeholder="검색" /></InputGroup>
+                    </HStack>
+                    <HStack spacing={0} borderWidth="1px" borderRadius="md" overflow="hidden">{[{ value: "ALL", label: "전체" }, { value: "DAY", label: "주간" }, { value: "NIGHT", label: "야간" }, { value: "OFF", label: "휴무" }, { value: "TRAINING", label: "교육" }].map((item) => <Button key={item.value} size="sm" borderRadius="0" px={2} colorScheme="blue" variant={statusFilter === item.value ? "solid" : "ghost"} onClick={() => setStatusFilter(item.value)}>{item.label}</Button>)}</HStack>
+                    <Button size="sm" colorScheme="blue" onClick={handleSearch} isLoading={loading}>조회</Button>
                   </HStack>
                 </HStack>
-                <HStack spacing={2} overflowX="auto" pb={1}>
-                  <Button
-                    size="sm"
-                    flex="0 0 auto"
-                    borderRadius="full"
-                    colorScheme="blue"
-                    variant={!selectedWorkPlace ? "solid" : "outline"}
-                    onClick={() => handleWorkPlaceFilter("")}
-                  >전체</Button>
-                  {workPlaceOptions.map((workPlace) => (
-                    <Button
-                      key={workPlace}
-                      size="sm"
-                      flex="0 0 auto"
-                      borderRadius="full"
-                      colorScheme="blue"
-                      variant={selectedWorkPlace === workPlace ? "solid" : "outline"}
-                      onClick={() => handleWorkPlaceFilter(workPlace)}
-                    >{workPlace}</Button>
-                  ))}
-                </HStack>
-                <HStack justify="space-between">
-                  <Text fontSize="md" fontWeight="900">전체 근무표</Text>
-                  <Text fontSize="sm" color="gray.500">{visibleUsers.length}명</Text>
+                <HStack justify="space-between" align="center" spacing={4}>
+                  <HStack spacing={1.5} overflowX="auto" pb={1}>
+                    <Text flex="0 0 auto" mr={1} fontSize="xs" color="gray.500">주차 선택</Text>
+                    {monthWeeks.map((week, index) => {
+                      const active = data.week_start === week.start;
+                      const today = toLocalDateValue();
+                      const current = today >= week.start && today <= week.end;
+                      return <Button key={week.start} size="sm" h="42px" flex="0 0 auto" px={3} colorScheme={active ? "blue" : current ? "cyan" : "gray"} variant={active ? "solid" : "outline"} onClick={() => selectWeek(week.start)}>
+                        <Box textAlign="left"><Text fontSize="11px" fontWeight="800">{index + 1}주차 {current && <Badge ml={1} colorScheme="cyan" fontSize="8px">이번 주</Badge>}</Text><Text fontSize="9px" opacity={0.8}>{week.start.slice(5).replace("-", ".")}—{week.end.slice(5).replace("-", ".")}</Text></Box>
+                      </Button>;
+                    })}
+                  </HStack>
+                  <HStack flex="0 0 auto" spacing={2}>
+                    {[{ label: "주간", scheme: "green" }, { label: "야간", scheme: "blue" }, { label: "휴무", scheme: "gray" }, { label: "교육", scheme: "orange" }].map((item) => (
+                      <HStack key={item.label} minW="76px" justify="center" spacing={1.5} px={3} py={2} borderRadius="md" bg={`${item.scheme}.50`} borderLeftWidth="4px" borderColor={`${item.scheme}.300`}>
+                        <Box w="9px" h="9px" borderRadius="full" bg={`${item.scheme}.400`} />
+                        <Text fontSize="11px" fontWeight="800" color={`${item.scheme}.700`}>{item.label}</Text>
+                      </HStack>
+                    ))}
+                  </HStack>
                 </HStack>
               </>
             )}
@@ -369,7 +370,10 @@ export default function WorkSchedulePreviewPanel({ isOpen, onClose, selectedDate
             ) : isMobile ? (
               <MobileCards dates={displayedDates} selectedDate={date} users={visibleUsers} />
             ) : (
-              <DesktopTable dates={displayedDates} selectedDate={date} users={visibleUsers} />
+              <Box borderWidth="1px" borderRadius="lg" overflow="hidden">
+                <DesktopTable dates={displayedDates} users={pagedUsers} />
+                <Pagination currentPage={currentPage} totalPages={totalPages} totalCount={visibleUsers.length} onChange={setCurrentPage} />
+              </Box>
             )}
           </VStack>
         </DrawerBody>

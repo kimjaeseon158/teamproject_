@@ -75,7 +75,7 @@ export default function PasswordChangeModal({ form }) {
         </Flex>
 
         <Text color="gray.600" fontSize="sm" lineHeight="1.65" mb={5}>
-          초기 비밀번호 1234를 확인한 뒤 새 비밀번호로 변경해주세요.
+          로그인에 사용한 생년월일 6자리를 현재 비밀번호로 입력한 뒤 새 비밀번호로 변경해 주세요.
         </Text>
 
         <Flex direction="column" gap={4}>

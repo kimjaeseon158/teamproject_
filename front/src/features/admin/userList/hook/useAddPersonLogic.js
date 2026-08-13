@@ -8,7 +8,6 @@ export function useAddPersonLogic(onSave, onClose, toast) {
     resident_number: "",
     phone_number: "010-",
     user_id: "",
-    password: "",
     mobile_carrier: "",
     address: "",
     address_detail: "",
@@ -59,13 +58,12 @@ export function useAddPersonLogic(onSave, onClose, toast) {
       resident_number,
       phone_number,
       user_id,
-      password,
       mobile_carrier,
       address,
       address_detail,
     } = formData;
 
-    if (!user_name || !resident_number || !phone_number) {
+    if (!user_name || !resident_number || !phone_number || !user_id) {
       notify({
         title: "필수 항목 누락",
         description: "이름, 주민등록번호, 전화번호를 입력해주세요.",
@@ -74,10 +72,18 @@ export function useAddPersonLogic(onSave, onClose, toast) {
       return;
     }
 
+    if (resident_number.replace(/\D/g, "").length !== 13) {
+      notify({
+        title: "주민등록번호 확인",
+        description: "주민등록번호 13자리를 모두 입력해 주세요.",
+        status: "warning",
+      });
+      return;
+    }
+
     const payload = {
       user_name,
       user_id,
-      password,
       phone_number,
       mobile_carrier,
       resident_number,
@@ -87,7 +93,7 @@ export function useAddPersonLogic(onSave, onClose, toast) {
     try {
       const result = await AddUser_PostData(payload, { toast });
       if (result?.success) {
-        onSave(payload);
+        onSave(result?.user_data?.[0] || payload);
         onClose();
         notify({
           title: "등록 완료",

@@ -11,7 +11,7 @@ from .models import (
     EmployeeWorkSchedule,
 )
 from .api_views.shared import normalize_work_type
-from .encryption.crypto import resident_number_blind_index
+from .encryption.crypto import normalize_resident_number, resident_number_blind_index
 
 DEFAULT_WORK_PLACE = "\ubbf8\uc9c0\uc815"  # \ubbf8\uc9c0\uc815 = "미지정"
 
@@ -22,6 +22,11 @@ class User_Login_InfoSerializer(serializers.ModelSerializer):
         exclude = ("resident_number_hash",)
 
     def validate_resident_number(self, value):
+        normalized = normalize_resident_number(value)
+        if len(normalized) != 13:
+            raise serializers.ValidationError(
+                "Resident number must contain exactly 13 digits."
+            )
         resident_hash = resident_number_blind_index(value)
         queryset = User_Login_Info.objects.filter(resident_number_hash=resident_hash)
         if self.instance is not None:
@@ -34,6 +39,9 @@ class User_Login_InfoSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
+        resident_number = validated_data["resident_number"]
+        validated_data["password"] = normalize_resident_number(resident_number)[:6]
+        validated_data["must_change_password"] = True
         user = super().create(validated_data)
         WorkPlaceRate.objects.get_or_create(
             user=user,

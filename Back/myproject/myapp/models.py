@@ -146,6 +146,38 @@ class Admin_Login_Info(models.Model):
 
 # 수입 매출 관련 테이블
 
+class PasswordResetRequest(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        APPROVED = "APPROVED", "Approved"
+
+    request_uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        User_Login_Info,
+        to_field="user_uuid",
+        on_delete=models.CASCADE,
+        related_name="password_reset_requests",
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    requested_at = models.DateTimeField(auto_now_add=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["requested_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=Q(status="PENDING"),
+                name="unique_pending_password_reset_per_user",
+            )
+        ]
+
+
 class AdminWorkPlace(models.Model):
     admin_work_place_uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     admin = models.ForeignKey(

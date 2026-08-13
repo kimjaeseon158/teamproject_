@@ -9,6 +9,7 @@ from .user_management import (
     UserInfoUpdateAPIView,
     UserInfoAddAPIView,
     UserInfoFilteringAPIView,
+    AdminPasswordResetRequestAPIView,
 )
 from .finance import (
     FinanceTableDateFilteredAPIView,
@@ -40,6 +41,7 @@ __all__ = [
     "UserInfoUpdateAPIView",
     "UserInfoAddAPIView",
     "UserInfoFilteringAPIView",
+    "AdminPasswordResetRequestAPIView",
     "FinanceTableDateFilteredAPIView",
     "IncomeDateFilteredAPIView",
     "ExpenseDateFilteredAPIView",

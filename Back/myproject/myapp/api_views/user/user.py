@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from ...models import UserRefreshToken
+from ...models import PasswordResetRequest, UserRefreshToken
 from ...models import WorkPlaceRate
 from ...serializers import UserWorkDaySerializer
 from ...models import User_Login_Info
@@ -23,6 +23,7 @@ from ..token import check_user_credentials
 from ..token import save_or_update_user_refresh_token
 from django.conf import settings
 from rest_framework import status
+from ...encryption.crypto import resident_number_blind_index
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,34 @@ class CheckUserLoginAPIView(APIView):
         )
 
         return response
+
+
+class UserPasswordResetRequestAPIView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    generic_response = {
+        "success": True
+    }
+
+    def post(self, request):
+        user_id = request.data.get("user_id")
+        resident_number = request.data.get("resident_number")
+
+        if user_id and resident_number:
+            try:
+                user = User_Login_Info.objects.get(
+                    user_id=user_id,
+                    resident_number_hash=resident_number_blind_index(resident_number),
+                )
+                PasswordResetRequest.objects.get_or_create(
+                    user=user,
+                    status=PasswordResetRequest.Status.PENDING,
+                )
+            except (User_Login_Info.DoesNotExist, IntegrityError):
+                pass
+
+        return Response(self.generic_response, status=status.HTTP_202_ACCEPTED)
 
 
 class UserWorkPlaceListAPIView(APIView):

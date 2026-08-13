@@ -6,10 +6,12 @@ from .views import (
     UserInfoDeleteAPIView,
     UserInfoUpdateAPIView,
     UserPasswordChangeAPIView,
+    UserPasswordResetRequestAPIView,
     CheckUserLoginAPIView,
     UserInfoFilteringAPIView,
     UserInfoListAPIView,
     UserInfoAddAPIView,
+    AdminPasswordResetRequestAPIView,
     UserWorkPlaceListAPIView,
     TokenRefreshAPIView,
     FinanceTableDateFilteredAPIView,
@@ -51,6 +53,7 @@ urlpatterns = [
     path('admin-logout/',         AdminLogoutAPIView.as_view(),      name='admin-logout'),
     path('check-user-login/',     CheckUserLoginAPIView.as_view(),   name='check-user-login'),
     path('user-password-change/', UserPasswordChangeAPIView.as_view(), name='user-password-change'),
+    path('user-password-reset-request/', UserPasswordResetRequestAPIView.as_view(), name='user-password-reset-request'),
     path('user-logout/',          UserLogoutAPIView.as_view(),       name='user-logout'),
     
     # Dashboard-admin-page
@@ -58,6 +61,7 @@ urlpatterns = [
     path('user-info-delete/',                                   UserInfoDeleteAPIView.as_view(),              name='user-info-delete'),
     path('user-info-update/',                                   UserInfoUpdateAPIView.as_view(),              name='user-info-update'),
     path('user-info-add/',                                      UserInfoAddAPIView.as_view(),                 name='user-info-add'),    
+    path('admin-password-reset-requests/',                      AdminPasswordResetRequestAPIView.as_view(),   name='admin-password-reset-requests'),
     path('user-info-filtering/',                                UserInfoFilteringAPIView.as_view(),           name='user-info-filtering'),
     path('admin-page-workday/',                                 AdminPageWorkDayListAPIView.as_view(),        name='admin-page-workday'),
     path('admin-workday-status-update/',                        AdminWorkDayStatusUpdateAPIView.as_view(),    name='admin-workday-status-update'),

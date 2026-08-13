@@ -13,6 +13,9 @@ import {
   VStack,
   HStack,
   Select,
+  Alert,
+  AlertIcon,
+  Text,
 } from "@chakra-ui/react";
 
 import { useAddPersonLogic } from "../hook/useAddPersonLogic";
@@ -49,7 +52,7 @@ const AddPersonModal = ({ isOpen, onClose, onSave, toast }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered closeOnOverlayClick={false} closeOnEsc={false}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>직원 추가</ModalHeader>
@@ -102,7 +105,7 @@ const AddPersonModal = ({ isOpen, onClose, onSave, toast }) => {
                 </HStack>
               </FormControl>
 
-              <FormControl>
+              <FormControl isRequired>
                 <FormLabel>주소</FormLabel>
                 <Button
                   size="sm"
@@ -138,15 +141,12 @@ const AddPersonModal = ({ isOpen, onClose, onSave, toast }) => {
                 />
               </FormControl>
 
-              <FormControl>
-                <FormLabel>비밀번호</FormLabel>
-                <Input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                />
-              </FormControl>
+              <Alert status="info" borderRadius="md" alignItems="flex-start">
+                <AlertIcon />
+                <Text fontSize="sm">
+                  초기 비밀번호는 주민등록번호 앞 6자리이며, 직원은 최초 로그인 후 반드시 새 비밀번호로 변경해야 합니다.
+                </Text>
+              </Alert>
             </VStack>
           </ModalBody>
 

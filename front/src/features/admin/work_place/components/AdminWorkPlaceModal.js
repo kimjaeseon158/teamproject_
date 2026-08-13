@@ -38,7 +38,7 @@ export default function AdminWorkPlaceModal({
   });
 
   return (
-    <Modal isOpen={isOpen} onClose={modal.handleClose} isCentered size="6xl">
+    <Modal isOpen={isOpen} onClose={modal.handleClose} isCentered size="6xl" closeOnOverlayClick={false} closeOnEsc={false}>
       <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(8px)" />
       <ModalContent borderRadius="2xl" overflow="hidden" maxH="92vh" mx={4}>
         <ModalHeader p={0}>

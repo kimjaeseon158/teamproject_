@@ -7,6 +7,7 @@ import {
   deleteAdminWorkPlace,
   updateAdminWorkPlace,
 } from "../api/adminWorkPlace";
+import { ERROR_MESSAGES, getErrorMessage } from "../../../../constants/errorMessages";
 
 const toForm = (place = {}) => ({
   ...initialRateForm,
@@ -78,7 +79,7 @@ export default function useAdminWorkPlaceModal({
   const handleSubmit = async () => {
     if (!form.work_place.trim()) {
       notify(toast, {
-        title: "근무지명을 입력해주세요.",
+        title: ERROR_MESSAGES.workplace.nameRequired,
         status: "warning",
       });
       return;
@@ -106,7 +107,12 @@ export default function useAdminWorkPlaceModal({
     } catch (err) {
       notify(toast, {
         title: "근무지 저장 중 오류가 발생했습니다.",
-        description: err?.message,
+        description: getErrorMessage(
+          err,
+          isEditMode
+            ? ERROR_MESSAGES.workplace.updateFailed
+            : ERROR_MESSAGES.workplace.createFailed
+        ),
         status: "error",
       });
     } finally {
@@ -135,7 +141,7 @@ export default function useAdminWorkPlaceModal({
     } catch (err) {
       notify(toast, {
         title: "근무지 삭제 중 오류가 발생했습니다.",
-        description: err?.message,
+        description: getErrorMessage(err, ERROR_MESSAGES.workplace.deleteFailed),
         status: "error",
       });
     } finally {

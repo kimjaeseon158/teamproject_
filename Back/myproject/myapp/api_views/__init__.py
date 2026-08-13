@@ -5,6 +5,7 @@ from .token import (
 from .user import (
     CheckUserLoginAPIView,
     UserPasswordChangeAPIView,
+    UserPasswordResetRequestAPIView,
     UserLogoutAPIView,
     UserWorkInfoAPIView,
     UserMonthlyWorkSummaryAPIView,
@@ -19,9 +20,11 @@ from .admin.user_management import (
     UserInfoUpdateAPIView,
     UserInfoAddAPIView,
     UserInfoFilteringAPIView,
+    AdminPasswordResetRequestAPIView,
 )
 from .google import (
     GoogleLoginAPIView,
+    GoogleLogoutAPIView,
     GoogleCallbackAPIView,
     GoogleCalendarEventsAPIView,
     GoogleDriveWorkplaceExcelExportAPIView,
@@ -54,6 +57,7 @@ __all__ = [
     "TokenRefreshAPIView",
     "CheckUserLoginAPIView",
     "UserPasswordChangeAPIView",
+    "UserPasswordResetRequestAPIView",
     "UserLogoutAPIView",
     "UserWorkInfoAPIView",
     "UserMonthlyWorkSummaryAPIView",
@@ -64,7 +68,9 @@ __all__ = [
     "UserInfoUpdateAPIView",
     "UserInfoAddAPIView",
     "UserInfoFilteringAPIView",
+    "AdminPasswordResetRequestAPIView",
     "GoogleLoginAPIView",
+    "GoogleLogoutAPIView",
     "GoogleCallbackAPIView",
     "GoogleCalendarEventsAPIView",
     "GoogleDriveWorkplaceExcelExportAPIView",

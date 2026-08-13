@@ -16,27 +16,25 @@ const Wheel = React.memo(({
   refObj,
   type,
   currentValue,
+  width = "50px",
   onScroll,
   onWheel,
-  onTouchStart,
-  onTouchEnd,
 }) => (
   <Box
     ref={refObj}
     h={`${ITEM_HEIGHT * VISIBLE_COUNT}px`}
-    w="50px"
-    overflowY="hidden"
+    w={width}
+    overflowY="auto"
     onScroll={() => onScroll(type)}
     onWheel={(e) => onWheel(type, e)}
-    onTouchStart={(e) => onTouchStart(type, e)}
-    onTouchEnd={(e) => onTouchEnd(type, e)}
     sx={{
       scrollSnapType: "y mandatory",
       overscrollBehavior: "contain",
       "&::-webkit-scrollbar": { display: "none" },
       WebkitOverflowScrolling: "touch",
-      touchAction: "none",
+      touchAction: "pan-y",
       userSelect: "none",
+      scrollbarWidth: "none",
     }}
   >
     {data.map((item, i) => (
@@ -64,6 +62,7 @@ export default function TimeWheelPicker({
   value = "00:00",
   onChange,
   minuteStep = 10,
+  variant = "default",
 }) {
   const hourRef = useRef(null);
   const minuteRef = useRef(null);
@@ -71,7 +70,6 @@ export default function TimeWheelPicker({
   const lastEmittedValue = useRef(value);
   const scrollTimers = useRef({});
   const wheelLocked = useRef(false);
-  const touchStartY = useRef({});
 
   const baseMinutes = useMemo(() => 
     generateRange(60 / minuteStep, (i) => String(i * minuteStep).padStart(2, "0")),
@@ -80,6 +78,7 @@ export default function TimeWheelPicker({
   const minutesData = useMemo(() => [...baseMinutes, ...baseMinutes, ...baseMinutes], [baseMinutes]);
 
   const [h, m] = useMemo(() => (value || "00:00").split(":"), [value]);
+  const isCompact = variant === "compact";
 
   const getSelectedValueFromScroll = useCallback((ref, data) => {
     if (!ref.current) return null;
@@ -183,35 +182,22 @@ export default function TimeWheelPicker({
     }, 140);
   }, [stepValue]);
 
-  const handleTouchStart = useCallback((type, event) => {
-    touchStartY.current[type] = event.touches[0]?.clientY;
-  }, []);
-
-  const handleTouchEnd = useCallback((type, event) => {
-    const startY = touchStartY.current[type];
-    const endY = event.changedTouches[0]?.clientY;
-    if (startY == null || endY == null) return;
-
-    const diff = startY - endY;
-    if (Math.abs(diff) < 12) return;
-
-    stepValue(type, diff > 0 ? 1 : -1);
-  }, [stepValue]);
-
   return (
     <Box
-      bg="#2c2c2e"
-      borderRadius="10px"
-      p={1}
-      border="1px solid"
-      borderColor="whiteAlpha.300"
+      bg={isCompact ? "transparent" : "#2c2c2e"}
+      borderRadius={isCompact ? "xl" : "10px"}
+      p={isCompact ? 0 : 1}
+      border={isCompact ? "0" : "1px solid"}
+      borderColor={isCompact ? "transparent" : "whiteAlpha.300"}
       w="fit-content"
     >
-      <Box textAlign="center" mb={1}>
-        <Text fontSize="10px" fontWeight="bold" color="blue.300">
-          SELECTED: {value}
-        </Text>
-      </Box>
+      {!isCompact && (
+        <Box textAlign="center" mb={1}>
+          <Text fontSize="10px" fontWeight="bold" color="blue.300">
+            SELECTED: {value}
+          </Text>
+        </Box>
+      )}
 
       <HStack spacing={0} position="relative">
         <Box
@@ -222,31 +208,29 @@ export default function TimeWheelPicker({
           transform="translateY(-50%)"
           h={`${ITEM_HEIGHT}px`}
           bg="whiteAlpha.100"
-          borderRadius="4px"
+          borderRadius={isCompact ? "lg" : "4px"}
           pointerEvents="none"
-          borderY="1px solid"
-          borderColor="blue.400"
+          borderY={isCompact ? "0" : "1px solid"}
+          borderColor={isCompact ? "transparent" : "blue.400"}
         />
         <Wheel 
           data={HOURS_DATA} 
           refObj={hourRef} 
           type="hour" 
           currentValue={h} 
+          width={isCompact ? "38px" : "50px"}
           onScroll={handleScroll} 
           onWheel={handleWheel}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
         />
-        <Text color="blue.400" fontWeight="bold" fontSize="xs">:</Text>
+        <Text color={isCompact ? "orange.300" : "blue.400"} fontWeight="bold" fontSize="xs">:</Text>
         <Wheel 
           data={minutesData} 
           refObj={minuteRef} 
           type="minute" 
           currentValue={m} 
+          width={isCompact ? "38px" : "50px"}
           onScroll={handleScroll} 
           onWheel={handleWheel}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
         />
       </HStack>
     </Box>

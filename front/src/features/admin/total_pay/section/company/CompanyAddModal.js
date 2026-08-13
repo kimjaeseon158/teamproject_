@@ -5,6 +5,7 @@ import {
 import { useState } from "react";
 
 export default function CompanyAddModal({ isOpen, onClose, onSave }) {
+  const [saving, setSaving] = useState(false);
   const [input, setInput] = useState({
     name: "",
     detail: "",
@@ -13,7 +14,7 @@ export default function CompanyAddModal({ isOpen, onClose, onSave }) {
   });
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered closeOnOverlayClick={false} closeOnEsc={false}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>업체 추가</ModalHeader>
@@ -40,14 +41,22 @@ export default function CompanyAddModal({ isOpen, onClose, onSave }) {
         <ModalFooter>
           <Button
             colorScheme="green"
-            onClick={() => {
-              onSave([input]);
-              onClose();
+            isLoading={saving}
+            onClick={async () => {
+              try {
+                setSaving(true);
+                await onSave([input]);
+                onClose();
+              } catch {
+                // API 오류는 요청 함수의 토스트에서 안내하며 모달은 유지합니다.
+              } finally {
+                setSaving(false);
+              }
             }}
           >
             저장
           </Button>
-          <Button ml={2} onClick={onClose}>취소</Button>
+          <Button ml={2} onClick={onClose} isDisabled={saving}>취소</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

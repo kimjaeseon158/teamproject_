@@ -23,7 +23,7 @@ export default function ExpenseEditModal({ isOpen, onClose, data, onSave }) {
   if (!form) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md" isCentered>
+    <Modal isOpen={isOpen} onClose={onClose} size="md" isCentered closeOnOverlayClick={false} closeOnEsc={false}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>지출 수정</ModalHeader>

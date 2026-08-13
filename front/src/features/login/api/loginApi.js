@@ -1,8 +1,10 @@
 import { ApiPost } from "../../../services/api/requestJson";
+import { ERROR_MESSAGES, getErrorMessage } from "../../../constants/errorMessages";
 
 const normalizeLoginError = (error) => ({
   success: false,
-  message: error?.message || "아이디 또는 비밀번호를 확인해주세요.",
+  message: getErrorMessage(error, ERROR_MESSAGES.login.invalidCredentials),
+  status: error?.status,
 });
 
 export const adminLoginAPI = async (id, password, admin_code) => {

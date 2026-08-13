@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { getExtraWorkTimes } from "../../common/workTimeUtils";
 import { diffMinutes, minutesToHM } from "../utils/timeUtils";
@@ -13,6 +13,7 @@ const createExtraWorkRow = (type = "weekday_ot", startTime = "", finishTime = ""
 };
 
 export default function useExtraWorkRows({ finishTime, startTime }) {
+  const skipNextTimeRebaseRef = useRef(false);
   const [extraEnabled, setExtraEnabled] = useState(false);
   const [extraWorks, setExtraWorks] = useState([]);
 
@@ -26,7 +27,11 @@ export default function useExtraWorkRows({ finishTime, startTime }) {
   }, [extraEnabled, extraWorks.length, startTime, finishTime]);
 
   useEffect(() => {
-    if (!extraEnabled || extraWorks.length === 0) return;
+    if (!extraEnabled) return;
+    if (skipNextTimeRebaseRef.current) {
+      skipNextTimeRebaseRef.current = false;
+      return;
+    }
 
     setExtraWorks((prev) =>
       prev.map((row) => {
@@ -40,7 +45,7 @@ export default function useExtraWorkRows({ finishTime, startTime }) {
         };
       })
     );
-  }, [startTime, finishTime, extraEnabled, extraWorks.length]);
+  }, [startTime, finishTime, extraEnabled]);
 
   const extraWorkMinutes = useMemo(() => {
     if (!extraEnabled) return 0;
@@ -74,15 +79,30 @@ export default function useExtraWorkRows({ finishTime, startTime }) {
     setExtraWorks((prev) => prev.filter((_, rowIndex) => rowIndex !== index));
   };
 
+  const handleAddExtraRow = () => {
+    setExtraWorks((prev) => [
+      ...prev,
+      createExtraWorkRow("weekday_ot", startTime, finishTime),
+    ]);
+  };
+
   const resetExtraWorks = () => {
     setExtraEnabled(false);
     setExtraWorks([]);
+  };
+
+  const applyExtraWorks = (rows = []) => {
+    skipNextTimeRebaseRef.current = rows.length > 0;
+    setExtraWorks(rows);
+    setExtraEnabled(rows.length > 0);
   };
 
   return {
     extraEnabled,
     extraWorkMinutes,
     extraWorks,
+    applyExtraWorks,
+    handleAddExtraRow,
     handleRemoveExtraRow,
     resetExtraWorks,
     setExtraEnabled,

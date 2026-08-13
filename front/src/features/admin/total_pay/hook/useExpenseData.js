@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { expense_filter_Data } from "../api/expense_filter";
+import { expense_Data } from "../api/expense_API";
 
 export function useExpenseData({ toast }) {
   const [range, setRange] = useState({ from: null, to: null });
@@ -28,5 +29,27 @@ export function useExpenseData({ toast }) {
     })();
   }, [range, toast]);
 
-  return { range, setRange, expenseData, setExpenseData, totalExpense };
+  const saveFinalList = async (finalList) => {
+    for (const item of finalList) {
+      const result = await expense_Data(
+        {
+          date: item.date.toISOString().split("T")[0],
+          expense_name: item.name,
+          expense_detail: item.detail,
+          amount: Number(item.amount),
+        },
+        toast
+      );
+      if (!result) throw new Error("지출 저장에 실패했습니다.");
+    }
+  };
+
+  return {
+    range,
+    setRange,
+    expenseData,
+    setExpenseData,
+    totalExpense,
+    saveFinalList,
+  };
 }

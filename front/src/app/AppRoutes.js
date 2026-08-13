@@ -6,7 +6,6 @@ import LoginPage from "../pages/LoginPage/LoginPage";
 import Calendar from "../pages/UserPage/CalendarPage";
 import PasswordChangePage from "../pages/UserPage/PasswordChangePage";
 import Dashboard from "../pages/dashboard";
-import GoogleCallbackDone from "../features/admin/api/google/GoogleCallbackDone";
 import RequireAuth from "../requireauth";
 
 export default function AppRoutes() {
@@ -23,7 +22,6 @@ export default function AppRoutes() {
       <AlarmProvider>
         <Routes>
           <Route path="/" element={<LoginPage />} />
-          <Route path="/oauth/callback" element={<GoogleCallbackDone />} />
 
           <Route
             path="/data"

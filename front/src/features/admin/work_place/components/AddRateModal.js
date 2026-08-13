@@ -53,7 +53,7 @@ export default function RateEditModal({
   );
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isCentered size="6xl">
+    <Modal isOpen={isOpen} onClose={onClose} isCentered size="6xl" closeOnOverlayClick={false} closeOnEsc={false}>
       <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(8px)" />
       <ModalContent borderRadius="2xl" overflow="hidden" maxH="92vh">
         <ModalHeader p={0}>

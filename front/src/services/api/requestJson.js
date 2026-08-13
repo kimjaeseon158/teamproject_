@@ -1,5 +1,6 @@
 import { resolveApiUrl } from "../../config/api/apiEnv";
 import { fetchWithAuth } from "./fetchWithAuth";
+import { ERROR_MESSAGES } from "../../constants/errorMessages";
 
 export const cleanParams = (params = {}) =>
   Object.fromEntries(
@@ -25,8 +26,10 @@ export async function requestJson(
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const message =
-      data.detail || data.message || data.error || "API 요청에 실패했습니다.";
-    throw new Error(message);
+      data.detail || data.message || data.error || ERROR_MESSAGES.common.requestFailed;
+    const error = new Error(message);
+    error.status = res.status;
+    throw error;
   }
 
   return data;
@@ -36,16 +39,20 @@ export async function requestApiResponse(
   url,
   { method = "GET", body, headers, toast } = {}
 ) {
+  const isFormData =
+    typeof FormData !== "undefined" && body instanceof FormData;
   const options = {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      ...(headers || {}),
-    },
+    headers: isFormData
+      ? { ...(headers || {}) }
+      : {
+          "Content-Type": "application/json",
+          ...(headers || {}),
+        },
   };
 
   if (body !== undefined) {
-    options.body = JSON.stringify(body);
+    options.body = isFormData ? body : JSON.stringify(body);
   }
 
   return await fetchWithAuth(resolveApiUrl(url), options, { toast });

@@ -27,7 +27,7 @@ export default function OptionSubmitConfirmDialog({
   onConfirm,
 }) {
   return (
-    <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef} onClose={onClose} isCentered>
+    <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef} onClose={onClose} isCentered closeOnOverlayClick={false} closeOnEsc={false}>
       <AlertDialogOverlay backdropFilter="blur(4px)">
         <AlertDialogContent bg="#1c1c1e" color="white" borderRadius="24px" m={4}>
           <AlertDialogHeader fontSize="lg" fontWeight="bold">
@@ -62,6 +62,11 @@ export default function OptionSubmitConfirmDialog({
                     <Text fontSize="sm" color="gray.400">
                       {item.startTime} ~ {item.finishTime} | {item.location}
                     </Text>
+                    {item.note && (
+                      <Text mt={2} fontSize="xs" color="orange.200">
+                        비고 · {item.note}
+                      </Text>
+                    )}
 
                     {extraDetails.length > 0 && (
                       <VStack align="stretch" spacing={1} mt={2}>

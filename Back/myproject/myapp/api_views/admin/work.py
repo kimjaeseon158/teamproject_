@@ -32,8 +32,8 @@ RATE_FIELD_NAMES = [
 ]
 
 
-def _admin_work_place_qs(admin):
-    return AdminWorkPlace.objects.filter(admin=admin).order_by("work_place")
+def _admin_work_place_qs(admin=None):
+    return AdminWorkPlace.objects.all().order_by("work_place", "admin_work_place_uuid")
 
 
 def _admin_work_place_list_response(admin):
@@ -49,7 +49,6 @@ def _apply_admin_work_place(admin, data):
     if admin_work_place_uuid:
         try:
             admin_work_place = AdminWorkPlace.objects.get(
-                admin=admin,
                 admin_work_place_uuid=admin_work_place_uuid,
             )
         except AdminWorkPlace.DoesNotExist:
@@ -64,9 +63,12 @@ def _apply_admin_work_place(admin, data):
     if not work_place:
         return None, "근무지를 선택해주세요."
 
-    try:
-        admin_work_place = AdminWorkPlace.objects.get(admin=admin, work_place=work_place)
-    except AdminWorkPlace.DoesNotExist:
+    admin_work_place = (
+        AdminWorkPlace.objects.filter(work_place=work_place)
+        .order_by("admin_work_place_uuid")
+        .first()
+    )
+    if admin_work_place is None:
         return None, "저장된 근무지만 선택할 수 있습니다."
 
     for field in RATE_FIELD_NAMES:
@@ -110,15 +112,15 @@ class AdminPageWorkDayListAPIView(APIView):
 
         if work_place:
             user_work_day = user_work_day.filter(work_place=work_place)
-            
+
         if user_name:
             user_work_day = user_work_day.filter(user_name__icontains=user_name)
 
         if extra_work:
             user_work_day = user_work_day.filter(
                 details__work_type=extra_work
-                ).distinct()
-            
+            ).distinct()
+
         # 날짜 필터 (선택)
         if start_date_str and end_date_str:
             try:
@@ -139,7 +141,9 @@ class AdminWorkDayStatusUpdateAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def _get_work_day_update(self, item, default_status=None, default_reject_reason=None):
+    def _get_work_day_update(
+        self, item, default_status=None, default_reject_reason=None
+    ):
         user_uuid = item.get("user_uuid")
         work_date_str = item.get("work_date")
         work_shift = item.get("work_shift")
@@ -226,8 +230,15 @@ class AdminWorkPlaceListCreateAPIView(APIView):
         if not serializer.is_valid():
             return Response({"success": False, "errors": serializer.errors})
 
+        work_place = serializer.validated_data["work_place"].strip()
+        if AdminWorkPlace.objects.filter(work_place__iexact=work_place).exists():
+            return Response(
+                {"success": False, "message": "이미 저장된 근무지입니다."},
+                status=409,
+            )
+
         try:
-            serializer.save(admin=request.user)
+            serializer.save(admin=request.user, work_place=work_place)
         except IntegrityError:
             return Response({"success": False, "message": "이미 저장된 근무지입니다."})
 
@@ -241,11 +252,12 @@ class AdminWorkPlaceUpdateDeleteAPIView(APIView):
     def patch(self, request):
         admin_work_place_uuid = request.data.get("admin_work_place_uuid")
         if not admin_work_place_uuid:
-            return Response({"success": False, "message": "admin_work_place_uuid가 필요합니다."})
+            return Response(
+                {"success": False, "message": "admin_work_place_uuid가 필요합니다."}
+            )
 
         try:
             admin_work_place = AdminWorkPlace.objects.get(
-                admin=request.user,
                 admin_work_place_uuid=admin_work_place_uuid,
             )
         except AdminWorkPlace.DoesNotExist:
@@ -259,8 +271,22 @@ class AdminWorkPlaceUpdateDeleteAPIView(APIView):
         if not serializer.is_valid():
             return Response({"success": False, "errors": serializer.errors})
 
+        work_place = serializer.validated_data.get(
+            "work_place",
+            admin_work_place.work_place,
+        ).strip()
+        if (
+            AdminWorkPlace.objects.filter(work_place__iexact=work_place)
+            .exclude(admin_work_place_uuid=admin_work_place_uuid)
+            .exists()
+        ):
+            return Response(
+                {"success": False, "message": "이미 저장된 근무지입니다."},
+                status=409,
+            )
+
         try:
-            serializer.save()
+            serializer.save(work_place=work_place)
         except IntegrityError:
             return Response({"success": False, "message": "이미 저장된 근무지입니다."})
 
@@ -269,10 +295,11 @@ class AdminWorkPlaceUpdateDeleteAPIView(APIView):
     def delete(self, request):
         admin_work_place_uuid = request.data.get("admin_work_place_uuid")
         if not admin_work_place_uuid:
-            return Response({"success": False, "message": "admin_work_place_uuid가 필요합니다."})
+            return Response(
+                {"success": False, "message": "admin_work_place_uuid가 필요합니다."}
+            )
 
         deleted_count, _ = AdminWorkPlace.objects.filter(
-            admin=request.user,
             admin_work_place_uuid=admin_work_place_uuid,
         ).delete()
         if not deleted_count:
@@ -297,10 +324,14 @@ class WorkPlaceRateListCreateAPIView(APIView):
     def post(self, request):
         create_ser = WorkPlaceRateCreateSerializer(data=request.data)
         if not create_ser.is_valid():
-            return Response({"success": False, "errors": "입력 정보가 유효하지 않습니다."})
+            return Response(
+                {"success": False, "errors": "입력 정보가 유효하지 않습니다."}
+            )
 
         user_uuid = create_ser.validated_data.pop("user_uuid")
-        rate_data, error_message = _apply_admin_work_place(request.user, create_ser.validated_data)
+        rate_data, error_message = _apply_admin_work_place(
+            request.user, create_ser.validated_data
+        )
         if error_message:
             return Response({"success": False, "message": error_message})
 
@@ -312,9 +343,13 @@ class WorkPlaceRateListCreateAPIView(APIView):
         try:
             WorkPlaceRate.objects.create(user=user, **rate_data)
         except IntegrityError:
-            return Response({"success": False, "message": "이미 존재하는 근무지입니다."})
+            return Response(
+                {"success": False, "message": "이미 존재하는 근무지입니다."}
+            )
 
-        WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
+        WorkPlace_qs = (
+            WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
+        )
         grouped = group_rates_by_user(WorkPlace_qs)
         return Response({"success": True, "users": grouped})
 
@@ -346,7 +381,9 @@ class WorkPlaceRateUpdateDeleteAPIView(APIView):
         serializer.save()
 
         # 수정 후 전체 목록 반환
-        WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
+        WorkPlace_qs = (
+            WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
+        )
         grouped = group_rates_by_user(WorkPlace_qs)
         return Response({"success": True, "users": grouped})
 
@@ -363,7 +400,9 @@ class WorkPlaceRateUpdateDeleteAPIView(APIView):
         rate.delete()
 
         # 삭제 후 전체 목록 반환
-        WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
+        WorkPlace_qs = (
+            WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
+        )
         grouped = group_rates_by_user(WorkPlace_qs)
         return Response({"success": True, "users": grouped})
 
@@ -373,8 +412,8 @@ class WorkPlaceRateListfilteringAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user_name = request.query_params.get("user_name")   
-        work_place = request.query_params.get("work_place") 
+        user_name = request.query_params.get("user_name")
+        work_place = request.query_params.get("work_place")
 
         WorkPlace_qs = WorkPlaceRate.objects.select_related("user").all()
 

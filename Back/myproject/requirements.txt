@@ -12,6 +12,7 @@ django-cors-headers>=4.0.0
 
 # 환경 변수 관리
 django-environ>=0.11.0
+cryptography>=42.0.0
 
 # PostgreSQL 데이터베이스
 psycopg2-binary>=2.9.0

@@ -17,7 +17,7 @@ export default function ExpenseRangeModal({
   setRange,
 }) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isCentered>
+    <Modal isOpen={isOpen} onClose={onClose} isCentered closeOnOverlayClick={false} closeOnEsc={false}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>기간 선택</ModalHeader>

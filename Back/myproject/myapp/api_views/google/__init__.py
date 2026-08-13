@@ -6,6 +6,7 @@ from .google import (
     GoogleDriveUserPayExcelExportAPIView,
     GoogleDriveWorkplaceExcelExportAPIView,
     GoogleLoginAPIView,
+    GoogleLogoutAPIView,
 )
 
 __all__ = [
@@ -15,4 +16,5 @@ __all__ = [
     "GoogleDriveUserPayExcelExportAPIView",
     "GoogleDriveWorkplaceExcelExportAPIView",
     "GoogleLoginAPIView",
+    "GoogleLogoutAPIView",
 ]

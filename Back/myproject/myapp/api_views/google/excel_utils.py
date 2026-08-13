@@ -378,11 +378,15 @@ def generate_salary_excel(year, month, template_file=None):
         .values(
             "work_day__user_uuid_id",
             "work_day__user_uuid__user_name",
-            "work_day__user_uuid__resident_number",
         )
         .annotate(total_amount=Sum("amount"))
         .order_by("work_day__user_uuid__user_name")
     )
+    user_ids = {row["work_day__user_uuid_id"] for row in salary_rows}
+    resident_numbers = {
+        user.user_uuid: user.resident_number
+        for user in User_Login_Info.objects.filter(user_uuid__in=user_ids)
+    }
 
     # 템플릿 기준: 5행부터 직원 1명당 1행씩 입력
     data_start_row = 5
@@ -408,7 +412,7 @@ def generate_salary_excel(year, month, template_file=None):
 
         safe_set(ws, row, 1, idx)
         safe_set(ws, row, 3, salary["work_day__user_uuid__user_name"])
-        safe_set(ws, row, 4, salary["work_day__user_uuid__resident_number"])
+        safe_set(ws, row, 4, resident_numbers.get(salary["work_day__user_uuid_id"], ""))
         safe_set(ws, row, 7, amount)
         safe_set(ws, row, 8, amount)
         safe_set(ws, row, 11, f"=SUM(H{row}:J{row})")

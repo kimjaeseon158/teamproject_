@@ -1,13 +1,16 @@
 import { refreshAccessToken } from "./authApi";
 import { getAccessToken, clearAccessToken } from "./token";
+import { ERROR_MESSAGES } from "../../constants/errorMessages";
 
 let refreshPromise = null;
 
 export async function fetchWithAuth(url, options = {}, { toast } = {}) {
   const token = getAccessToken();
+  const isFormData =
+    typeof FormData !== "undefined" && options.body instanceof FormData;
 
   const baseHeaders = {
-    "Content-Type": "application/json",
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...(options.headers || {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
@@ -41,7 +44,7 @@ export async function fetchWithAuth(url, options = {}, { toast } = {}) {
       clearAccessToken();
 
       if (toast) {
-        toast({ title: "세션이 만료되었습니다.", status: "error" });
+        toast({ title: ERROR_MESSAGES.common.sessionExpired, status: "error" });
       }
 
       return res;

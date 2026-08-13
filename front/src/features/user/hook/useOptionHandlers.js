@@ -1,8 +1,10 @@
 import submitWorkInfo from "../api/submitWorkInfo";
 import { diffMinutes, calculateNetMinutes } from "../utils/timeUtils";
 import { getExtraWorkSubmitLabel } from "../../common/workTypes";
+import { ERROR_MESSAGES, getErrorMessage } from "../../../constants/errorMessages";
 
 export function useOptionHandlers({
+  existingWorks = [],
   selectedDate,
   userUuid,
   userName,
@@ -15,6 +17,7 @@ export function useOptionHandlers({
   startTime,
   finishTime,
   location,
+  note,
   extraEnabled,
   extraWorks,
   setIsSubmitConfirmOpen,
@@ -25,7 +28,24 @@ export function useOptionHandlers({
 }) {
   const handleAddToCart = () => {
     if (!location || !startTime || !finishTime) {
-      toast({ title: "필수 항목을 입력하세요.", status: "warning" });
+      toast({ title: ERROR_MESSAGES.workRegistration.requiredFields, status: "warning" });
+      return;
+    }
+
+    const hasExistingWork = existingWorks.some(
+      (work) => (work.work_shift || work.work_type) === baseShift
+    );
+    const hasCartWork = cart.some(
+      (work) =>
+        work.baseShift === baseShift &&
+        work.work_date?.formatted === selectedDate?.formatted
+    );
+
+    if (hasExistingWork || hasCartWork) {
+      toast({
+        title: ERROR_MESSAGES.workRegistration.duplicate,
+        status: "warning",
+      });
       return;
     }
 
@@ -58,6 +78,7 @@ export function useOptionHandlers({
         id: crypto.randomUUID(),
         work_date: { ...selectedDate },
         location,
+        note,
         startTime,
         finishTime,
         baseShift,
@@ -94,6 +115,7 @@ export function useOptionHandlers({
         finishTime: item.finishTime,
         work_shift: item.baseShift,
         location: item.location,
+        note: item.note,
         details: item.details,
       }));
 
@@ -102,10 +124,9 @@ export function useOptionHandlers({
       console.error("등록 실패 원인:", e);
       toast({
         title: "등록 실패",
-        description: e?.message || "서버 응답을 확인해주세요.",
+        description: getErrorMessage(e, ERROR_MESSAGES.workRegistration.failed),
         status: "error",
       });
-      setCart([]);
       setIsSubmitConfirmOpen(false);
       setIsSubmitting?.(false);
       return;

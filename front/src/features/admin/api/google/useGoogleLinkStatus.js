@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { ApiRawGet } from "../../../../services/api/requestJson";
 import { clearGoogleLinked, markGoogleLinked } from "./googleLinkStorage";
-import { googleEventsUrl } from "./googleApiConfig";
+import { googleCalendarEventsUrl } from "./googleApiConfig";
 
 const toCalendarEvents = (events = []) =>
   events.map((event) => ({
@@ -35,7 +35,7 @@ export default function useGoogleLinkStatus() {
       }
 
       try {
-        const res = await ApiRawGet(googleEventsUrl);
+        const res = await ApiRawGet(googleCalendarEventsUrl);
         if (!alive) return;
 
         if (res?.status === 200) {

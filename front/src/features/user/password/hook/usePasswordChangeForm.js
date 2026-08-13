@@ -9,7 +9,6 @@ import {
   canSubmitPasswordChange,
   getPasswordChecks,
   hasKorean,
-  INITIAL_PASSWORD,
 } from "../utils/passwordValidation";
 
 const initialVisibility = {
@@ -23,7 +22,7 @@ export default function usePasswordChangeForm() {
   const navigate = useNavigate();
   const { logout, userUuid } = useUser();
   const [values, setValues] = useState({
-    initialPassword: INITIAL_PASSWORD,
+    initialPassword: "",
     newPassword: "",
     confirmPassword: "",
   });

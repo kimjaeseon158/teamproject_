@@ -5,7 +5,6 @@ import { getApprovalStatus, getWorkType } from "../../utils/calendarSidebarUtils
 export default function DesktopWorkSummary({ event }) {
   const data = event.extendedProps;
   const groupedItems = data.grouped_items?.length ? data.grouped_items : [data];
-  const status = getApprovalStatus(data.is_approved);
 
   return (
     <VStack align="stretch" spacing={2} mt={4}>
@@ -14,6 +13,7 @@ export default function DesktopWorkSummary({ event }) {
       </Text>
       {groupedItems.map((item, index) => {
         const workType = getWorkType(item);
+        const status = getApprovalStatus(item.is_approved);
 
         return (
           <HStack

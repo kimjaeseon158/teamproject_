@@ -9,14 +9,15 @@ env = environ.Env(
     # env 디버깅 값 활성화 여부 선택
     DEBUG=(bool, False)
 )
-
+ 
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = env('SECRET_KEY')
 REFRESH_TOKEN_HASH_SECRET = env('REFRESH_TOKEN_HASH_SECRET')
-DEBUG = env('DEBUG')
-
-DEBUG = True
+FIELD_ENCRYPTION_KEY_ID = env('FIELD_ENCRYPTION_KEY_ID')
+FIELD_ENCRYPTION_KEYS = env.json('FIELD_ENCRYPTION_KEYS')
+FIELD_BLIND_INDEX_KEY = env('FIELD_BLIND_INDEX_KEY')
+DEBUG = env.bool('DEBUG', default=False)
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost"])
 

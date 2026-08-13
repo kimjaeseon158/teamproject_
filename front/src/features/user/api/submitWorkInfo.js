@@ -34,6 +34,7 @@ export const buildWorkInfoPayload = (input) => {
           work_start: toDateTime(workDate, item.startTime),
           work_end: toDateTime(workDate, item.finishTime),
           work_place: item.location,
+          note: item.note || "",
           details: item.details,
         };
       }),
@@ -49,6 +50,7 @@ export const buildWorkInfoPayload = (input) => {
     startTime,
     finishTime,
     location,
+    note = "",
     details = [],
   } = input;
 
@@ -66,6 +68,7 @@ export const buildWorkInfoPayload = (input) => {
       work_start: toDateTime(workDate, startTime),
       work_end: toDateTime(workDate, finishTime),
       work_place: location,
+      note,
       details,
     },
   };

@@ -6,10 +6,13 @@ from .views import (
     UserInfoDeleteAPIView,
     UserInfoUpdateAPIView,
     UserPasswordChangeAPIView,
+    UserPasswordResetRequestAPIView,
     CheckUserLoginAPIView,
     UserInfoFilteringAPIView,
     UserInfoListAPIView,
     UserInfoAddAPIView,
+    AdminPasswordResetRequestAPIView,
+    UserWorkPlaceListAPIView,
     TokenRefreshAPIView,
     FinanceTableDateFilteredAPIView,
     IncomeDateFilteredAPIView,
@@ -21,6 +24,7 @@ from .views import (
     IncomeDeleteAPIView,
     ExpenseDeleteAPIView,
     GoogleLoginAPIView,
+    GoogleLogoutAPIView,
     GoogleCallbackAPIView,
     GoogleCalendarEventsAPIView,
     GoogleDriveWorkplaceExcelExportAPIView,
@@ -36,40 +40,48 @@ from .views import (
     WorkPlaceRateUpdateDeleteAPIView,
     WorkPlaceRateListfilteringAPIView,
     Expense3MonthsTotalsAPIView,
-    UserMonthlyWorkSummaryAPIView
+    UserMonthlyWorkSummaryAPIView,
+    AdminWorkScheduleBatchAPIView,
+    AdminWorkScheduleWeekAPIView,
+    UserWorkScheduleWeekAPIView,
 )
 
 # fmt:off
 urlpatterns = [
     # Login-Home
-    path('check-admin-login/', CheckAdminLoginAPIView.as_view(),  name='check-admin-login'),
-    path('admin-logout/',      AdminLogoutAPIView.as_view(),      name='admin-logout'),
-    path('check-user-login/',  CheckUserLoginAPIView.as_view(),   name='check-user-login'),
+    path('check-admin-login/',    CheckAdminLoginAPIView.as_view(),  name='check-admin-login'),
+    path('admin-logout/',         AdminLogoutAPIView.as_view(),      name='admin-logout'),
+    path('check-user-login/',     CheckUserLoginAPIView.as_view(),   name='check-user-login'),
     path('user-password-change/', UserPasswordChangeAPIView.as_view(), name='user-password-change'),
-    path('user-logout/',       UserLogoutAPIView.as_view(),       name='user-logout'),
+    path('user-password-reset-request/', UserPasswordResetRequestAPIView.as_view(), name='user-password-reset-request'),
+    path('user-logout/',          UserLogoutAPIView.as_view(),       name='user-logout'),
     
     # Dashboard-admin-page
-    path('user-info-list/',                  UserInfoListAPIView.as_view(),                name='user-info-list'),
-    path('user-info-delete/',                UserInfoDeleteAPIView.as_view(),              name='user-info-delete'),
-    path('user-info-update/',                UserInfoUpdateAPIView.as_view(),              name='user-info-update'),
-    path('user-info-add/',                   UserInfoAddAPIView.as_view(),                 name='user-info-add'),    
-    path('user-info-filtering/',             UserInfoFilteringAPIView.as_view(),           name='user-info-filtering'),
-    path('admin-page-workday/',              AdminPageWorkDayListAPIView.as_view(),        name='admin-page-workday'),
-    path('admin-workday-status-update/',     AdminWorkDayStatusUpdateAPIView.as_view(),    name='admin-workday-status-update'),
-    path('admin-work-place-list-create/',    AdminWorkPlaceListCreateAPIView.as_view(),    name='admin-work-place-list-create'),
-    path('admin-work-place-update-delete/',  AdminWorkPlaceUpdateDeleteAPIView.as_view(),  name='admin-work-place-update-delete'),
-    path('work-place-rate-list-create/',     WorkPlaceRateListCreateAPIView.as_view(),     name='work-place-rate-list-create'),
-    path('work-place-rate-update-delete/',   WorkPlaceRateUpdateDeleteAPIView.as_view(),   name='work-place-rate-update-delete'),
-    path('work-place-rate-list-filtering/',  WorkPlaceRateListfilteringAPIView.as_view(),  name='work-place-rate-list-filtering'),
+    path('user-info-list/',                                     UserInfoListAPIView.as_view(),                name='user-info-list'),
+    path('user-info-delete/',                                   UserInfoDeleteAPIView.as_view(),              name='user-info-delete'),
+    path('user-info-update/',                                   UserInfoUpdateAPIView.as_view(),              name='user-info-update'),
+    path('user-info-add/',                                      UserInfoAddAPIView.as_view(),                 name='user-info-add'),    
+    path('admin-password-reset-requests/',                      AdminPasswordResetRequestAPIView.as_view(),   name='admin-password-reset-requests'),
+    path('user-info-filtering/',                                UserInfoFilteringAPIView.as_view(),           name='user-info-filtering'),
+    path('admin-page-workday/',                                 AdminPageWorkDayListAPIView.as_view(),        name='admin-page-workday'),
+    path('admin-workday-status-update/',                        AdminWorkDayStatusUpdateAPIView.as_view(),    name='admin-workday-status-update'),
+    path('admin-work-place-list-create/',                       AdminWorkPlaceListCreateAPIView.as_view(),    name='admin-work-place-list-create'),
+    path('admin-work-place-update-delete/',                     AdminWorkPlaceUpdateDeleteAPIView.as_view(),  name='admin-work-place-update-delete'),
+    path('work-place-rate-list-create/',                        WorkPlaceRateListCreateAPIView.as_view(),     name='work-place-rate-list-create'),
+    path('work-place-rate-update-delete/',                      WorkPlaceRateUpdateDeleteAPIView.as_view(),   name='work-place-rate-update-delete'),
+    path('work-place-rate-list-filtering/',                     WorkPlaceRateListfilteringAPIView.as_view(),  name='work-place-rate-list-filtering'),
+    path('admin-work-schedules/',                               AdminWorkScheduleWeekAPIView.as_view(),       name='admin-work-schedules'),
+    path('admin-work-schedules/batch/',                         AdminWorkScheduleBatchAPIView.as_view(),      name='admin-work-schedules-batch'),
     
 
 
-    # Dashboard-google-calendar
-    path('google-calendar-auth/',             GoogleLoginAPIView.as_view(),                     name='google-calendar-auth'),
-    path('google-calendar-auth/callback/',    GoogleCallbackAPIView.as_view(),                  name='google-calendar-auth-back'),
-    path('google-calendar-auth/events/',      GoogleCalendarEventsAPIView.as_view(),            name='google-calendar-auth-events'),
-    path('google-drive-excel-export/',        GoogleDriveWorkplaceExcelExportAPIView.as_view(), name='google-drive-excel-export'),
-    path('google-drive-salary-excel-export/', GoogleDriveSalaryExcelExportAPIView.as_view(), name='google-drive-salary-excel-export'),
+    # Google OAuth / Calendar
+    path('google/login/',                       GoogleLoginAPIView.as_view(),          name='google-login'),
+    path('google/logout/',                      GoogleLogoutAPIView.as_view(),         name='google-logout'),
+    path('google/callback/',                    GoogleCallbackAPIView.as_view(),       name='google-callback'),
+    path('google/calendar/events/',             GoogleCalendarEventsAPIView.as_view(), name='google-calendar-events'),
+    path('google-drive-excel-export/',          GoogleDriveWorkplaceExcelExportAPIView.as_view(), name='google-drive-excel-export'),
+    path('google-drive-salary-excel-export/',   GoogleDriveSalaryExcelExportAPIView.as_view(), name='google-drive-salary-excel-export'),
     path('google-drive-user-pay-excel-export/', GoogleDriveUserPayExcelExportAPIView.as_view(), name='google-drive-user-pay-excel-export'),
 
     
@@ -88,7 +100,8 @@ urlpatterns = [
     # User-page
     path('user-work-info/',              UserWorkInfoAPIView.as_view(),           name='user-work-info'),
     path('user-monthly-work-summary/',   UserMonthlyWorkSummaryAPIView.as_view(), name='user-monthly-work-summary'),
-
+    path('user-work-places/',            UserWorkPlaceListAPIView.as_view(), name='user-work-places'),
+    path('user-work-schedule/',           UserWorkScheduleWeekAPIView.as_view(), name='user-work-schedule'),
 
     # Refresh-Token
     path('refresh-token/',   TokenRefreshAPIView.as_view(), name='refresh-token')

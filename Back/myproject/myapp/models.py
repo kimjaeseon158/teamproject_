@@ -1,30 +1,35 @@
 import uuid
+from pathlib import Path
 from django.db import models
 from django.contrib.auth.hashers import make_password
 from django.db.models import Q
-
-
+from .encryption.crypto import resident_number_blind_index
+from .encryption.fields import EncryptedTextField
 
 # fmt:off
 # User 관련 테이블
 class User_Login_Info(models.Model):
-    user_uuid       = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user_name       = models.CharField(max_length=50, default='홍길동')   # 유저 이름
-    user_id         = models.CharField(max_length=50,unique=True)
-    password        = models.CharField(max_length=100, default='1234')
+    user_uuid            = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user_name            = models.CharField(max_length=50, default='홍길동')   # 유저 이름
+    user_id              = models.CharField(max_length=50,unique=True)
+    password             = models.CharField(max_length=100, default='1234')
     must_change_password = models.BooleanField(default=True)
-    phone_number    = models.CharField(max_length=20)
-    mobile_carrier  = models.CharField(max_length=20)
-    resident_number = models.CharField(max_length=14)
-    address         = models.CharField(max_length=200)
+    phone_number         = models.CharField(max_length=20)
+    mobile_carrier       = models.CharField(max_length=20)
+    resident_number      = EncryptedTextField()
+    resident_number_hash = models.CharField(max_length=64, unique=True, editable=False)
+    address              = EncryptedTextField()
     
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['resident_number'], name='unique_resident_number'),
             models.UniqueConstraint(fields=['phone_number'],    name='unique_phone_number'),
         ]
 
     def save(self, *args, **kwargs):
+        self.resident_number_hash = resident_number_blind_index(self.resident_number)
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None:
+            kwargs["update_fields"] = set(update_fields) | {"resident_number_hash"}
         # 비밀번호가 해시되지 않은 상태일 때만 해시
         if not self.password.startswith('pbkdf2_'):  # Django 기본 prefix 체크
             self.password = make_password(self.password)
@@ -47,14 +52,15 @@ class User_WorkDay(models.Model):
         null=False,                   
         related_name="workdays",
     )
-    work_shift      = models.CharField(max_length=2)                        # "주간", "야간"
-    user_name       = models.CharField(max_length=50)                       # 유저 이름
-    work_date       = models.DateField()                                    # 근무 날짜
-    work_start      = models.DateTimeField()                                # 작업 시작 시간 (시간만)
-    work_end        = models.DateTimeField()                                # 작업 종료 시간 (시간만)
-    work_place      = models.CharField(max_length=100)                      # 근무 장소
-    is_approved     = models.BooleanField(null=True,blank=True)             # 승인 여부 (None=미처리)
-    reject_reason   = models.TextField(null=True,blank=True)                # 반려 사유
+    work_shift      = models.CharField(max_length=2)                            # "주간", "야간"
+    user_name       = models.CharField(max_length=50)                           # 유저 이름
+    work_date       = models.DateField()                                        # 근무 날짜
+    work_start      = models.DateTimeField()                                    # 작업 시작 시간 (시간만)
+    work_end        = models.DateTimeField()                                    # 작업 종료 시간 (시간만)
+    work_place      = models.CharField(max_length=100)                          # 근무 장소
+    note            = models.CharField(max_length=200, blank=True, default="")  # 비고란
+    is_approved     = models.BooleanField(null=True,blank=True)                 # 승인 여부 (None=미처리)
+    reject_reason   = models.TextField(null=True,blank=True)                    # 반려 사유
 
     # FK값 -> PK값 파싱 클래스 단순화
     @property
@@ -140,6 +146,38 @@ class Admin_Login_Info(models.Model):
 
 # 수입 매출 관련 테이블
 
+class PasswordResetRequest(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        APPROVED = "APPROVED", "Approved"
+
+    request_uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        User_Login_Info,
+        to_field="user_uuid",
+        on_delete=models.CASCADE,
+        related_name="password_reset_requests",
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    requested_at = models.DateTimeField(auto_now_add=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["requested_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=Q(status="PENDING"),
+                name="unique_pending_password_reset_per_user",
+            )
+        ]
+
+
 class AdminWorkPlace(models.Model):
     admin_work_place_uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     admin = models.ForeignKey(
@@ -169,6 +207,87 @@ class AdminWorkPlace(models.Model):
     @property
     def admin_uuid_str(self):
         return str(self.admin_id) if self.admin_id else None
+
+
+class EmployeeWorkSchedule(models.Model):
+    class Status(models.TextChoices):
+        DAY = "DAY", "주간"
+        NIGHT = "NIGHT", "야간"
+        OFF = "OFF", "휴무"
+        TRAINING = "TRAINING", "교육"
+
+    schedule_uuid = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+    user = models.ForeignKey(
+        User_Login_Info,
+        to_field="user_uuid",
+        on_delete=models.CASCADE,
+        related_name="work_schedules",
+    )
+    work_date = models.DateField(db_index=True)
+    status = models.CharField(max_length=10, choices=Status.choices)
+    admin_work_place = models.ForeignKey(
+        AdminWorkPlace,
+        to_field="admin_work_place_uuid",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="employee_schedules",
+    )
+    work_place_name = models.CharField(max_length=100, blank=True, default="")
+    work_place_detail = models.CharField(max_length=200, blank=True, default="")
+    created_by = models.ForeignKey(
+        Admin_Login_Info,
+        to_field="admin_uuid",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="created_employee_schedules",
+    )
+    updated_by = models.ForeignKey(
+        Admin_Login_Info,
+        to_field="admin_uuid",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="updated_employee_schedules",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["work_date", "user__user_name", "created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "user",
+                    "work_date",
+                    "status",
+                    "work_place_name",
+                    "work_place_detail",
+                ],
+                name="uniq_employee_schedule_exact",
+            )
+        ]
+
+
+# Historical migration helpers used by migration 0033.
+def work_schedule_original_upload_to(instance, filename):
+    extension = Path(filename).suffix.lower()
+    schedule_date = instance.schedule_date
+    return (
+        f"work_schedules/{schedule_date:%Y}/{schedule_date:%Y-%m}/"
+        f"originals/{uuid.uuid4()}{extension}"
+    )
+
+
+def work_schedule_preview_upload_to(instance, filename):
+    schedule_date = instance.schedule.schedule_date
+    return (
+        f"work_schedules/{schedule_date:%Y}/{schedule_date:%Y-%m}/"
+        f"previews/{uuid.uuid4()}.png"
+    )
 
 
 class Income(models.Model):

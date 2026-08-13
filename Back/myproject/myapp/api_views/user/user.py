@@ -2,11 +2,13 @@
 
 import logging
 
+from django.db import IntegrityError, transaction
+from django.utils.dateparse import parse_date
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from ...models import UserRefreshToken
+from ...models import PasswordResetRequest, UserRefreshToken
 from ...models import WorkPlaceRate
 from ...serializers import UserWorkDaySerializer
 from ...models import User_Login_Info
@@ -21,6 +23,7 @@ from ..token import check_user_credentials
 from ..token import save_or_update_user_refresh_token
 from django.conf import settings
 from rest_framework import status
+from ...encryption.crypto import resident_number_blind_index
 
 logger = logging.getLogger(__name__)
 
@@ -55,11 +58,6 @@ class CheckUserLoginAPIView(APIView):
             lifetime_days=7,
         )
 
-        work_places = WorkPlaceRate.objects.filter(user=user_instance).order_by("work_place")
-        work_places_data = list(
-            work_places.values("rate_uuid", "work_place")
-        )
-
         # (4) 응답 구성
         response = Response(
             {
@@ -68,7 +66,6 @@ class CheckUserLoginAPIView(APIView):
                 "user_uuid": user_uuid,
                 "access": str(access),
                 "must_change_password": user_instance.must_change_password,
-                "work_places": work_places_data,
             }
         )
 
@@ -83,6 +80,53 @@ class CheckUserLoginAPIView(APIView):
         )
 
         return response
+
+
+class UserPasswordResetRequestAPIView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    generic_response = {
+        "success": True
+    }
+
+    def post(self, request):
+        user_id = request.data.get("user_id")
+        resident_number = request.data.get("resident_number")
+
+        if user_id and resident_number:
+            try:
+                user = User_Login_Info.objects.get(
+                    user_id=user_id,
+                    resident_number_hash=resident_number_blind_index(resident_number),
+                )
+                PasswordResetRequest.objects.get_or_create(
+                    user=user,
+                    status=PasswordResetRequest.Status.PENDING,
+                )
+            except (User_Login_Info.DoesNotExist, IntegrityError):
+                pass
+
+        return Response(self.generic_response, status=status.HTTP_202_ACCEPTED)
+
+
+class UserWorkPlaceListAPIView(APIView):
+    authentication_classes = [UserJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        work_places = (
+            WorkPlaceRate.objects.filter(user=request.user)
+            .order_by("work_place")
+            .values("rate_uuid", "work_place")
+        )
+
+        return Response(
+            {
+                "success": True,
+                "work_places": list(work_places),
+            }
+        )
 
 
 class UserPasswordChangeAPIView(APIView):
@@ -151,12 +195,27 @@ class UserWorkInfoAPIView(APIView):
     authentication_classes = [UserJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def _password_change_required_response(self, request):
         if request.user.must_change_password:
             return Response(
                 {"success": False, "must_change_password": True},
                 status=status.HTTP_403_FORBIDDEN,
             )
+        return None
+
+    def _target_params(self, request):
+        work_date_str = request.query_params.get("work_date")
+        work_shift = request.query_params.get("work_shift")
+        work_date = parse_date(work_date_str) if work_date_str else None
+
+        if work_date is None or not work_shift:
+            return None
+        return work_date, work_shift
+
+    def post(self, request):
+        password_response = self._password_change_required_response(request)
+        if password_response:
+            return password_response
 
         data = request.data.get("data")
 
@@ -166,6 +225,109 @@ class UserWorkInfoAPIView(APIView):
         serializer = UserWorkDaySerializer(data=data, many=is_many)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+
+        return Response({"success": True})
+
+    def patch(self, request):
+        password_response = self._password_change_required_response(request)
+        if password_response:
+            return password_response
+
+        target = self._target_params(request)
+        if target is None:
+            return Response(
+                {"success": False},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        data = request.data.get("data")
+        if not isinstance(data, dict):
+            return Response(
+                {"success": False},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        data = data.copy()
+        data["user_uuid"] = request.user.user_uuid
+        data["is_approved"] = None
+
+        work_date, work_shift = target
+        try:
+            with transaction.atomic():
+                try:
+                    work_day = (
+                        User_WorkDay.objects
+                        .select_for_update()
+                        .get(
+                            user_uuid=request.user,
+                            work_date=work_date,
+                            work_shift=work_shift,
+                        )
+                    )
+                except User_WorkDay.DoesNotExist:
+                    return Response(
+                        {"success": False},
+                        status=status.HTTP_404_NOT_FOUND,
+                    )
+
+                if work_day.is_approved is not None:
+                    return Response(
+                        {"success": False},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+
+                serializer = UserWorkDaySerializer(
+                    work_day,
+                    data=data,
+                    context={"request": request},
+                )
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+        except IntegrityError:
+            return Response(
+                {"success": False},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response({"success": True})
+
+    def delete(self, request):
+        password_response = self._password_change_required_response(request)
+        if password_response:
+            return password_response
+
+        target = self._target_params(request)
+        if target is None:
+            return Response(
+                {"success": False},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        work_date, work_shift = target
+        with transaction.atomic():
+            try:
+                work_day = (
+                    User_WorkDay.objects
+                    .select_for_update()
+                    .get(
+                        user_uuid=request.user,
+                        work_date=work_date,
+                        work_shift=work_shift,
+                    )
+                )
+            except User_WorkDay.DoesNotExist:
+                return Response(
+                    {"success": False},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            if work_day.is_approved is not None:
+                return Response(
+                    {"success": False},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            work_day.delete()
 
         return Response({"success": True})
 
@@ -219,35 +381,15 @@ class UserMonthlyWorkSummaryAPIView(APIView):
             elif wd.work_shift == "야간":
                 night_shift_count += 1
 
-            if is_approved is True: # 승인된 경우: Expense에서 급여 가져오기
-                # wd.salary_expense는 OneToOneField로 연결된 Expense 객체
-                if hasattr(wd, 'salary_expense') and wd.salary_expense:
-                    day_amount = wd.salary_expense.amount
-                else:
-                    # 승인되었으나 Expense가 없는 경우는 로직상 발생하지 않음을 가정하고,
-                    # 해당 경우 발생 시 ValueError를 그대로 발생시킴.
-                    rates = get_rates_for_workday(wd) # WorkPlaceRate가 있을 것으로 가정
-                    breakdown = calculate_daily_salary_breakdown(details, rates, wd.work_shift)
-                    day_amount = breakdown["total_amount"]
-                    amount_breakdown = breakdown["by_work_type"]
-                    detail_amounts = breakdown["detail_amounts"]
-            elif is_approved is None: # 대기 중인 경우: 실시간으로 급여 계산 (WorkPlaceRate가 있을 것으로 가정)
-                # WorkPlaceRate가 없을 경우 ValueError 발생
+            # 승인 여부와 관계없이 현재 시급표를 기준으로 같은 방식으로 계산한다.
+            # Expense는 승인 시점의 저장값이라 시급 변경 후 상세 합계와 달라질 수 있다.
+            if is_approved is not False:
                 rates = get_rates_for_workday(wd)
                 breakdown = calculate_daily_salary_breakdown(details, rates, wd.work_shift)
                 day_amount = breakdown["total_amount"]
                 amount_breakdown = breakdown["by_work_type"]
                 detail_amounts = breakdown["detail_amounts"]
             # is_approved가 False (반려됨)인 경우 day_amount는 기본값 0으로 유지됨
-
-            if amount_breakdown is None and details and is_approved is not False:
-                try:
-                    rates = get_rates_for_workday(wd)
-                    breakdown = calculate_daily_salary_breakdown(details, rates, wd.work_shift)
-                    amount_breakdown = breakdown["by_work_type"]
-                    detail_amounts = breakdown["detail_amounts"]
-                except ValueError:
-                    pass
 
             daily_list.append({
                 "date": wd.work_date,

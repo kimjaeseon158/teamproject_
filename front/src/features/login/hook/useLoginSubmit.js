@@ -3,6 +3,8 @@ import { useState } from "react";
 import { setAccessToken } from "../../../services/api/token";
 import { adminLoginAPI, userLoginAPI } from "../api/loginApi";
 import { validation } from "../utils/validation";
+import { ERROR_MESSAGES, getErrorMessage } from "../../../constants/errorMessages";
+import { clearLoginFailures, incrementLoginFailures } from "../utils/loginFailureStorage";
 
 export default function useLoginSubmit({
   navigate,
@@ -18,6 +20,8 @@ export default function useLoginSubmit({
   storageKey,
   toast,
   values,
+  onFailureCountChange,
+  clearPassword,
 }) {
   const [fadeOut, setFadeOut] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -47,27 +51,28 @@ export default function useLoginSubmit({
           : await userLoginAPI(values.id, values.password);
 
       if (!response?.success) {
-        const message = response?.message || "아이디 또는 비밀번호를 확인해주세요.";
+        const message = response?.message || ERROR_MESSAGES.login.invalidCredentials;
+        if (role === "user" && response?.status === 400) {
+          onFailureCountChange(incrementLoginFailures(values.id));
+        }
         setLoginError(message);
-        toast({
-          title: "로그인 실패",
-          description: message,
-          status: "error",
-          duration: 3000,
-          isClosable: true,
-          position: "top",
-        });
+        clearPassword();
         setIsLoading(false);
         return;
       }
 
       if (!response.access) {
-        setLoginError("access token이 없습니다.");
+        setLoginError(ERROR_MESSAGES.login.sessionCreationFailed);
         setIsLoading(false);
         return;
       }
 
       setAccessToken(response.access);
+
+      if (role === "user") {
+        clearLoginFailures(values.id);
+        onFailureCountChange(0);
+      }
 
       if (rememberId) {
         localStorage.setItem(storageKey, values.id);
@@ -108,10 +113,12 @@ export default function useLoginSubmit({
       });
     } catch (err) {
       console.error("로그인 오류", err);
-      setLoginError("서버와 연결이 원활하지 않습니다.");
+      const message = getErrorMessage(err, ERROR_MESSAGES.login.failed);
+      setLoginError(message);
+      clearPassword();
       toast({
         title: "연결 오류",
-        description: "서버와 연결이 지연되고 있습니다. 잠시 후 다시 시도해주세요.",
+        description: message,
         status: "warning",
         duration: 4000,
         isClosable: true,

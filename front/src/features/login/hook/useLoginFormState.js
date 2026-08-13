@@ -54,6 +54,10 @@ export default function useLoginFormState() {
     }));
   };
 
+  const clearPassword = () => {
+    setValues((prev) => ({ ...prev, password: "" }));
+  };
+
   const onRememberIdChange = (e) => {
     const isChecked = e.target.checked;
     setRememberId(isChecked);
@@ -69,6 +73,7 @@ export default function useLoginFormState() {
 
   return {
     errors,
+    clearPassword,
     loginError,
     onChange,
     onRememberIdChange,

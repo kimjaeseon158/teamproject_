@@ -82,6 +82,7 @@ export default function DailyPayPage() {
         loading={dailyPay.exportLoading}
         showWorkPlace={false}
       />
+
     </Box>
   );
 }

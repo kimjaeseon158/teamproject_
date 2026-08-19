@@ -32,6 +32,7 @@ import { FiChevronLeft, FiChevronRight, FiSearch } from "react-icons/fi";
 
 import { fetchUserWorkSchedule } from "../api/userWorkSchedule";
 import { addDaysToDateValue, toLocalDateValue } from "../../common/utils/dateValue";
+import { useUser } from "../../auth/userContext";
 
 const statusColor = { DAY: "green", NIGHT: "blue", OFF: "gray", TRAINING: "orange" };
 const PAGE_SIZE = 8;
@@ -183,6 +184,7 @@ function MobileCards({ dates, selectedDate, users }) {
 
 export default function WorkSchedulePreviewPanel({ isOpen, onClose, selectedDate }) {
   const toast = useToast();
+  const { userName } = useUser();
   const placement = useBreakpointValue({ base: "bottom", md: "right" });
   const isMobile = placement === "bottom";
   const [date, setDate] = useState(selectedDate?.formatted || toLocalDateValue());
@@ -281,7 +283,14 @@ export default function WorkSchedulePreviewPanel({ isOpen, onClose, selectedDate
       <DrawerOverlay />
       <DrawerContent bg="white" color="gray.800" maxH={isMobile ? "92dvh" : undefined} borderTopRadius={isMobile ? "24px" : undefined}>
         <DrawerCloseButton top={4} right={4} />
-        <DrawerHeader borderBottomWidth="1px" borderColor="gray.200">근무표 조회</DrawerHeader>
+        <DrawerHeader borderBottomWidth="1px" borderColor="gray.200">
+          <HStack spacing={3} pr={10}>
+            <Text>근무표 조회</Text>
+            <Badge colorScheme="blue" borderRadius="full" px={3}>
+              로그인 사용자 · {userName || "사용자"}
+            </Badge>
+          </HStack>
+        </DrawerHeader>
         <DrawerBody px={{ base: 4, md: 6 }} py={5}>
           <VStack align="stretch" spacing={4}>
             {isMobile ? (

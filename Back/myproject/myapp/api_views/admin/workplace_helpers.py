@@ -1,5 +1,7 @@
 # 관리자 근무지와 급여율 공통 처리 함수
 
+from rest_framework.response import Response
+
 from ...models import AdminWorkPlace
 from ...serializers import AdminWorkPlaceSerializer
 

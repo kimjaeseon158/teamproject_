@@ -25,8 +25,95 @@ class WorkPlaceRateListCreateAPIView(APIView):
 
         return Response({"success": True, "users": grouped})
 
-    @transaction.atomic
     def post(self, request):
+        # Existing clients may keep sending a single object. New clients can
+        # send {"rates": [...]} to create several rates in one HTTP request.
+        if "rates" not in request.data:
+            return self._create_single(request, request.data)
+
+        rates = request.data.get("rates")
+        if not isinstance(rates, list) or not rates:
+            return Response(
+                {
+                    "success": False,
+                    "partial_success": False,
+                    "created_count": 0,
+                    "failed_count": 0,
+                    "results": [],
+                    "errors": {"rates": ["하나 이상의 근무지 배열을 보내주세요."]},
+                }
+            )
+
+        results = []
+        created_count = 0
+        for index, rate in enumerate(rates):
+            result = self._create_rate(request, rate)
+            result["index"] = index
+            results.append(result)
+            if result["success"]:
+                created_count += 1
+
+        failed_count = len(results) - created_count
+        work_place_qs = (
+            WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
+        )
+        return Response(
+            {
+                "success": failed_count == 0,
+                "partial_success": created_count > 0 and failed_count > 0,
+                "created_count": created_count,
+                "failed_count": failed_count,
+                "results": results,
+                "users": group_rates_by_user(work_place_qs),
+            }
+        )
+
+    def _create_single(self, request, rate):
+        result = self._create_rate(request, rate)
+        if not result["success"]:
+            return Response(result)
+
+        work_place_qs = (
+            WorkPlaceRate.objects.select_related("user").all().order_by("work_place")
+        )
+        return Response({"success": True, "users": group_rates_by_user(work_place_qs)})
+
+    def _create_rate(self, request, rate):
+        if not isinstance(rate, dict):
+            return {
+                "success": False,
+                "errors": {"item": ["객체 형식으로 보내주세요."]},
+            }
+
+        serializer = WorkPlaceRateCreateSerializer(data=rate)
+        if not serializer.is_valid():
+            return {"success": False, "errors": serializer.errors}
+
+        validated_data = serializer.validated_data.copy()
+        user_uuid = validated_data.pop("user_uuid")
+        rate_data, error_message = _apply_admin_work_place(
+            request.user, validated_data
+        )
+        if error_message:
+            return {"success": False, "message": error_message}
+
+        try:
+            user = User_Login_Info.objects.get(user_uuid=user_uuid)
+        except User_Login_Info.DoesNotExist:
+            return {"success": False, "message": "존재하지 않는 user입니다."}
+
+        try:
+            # Each item gets its own savepoint, so one duplicate does not roll
+            # back successful items from the same request.
+            with transaction.atomic():
+                created = WorkPlaceRate.objects.create(user=user, **rate_data)
+        except IntegrityError:
+            return {"success": False, "message": "이미 존재하는 근무지입니다."}
+
+        return {"success": True, "rate_uuid": str(created.rate_uuid)}
+
+    @transaction.atomic
+    def _legacy_post(self, request):
         create_ser = WorkPlaceRateCreateSerializer(data=request.data)
         if not create_ser.is_valid():
             return Response(

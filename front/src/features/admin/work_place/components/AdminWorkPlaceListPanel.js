@@ -1,9 +1,10 @@
-import { Box, Button, Flex, Input, Text, VStack } from "@chakra-ui/react";
+import { Badge, Box, Button, Flex, Input, Text, VStack } from "@chakra-ui/react";
 
 import { formatWon } from "../utils/rateFormat";
 
 export default function AdminWorkPlaceListPanel({
   form,
+  isAdding,
   onNew,
   onSearchChange,
   onSelect,
@@ -43,7 +44,29 @@ export default function AdminWorkPlaceListPanel({
       />
 
       <VStack align="stretch" spacing={2} maxH="420px" overflowY="auto" pr={1}>
-        {workPlaces.length === 0 ? (
+        {isAdding && (
+          <Box
+            border="1px dashed"
+            borderColor="blue.400"
+            bg="blue.50"
+            borderRadius="lg"
+            p={3}
+          >
+            <Flex justify="space-between" align="center" gap={2}>
+              <Text fontSize="sm" fontWeight="900" color="gray.800" noOfLines={1}>
+                {form.work_place.trim() || "근무지명 입력 중"}
+              </Text>
+              <Badge colorScheme="blue" flexShrink={0}>
+                작성 중
+              </Badge>
+            </Flex>
+            <Text fontSize="xs" color="gray.600" mt={1}>
+              기본 {formatWon(form.base_hourly_wage)}
+            </Text>
+          </Box>
+        )}
+
+        {workPlaces.length === 0 && !isAdding ? (
           <Box bg="gray.50" borderRadius="lg" p={4}>
             <Text fontSize="sm" color="gray.500">
               등록된 근무지가 없습니다.

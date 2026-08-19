@@ -25,6 +25,14 @@ export default function useRateEditRowsState(user) {
     setCheckedItems({});
   };
 
+  const updateTempRate = (rateUuid, changes) => {
+    setTempRates((prev) =>
+      prev.map((rate) =>
+        rate.rate_uuid === rateUuid ? { ...rate, ...changes } : rate
+      )
+    );
+  };
+
   return {
     checkedItems,
     editedValues,
@@ -39,5 +47,6 @@ export default function useRateEditRowsState(user) {
     setTempRates,
     tableData,
     tempRates,
+    updateTempRate,
   };
 }

@@ -1,5 +1,5 @@
 import { EMPTY_PLACE, RATE_FIELDS } from "../constants/rateFields";
-import { getWorkaddPlaceList } from "../api/userWorkplace_addList";
+import { addWorkPlaceRates, getWorkaddPlaceList } from "../api/userWorkplace_addList";
 import { getWorkPlaceFiltering } from "../api/userWorkplaceFiltering";
 import { getWorkPlaceList_Update } from "../api/userWorkplace_Update";
 import { getWorkplaceList_Delete } from "../api/userWorkplace_Delete";
@@ -28,6 +28,20 @@ export function useWorkPlaceRate(toast) {
       toast
     );
 
+  const handleAddMany = async (payloads) =>
+    await addWorkPlaceRates(
+      payloads.map((payload) => ({
+        user_uuid: payload.user_uuid,
+        admin_work_place_uuid: payload.admin_work_place_uuid,
+        work_place: payload.work_place,
+        ...RATE_FIELDS.reduce((next, field) => {
+          next[field.key] = payload[field.key] ?? null;
+          return next;
+        }, {}),
+      })),
+      toast
+    );
+
   const handleUpdate = async (payload) =>
     await getWorkPlaceList_Update(payload, { toast });
 
@@ -50,6 +64,7 @@ export function useWorkPlaceRate(toast) {
 
   return {
     handleAdd,
+    handleAddMany,
     handleUpdate,
     handleDelete,
     handleFiltering,

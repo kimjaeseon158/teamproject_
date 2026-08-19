@@ -81,6 +81,15 @@ export function useAddPersonLogic(onSave, onClose, toast) {
       return;
     }
 
+    if (phone_number.replace(/\D/g, "").length !== 11) {
+      notify({
+        title: "전화번호 확인",
+        description: "전화번호 11자리를 모두 입력해 주세요.",
+        status: "warning",
+      });
+      return;
+    }
+
     const payload = {
       user_name,
       user_id,
@@ -93,7 +102,7 @@ export function useAddPersonLogic(onSave, onClose, toast) {
     try {
       const result = await AddUser_PostData(payload, { toast });
       if (result?.success) {
-        onSave(result?.user_data?.[0] || payload);
+        onSave(Array.isArray(result?.user_data) ? result.user_data : null);
         onClose();
         notify({
           title: "등록 완료",

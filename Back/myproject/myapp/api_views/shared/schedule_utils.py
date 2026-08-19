@@ -6,7 +6,7 @@ from uuid import UUID
 from django.utils.dateparse import parse_date
 from rest_framework import status
 from rest_framework.response import Response
-from ...models import EmployeeWorkSchedule
+from ...models import EmployeeWorkSchedule,User_Login_Info
 
 
 class ScheduleBatchError(Exception):

@@ -1,9 +1,9 @@
-# 토큰 API export
-from .jwt_utils import AdminJWTAuthentication, CustomRefreshToken, UserJWTAuthentication
-from .token import (
-    TokenRefreshAPIView,
-    check_admin_credentials,
-    check_user_credentials,
+# JWT 인증·자격 검증·refresh token 처리를 제공하는 패키지
+
+from .authentication import AdminJWTAuthentication, CustomRefreshToken, UserJWTAuthentication
+from .credentials import check_admin_credentials, check_user_credentials
+from .refresh import TokenRefreshAPIView
+from .storage import (
     hash_refresh,
     save_or_update_admin_refresh_token,
     save_or_update_user_refresh_token,

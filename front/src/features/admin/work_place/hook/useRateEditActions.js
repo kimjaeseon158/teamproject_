@@ -16,33 +16,12 @@ export default function useRateEditActions({
   toast,
   user,
 }) {
-  const { handleAdd, handleUpdate, handleDelete } = useWorkPlaceRate(toast);
+  const { handleAddMany, handleUpdate, handleDelete } = useWorkPlaceRate(toast);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const handleAddRow = () => {
-    const { setCheckedItems, setEditedValues, setEditingId, setTempRates, tableData, tempRates } = rows;
-    const hasUnassigned = tableData.some(
-      (row) => !row.work_place || row.work_place === EMPTY_PLACE
-    );
-
-    if (hasUnassigned) {
-      notify(toast, {
-        title: "미지정 근무지가 있습니다.",
-        description: "먼저 근무지를 선택한 뒤 새 근무지를 추가해주세요.",
-        status: "warning",
-      });
-      return;
-    }
-
-    if (tempRates.length > 0) {
-      notify(toast, {
-        title: "추가 중인 항목이 있습니다.",
-        description: "현재 추가 중인 근무지를 먼저 저장해주세요.",
-        status: "info",
-      });
-      return;
-    }
+    const { setCheckedItems, setTempRates } = rows;
 
     const newRow = {
       rate_uuid: `temp-${Date.now()}`,
@@ -51,8 +30,6 @@ export default function useRateEditActions({
     };
 
     setTempRates((prev) => [...prev, newRow]);
-    setEditingId(newRow.rate_uuid);
-    setEditedValues(newRow);
     setCheckedItems({ [newRow.rate_uuid]: true });
     notify(toast, {
       title: "근무지 입력 행을 추가했습니다.",
@@ -134,7 +111,7 @@ export default function useRateEditActions({
 
   const handleSaveClick = async () => {
     const { editedValues, editingId, resetEditState, tableData, tempRates } = rows;
-    if (!editingId) {
+    if (!editingId && tempRates.length === 0) {
       notify(toast, {
         title: "수정할 항목을 선택해주세요.",
         status: "warning",
@@ -142,12 +119,14 @@ export default function useRateEditActions({
       return;
     }
 
-    const nextValues = {
-      ...tableData.find((row) => row.rate_uuid === editingId),
-      ...editedValues,
-    };
-
-    if (!nextValues.work_place || nextValues.work_place === EMPTY_PLACE) {
+    const existingEdit = editingId
+      ? { ...tableData.find((row) => row.rate_uuid === editingId), ...editedValues }
+      : null;
+    const pendingRows = [...tempRates, ...(existingEdit ? [existingEdit] : [])];
+    const missingPlace = pendingRows.find(
+      (row) => !row.work_place || row.work_place === EMPTY_PLACE
+    );
+    if (missingPlace) {
       notify(toast, {
         title: "근무지를 선택해주세요.",
         status: "warning",
@@ -155,27 +134,52 @@ export default function useRateEditActions({
       return;
     }
 
-    const isNewRow = tempRates.some((row) => row.rate_uuid === editingId);
+    const visibleRateFields = RATE_FIELDS.filter(
+      (field) => field.key !== "special_hourly_wage"
+    );
+    const invalidRow = pendingRows.find((row) =>
+      visibleRateFields.some(
+        (field) =>
+          row[field.key] === "" ||
+          row[field.key] == null ||
+          !Number.isFinite(Number(row[field.key])) ||
+          Number(row[field.key]) < 0
+      )
+    );
+    if (invalidRow) {
+      notify(toast, {
+        title: "시급 정보를 모두 입력해주세요.",
+        description: "모든 시급 항목에는 0 이상의 숫자가 필요합니다.",
+        status: "warning",
+      });
+      return;
+    }
 
     try {
       setSaving(true);
-      const result = isNewRow
-        ? await handleAdd({
+      let result;
+      if (tempRates.length > 0) {
+        result = await handleAddMany(
+          tempRates.map((row) => ({
             user_uuid: user.user_uuid,
-            ...toRatePayload(nextValues),
-          })
-        : await handleUpdate({
-            rate_uuid: editingId,
-            ...toRatePayload(nextValues),
-          });
+            ...toRatePayload(row),
+          }))
+        );
+      }
+      if (existingEdit) {
+        result = await handleUpdate({
+          rate_uuid: editingId,
+          ...toRatePayload(existingEdit),
+        });
+      }
 
       if (result?.success === false) {
         throw new Error(result?.message || "저장에 실패했습니다.");
       }
 
       notify(toast, {
-        title: isNewRow
-          ? "근무지 시급을 추가했습니다."
+        title: tempRates.length > 0
+          ? `${tempRates.length}개 근무지 시급을 저장했습니다.`
           : "근무지 시급을 수정했습니다.",
         status: "success",
       });

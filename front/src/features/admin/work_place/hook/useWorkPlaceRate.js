@@ -1,8 +1,8 @@
 import { EMPTY_PLACE, RATE_FIELDS } from "../constants/rateFields";
-import { getWorkaddPlaceList } from "../api/userWorkplace_addList";
+import { addWorkPlaceRates, createWorkPlaceRate } from "../api/userWorkplace_addList";
 import { getWorkPlaceFiltering } from "../api/userWorkplaceFiltering";
-import { getWorkPlaceList_Update } from "../api/userWorkplace_Update";
-import { getWorkplaceList_Delete } from "../api/userWorkplace_Delete";
+import { updateWorkPlaceRate } from "../api/userWorkplace_Update";
+import { deleteWorkPlaceRate } from "../api/userWorkplace_Delete";
 
 const buildEmptyRatePayload = (rateUuid) => ({
   rate_uuid: rateUuid,
@@ -15,7 +15,7 @@ const buildEmptyRatePayload = (rateUuid) => ({
 
 export function useWorkPlaceRate(toast) {
   const handleAdd = async (payload) =>
-    await getWorkaddPlaceList(
+    await createWorkPlaceRate(
       {
         user_uuid: payload.user_uuid,
         admin_work_place_uuid: payload.admin_work_place_uuid,
@@ -28,21 +28,35 @@ export function useWorkPlaceRate(toast) {
       toast
     );
 
+  const handleAddMany = async (payloads) =>
+    await addWorkPlaceRates(
+      payloads.map((payload) => ({
+        user_uuid: payload.user_uuid,
+        admin_work_place_uuid: payload.admin_work_place_uuid,
+        work_place: payload.work_place,
+        ...RATE_FIELDS.reduce((next, field) => {
+          next[field.key] = payload[field.key] ?? null;
+          return next;
+        }, {}),
+      })),
+      toast
+    );
+
   const handleUpdate = async (payload) =>
-    await getWorkPlaceList_Update(payload, { toast });
+    await updateWorkPlaceRate(payload, { toast });
 
   const handleDelete = async ({ user, rate_uuid }) => {
     if (!rate_uuid) return null;
 
     if (user.rates.length === 1) {
       const rate = user.rates[0];
-      return await getWorkPlaceList_Update(
+      return await updateWorkPlaceRate(
         buildEmptyRatePayload(rate.rate_uuid),
         { toast }
       );
     }
 
-    return await getWorkplaceList_Delete({ rate_uuid }, toast);
+    return await deleteWorkPlaceRate({ rate_uuid }, toast);
   };
 
   const handleFiltering = async ({ user_name, work_place }) =>
@@ -50,6 +64,7 @@ export function useWorkPlaceRate(toast) {
 
   return {
     handleAdd,
+    handleAddMany,
     handleUpdate,
     handleDelete,
     handleFiltering,

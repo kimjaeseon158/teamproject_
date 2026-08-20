@@ -10,6 +10,7 @@ import {
   Button,
   HStack,
   IconButton,
+  Spinner,
   Text,
   VStack,
 } from "@chakra-ui/react";
@@ -22,18 +23,27 @@ export default function OptionSubmitConfirmDialog({
   isOpen,
   cancelRef,
   cart,
+  isSubmitting,
   onClose,
   onDelete,
   onConfirm,
 }) {
   return (
-    <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef} onClose={onClose} isCentered closeOnOverlayClick={false} closeOnEsc={false}>
+    <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef} onClose={isSubmitting ? undefined : onClose} isCentered closeOnOverlayClick={false} closeOnEsc={false}>
       <AlertDialogOverlay backdropFilter="blur(4px)">
         <AlertDialogContent bg="#1c1c1e" color="white" borderRadius="24px" m={4}>
           <AlertDialogHeader fontSize="lg" fontWeight="bold">
             최종 등록 확인
           </AlertDialogHeader>
           <AlertDialogBody>
+            {isSubmitting && (
+              <VStack py={8} spacing={4}>
+                <Spinner size="xl" thickness="4px" color="green.300" />
+                <Text fontWeight="bold">근무 등록을 요청하고 있습니다.</Text>
+                <Text fontSize="sm" color="gray.400">완료될 때까지 창을 닫지 마세요.</Text>
+              </VStack>
+            )}
+            {!isSubmitting && (
             <VStack spacing={3} align="stretch" maxH="300px" overflowY="auto" py={2}>
               {cart.map((item) => {
                 const extraDetails = item.details.slice(1);
@@ -84,12 +94,13 @@ export default function OptionSubmitConfirmDialog({
                 );
               })}
             </VStack>
+            )}
           </AlertDialogBody>
           <AlertDialogFooter gap={3}>
-            <Button ref={cancelRef} variant="ghost" onClick={onClose}>
+            <Button ref={cancelRef} variant="ghost" onClick={onClose} isDisabled={isSubmitting}>
               취소
             </Button>
-            <Button colorScheme="green" borderRadius="xl" onClick={onConfirm}>
+            <Button colorScheme="green" borderRadius="xl" onClick={onConfirm} isLoading={isSubmitting} loadingText="등록 중" isDisabled={isSubmitting}>
               지금 등록하기
             </Button>
           </AlertDialogFooter>

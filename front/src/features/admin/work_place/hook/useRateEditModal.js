@@ -40,6 +40,7 @@ export default function useRateEditModal({
     setEditedValues: rows.setEditedValues,
     setEditingId: rows.setEditingId,
     setTempRates: rows.setTempRates,
+    updateTempRate: rows.updateTempRate,
     summary,
     tableData: rows.tableData,
   };

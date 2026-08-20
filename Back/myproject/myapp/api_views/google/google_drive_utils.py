@@ -1,3 +1,4 @@
+# Google Drive 다운로드·업로드 공통 함수
 # Google Drive 유틸
 
 import requests

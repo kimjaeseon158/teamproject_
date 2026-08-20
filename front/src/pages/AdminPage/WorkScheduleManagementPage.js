@@ -86,12 +86,12 @@ export default function WorkScheduleManagementPage() {
             colorScheme="blue"
             variant="outline"
             leftIcon={<FiRefreshCw />}
-            title={`${previousDate} 근무를 ${schedule.date}에 자동 덮어쓰기`}
+            title="이번 주의 직원별 최근 과거 근무를 기준일에 덮어쓰기"
             onClick={() => schedule.copyPreviousDay("replace")}
             isLoading={schedule.copying}
-            isDisabled={schedule.changeCount > 0}
+            isDisabled={schedule.changeCount > 0 || schedule.loading || !schedule.canCopyRecent}
           >
-            전날 근무 덮어쓰기
+            최근 근무 덮어쓰기
           </Button>
           <Button
             aria-label="이전 날짜"

@@ -85,6 +85,30 @@ export default function useAdminWorkPlaceModal({
       return;
     }
 
+    const missingRate = RATE_FIELDS.find(
+      (field) => form[field.key] === "" || form[field.key] == null
+    );
+    if (missingRate) {
+      notify(toast, {
+        title: "시급 정보를 모두 입력해주세요.",
+        description: `${missingRate.label} 항목이 비어 있습니다.`,
+        status: "warning",
+      });
+      return;
+    }
+
+    const invalidRate = RATE_FIELDS.find(
+      (field) => !Number.isFinite(Number(form[field.key])) || Number(form[field.key]) < 0
+    );
+    if (invalidRate) {
+      notify(toast, {
+        title: "시급 정보를 확인해주세요.",
+        description: `${invalidRate.label} 항목에는 0 이상의 숫자를 입력해주세요.`,
+        status: "warning",
+      });
+      return;
+    }
+
     try {
       setSaving(true);
       const result = isEditMode
@@ -159,6 +183,7 @@ export default function useAdminWorkPlaceModal({
     handleNew,
     handleSelect,
     handleSubmit,
+    isAdding,
     isEditMode,
     saving,
     search,

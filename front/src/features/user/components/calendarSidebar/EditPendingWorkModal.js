@@ -31,6 +31,7 @@ import { fetchUserWorkPlaces } from "../../api/userWorkPlaces";
 import { deleteWorkInfo, updateWorkInfo } from "../../api/updateWorkInfo";
 import workTimeList from "../../data/workTimeList";
 import { calculateNetMinutes, diffMinutes } from "../../utils/timeUtils";
+import TimeWheelPicker from "../../../common/TimeWheelPicker";
 
 const TEXT = {
   addExtra: "\ucd94\uac00\uadfc\ubb34\u0020\ucd94\uac00",
@@ -395,13 +396,27 @@ export default function EditPendingWorkModal({
 
                 <FormControl>
                   <FormLabel fontSize="xs" color="gray.400">{TEXT.time}</FormLabel>
-                  <Select value={selectedWorkTime} onChange={(e) => handleWorkTimeChange(e.target.value)} {...fieldStyle}>
-                    {filteredWorkTimes.map((time) => (
-                      <option key={`${time.startTime}-${time.finishTime}`} value={`${time.startTime}~${time.finishTime}`}>
-                        {time.startTime} ~ {time.finishTime}
-                      </option>
-                    ))}
-                  </Select>
+                  {isBottomSheet ? (
+                    <HStack justify="center" spacing={3} p={3} bg="blackAlpha.200" borderRadius="18px">
+                      <VStack spacing={1}>
+                        <Text fontSize="10px" color="gray.300" fontWeight="bold">시작 시간</Text>
+                        <TimeWheelPicker value={startTime} variant="compact" onChange={setStartTime} />
+                      </VStack>
+                      <Text color="orange.300" fontWeight="bold">→</Text>
+                      <VStack spacing={1}>
+                        <Text fontSize="10px" color="gray.300" fontWeight="bold">종료 시간</Text>
+                        <TimeWheelPicker value={finishTime} variant="compact" onChange={setFinishTime} />
+                      </VStack>
+                    </HStack>
+                  ) : (
+                    <Select value={selectedWorkTime} onChange={(e) => handleWorkTimeChange(e.target.value)} {...fieldStyle}>
+                      {filteredWorkTimes.map((time) => (
+                        <option key={`${time.startTime}-${time.finishTime}`} value={`${time.startTime}~${time.finishTime}`}>
+                          {time.startTime} ~ {time.finishTime}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
                 </FormControl>
 
                 <FormControl>

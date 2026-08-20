@@ -1,8 +1,8 @@
 import { ApiGet, toQueryString } from "../../../../services/api/requestJson";
 
-export const Panel_PostData = async (data = {}, toast) => {
+export const fetchEmployees = async (queryParams = {}, toast) => {
   try {
-    return await ApiGet(`/api/user-info-list/${toQueryString(data)}`, {
+    return await ApiGet(`/api/user-info-list/${toQueryString(queryParams)}`, {
       toast,
     });
   } catch (error) {

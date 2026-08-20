@@ -1,6 +1,6 @@
 import { ApiGet, toQueryString } from "../../../../services/api/requestJson";
 
-export async function total_payPost(payload, toast) {
+export async function fetchFinanceSummary(payload, toast) {
   try {
     return await ApiGet(`/api/finance-total/${toQueryString(payload)}`, {
       toast,

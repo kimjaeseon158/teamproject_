@@ -1,5 +1,5 @@
 import { ApiPatch } from "../../../../services/api/requestJson";
 
-export async function getWorkPlaceList_Update(payload, { toast } = {}) {
+export async function updateWorkPlaceRate(payload, { toast } = {}) {
   return await ApiPatch("/api/work-place-rate-update-delete/", payload, { toast });
 }

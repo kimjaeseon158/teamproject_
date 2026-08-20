@@ -15,10 +15,10 @@ export default function ExpensePage() {
     range, setRange,
     expenseData, setExpenseData,
     totalExpense,
-    saveFinalList,
+    saveExpenseItems,
   } = useExpenseData({ toast });
 
-  const [finalList, setFinalList] = useState([]);
+  const [selectedExpenseRows, setSelectedExpenseRows] = useState([]);
   const [editIndex, setEditIndex] = useState(null);
 
   const rangeModal = useDisclosure();
@@ -30,11 +30,11 @@ export default function ExpensePage() {
       <Flex gap={6} flexWrap="wrap">
         <ExpenseTableSection
           expenseData={expenseData}
-          finalList={finalList}
+          selectedRows={selectedExpenseRows}
           onSelectRow={(idx, checked) =>
             checked
-              ? setFinalList([...finalList, expenseData[idx]])
-              : setFinalList(finalList.filter((f) => f !== expenseData[idx]))
+              ? setSelectedExpenseRows([...selectedExpenseRows, expenseData[idx]])
+              : setSelectedExpenseRows(selectedExpenseRows.filter((row) => row !== expenseData[idx]))
           }
           onRowClick={(idx) => {
             setEditIndex(idx);
@@ -60,7 +60,7 @@ export default function ExpensePage() {
       <ExpenseAddModal
         isOpen={addModal.isOpen}
         onClose={addModal.onClose}
-        onSave={saveFinalList}
+        onSave={saveExpenseItems}
       />
 
       <ExpenseEditModal

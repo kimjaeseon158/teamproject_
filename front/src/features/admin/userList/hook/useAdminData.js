@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 
-import { Panel_PostData } from "../api/admnsdbPost";
+import { fetchEmployees } from "../api/admnsdbPost";
 
 export function useAdminData(setPeopleData) {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await Panel_PostData();
+        const res = await fetchEmployees();
         if (res?.success && Array.isArray(res.users)) {
           setPeopleData(res.users);
         }

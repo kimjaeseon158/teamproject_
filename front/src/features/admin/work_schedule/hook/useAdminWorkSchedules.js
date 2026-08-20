@@ -2,9 +2,20 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useToast } from "@chakra-ui/react";
 
 import { fetchAdminWorkSchedules, saveAdminWorkSchedules } from "../api/adminWorkSchedules";
-import { addDaysToDateValue, toLocalDateValue } from "../../../common/utils/dateValue";
+import { toLocalDateValue } from "../../../common/utils/dateValue";
 
 const tempUuid = () => `new-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+const findMostRecentWeekSchedules = (user, dates, targetDate) => {
+  const sourceDate = [...dates]
+    .filter((workDate) => workDate < targetDate)
+    .sort((a, b) => b.localeCompare(a))
+    .find((workDate) => (user.days?.[workDate] || []).length > 0);
+
+  return sourceDate
+    ? { sourceDate, schedules: user.days[sourceDate] }
+    : null;
+};
 
 export default function useAdminWorkSchedules() {
   const toast = useToast();
@@ -109,30 +120,44 @@ export default function useAdminWorkSchedules() {
 
   const changeCount = changes.create.length + changes.update.length + changes.delete.length;
 
+  const canCopyRecent = useMemo(
+    () => data.users.some((user) =>
+      Boolean(findMostRecentWeekSchedules(user, data.dates, date))
+    ),
+    [data, date]
+  );
+
   const copyPreviousDay = async (mode = "replace") => {
-    const previousDate = addDaysToDateValue(date, -1);
     setCopying(true);
     try {
-      const sourceData = data.dates.includes(previousDate)
-        ? data
-        : await fetchAdminWorkSchedules(previousDate, { toast });
-      const sourceByUser = new Map(
-        (sourceData?.users || []).map((user) => [user.user_uuid, user.days?.[previousDate] || []])
-      );
+      const sourceByUser = new Map();
+      data.users.forEach((user) => {
+        const recent = findMostRecentWeekSchedules(user, data.dates, date);
+        if (recent) sourceByUser.set(user.user_uuid, recent);
+      });
+
+      if (sourceByUser.size === 0) {
+        toast({ title: "이번 주에 불러올 과거 근무가 없습니다.", status: "info" });
+        return;
+      }
 
       if (mode === "replace") {
         setPendingWorkDate((current) => current || date);
-        const persistedTargetUuids = data.users.flatMap((user) =>
-          (user.days?.[date] || []).map((item) => item.schedule_uuid).filter(Boolean)
-        );
+        const persistedTargetUuids = data.users
+          .filter((user) => sourceByUser.has(user.user_uuid))
+          .flatMap((user) =>
+            (user.days?.[date] || []).map((item) => item.schedule_uuid).filter(Boolean)
+          );
         setDeleted((current) => Array.from(new Set([...current, ...persistedTargetUuids])));
       }
 
       setData((current) => ({
         ...current,
         users: current.users.map((user) => {
+          const recent = sourceByUser.get(user.user_uuid);
+          if (!recent) return user;
           const currentSchedules = mode === "replace" ? [] : (user.days?.[date] || []);
-          const copied = (sourceByUser.get(user.user_uuid) || [])
+          const copied = recent.schedules
             .map((item) => {
               const copiedItem = { ...item, __client_uuid: tempUuid() };
               delete copiedItem.schedule_uuid;
@@ -150,9 +175,13 @@ export default function useAdminWorkSchedules() {
           };
         }),
       }));
-      toast({ title: `${previousDate} 근무를 ${date}로 불러왔습니다.`, status: "success" });
+      toast({
+        title: `이번 주 최근 근무를 ${date}로 불러왔습니다.`,
+        description: `${sourceByUser.size}명의 최근 과거 근무를 적용했습니다.`,
+        status: "success",
+      });
     } catch (error) {
-      toast({ title: "전날 근무를 불러오지 못했습니다.", description: error.message, status: "error" });
+      toast({ title: "최근 근무를 불러오지 못했습니다.", description: error.message, status: "error" });
     } finally {
       setCopying(false);
     }
@@ -200,6 +229,7 @@ export default function useAdminWorkSchedules() {
   return {
     changeCount,
     changeDate: pendingWorkDate,
+    canCopyRecent,
     copying,
     copyEmployeePrevious,
     copyPreviousDay,

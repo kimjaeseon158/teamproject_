@@ -35,10 +35,8 @@ export default function ActivityForm({
    const {
     setBaseShift,
     setIsSpecial,
-    setWorkTime,
     setLocation,
     setExtraEnabled,
-    setExtraWorks,
     handleSelectWorkTime,
     updateExtraWork,
     handleRemoveExtraRow,

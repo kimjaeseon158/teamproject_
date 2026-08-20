@@ -178,6 +178,7 @@ const Option = ({
         isOpen={form.isSubmitConfirmOpen}
         cancelRef={cancelRef}
         cart={form.cart}
+        isSubmitting={form.isSubmitting}
         onClose={() => form.setIsSubmitConfirmOpen(false)}
         onDelete={form.handleDeleteFromCart}
         onConfirm={form.handleConfirmSubmitAll}

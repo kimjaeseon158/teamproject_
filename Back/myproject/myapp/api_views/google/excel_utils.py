@@ -1,4 +1,5 @@
-# Google Excel 생성 유틸
+# Google Drive용 Excel 생성과 셀 처리 함수
+
 
 import os
 from openpyxl import load_workbook, Workbook
@@ -12,7 +13,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.formula.translate import Translator
 import calendar
 from ..shared import normalize_work_type
-from ...salary import WageRates, get_detail_salary_amount
+from ..shared.salary_utils import WageRates, get_detail_salary_amount
 
 
 # ----------------------

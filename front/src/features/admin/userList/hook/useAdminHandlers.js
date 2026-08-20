@@ -1,7 +1,7 @@
 import { deleteEmployees } from "../api/adminPageDelete";
 import { updateEmployee } from "../api/adminPageUpdate";
 import { fetchFilteredPeople } from "../api/adminPageLogic";
-import { Panel_PostData } from "../api/admnsdbPost";
+import { fetchEmployees } from "../api/admnsdbPost";
 import { formatResidentNumber, formatPhoneNumber } from "../utils/format";
 
 const initialSearchForm = {
@@ -156,7 +156,7 @@ export function useAdminHandlers(state, toast) {
   };
 
   const handleShowAll = async () => {
-    const res = await Panel_PostData({}, toast);
+    const res = await fetchEmployees({}, toast);
 
     if (res?.success && Array.isArray(res.users)) {
       setPeopleData(res.users);

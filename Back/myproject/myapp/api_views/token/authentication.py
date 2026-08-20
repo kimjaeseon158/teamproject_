@@ -1,9 +1,8 @@
-# JWT 인증 유틸
+# 관리자·사용자 JWT 인증 클래스
 
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from ...models import Admin_Login_Info, User_Login_Info
 
 

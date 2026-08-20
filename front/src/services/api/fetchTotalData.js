@@ -1,5 +1,5 @@
 // src/js/fetchTotalData.js
-import { total_payPost } from "../../features/admin/total_pay/api/total_payPostLogic";
+import { fetchFinanceSummary } from "../../features/admin/total_pay/api/total_payPostLogic";
 
 export async function fetchTotalData({ start, end, toast }) {
   const payload = {
@@ -7,7 +7,7 @@ export async function fetchTotalData({ start, end, toast }) {
     end_date: end.toISOString().split("T")[0],
   };
 
-  const data = await total_payPost(payload, toast);
+  const data = await fetchFinanceSummary(payload, toast);
 
   if (!data || !data.success) return null;
 

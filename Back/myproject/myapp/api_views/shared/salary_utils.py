@@ -1,10 +1,11 @@
+# 근무 유형별 급여 계산과 급여 지출 동기화 함수
+
 from __future__ import annotations
 from dataclasses import dataclass
 from django.db import transaction
 from myapp.models import WorkPlaceRate, Expense
 from collections import OrderedDict
 from django.core.exceptions import ObjectDoesNotExist
-from datetime import date
 
 
 MINUTES_PER_HOUR = 60
@@ -13,7 +14,7 @@ FULL_DAY_MINUTES = 480
 
 def _normalize_work_type(work_type: str, work_shift: str | None = None) -> str:
     # api_views 패키지는 뷰를 즉시 import하므로 모듈 로드 시 순환 import를 피한다.
-    from .api_views.shared import normalize_work_type
+    from .work_type_utils import normalize_work_type
 
     return normalize_work_type(work_type, work_shift)
 

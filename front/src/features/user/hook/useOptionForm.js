@@ -93,6 +93,7 @@ export default function useOptionForm({
     },
     isSpecial: workTimeForm.isSpecial,
     isSubmitConfirmOpen: cartState.isSubmitConfirmOpen,
+    isSubmitting: cartState.isSubmitting,
     location,
     note,
     setExtraEnabled: extraWorkRows.setExtraEnabled,

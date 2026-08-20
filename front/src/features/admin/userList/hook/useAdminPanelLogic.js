@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Panel_PostData } from "../api/admnsdbPost";
+import { fetchEmployees } from "../api/admnsdbPost";
 
 export function useAdminPanelLogic(initLocations, onClose, toast) {
   const [locations, setLocations] = useState(initLocations);
@@ -46,7 +46,7 @@ export function useAdminPanelLogic(initLocations, onClose, toast) {
     };
 
     try {
-      await Panel_PostData(payload);
+      await fetchEmployees(payload);
       onClose();
     } catch (err) {
       notify({

@@ -47,6 +47,7 @@ export default function RateEditModal({
         setEditedValues: modal.setEditedValues,
         setEditingId: modal.setEditingId,
         setTempRates: modal.setTempRates,
+        updateTempRate: modal.updateTempRate,
         adminWorkPlaces: modal.adminWorkPlaces,
       }),
     [modal]

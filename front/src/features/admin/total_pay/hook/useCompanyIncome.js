@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { income_Data } from "../api/company_api";
+import { createIncome } from "../api/company_api";
 import { income_filter_Data } from "../api/company_filter";
 
 export function useCompanyIncome({ user, loading, toast }) {
@@ -30,9 +30,9 @@ export function useCompanyIncome({ user, loading, toast }) {
     })();
   }, [range, user, loading, toast]);
 
-  const saveFinalList = async (finalList) => {
-    for (const item of finalList) {
-      const result = await income_Data(
+  const saveIncomeItems = async (incomeItems) => {
+    for (const item of incomeItems) {
+      const result = await createIncome(
         {
           date: item.date.toISOString().split("T")[0],
           company_name: item.name,
@@ -51,6 +51,6 @@ export function useCompanyIncome({ user, loading, toast }) {
     incomeData,
     setIncomeData,
     totalIncome,
-    saveFinalList,
+    saveIncomeItems,
   };
 }

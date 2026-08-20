@@ -1,6 +1,6 @@
 import { ApiPost } from "../../../../services/api/requestJson";
 
-export async function expense_Data(payload, toast) {
+export async function createExpense(payload, toast) {
   try {
     return await ApiPost("/api/expense-add/", payload, { toast });
   } catch (err) {

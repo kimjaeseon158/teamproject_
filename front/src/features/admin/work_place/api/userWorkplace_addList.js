@@ -1,5 +1,13 @@
 import { ApiPost } from "../../../../services/api/requestJson";
 
-export async function getWorkaddPlaceList(payload, toast) {
+export async function createWorkPlaceRate(payload, toast) {
   return await ApiPost("/api/work-place-rate-list-create/", payload, { toast });
+}
+
+export async function addWorkPlaceRates(rates, toast) {
+  return await ApiPost(
+    "/api/work-place-rate-list-create/",
+    { rates },
+    { toast }
+  );
 }

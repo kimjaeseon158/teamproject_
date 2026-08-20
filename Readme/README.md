@@ -44,54 +44,42 @@
 ## 프로젝트 구조
 
 ```text
-teamproject_-3/
+teamproject_/
+teamproject_/
 ├─ Back/
-│  └─ myproject/
-│     ├─ manage.py
-│     ├─ myproject/
-│     │  ├─ settings.py
-│     │  ├─ urls.py
-│     │  ├─ asgi.py
-│     │  ├─ wsgi.py
-│     │  └─ middlewares.py
-│     └─ myapp/
-│        ├─ apps.py
-│        ├─ models.py
-│        ├─ serializers.py
-│        ├─ views.py
-│        ├─ urls.py
-│        ├─ salary.py
-│        ├─ api_views/
-│        │  ├─ __init__.py
-│        │  ├─ admin/
-│        │  │  ├─ __init__.py
-│        │  │  ├─ admin_auth.py
-│        │  │  ├─ user_management.py
-│        │  │  ├─ finance.py
-│        │  │  └─ work.py
-│        │  ├─ user/
-│        │  │  ├─ __init__.py
-│        │  │  └─ user.py
-│        │  ├─ google/
-│        │  │  ├─ __init__.py
-│        │  │  ├─ google.py
-│        │  │  ├─ excel_utils.py
-│        │  │  └─ google_drive_utils.py
-│        │  ├─ token/
-│        │  │  ├─ __init__.py
-│        │  │  ├─ jwt_utils.py
-│        │  │  └─ token.py
-│        │  └─ shared/
-│        │     ├─ __init__.py
-│        │     ├─ common.py
-│        │     └─ utils.py
-│        ├─ ws/
-│        │  ├─ __init__.py
-│        │  ├─ consumers.py
-│        │  ├─ routing.py
-│        │  └─ signals.py
-│        └─ migrations/
-├─ front/
+│   └─ myproject/
+│      ├─ manage.py
+│      ├─ requirements.txt
+│      ├─ myproject/                 # Django 프로젝트 설정
+│      │  ├─ settings.py
+│      │  ├─ urls.py
+│      │  ├─ middlewares.py
+│      │  ├─ asgi.py
+│      │  └─ wsgi.py
+│      └─ myapp/                     # 백엔드 주요 Django 앱
+│         ├─ models/                  # 기능별 DB 모델
+│         │  ├─ accounts.py
+│         │  ├─ work.py
+│         │  ├─ schedules.py
+│         │  ├─ finance.py
+│         │  └─ tokens.py
+│         ├─ serializers/             # 기능별 DRF serializer
+│         │  ├─ accounts.py
+│         │  ├─ work.py
+│         │  ├─ schedules.py
+│         │  └─ finance.py
+│         ├─ api_views/               # API 요청 처리
+│         │  ├─ admin/           # 관리자 API
+│         │  ├─ user/            # 사용자 API
+│         │  ├─ google/          # Google 연동
+│         │  ├─ token/           # JWT·refresh token
+│         │  └─ shared/          # API 공통 로직
+│         ├─ encryption/              # 민감 정보 암호화
+│         ├─ management/              # Django 관리 명령
+│         ├─ migrations/              # DB migration 이력
+│         ├─ ws/                      # Channels WebSocket
+│         ├─ urls.py                  # 기존 HTTP URL 라우팅
+│         └─ views.py                 # URL import 호환 모듈
 │  ├─ package.json
 │  ├─ vercel.json
 │  ├─ public/
@@ -101,43 +89,105 @@ teamproject_-3/
    └─ Code_Review/
 ```
 
-## Backend 주요 파일
+## Backend 파일별 역할
 
-| 파일/폴더 | 역할 |
-| --- | --- |
-| `Back/myproject/manage.py` | Django 관리 명령 실행 파일 |
-| `Back/myproject/myproject/settings.py` | Django, DB, JWT, CORS, Redis, Google OAuth 설정 |
-| `Back/myproject/myproject/urls.py` | 프로젝트 전체 URL 연결 |
-| `Back/myproject/myproject/asgi.py` | HTTP/WebSocket ASGI 진입점, `myapp.ws.routing` 연결 |
-| `Back/myproject/myproject/wsgi.py` | WSGI 진입점 |
-| `Back/myproject/myproject/middlewares.py` | WebSocket 토큰 인증 미들웨어 |
-| `Back/myproject/myapp/apps.py` | Django 앱 설정, `myapp.ws.signals` 등록 |
-| `Back/myproject/myapp/models.py` | 사용자, 관리자, 근무 기록, 급여, 재무, Refresh Token 모델 |
-| `Back/myproject/myapp/serializers.py` | API 요청/응답 직렬화 및 생성/수정 검증 |
-| `Back/myproject/myapp/views.py` | 기존 import 호환을 위한 API view export 파일 |
-| `Back/myproject/myapp/urls.py` | `myapp` API endpoint 라우팅 |
-| `Back/myproject/myapp/salary.py` | 급여 계산, 시급 조회, 급여 지출 동기화 도메인 로직 |
-| `Back/myproject/myapp/api_views/` | REST API view를 도메인별로 분리한 패키지 |
-| `Back/myproject/myapp/ws/` | WebSocket consumer, routing, signal 패키지 |
-| `Back/myproject/myapp/migrations/` | DB 스키마 변경 이력 |
+### 모델
 
-## API View 구조
+| 경로 | 역할 |
+|---|---|
+| `myapp/models/__init__.py` | 기능별 Django 모델을 기존 import 경로로 제공하는 패키지 |
+| `myapp/models/accounts.py` | 사용자와 관리자 계정 및 비밀번호 재설정 모델 |
+| `myapp/models/work.py` | 근무일·근무 상세·근무지·급여율 모델 |
+| `myapp/models/schedules.py` | 직원 근무 일정 모델과 과거 파일 경로 함수 |
+| `myapp/models/finance.py` | 수입과 지출 모델 |
+| `myapp/models/tokens.py` | 사용자와 관리자 refresh token 모델 |
 
-| 파일/폴더 | 역할 |
-| --- | --- |
-| `api_views/__init__.py` | API view export |
-| `api_views/admin/admin_auth.py` | 관리자 로그인/로그아웃 API |
-| `api_views/admin/user_management.py` | 관리자의 직원 조회/추가/수정/삭제/필터링 API |
-| `api_views/admin/finance.py` | 수입/지출 조회, 추가, 수정, 삭제, 집계 API |
-| `api_views/admin/work.py` | 근무 승인/반려, 근무지, 시급 관리 API |
-| `api_views/user/user.py` | 사용자 로그인, 비밀번호 변경, 근무 입력, 월별 근무 요약 API |
-| `api_views/google/google.py` | Google OAuth, Calendar, Drive Excel export API |
-| `api_views/google/excel_utils.py` | Google export용 Excel Workbook 생성 유틸 |
-| `api_views/google/google_drive_utils.py` | Google Drive 파일 조회, 다운로드, 업로드 유틸 |
-| `api_views/token/jwt_utils.py` | `CustomRefreshToken`, 관리자/사용자 JWT 인증 클래스 |
-| `api_views/token/token.py` | 토큰 재발급 API, 로그인 credential 확인, Refresh Token 저장/갱신 |
-| `api_views/shared/utils.py` | 날짜 범위, 월 계산, 근무 타입 정규화 공용 유틸 |
-| `api_views/shared/common.py` | shared 확장용 빈 파일 |
+### Serializer
+
+| 경로 | 역할 |
+|---|---|
+| `myapp/serializers/__init__.py` | 기능별 serializer를 기존 import 경로로 제공하는 패키지 |
+| `myapp/serializers/accounts.py` | 사용자 계정 생성과 조회 serializer |
+| `myapp/serializers/work.py` | 근무일·근무지·급여율 serializer |
+| `myapp/serializers/schedules.py` | 직원 근무 일정 입력 serializer |
+| `myapp/serializers/finance.py` | 수입과 지출 serializer |
+### 관리자 API
+
+| 경로 | 역할 |
+|---|---|
+| `myapp/api_views/admin/__init__.py` | 관리자 기능별 API 패키지 |
+| `myapp/api_views/admin/admin_auth.py` | 관리자 로그인/로그아웃 |
+| `myapp/api_views/admin/user_management.py` | 관리자 사용자 정보 관리 API |
+| `myapp/api_views/admin/password_reset.py` | 관리자의 사용자 비밀번호 재설정 요청 처리 API |
+| `myapp/api_views/admin/workdays.py` | 관리자 근무일 조회와 승인 상태 변경 API |
+| `myapp/api_views/admin/workplaces.py` | 관리자 근무지 생성·조회·수정·삭제 API |
+| `myapp/api_views/admin/workplace_rates.py` | 사용자별 근무지 급여율 관리 API |
+| `myapp/api_views/admin/workplace_helpers.py` | 관리자 근무지와 급여율 공통 처리 함수 |
+| `myapp/api_views/admin/schedules.py` | 관리자 주간 근무 일정 조회와 일괄 변경 API |
+| `myapp/api_views/admin/finance.py` | 관리자 수입/지출 관리 |
+
+### 사용자 API
+
+| 경로 | 역할 |
+|---|---|
+| `myapp/api_views/user/__init__.py` | 사용자 인증·근무·급여·일정 API 패키지 |
+| `myapp/api_views/user/auth.py` | 사용자 로그인과 로그아웃 API |
+| `myapp/api_views/user/password.py` | 사용자 비밀번호 변경과 재설정 요청 API |
+| `myapp/api_views/user/workdays.py` | 사용자 근무일 등록과 조회 API |
+| `myapp/api_views/user/workplaces.py` | 사용자 근무지 조회 API |
+| `myapp/api_views/user/salary.py` | 사용자 월별 근무와 급여 요약 API |
+| `myapp/api_views/user/schedules.py` | 사용자 주간 근무 일정 조회 API |
+
+### Google 연동
+
+| 경로 | 역할 |
+|---|---|
+| `myapp/api_views/google/__init__.py` | Google 인증·Calendar·Drive 연동 API를 제공하는 패키지 |
+| `myapp/api_views/google/auth.py` | Google 로그인·콜백·로그아웃 API |
+| `myapp/api_views/google/calendar.py` | Google Calendar 일정 조회 API |
+| `myapp/api_views/google/drive_export.py` | Google Drive 근무·급여 Excel 내보내기 API |
+| `myapp/api_views/google/google_drive_utils.py` | Google Drive 다운로드·업로드 공통 함수 |
+| `myapp/api_views/google/excel_utils.py` | Google Drive용 Excel 생성과 셀 처리 함수 |
+
+### Token·JWT
+
+| 경로 | 역할 |
+|---|---|
+| `myapp/api_views/token/__init__.py` | JWT 인증·자격 검증·refresh token 처리를 제공하는 패키지 |
+| `myapp/api_views/token/authentication.py` | 관리자·사용자 JWT 인증 클래스 |
+| `myapp/api_views/token/credentials.py` | 관리자·사용자 로그인 자격 증명 검사 함수 |
+| `myapp/api_views/token/refresh.py` | JWT refresh token 갱신 API |
+| `myapp/api_views/token/storage.py` | refresh token 해시와 데이터베이스 저장 함수 |
+
+### API 공통 로직
+
+| 경로 | 역할 |
+|---|---|
+| `myapp/api_views/shared/__init__.py` | 여러 API가 공통으로 사용하는 함수 패키지 |
+| `myapp/api_views/shared/date_utils.py` | 날짜 범위와 월 계산 공통 함수 |
+| `myapp/api_views/shared/work_type_utils.py` | 근무 유형 별칭과 정규화 공통 함수 |
+| `myapp/api_views/shared/salary_utils.py` | 근무 유형별 급여 계산과 급여 지출 동기화 함수 |
+| `myapp/api_views/shared/schedule_utils.py` | 근무 일정 검증과 주간 응답 공통 함수 |
+
+### 프로젝트·인프라
+
+| 경로 | 역할 |
+|---|---|
+| `manage.py` | Django 관리 명령 실행 진입점 |
+| `requirements.txt` | Python 패키지 의존성 목록 |
+| `myproject/settings.py` | Django·DB·JWT·Channels·Google 환경 설정 |
+| `myproject/urls.py` | 최상위 HTTP URL과 `myapp.urls` 연결 |
+| `myproject/middlewares.py` | WebSocket token 인증 middleware |
+| `myproject/asgi.py` | HTTP와 WebSocket ASGI 진입점 |
+| `myproject/wsgi.py` | WSGI 배포 진입점 |
+| `myapp/apps.py` | Django 앱 설정과 WebSocket signal 등록 |
+| `myapp/urls.py` | 기존 API URL path와 URL name 정의 |
+| `myapp/views.py` | 기존 URL import를 유지하는 API view 호환 모듈 |
+| `myapp/tests.py` | Django 테스트 모듈; 현재 등록된 테스트 없음 |
+| `myapp/encryption/crypto.py` | 민감 정보 암복호화·정규화·blind index 함수 |
+| `myapp/encryption/fields.py` | Django 암호화 TextField |
+| `myapp/management/commands/rotate_field_encryption_key.py` | 필드 암호화 키 교체 명령 |
+| `myapp/migrations/` | Django DB schema와 data migration 이력; 기존 파일 수정 금지 |
 
 ## WebSocket 구조
 

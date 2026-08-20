@@ -66,6 +66,7 @@ export default function AdminWorkPlaceModal({
           <Flex direction={{ base: "column", lg: "row" }} gap={5} align="stretch">
             <AdminWorkPlaceListPanel
               form={modal.form}
+              isAdding={modal.isAdding}
               onNew={modal.handleNew}
               onSearchChange={modal.setSearch}
               onSelect={modal.handleSelect}

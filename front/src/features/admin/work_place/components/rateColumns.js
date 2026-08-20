@@ -21,6 +21,7 @@ const getRateColumns = ({
   setEditedValues,
   setEditingId,
   setTempRates,
+  updateTempRate,
   adminWorkPlaces = [],
 }) => {
   const renderInput = (field, row, fallbackField) => (
@@ -29,16 +30,19 @@ const getRateColumns = ({
       width="100%"
       minW="80px"
       value={
-        editedValues[field] !== undefined
+        row.isNew
+          ? row[field] ?? row[fallbackField] ?? ""
+          : editedValues[field] !== undefined
           ? editedValues[field]
           : row[field] ?? row[fallbackField] ?? ""
       }
-      onChange={(e) =>
-        setEditedValues((prev) => ({
-          ...prev,
-          [field]: e.target.value,
-        }))
-      }
+      onChange={(e) => {
+        if (row.isNew) {
+          updateTempRate(row.rate_uuid, { [field]: e.target.value });
+          return;
+        }
+        setEditedValues((prev) => ({ ...prev, [field]: e.target.value }));
+      }}
     />
   );
 
@@ -48,14 +52,16 @@ const getRateColumns = ({
       label: "근무지",
       width: "200px",
       render: (value, row) => {
-        if (editingId === row.rate_uuid) {
+        if (row.isNew || editingId === row.rate_uuid) {
           return (
             <Select
               size="sm"
               width="100%"
               minW="170px"
               value={
-                editedValues.admin_work_place_uuid !== undefined
+                row.isNew
+                  ? row.admin_work_place_uuid || ""
+                  : editedValues.admin_work_place_uuid !== undefined
                   ? editedValues.admin_work_place_uuid
                   : getSelectedPlaceUuid(row, adminWorkPlaces)
               }
@@ -64,15 +70,16 @@ const getRateColumns = ({
                   (place) => place.admin_work_place_uuid === e.target.value
                 );
 
-                setEditedValues((prev) => ({
-                  ...prev,
+                const changes = {
                   admin_work_place_uuid: selectedPlace?.admin_work_place_uuid ?? "",
                   work_place: selectedPlace?.work_place ?? "",
                   ...RATE_FIELDS.reduce((next, field) => {
                     next[field.key] = selectedPlace?.[field.key] ?? "";
                     return next;
                   }, {}),
-                }));
+                };
+                if (row.isNew) updateTempRate(row.rate_uuid, changes);
+                else setEditedValues((prev) => ({ ...prev, ...changes }));
               }}
             >
               <option value="">{EMPTY_PLACE}</option>
@@ -104,7 +111,7 @@ const getRateColumns = ({
               : undefined;
           const displayValue = value ?? row[fallbackField];
 
-          return editingId === row.rate_uuid
+          return row.isNew || editingId === row.rate_uuid
             ? renderInput(field.key, row, fallbackField)
             : formatNumber(displayValue);
         },

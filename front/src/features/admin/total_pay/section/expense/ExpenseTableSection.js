@@ -6,7 +6,7 @@ import { formatDotDate } from "../../../utils/dateUtils";
 
 export default function ExpenseTableSection({
   expenseData,
-  finalList,
+  selectedRows,
   onSelectRow,
   onRowClick,
   onOpenRange,
@@ -38,7 +38,7 @@ export default function ExpenseTableSection({
             <Tr key={idx} _hover={{ bg: "gray.50" }} onClick={() => onRowClick(idx)}>
               <Td>
                 <Checkbox
-                  isChecked={finalList.includes(item)}
+                  isChecked={selectedRows.includes(item)}
                   onChange={(e) => onSelectRow(idx, e.target.checked)}
                   onClick={(e) => e.stopPropagation()}
                 />

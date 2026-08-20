@@ -17,10 +17,10 @@ export default function TotalEditCompanyPage() {
     range, setRange,
     incomeData, setIncomeData,
     totalIncome,
-    saveFinalList,
+    saveIncomeItems,
   } = useCompanyIncome({ user, loading, toast });
 
-  const [finalList, setFinalList] = useState([]);
+  const [selectedIncomeRows, setSelectedIncomeRows] = useState([]);
   const [editIndex, setEditIndex] = useState(null);
 
   const rangeModal = useDisclosure();
@@ -32,11 +32,11 @@ export default function TotalEditCompanyPage() {
       <Flex gap={6} flexWrap="wrap">
         <CompanyTableSection
           incomeData={incomeData}
-          finalList={finalList}
+          selectedRows={selectedIncomeRows}
           onSelectRow={(idx, checked) =>
             checked
-              ? setFinalList([...finalList, incomeData[idx]])
-              : setFinalList(finalList.filter((f) => f !== incomeData[idx]))
+              ? setSelectedIncomeRows([...selectedIncomeRows, incomeData[idx]])
+              : setSelectedIncomeRows(selectedIncomeRows.filter((row) => row !== incomeData[idx]))
           }
           onRowClick={(idx) => {
             setEditIndex(idx);
@@ -62,7 +62,7 @@ export default function TotalEditCompanyPage() {
       <CompanyAddModal
         isOpen={addModal.isOpen}
         onClose={addModal.onClose}
-        onSave={saveFinalList}
+        onSave={saveIncomeItems}
       />
 
       <CompanyEditModal

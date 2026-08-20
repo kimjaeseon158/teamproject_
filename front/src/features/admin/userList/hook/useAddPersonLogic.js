@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AddUser_PostData } from "../api/adminPageAddPerson";
+import { createEmployee } from "../api/adminPageAddPerson";
 import { formatPhoneNumber, formatResidentNumber } from "../utils/format";
 
 export function useAddPersonLogic(onSave, onClose, toast) {
@@ -100,7 +100,7 @@ export function useAddPersonLogic(onSave, onClose, toast) {
     };
 
     try {
-      const result = await AddUser_PostData(payload, { toast });
+      const result = await createEmployee(payload, { toast });
       if (result?.success) {
         onSave(Array.isArray(result?.user_data) ? result.user_data : null);
         onClose();

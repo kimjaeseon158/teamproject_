@@ -6,7 +6,6 @@ from django.db import transaction
 from myapp.models import WorkPlaceRate, Expense
 from collections import OrderedDict
 from django.core.exceptions import ObjectDoesNotExist
-from datetime import date
 
 
 MINUTES_PER_HOUR = 60

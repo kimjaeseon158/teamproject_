@@ -1,10 +1,5 @@
 # Google Drive 근무·급여 Excel 내보내기 API
 
-from datetime import datetime
-import requests
-from django.conf import settings
-from django.shortcuts import redirect
-from google_auth_oauthlib.flow import Flow
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView

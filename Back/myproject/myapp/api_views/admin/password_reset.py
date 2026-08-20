@@ -6,9 +6,8 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from ...encryption.crypto import normalize_resident_number, resident_number_blind_index
+from ...encryption.crypto import normalize_resident_number
 from ...models import PasswordResetRequest, UserRefreshToken, User_Login_Info
-from ...serializers import User_InfoSerializer, User_Login_InfoSerializer
 from ..token import AdminJWTAuthentication
 
 

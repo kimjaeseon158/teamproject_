@@ -1,13 +1,10 @@
 # 사용자 주간 근무 일정 조회 API
 
-from django.db import IntegrityError, transaction
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from ...models import AdminWorkPlace, EmployeeWorkSchedule, User_Login_Info
-from ...serializers import EmployeeWorkScheduleWriteSerializer
-from ..shared.schedule_utils import ScheduleBatchError, _error_response, _normalized_uuid, _required_date, _week_range, build_week_response
-from ..token import AdminJWTAuthentication, UserJWTAuthentication
+from ..shared.schedule_utils import ScheduleBatchError, _error_response, _required_date, build_week_response
+from ..token import UserJWTAuthentication
 
 
 class UserWorkScheduleWeekAPIView(APIView):

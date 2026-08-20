@@ -8,7 +8,7 @@ from rest_framework import status
 from ...models import AdminWorkPlace, EmployeeWorkSchedule, User_Login_Info
 from ...serializers import EmployeeWorkScheduleWriteSerializer
 from ..shared.schedule_utils import ScheduleBatchError, _error_response, _normalized_uuid, _required_date, _week_range, build_week_response
-from ..token import AdminJWTAuthentication, UserJWTAuthentication
+from ..token import AdminJWTAuthentication
 
 
 class AdminWorkScheduleWeekAPIView(APIView):

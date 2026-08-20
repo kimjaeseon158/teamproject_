@@ -2,19 +2,12 @@
 
 import logging
 from django.conf import settings
-from django.contrib.auth.hashers import check_password
-from django.db import IntegrityError, transaction
-from django.utils.dateparse import parse_date
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from ...encryption.crypto import resident_number_blind_index
-from ...models import PasswordResetRequest, UserRefreshToken, User_Login_Info, User_WorkDay, WorkPlaceRate
-from ...serializers import UserWorkDaySerializer
-from ..shared import normalize_work_type
-from ..shared.salary_utils import calculate_daily_salary_breakdown, get_rates_for_workday
-from ..token import CustomRefreshToken, UserJWTAuthentication, check_user_credentials, save_or_update_user_refresh_token
+from ...models import UserRefreshToken, User_Login_Info
+from ..token import CustomRefreshToken, check_user_credentials, save_or_update_user_refresh_token
 
 
 logger = logging.getLogger(__name__)

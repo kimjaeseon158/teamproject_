@@ -1,6 +1,5 @@
 # Google 로그인·콜백·로그아웃 API
 
-from datetime import datetime
 import requests
 from django.conf import settings
 from django.shortcuts import redirect
@@ -8,9 +7,6 @@ from google_auth_oauthlib.flow import Flow
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from ...models import User_Login_Info, User_WorkDay
-from .excel_utils import generate_salary_excel, generate_users_pay_excel, generate_workplace_excel
-from .google_drive_utils import GoogleDriveService, GoogleDriveUploadError, download_drive_template, parse_year_month, save_workbook_to_drive, workbook_download_response
 
 
 class GoogleLoginAPIView(APIView):

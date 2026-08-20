@@ -2,15 +2,13 @@
 
 from datetime import datetime
 from django.db import transaction
-from django.db.utils import IntegrityError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from ...models import AdminWorkPlace, User_Login_Info, User_WorkDay, WorkPlaceRate
-from ...serializers import AdminWorkPlaceCreateSerializer, AdminWorkPlaceSerializer, UserWorkDaySerializer, WorkPlaceRateCreateSerializer, WorkPlaceRateSerializer
-from ..shared.salary_utils import group_rates_by_user, sync_salary_expense_for_workday
+from ...models import User_WorkDay
+from ...serializers import UserWorkDaySerializer
+from ..shared.salary_utils import sync_salary_expense_for_workday
 from ..token import AdminJWTAuthentication
-from .workplace_helpers import _admin_work_place_list_response, _apply_admin_work_place
 
 
 class AdminPageWorkDayListAPIView(APIView):

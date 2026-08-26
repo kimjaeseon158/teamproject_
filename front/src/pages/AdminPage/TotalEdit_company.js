@@ -11,14 +11,15 @@ import DateRangeModal from "../../features/admin/total_pay/section/DateRangeModa
 
 export default function TotalEditCompanyPage() {
   const toast = useToast();
-  const { user, loading } = useUser();
+  const { userUuid, loading } = useUser();
 
   const {
     range, setRange,
-    incomeData, setIncomeData,
+    incomeData,
     totalIncome,
     saveIncomeItems,
-  } = useCompanyIncome({ user, loading, toast });
+    updateIncomeItem,
+  } = useCompanyIncome({ user: userUuid, loading, toast });
 
   const [selectedIncomeRows, setSelectedIncomeRows] = useState([]);
   const [editIndex, setEditIndex] = useState(null);
@@ -57,6 +58,7 @@ export default function TotalEditCompanyPage() {
         onClose={rangeModal.onClose}
         range={range}
         setRange={setRange}
+        onApply={rangeModal.onClose}
       />
 
       <CompanyAddModal
@@ -69,11 +71,7 @@ export default function TotalEditCompanyPage() {
         isOpen={editModal.isOpen}
         onClose={editModal.onClose}
         data={incomeData[editIndex]}
-        onSave={(updated) => {
-          const next = [...incomeData];
-          next[editIndex] = updated;
-          setIncomeData(next);
-        }}
+        onSave={updateIncomeItem}
       />
     </Box>
   );

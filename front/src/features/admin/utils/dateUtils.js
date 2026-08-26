@@ -28,7 +28,8 @@ export const formatRangeLabel = (from, to) => {
 // YYYY-MM-DD
 export const toISODate = (date) => {
   if (!date) return "";
-  return new Date(date).toISOString().split("T")[0];
+  const d = new Date(date);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 
 /* =========================

@@ -1,18 +1,23 @@
 import {
   Box,
   Divider,
+  Collapse,
   HStack,
   Icon,
   Text,
   VStack,
   useToast,
 } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   FiBarChart2,
   FiCalendar,
+  FiChevronDown,
   FiDollarSign,
   FiHome,
+  FiTrendingDown,
+  FiTrendingUp,
   FiUsers,
 } from "react-icons/fi";
 import { useUser } from "../../auth/userContext";
@@ -23,7 +28,12 @@ const navItems = [
   { label: "승인 관리", path: "/dashboard/approval", icon: FiCalendar },
   { label: "일급 관리", path: "/dashboard/daily-pay", icon: FiDollarSign },
   { label: "근무표 관리", path: "/dashboard/work-schedules", icon: FiCalendar },
-  { label: "급여 현황", path: "/dashboard/total-sales", icon: FiBarChart2 },
+];
+
+const totalMenuItems = [
+  { label: "수입", path: "/dashboard/total-sales/company", icon: FiTrendingUp },
+  { label: "지출", path: "/dashboard/total-sales/expense", icon: FiTrendingDown },
+  { label: "급여", path: "/dashboard/total-sales/salary", icon: FiDollarSign },
 ];
 
 export default function Sidebar() {
@@ -31,6 +41,12 @@ export default function Sidebar() {
   const location = useLocation();
   const toast = useToast();
   const { userUuid, loading } = useUser();
+  const isTotalPath = location.pathname.startsWith("/dashboard/total-sales");
+  const [isTotalOpen, setIsTotalOpen] = useState(isTotalPath);
+
+  useEffect(() => {
+    if (isTotalPath) setIsTotalOpen(true);
+  }, [isTotalPath]);
 
   const handleProtectedNav = (path) => {
     if (loading) {
@@ -119,6 +135,82 @@ export default function Sidebar() {
             </HStack>
           );
         })}
+
+        <Box>
+          <HStack
+            as="button"
+            type="button"
+            spacing={3}
+            w="100%"
+            px={3}
+            py={3}
+            borderRadius="md"
+            textAlign="left"
+            bg={isTotalPath ? "whiteAlpha.100" : "transparent"}
+            color={isTotalPath ? "white" : "gray.300"}
+            fontWeight={isTotalPath ? "800" : "600"}
+            _hover={{ bg: "whiteAlpha.100", color: "white" }}
+            onClick={() => {
+              setIsTotalOpen(true);
+              handleProtectedNav("/dashboard/total-sales");
+            }}
+            aria-expanded={isTotalOpen}
+          >
+            <Icon as={FiBarChart2} boxSize={4} color={isTotalPath ? "blue.300" : "gray.400"} />
+            <Text fontSize="sm" flex="1">
+              통합
+            </Text>
+            <Box
+              as="span"
+              role="button"
+              aria-label={isTotalOpen ? "통합 메뉴 접기" : "통합 메뉴 펼치기"}
+              p={1}
+              m={-1}
+              onClick={(event) => {
+                event.stopPropagation();
+                setIsTotalOpen((open) => !open);
+              }}
+            >
+              <Icon
+                as={FiChevronDown}
+                boxSize={4}
+                color="gray.400"
+                transform={isTotalOpen ? "rotate(180deg)" : "rotate(0deg)"}
+                transition="transform 0.2s ease"
+              />
+            </Box>
+          </HStack>
+
+          <Collapse in={isTotalOpen} animateOpacity>
+            <VStack align="stretch" spacing={1} mt={1} pl={6}>
+              {totalMenuItems.map((item) => {
+                const active = isActive(item);
+
+                return (
+                  <HStack
+                    key={item.path}
+                    as="button"
+                    type="button"
+                    spacing={3}
+                    w="100%"
+                    px={3}
+                    py={2.5}
+                    borderRadius="md"
+                    textAlign="left"
+                    bg={active ? "whiteAlpha.100" : "transparent"}
+                    color={active ? "white" : "gray.400"}
+                    fontWeight={active ? "800" : "600"}
+                    _hover={{ bg: "whiteAlpha.100", color: "white" }}
+                    onClick={() => handleProtectedNav(item.path)}
+                  >
+                    <Icon as={item.icon} boxSize={3.5} color={active ? "blue.300" : "gray.500"} />
+                    <Text fontSize="sm">{item.label}</Text>
+                  </HStack>
+                );
+              })}
+            </VStack>
+          </Collapse>
+        </Box>
       </VStack>
 
       <Box mt="auto">

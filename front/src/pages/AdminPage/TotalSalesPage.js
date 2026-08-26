@@ -1,4 +1,5 @@
 import { Box, Flex } from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
 
 import ExcelExportModal from "../../features/admin/total_pay/section/ExcelExportModal";
 import PayDetailSection from "../../features/admin/total_pay/section/PayDetailSection";
@@ -10,6 +11,7 @@ import useTotalSalesPage from "../../features/admin/total_pay/hook/useTotalSales
 
 export default function TotalSalesPage() {
   const totalSales = useTotalSalesPage();
+  const navigate = useNavigate();
 
   return (
     <Box
@@ -25,6 +27,8 @@ export default function TotalSalesPage() {
         apiMonth={totalSales.apiMonth}
         onMonthChange={totalSales.setApiMonth}
         onExcelOpen={totalSales.exportDisclosure.onOpen}
+        onIncomeOpen={() => navigate("/dashboard/total-sales/company")}
+        onExpenseOpen={() => navigate("/dashboard/total-sales/expense")}
       />
 
       <TotalSalesSummaryCards

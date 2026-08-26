@@ -13,9 +13,10 @@ export default function ExpensePage() {
 
   const {
     range, setRange,
-    expenseData, setExpenseData,
+    expenseData,
     totalExpense,
     saveExpenseItems,
+    updateExpenseItem,
   } = useExpenseData({ toast });
 
   const [selectedExpenseRows, setSelectedExpenseRows] = useState([]);
@@ -67,11 +68,7 @@ export default function ExpensePage() {
         isOpen={editModal.isOpen}
         onClose={editModal.onClose}
         data={expenseData[editIndex]}
-        onSave={(updated) => {
-          const next = [...expenseData];
-          next[editIndex] = updated;
-          setExpenseData(next);
-        }}
+        onSave={updateExpenseItem}
       />
     </Box>
   );

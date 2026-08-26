@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 
 export default function ExpenseEditModal({ isOpen, onClose, data, onSave }) {
   const [form, setForm] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setForm(data);
@@ -55,14 +56,20 @@ export default function ExpenseEditModal({ isOpen, onClose, data, onSave }) {
         <ModalFooter>
           <Button
             colorScheme="blue"
-            onClick={() => {
-              onSave(form);
-              onClose();
+            isLoading={saving}
+            onClick={async () => {
+              try {
+                setSaving(true);
+                await onSave(form);
+                onClose();
+              } finally {
+                setSaving(false);
+              }
             }}
           >
             저장
           </Button>
-          <Button ml={2} onClick={onClose}>
+          <Button ml={2} onClick={onClose} isDisabled={saving}>
             취소
           </Button>
         </ModalFooter>

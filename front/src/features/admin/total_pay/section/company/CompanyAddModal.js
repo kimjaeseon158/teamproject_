@@ -21,6 +21,11 @@ export default function CompanyAddModal({ isOpen, onClose, onSave }) {
         <ModalBody>
           <VStack spacing={3}>
             <Input
+              type="date"
+              value={input.date.toISOString().split("T")[0]}
+              onChange={(e) => setInput({ ...input, date: new Date(`${e.target.value}T00:00:00`) })}
+            />
+            <Input
               placeholder="업체명"
               value={input.name}
               onChange={(e) => setInput({ ...input, name: e.target.value })}

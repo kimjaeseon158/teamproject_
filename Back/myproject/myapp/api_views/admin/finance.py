@@ -1,7 +1,7 @@
 # 관리자 수입/지출 관리
 
 from rest_framework.views import APIView
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, TruncMonth
 from ...models import Expense
 from ...serializers import ExpenseSerializer
 from ...models import Income
@@ -125,11 +125,38 @@ class ExpenseDateFilteredAPIView(APIView):
         if not start_date or not end_date:
             return Response({"success": False})
 
-        # 지정 날짜 범위의 모든 지출 가져오기
-        expenses = _date_filtered_queryset(Expense, start_date, end_date).values(
-            "expense_uuid", "date", "expense_name", "expense_detail", "amount"
+        expenses = _date_filtered_queryset(Expense, start_date, end_date)
+
+        # 일반 지출은 기존 응답 형식을 그대로 유지한다.
+        regular_expenses = list(
+            expenses.filter(work_day__isnull=True).values(
+                "expense_uuid", "date", "expense_name", "expense_detail", "amount"
+            )
         )
-        result = list(expenses)
+
+        # 급여 지출은 월, 근무지, 주간/야간 기준으로 합산한다.
+        salary_totals = (
+            expenses.filter(work_day__isnull=False)
+            .annotate(salary_month=TruncMonth("date"))
+            .values(
+                "salary_month", "work_day__work_place", "work_day__work_shift"
+            )
+            .annotate(amount=Sum("amount"))
+            .order_by(
+                "salary_month", "work_day__work_place", "work_day__work_shift"
+            )
+        )
+        grouped_salaries = [
+            {
+                "date": item["salary_month"].strftime("%Y-%m"),
+                "expense_name": f'{item["work_day__work_place"]} 급여',
+                "expense_detail": item["work_day__work_shift"],
+                "amount": item["amount"],
+            }
+            for item in salary_totals
+        ]
+
+        result = regular_expenses + grouped_salaries
 
         return Response({"success": True, "data": result})
 

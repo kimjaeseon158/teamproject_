@@ -189,7 +189,11 @@ class Expense3MonthsTotalsAPIView(APIView):
 
             qs = (
                 Expense.objects
-                .filter(date__gte=start, date__lt=next_start)
+                .filter(
+                    date__gte=start,
+                    date__lt=next_start,
+                    work_day__isnull=False,
+                )
                 .values("expense_name")
                 .annotate(total=Coalesce(Sum("amount"), 0))
             )

@@ -9,6 +9,7 @@ from ...serializers import IncomeSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.db.models import Sum
+from datetime import timedelta
 from ..shared import add_months
 from ..shared import get_date_range
 from ..shared import month_start_end
@@ -30,14 +31,39 @@ class FinanceTableDateFilteredAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # 프론트에서 날짜 범위 받기
+        # start_date와 end_date가 모두 있으면 기존 날짜 범위를 우선 사용한다.
         start_date, end_date = get_date_range(request.query_params)
 
+        # date=YYYY-MM만 있으면 해당 월을 포함한 최근 6개월을 조회한다.
+        if not start_date or not end_date:
+            month_str = request.query_params.get("date")
+            if month_str:
+                try:
+                    year, month = map(int, month_str.split("-"))
+                    if not 1 <= month <= 12:
+                        raise ValueError
+
+                    start_year, start_month = add_months(year, month, 5)
+                    start_date, _ = month_start_end(start_year, start_month)
+                    _, next_month_start = month_start_end(year, month)
+                    end_date = next_month_start - timedelta(days=1)
+                except (TypeError, ValueError):
+                    return Response(
+                        {
+                            "success": False,
+                            "message": "date must be in YYYY-MM format",
+                        }
+                    )
+
+        # 날짜 범위와 기준 월이 모두 없는 경우
         if not start_date or not end_date:
             return Response(
                 {
                     "success": False,
-                    "message": "start_date and end_date are required",
+                    "message": {
+                        "start_date and end_date are required, "
+                        "or provide month in YYYY-MM format"
+                    },
                 }
             )
 

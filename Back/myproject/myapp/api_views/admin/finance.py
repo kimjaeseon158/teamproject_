@@ -60,36 +60,71 @@ class FinanceTableDateFilteredAPIView(APIView):
             return Response(
                 {
                     "success": False,
-                    "message": {
+                    "message": (
                         "start_date and end_date are required, "
-                        "or provide month in YYYY-MM format"
-                    },
+                        "or provide date in YYYY-MM format"
+                    ),
                 }
             )
 
-        # Expense 합계 (날짜 필터링)
+        # 조회 범위의 모든 월을 먼저 생성해 데이터가 없는 월도 0원으로 반환한다.
+        monthly_totals = {}
+        current_month, _ = month_start_end(start_date.year, start_date.month)
+        last_month, _ = month_start_end(end_date.year, end_date.month)
+
+        while current_month <= last_month:
+            month_key = current_month.strftime("%Y-%m")
+            monthly_totals[month_key] = {
+                "date": month_key,
+                "expense_totals": {},
+                "income_totals": {},
+                "total_expense": 0,
+                "total_income": 0,
+            }
+            _, current_month = month_start_end(
+                current_month.year, current_month.month
+            )
+
+        # 지출을 월과 지출명 기준으로 합산한다.
         expense_qs = (
             _date_filtered_queryset(Expense, start_date, end_date)
-            .values("expense_name")
+            .annotate(month=TruncMonth("date"))
+            .values("month", "expense_name")
             .annotate(total_amount=Sum("amount"))
+            .order_by("month", "expense_name")
         )
-        expense_totals = {
-            item["expense_name"]: item["total_amount"] for item in expense_qs
-        }
+        total_expense = 0
+        for item in expense_qs:
+            month_key = item["month"].strftime("%Y-%m")
+            amount = int(item["total_amount"] or 0)
+            monthly_totals[month_key]["expense_totals"][item["expense_name"]] = amount
+            monthly_totals[month_key]["total_expense"] += amount
+            total_expense += amount
 
-        # Income 합계 (날짜 필터링)
+        # 수입을 월과 회사명 기준으로 합산한다.
         income_qs = (
             _date_filtered_queryset(Income, start_date, end_date)
-            .values("company_name")
+            .annotate(month=TruncMonth("date"))
+            .values("month", "company_name")
             .annotate(total_amount=Sum("amount"))
+            .order_by("month", "company_name")
         )
-        income_totals = {
-            item["company_name"]: item["total_amount"] for item in income_qs
-        }
+        total_income = 0
+        for item in income_qs:
+            month_key = item["month"].strftime("%Y-%m")
+            amount = int(item["total_amount"] or 0)
+            monthly_totals[month_key]["income_totals"][item["company_name"]] = amount
+            monthly_totals[month_key]["total_income"] += amount
+            total_income += amount
 
-        result = {"expense_totals": expense_totals, "income_totals": income_totals}
-
-        return Response({"success": True, "data": result})
+        return Response(
+            {
+                "success": True,
+                "total_expense": total_expense,
+                "total_income": total_income,
+                "data": list(monthly_totals.values()),
+            }
+        )
 
 
 class IncomeDateFilteredAPIView(APIView):

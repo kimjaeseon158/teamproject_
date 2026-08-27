@@ -21,11 +21,13 @@ export function useExpenseData({ toast }) {
       toast
     );
 
+    const selectedMonth = `${range.from.getFullYear()}-${String(range.from.getMonth() + 1).padStart(2, "0")}`;
     const list =
-      res?.data?.map((r) => ({
+      res?.data?.filter((r) => String(r.date || "").startsWith(selectedMonth)).map((r) => ({
         id: r.expense_uuid,
         name: r.expense_name,
         detail: r.expense_detail,
+        paymentMethod: r.payment_method || r.payment || "",
         amount: Number(r.amount),
         date: new Date(`${r.date}T00:00:00`),
       })) || [];
@@ -45,6 +47,7 @@ export function useExpenseData({ toast }) {
           date: toISODate(item.date),
           expense_name: item.name,
           expense_detail: item.detail,
+          payment_method: item.paymentMethod,
           amount: Number(item.amount),
         },
         toast
@@ -62,6 +65,7 @@ export function useExpenseData({ toast }) {
       date: toISODate(item.date),
       expense_name: item.name,
       expense_detail: item.detail,
+      payment_method: item.paymentMethod,
       amount: Number(item.amount),
     }, toast);
     if (!result?.success) throw new Error("지출 수정에 실패했습니다.");

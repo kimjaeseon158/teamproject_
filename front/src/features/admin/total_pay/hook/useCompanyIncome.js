@@ -22,8 +22,9 @@ export function useCompanyIncome({ user, loading, toast }) {
       toast
     );
 
+    const selectedMonth = `${range.from.getFullYear()}-${String(range.from.getMonth() + 1).padStart(2, "0")}`;
     const list =
-      result?.data?.map((r) => ({
+      result?.data?.filter((r) => String(r.date || "").startsWith(selectedMonth)).map((r) => ({
         id: r.Income_uuid,
         name: r.company_name,
         detail: r.company_detail,

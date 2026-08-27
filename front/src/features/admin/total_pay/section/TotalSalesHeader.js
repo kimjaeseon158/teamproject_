@@ -28,9 +28,6 @@ export default function TotalSalesHeader({
             {apiMonth}
           </Badge>
         </HStack>
-        <Text color="gray.500" fontSize="sm">
-          최근 3개월 지급 흐름과 선택 월 상세 급여를 확인합니다.
-        </Text>
       </Box>
 
       <HStack spacing={2}>

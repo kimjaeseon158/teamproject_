@@ -23,7 +23,7 @@ import {
 import { useUser } from "../../auth/userContext";
 
 const navItems = [
-  { label: "Overview", path: "/dashboard", icon: FiHome, exact: true },
+  { label: "홈", path: "/dashboard", icon: FiHome, exact: true },
   { label: "직원 관리", path: "/dashboard/admin", icon: FiUsers },
   { label: "승인 관리", path: "/dashboard/approval", icon: FiCalendar },
   { label: "일급 관리", path: "/dashboard/daily-pay", icon: FiDollarSign },
@@ -158,7 +158,7 @@ export default function Sidebar() {
           >
             <Icon as={FiBarChart2} boxSize={4} color={isTotalPath ? "blue.300" : "gray.400"} />
             <Text fontSize="sm" flex="1">
-              통합
+              총 매출 관리
             </Text>
             <Box
               as="span"

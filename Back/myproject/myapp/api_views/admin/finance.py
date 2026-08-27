@@ -165,7 +165,8 @@ class ExpenseDateFilteredAPIView(APIView):
         # 일반 지출은 기존 응답 형식을 그대로 유지한다.
         regular_expenses = list(
             expenses.filter(work_day__isnull=True).values(
-                "expense_uuid", "date", "expense_name", "expense_detail", "amount"
+                "expense_uuid", "date", "expense_name", "expense_detail", "amount",
+                "payment_method",
             )
         )
 
@@ -174,7 +175,8 @@ class ExpenseDateFilteredAPIView(APIView):
             expenses.filter(work_day__isnull=False)
             .annotate(salary_month=TruncMonth("date"))
             .values(
-                "salary_month", "work_day__work_place", "work_day__work_shift"
+                "salary_month", "work_day__work_place", "work_day__work_shift",
+                "payment_method",
             )
             .annotate(amount=Sum("amount"))
             .order_by(
@@ -187,6 +189,7 @@ class ExpenseDateFilteredAPIView(APIView):
                 "expense_name": f'{item["work_day__work_place"]} 급여',
                 "expense_detail": item["work_day__work_shift"],
                 "amount": item["amount"],
+                "payment_method": item["payment_method"],
             }
             for item in salary_totals
         ]

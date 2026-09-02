@@ -131,7 +131,7 @@ export function UserProvider({ children, loginType: initialLoginType }) {
       
       const payload = JSON.parse(atob(access.split(".")[1]));
       setUserUuid(payload?.sub ?? null);
-      setUserName(payload?.user_name ?? null);
+      setUserName(payload?.user_name ?? payload?.admin_name ?? null);
 
       return true;
     } catch (err) {

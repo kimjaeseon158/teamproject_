@@ -2,10 +2,11 @@ import React, { useEffect, useRef } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useUser } from "./features/auth/userContext";
 
-export default function RequireAuth({ children, role }) {
+export default function RequireAuth({ children, role, roles }) {
   const { loading, userUuid, revalidate, loginType, mustChangePassword } =
     useUser();
   const location = useLocation();
+  const allowedRoles = roles || (role ? [role] : []);
 
   // revalidate 중복 호출 방지
   const triedRef = useRef(false);
@@ -25,14 +26,11 @@ export default function RequireAuth({ children, role }) {
   if (!userUuid) {
     return <Navigate to="/" replace state={{ from: location }} />;
   }
-  if (role === "admin" && loginType !== "admin") {
-    return <Navigate to="/data" replace />;
-  }
-  if (role === "user" && loginType !== "user") {
-    return <Navigate to="/dashboard" replace />;
+  if (allowedRoles.length > 0 && !allowedRoles.includes(loginType)) {
+    return <Navigate to={loginType === "admin" ? "/dashboard" : "/data"} replace />;
   }
   if (
-    role === "user" &&
+    loginType === "user" &&
     mustChangePassword &&
     !isPasswordChangePath
   ) {

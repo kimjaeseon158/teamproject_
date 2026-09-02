@@ -1,11 +1,10 @@
-import { Box, useDisclosure } from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
 
 import CalendarView from "../../../common/CalendarView";
 import CalendarHeader from "../components/CalendarHeader";
 import CalendarSidebar from "../components/CalendarSidebar";
 import EditPendingWorkModal from "../components/calendarSidebar/EditPendingWorkModal";
 import PendingWorkSelectModal from "../components/calendarSidebar/PendingWorkSelectModal";
-import WorkSchedulePreviewPanel from "../components/WorkSchedulePreviewPanel";
 import MonthlyComparisonDrawer from "../components/MonthlyComparisonDrawer";
 
 export default function CalendarDesktopLayout({
@@ -29,8 +28,6 @@ export default function CalendarDesktopLayout({
   onCloseComparison,
   onOpenComparison,
 }) {
-  const workScheduleDisclosure = useDisclosure();
-
   return (
     <Box display="flex" height="100vh" overflow="hidden">
       <PendingWorkSelectModal
@@ -48,12 +45,6 @@ export default function CalendarDesktopLayout({
         onRefresh={calendar.loadMonthlyData}
         selectedDate={calendar.selectedDate}
         work={editingWork}
-      />
-
-      <WorkSchedulePreviewPanel
-        isOpen={workScheduleDisclosure.isOpen}
-        onClose={workScheduleDisclosure.onClose}
-        selectedDate={calendar.selectedDate}
       />
 
       <MonthlyComparisonDrawer
@@ -79,10 +70,8 @@ export default function CalendarDesktopLayout({
           goToday={goToday}
           goToDate={goToDate}
           calendarTitle={calendarTitle}
-          onWorkScheduleOpen={workScheduleDisclosure.onOpen}
           setCalendarTitle={onTitleChange}
           summary={calendar.summary}
-          hideActions={workScheduleDisclosure.isOpen}
           onMonthlyCompareOpen={onOpenComparison}
           comparisonLoading={comparison.isLoading}
         />

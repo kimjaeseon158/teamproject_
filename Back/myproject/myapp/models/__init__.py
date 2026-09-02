@@ -2,6 +2,7 @@
 
 from .accounts import Admin_Login_Info, PasswordResetRequest, User_Login_Info
 from .finance import Expense, Income
+from .notices import Notice, NoticeRead
 from .schedules import (
     EmployeeWorkSchedule,
     work_schedule_original_upload_to,
@@ -17,6 +18,8 @@ __all__ = [
     "EmployeeWorkSchedule",
     "Expense",
     "Income",
+    "Notice",
+    "NoticeRead",
     "PasswordResetRequest",
     "User_Login_Info",
     "User_WorkDay",

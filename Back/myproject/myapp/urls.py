@@ -44,6 +44,7 @@ from .views import (
     AdminWorkScheduleBatchAPIView,
     AdminWorkScheduleWeekAPIView,
     UserWorkScheduleWeekAPIView,
+    UserContactListAPIView,
 )
 
 # fmt:off
@@ -102,6 +103,7 @@ urlpatterns = [
     path('user-monthly-work-summary/',   UserMonthlyWorkSummaryAPIView.as_view(), name='user-monthly-work-summary'),
     path('user-work-places/',            UserWorkPlaceListAPIView.as_view(), name='user-work-places'),
     path('user-work-schedule/',           UserWorkScheduleWeekAPIView.as_view(), name='user-work-schedule'),
+    path('user-contacts/',                UserContactListAPIView.as_view(), name='user-contacts'),
 
     # Refresh-Token
     path('refresh-token/',   TokenRefreshAPIView.as_view(), name='refresh-token')

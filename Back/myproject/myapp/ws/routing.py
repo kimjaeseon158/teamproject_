@@ -7,4 +7,5 @@ websocket_urlpatterns = [
     # RequestMonitorConsumer를 실행하라는 의미입니다.
     re_path(r'ws/admin/request-monitor/$', consumers.RequestMonitorConsumer.as_asgi()),
     re_path(r'ws/user/request-monitor/$', consumers.UserRejectMonitorConsumer.as_asgi()),
+    re_path(r'ws/user/notices/$', consumers.UserNoticeConsumer.as_asgi()),
 ]

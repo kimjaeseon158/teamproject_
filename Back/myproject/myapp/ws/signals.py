@@ -2,7 +2,7 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-from ..models import User_WorkDay
+from ..models import Notice, User_WorkDay
 from django.db import transaction
 
 @receiver([post_save, post_delete], sender=User_WorkDay)
@@ -48,3 +48,21 @@ def notify_count_change(sender, instance, **kwargs):
     
     # 반드시 커밋된 후에 조회하고 전송하도록 보장
     transaction.on_commit(send_ws_update)
+
+
+@receiver(post_save, sender=Notice)
+def notify_new_notice(sender, instance, created, **kwargs):
+    if not created:
+        return
+
+    def send_notice():
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            "user_notices",
+            {
+                "type": "notice_created_message",
+                "title": instance.title,
+            },
+        )
+
+    transaction.on_commit(send_notice)

@@ -3,6 +3,11 @@
 
 from .auth import CheckUserLoginAPIView, UserLogoutAPIView
 from .contacts import UserContactListAPIView
+from .notices import (
+    UserNoticeDetailAPIView,
+    UserNoticeListCreateAPIView,
+    UserNoticeReadAPIView,
+)
 from .password import UserPasswordChangeAPIView, UserPasswordResetRequestAPIView
 from .salary import UserMonthlyWorkSummaryAPIView
 from .schedules import UserWorkScheduleWeekAPIView
@@ -13,6 +18,9 @@ __all__ = [
     "CheckUserLoginAPIView",
     "UserLogoutAPIView",
     "UserContactListAPIView",
+    "UserNoticeDetailAPIView",
+    "UserNoticeListCreateAPIView",
+    "UserNoticeReadAPIView",
     "UserMonthlyWorkSummaryAPIView",
     "UserPasswordChangeAPIView",
     "UserPasswordResetRequestAPIView",

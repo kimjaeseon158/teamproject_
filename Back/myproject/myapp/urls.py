@@ -45,6 +45,11 @@ from .views import (
     AdminWorkScheduleWeekAPIView,
     UserWorkScheduleWeekAPIView,
     UserContactListAPIView,
+    AdminNoticeDetailAPIView,
+    AdminNoticeListCreateAPIView,
+    UserNoticeDetailAPIView,
+    UserNoticeListCreateAPIView,
+    UserNoticeReadAPIView,
 )
 
 # fmt:off
@@ -104,6 +109,13 @@ urlpatterns = [
     path('user-work-places/',            UserWorkPlaceListAPIView.as_view(), name='user-work-places'),
     path('user-work-schedule/',           UserWorkScheduleWeekAPIView.as_view(), name='user-work-schedule'),
     path('user-contacts/',                UserContactListAPIView.as_view(), name='user-contacts'),
+
+    # Notices
+    path('admin/notices/', AdminNoticeListCreateAPIView.as_view(), name='admin-notice-list-create'),
+    path('admin/notices/<uuid:notice_uuid>/', AdminNoticeDetailAPIView.as_view(), name='admin-notice-detail'),
+    path('user/notices/', UserNoticeListCreateAPIView.as_view(), name='user-notice-list-create'),
+    path('user/notices/<uuid:notice_uuid>/', UserNoticeDetailAPIView.as_view(), name='user-notice-detail'),
+    path('user/notices/<uuid:notice_uuid>/read/', UserNoticeReadAPIView.as_view(), name='user-notice-read'),
 
     # Refresh-Token
     path('refresh-token/',   TokenRefreshAPIView.as_view(), name='refresh-token')

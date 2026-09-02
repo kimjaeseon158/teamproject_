@@ -15,6 +15,7 @@ from .finance import (
     IncomeUpdateAPIView,
 )
 from .password_reset import AdminPasswordResetRequestAPIView
+from .notices import AdminNoticeDetailAPIView, AdminNoticeListCreateAPIView
 from .schedules import AdminWorkScheduleBatchAPIView, AdminWorkScheduleWeekAPIView
 from .user_management import (
     UserInfoAddAPIView,

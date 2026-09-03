@@ -114,7 +114,7 @@ const Alarm = () => {
                   fontWeight="bold"
                   color="red.600"
                 >
-                  미승인 알림이 {unreadCount}건 있습니다.
+                  확인할 알림이 {unreadCount}건 있습니다.
                 </Text>
               </Box>
             )}
@@ -146,6 +146,9 @@ const Alarm = () => {
                 }
                 _hover={{ bg: "gray.50" }}
                 onClick={() => {
+                  if (alarm.type === "notice") {
+                    navigate("/note");
+                  }
                   if (typeof markAsRead === "function") {
                     markAsRead(alarm.id);
                   }
@@ -162,7 +165,7 @@ const Alarm = () => {
                     color="red.500"
                     mt={1}
                   >
-                    사유: {alarm.description}
+                  {alarm.type === "notice" ? alarm.description : `사유: ${alarm.description}`}
                   </Text>
                 )}
 

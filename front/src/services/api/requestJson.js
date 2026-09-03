@@ -28,6 +28,7 @@ export async function requestJson(
       data.detail || data.message || data.error || ERROR_MESSAGES.common.requestFailed;
     const error = new Error(message);
     error.status = res.status;
+    error.data = data;
     throw error;
   }
 

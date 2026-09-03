@@ -11,6 +11,7 @@ import {
 } from "../../services/api/token";
 import { refreshAuthSession } from "../../services/api/authApi";
 import { useNotifySocket } from "../../services/ws/useNotifySocket";
+import useNoticeSocket from "../../services/ws/useNoticeSocket";
 
 const UserContext = createContext(null);
 const MUST_CHANGE_PASSWORD_KEY = "mustChangePassword";
@@ -79,6 +80,31 @@ export function UserProvider({ children, loginType: initialLoginType }) {
 
   const [alarms, setAlarms] = useState([]);
   const [alarmCount, setAlarmCount] = useState(0);
+  const [noticeAlarms, setNoticeAlarms] = useState([]);
+  const noticeSequenceRef = React.useRef(0);
+
+  const clearNoticeAlarms = useCallback(() => setNoticeAlarms([]), []);
+  const addNoticeAlarm = useCallback((data) => {
+    noticeSequenceRef.current += 1;
+    setNoticeAlarms((current) => [
+      ...current,
+      {
+        id: `notice-${Date.now()}-${noticeSequenceRef.current}`,
+        type: "notice",
+        title: data.title.trim(),
+        description: "새 공지사항을 확인해주세요.",
+        date: "",
+        time: "",
+        read: false,
+      },
+    ]);
+  }, []);
+  const markNoticeAsRead = useCallback((title) => {
+    setNoticeAlarms((current) => {
+      const index = current.findIndex((alarm) => alarm.title === title);
+      return index < 0 ? current : current.filter((_, itemIndex) => itemIndex !== index);
+    });
+  }, []);
 
   /* =========================
      loginType 변경 시 초기화
@@ -86,6 +112,7 @@ export function UserProvider({ children, loginType: initialLoginType }) {
   useEffect(() => {
     setAlarms([]);
     setAlarmCount(0);
+    setNoticeAlarms([]);
   }, [loginType]);
 
   useEffect(() => {
@@ -233,6 +260,12 @@ export function UserProvider({ children, loginType: initialLoginType }) {
       }
     },
   });
+  const { connected: noticeWsConnected } = useNoticeSocket({
+    token: !loading && token && userUuid ? token : null,
+    enabled: loginType === "user",
+    onConnect: clearNoticeAlarms,
+    onMessage: addNoticeAlarm,
+  });
   return (
     <UserContext.Provider
       value={{
@@ -242,7 +275,10 @@ export function UserProvider({ children, loginType: initialLoginType }) {
         workPlaces,
         alarms,
         alarmCount,
+        noticeAlarms,
+        combinedAlarmCount: alarmCount + noticeAlarms.length,
         wsConnected,
+        noticeWsConnected,
         loginType, // Alarm에서 사용
         mustChangePassword,
         setUserName,
@@ -250,6 +286,7 @@ export function UserProvider({ children, loginType: initialLoginType }) {
         setLoginType,
         setMustChangePassword,
         revalidate,
+        markNoticeAsRead,
         logout: ({ skipRefresh = false } = {}) => {
           sessionStorage.setItem(LOGGED_OUT_KEY, "true");
           if (skipRefresh) {
@@ -263,6 +300,7 @@ export function UserProvider({ children, loginType: initialLoginType }) {
           setMustChangePassword(false);
           setAlarms([]);
           setAlarmCount(0);
+          setNoticeAlarms([]);
         },
       }}
     >

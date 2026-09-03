@@ -12,7 +12,7 @@ class Notice(models.Model):
 
     notice_uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=100)
-    content = models.CharField(max_length=500)
+    content = models.TextField()
     author_type = models.CharField(max_length=5, choices=AuthorType.choices)
     author_uuid = models.UUIDField()
     author_name = models.CharField(max_length=50)

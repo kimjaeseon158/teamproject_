@@ -67,7 +67,6 @@ const RecentTransactions = ({ overview }) => {
     <Card border="1px solid" borderColor="#e2e8f0" boxShadow="sm" borderRadius="8px" minW={0} h="100%">
       <CardBody p={{ base: 4, md: 5 }} display="flex" flexDirection="column">
         <Heading fontSize="lg" mb={1}>최근 6개월 금액</Heading>
-        <Text fontSize="xs" color="#64748b" mb={4}>월별 수입과 지출 총금액</Text>
 
         <Tabs colorScheme="green" size="sm" mb={4} onChange={(index) => setFilter(["all", "income", "expense"][index])}>
           <TabList>

@@ -9,14 +9,14 @@ export const WIDGET_LIMITS = {
   calendar: { minW: 5, minH: 8 },
   approvalQueue: { minW: 3, minH: 4 },
   finance: { minW: 3, minH: 6 },
-  employeeSnapshot: { minW: 3, minH: 3 },
+  employeeSnapshot: { minW: 3, minH: 2 },
 };
 export const DEFAULT_LAYOUT = {
   kpis: { x: 0, y: 0, w: 12, h: 2, visible: true },
   calendar: { x: 0, y: 2, w: 7, h: 13, visible: true },
   approvalQueue: { x: 7, y: 2, w: 5, h: 4, visible: true },
   finance: { x: 7, y: 6, w: 5, h: 6, visible: true },
-  employeeSnapshot: { x: 7, y: 12, w: 5, h: 3, visible: true },
+  employeeSnapshot: { x: 7, y: 12, w: 5, h: 2, visible: true },
 };
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const integer = (value, fallback) => Number.isFinite(value) ? Math.round(value) : fallback;
@@ -26,7 +26,7 @@ export function getKpiHeight(w, canvasWidth = 900) {
   const columns = Math.max(1, Math.min(6, Math.floor((pixelWidth + GAP) / (140 + GAP))));
   const rows = Math.ceil(6 / columns);
   // Reserve the editor handle (28px); individual cards always stay 80px tall.
-  return Math.ceil((rows * 80 + (rows - 1) * GAP + 28 + GAP) / (ROW_HEIGHT + GAP));
+  return Math.ceil((rows * 88 + (rows - 1) * GAP + 28 + GAP) / (ROW_HEIGHT + GAP));
 }
 
 export function constrainWidget(key, value, canvasWidth = 900) {

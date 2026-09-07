@@ -1,7 +1,7 @@
 import { Badge, Box, Button, Divider, Flex, FormControl, FormErrorMessage, FormLabel, Grid, GridItem, HStack, Icon, Input, Text, VStack, useToast } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { FiEdit3, FiInfo, FiUser } from "react-icons/fi";
+import { FiEdit3, FiUser } from "react-icons/fi";
 
 import BoardPageTitle from "../../features/board/components/BoardPageTitle";
 import BoardLayout from "../../features/board/layout/BoardLayout";
@@ -85,7 +85,7 @@ export default function BoardNoticeFormPage() {
             <Flex w="44px" h="44px" bg="blue.50" color="blue.500" borderRadius="lg" align="center" justify="center">
               <Icon as={FiEdit3} boxSize={5} />
             </Flex>
-            <BoardPageTitle title={editing ? "공지사항 수정" : "새 공지 작성"} description="구성원에게 전달할 내용을 작성해주세요." />
+            <BoardPageTitle title={editing ? "공지사항 수정" : "새 공지 작성"} />
           </Flex>
 
           <VStack p={{ base: 5, md: 7 }} spacing={6} align="stretch">
@@ -107,12 +107,6 @@ export default function BoardNoticeFormPage() {
         </GridItem>
 
         <GridItem><VStack spacing={4} align="stretch">
-          <SideCard icon={FiInfo} title="작성 안내" color="teal.500">
-            <GuideText title="명확한 제목을 작성해주세요." body="한눈에 내용을 파악할 수 있는 제목이 좋습니다." />
-            <GuideText title="핵심 내용을 먼저 전달해주세요." body="중요한 일정과 요청 사항을 상단에 작성하세요." />
-            <GuideText title="등록 전 내용을 확인해주세요." body="등록 즉시 사용자에게 알림이 전송됩니다." />
-          </SideCard>
-
           <SideCard icon={FiUser} title="작성자" color="blue.500">
             <HStack justify="space-between"><Text color="gray.500" fontSize="sm">이름</Text><Text fontWeight="700" fontSize="sm">{userName || "-"}</Text></HStack>
             <HStack justify="space-between"><Text color="gray.500" fontSize="sm">권한</Text><Badge colorScheme={loginType === "admin" ? "blue" : "teal"}>{loginType === "admin" ? "관리자" : "사용자"}</Badge></HStack>
@@ -135,8 +129,4 @@ function SideCard({ icon, title, color, children }) {
     <Divider mb={4} />
     <VStack align="stretch" spacing={3}>{children}</VStack>
   </Box>;
-}
-
-function GuideText({ title, body }) {
-  return <Box><Text fontSize="sm" fontWeight="700" color="gray.700">{title}</Text><Text mt={1} fontSize="xs" lineHeight="1.6" color="gray.500">{body}</Text></Box>;
 }

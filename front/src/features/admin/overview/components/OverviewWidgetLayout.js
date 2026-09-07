@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Box, Button, Checkbox, Flex, HStack, IconButton, Text, useToast } from "@chakra-ui/react";
-import { EditIcon, CloseIcon } from "@chakra-ui/icons";
+import { CloseIcon } from "@chakra-ui/icons";
 import { OVERVIEW_WIDGET_LABELS } from "../constants/overviewWidgets";
 import {
   COLUMNS, DEFAULT_LAYOUT, GAP, LAYOUT_STORAGE_KEY, ROW_HEIGHT,
@@ -9,7 +9,7 @@ import {
 
 const STEP = ROW_HEIGHT + GAP;
 
-export default function OverviewWidgetLayout({ widgets }) {
+export default function OverviewWidgetLayout({ widgets, editRequest = 0 }) {
   const toast = useToast();
   const [saved, setSaved] = useState(() => {
     try { return loadWidgetLayout(window.localStorage); }
@@ -20,13 +20,36 @@ export default function OverviewWidgetLayout({ widgets }) {
   const [width, setWidth] = useState(0);
   const canvas = useRef(null);
   const drag = useRef(null);
+  const handledEditRequest = useRef(0);
   const editing = draft !== null;
   const layout = fitKpiHeight(draft || saved, width || 900);
   const desktop = width >= 900;
+
+  useEffect(() => {
+    if (editRequest > handledEditRequest.current) {
+      handledEditRequest.current = editRequest;
+      if (!editing) setDraft(structuredClone(saved));
+    }
+  }, [editRequest, editing, saved]);
   const columnStep = (width + GAP) / COLUMNS;
   const visibleKeys = Object.keys(layout).filter((key) => layout[key].visible)
     .sort((a, b) => layout[a].y - layout[b].y || layout[a].x - layout[b].x);
-  const height = Math.max(1, ...visibleKeys.map((key) => layout[key].y + layout[key].h)) * STEP - GAP;
+  // The saved grid reserves a 2-row editor header for KPIs. In view mode,
+  // collapse only that header half-row while keeping the 80px KPI cards visible.
+  const normalEditorOffset = !editing && layout.kpis?.visible ? 1.25 : 0;
+  const getRenderItem = (key) => {
+    const item = layout[key];
+    if (!editing && key !== "kpis" && layout.kpis?.visible) {
+      return { ...item, y: Math.max(0, item.y - normalEditorOffset) };
+    }
+    if (!editing && key === "kpis") return { ...item, h: 1.75 };
+    if (!editing && key === "employeeSnapshot") return { ...item, h: 2 };
+    return item;
+  };
+  const height = Math.max(1, ...visibleKeys.map((key) => {
+    const item = getRenderItem(key);
+    return item.y + item.h;
+  })) * STEP - GAP;
 
   useEffect(() => {
     const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
@@ -98,17 +121,25 @@ export default function OverviewWidgetLayout({ widgets }) {
   };
 
   return (
-    <Box>
-      <Flex mb={3} align="center" justify="space-between" gap={3} wrap="wrap">
-        <Text fontSize="sm" color="gray.500">
-          {editing ? "상단을 잡아 이동 · 오른쪽 아래 모서리로 크기 조절" : "자주 보는 위젯을 원하는 위치에 배치하세요."}
-        </Text>
+    <Box position="relative">
+      <Flex
+        mb={editing ? 3 : 0}
+        align="center"
+        justify="space-between"
+        gap={3}
+        wrap="wrap"
+        position={editing ? "relative" : "absolute"}
+        right={editing ? undefined : 0}
+        top={editing ? undefined : "-54px"}
+        zIndex={3}
+      >
+        {!editing && <Box />}
         <HStack spacing={2}>
           {editing ? <>
             <Button size="sm" variant="outline" onClick={() => setDraft(structuredClone(DEFAULT_LAYOUT))}>기본 배치</Button>
             <Button size="sm" variant="outline" onClick={() => { finishGesture(); setDraft(null); }}>취소</Button>
             <Button size="sm" colorScheme="blue" onClick={save}>저장</Button>
-          </> : <Button size="sm" variant="outline" leftIcon={<EditIcon />} onClick={() => setDraft(structuredClone(saved))}>편집</Button>}
+          </> : null}
         </HStack>
       </Flex>
 
@@ -120,10 +151,6 @@ export default function OverviewWidgetLayout({ widgets }) {
               onChange={(event) => setDraft(updateWidget(layout, key, { visible: event.target.checked }, width))}>{label}</Checkbox>
           ))}
         </Flex>
-        <Text mt={2} fontSize="xs" color="gray.500">
-          {desktop ? "손잡이에 Tab으로 이동한 뒤 방향키로도 조절할 수 있습니다. 저장 전에는 변경 사항이 적용되지 않습니다."
-            : "좁은 화면에서는 한 열로 표시합니다. 위치·크기 조절은 넓은 PC 화면에서 사용할 수 있습니다."}
-        </Text>
       </Box>}
 
       <Box ref={canvas} position="relative" minH="120px" h={desktop ? `${height}px` : "auto"}
@@ -133,7 +160,7 @@ export default function OverviewWidgetLayout({ widgets }) {
         backgroundSize={`${columnStep}px ${STEP}px`}>
         {!visibleKeys.length && <Text p={8} textAlign="center" color="gray.500">표시할 위젯이 없습니다. 편집에서 위젯을 선택해주세요.</Text>}
         {(desktop ? Object.keys(layout).filter((key) => layout[key].visible) : visibleKeys).map((key) => {
-          const item = layout[key];
+          const item = getRenderItem(key);
           const selected = gesture?.key === key;
           return <Box key={key} role="group" aria-label={`${OVERVIEW_WIDGET_LABELS[key]} 위젯`}
             position={desktop ? "absolute" : "relative"}
@@ -143,8 +170,9 @@ export default function OverviewWidgetLayout({ widgets }) {
             h={desktop ? `${item.h * STEP - GAP}px` : key === "kpis" ? "auto" : `${Math.max(item.h, key === "calendar" ? 9 : 0) * STEP - GAP}px`}
             minW={0} display="flex" flexDirection="column"
             borderRadius="lg" bg={key === "kpis" ? "transparent" : editing ? "white" : undefined}
-            outline={key === "kpis" ? "1px solid" : undefined}
-            outlineColor={key === "kpis" ? "gray.200" : undefined}
+            border={editing ? "2px dashed" : "none"}
+            borderColor={selected ? "blue.500" : "blue.300"}
+            boxSizing="border-box"
             zIndex={selected ? 2 : 1}
             boxShadow={selected ? "lg" : undefined}>
             {editing && <Flex align="center" px={2} h="28px" flexShrink={0} bg="blue.50" borderTopRadius="lg">

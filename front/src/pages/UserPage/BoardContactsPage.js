@@ -12,10 +12,7 @@ export default function BoardContactsPage(props) {
     <BoardLayout activeSection="contacts" {...props}>
       <VStack align="stretch" spacing={5}>
         <HStack justify="space-between" align={{ base: "stretch", md: "flex-start" }} flexDirection={{ base: "column", md: "row" }}>
-          <BoardPageTitle
-            title="사내 연락처"
-            description={`이름을 검색하거나 초성별로 찾아보세요. · 총 ${contacts.contacts.length}명`}
-          />
+          <BoardPageTitle title="사내 연락처" />
           <HStack>
             <HStack bg="white" borderWidth="1px" borderRadius="md" px={3}>
               <FiSearch color="#A0AEC0" />

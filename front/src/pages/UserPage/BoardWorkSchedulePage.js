@@ -10,7 +10,6 @@ import { toLocalDateValue } from "../../features/common/utils/dateValue";
 export default function BoardWorkSchedulePage(props) {
   const schedule = useBoardWorkSchedule();
   const dates = schedule.data.dates || [];
-  const range = dates.length ? `${dates[0].slice(5).replace("-", ".")} — ${dates[dates.length - 1].slice(5).replace("-", ".")}` : "-";
   const searchPlaceholder = {
     user_name: "직원 이름 검색",
     work_place: "근무지 검색",
@@ -25,7 +24,6 @@ export default function BoardWorkSchedulePage(props) {
             <BoardPageTitle
               title="근무표 조회"
               badge="오늘 기준"
-              description={`${range} · 직원 ${schedule.data.users.length}명 · 일정 ${schedule.scheduleCount}건`}
             />
             <HStack spacing={2.5} flexWrap="wrap">
               <Text fontSize="sm" fontWeight="700" color="gray.600" mr={1}>주차 선택</Text>

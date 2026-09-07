@@ -1,4 +1,5 @@
 import { Box, Flex } from "@chakra-ui/react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import useOverviewPage from "../../features/admin/overview/hook/useOverviewPage";
@@ -13,6 +14,7 @@ import OverviewWidgetLayout from "../../features/admin/overview/components/Overv
 export default function OverviewPage() {
   const navigate = useNavigate();
   const overview = useOverviewPage();
+  const [editRequest, setEditRequest] = useState(0);
 
   const goApproval = () => navigate("/dashboard/approval");
 
@@ -26,6 +28,7 @@ export default function OverviewPage() {
           onGoogleLogin={overview.handleGoogleLogin}
           onMonthChange={overview.handleMonthChange}
           onRefresh={overview.refresh}
+          onEdit={() => setEditRequest((value) => value + 1)}
         />
 
         <OverviewWidgetLayout widgets={{
@@ -51,7 +54,7 @@ export default function OverviewPage() {
             dailyPaySummary={overview.dailyPaySummary}
             onNavigateEmployee={() => navigate("/dashboard/admin")}
           />,
-        }} />
+        }} editRequest={editRequest} />
       </Flex>
     </Box>
   );

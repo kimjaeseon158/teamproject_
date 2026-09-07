@@ -20,14 +20,14 @@ export default function OverviewKpiSection({ kpis, onNavigate, onRemove }) {
           <DashboardCard
             key={item.label}
             p={3}
-            h="80px"
+            h="88px"
             borderColor="gray.200"
             boxShadow="none"
             cursor="pointer"
             role="button"
             aria-label={`${item.label} 페이지로 이동`}
-            _hover={{ borderColor: item.color, transform: "translateY(-1px)" }}
-            transition="all 0.15s"
+            _hover={{ borderColor: item.color, boxShadow: "sm" }}
+            transition="border-color 0.15s, box-shadow 0.15s"
             onClick={() => onNavigate(item.path)}
           >
             <HStack justify="space-between" align="start">

@@ -21,7 +21,7 @@ export default function BoardNoticePage(props) {
     <BoardLayout activeSection="notice" {...props}>
       <VStack align="stretch" spacing={5}>
         <HStack justify="space-between" align="flex-start" flexWrap="wrap" gap={3}>
-          <BoardPageTitle title="공지사항" description="중요한 소식과 안내를 확인하세요." />
+          <BoardPageTitle title="공지사항" />
           <Button colorScheme="blue" onClick={() => navigate("/note/notices/new")}>공지 작성</Button>
         </HStack>
         <HStack as="form" onSubmit={submitSearch} spacing={2} flexWrap="wrap">

@@ -26,13 +26,13 @@ export default function DailyPayPage() {
     <Box minH="100%" bg="gray.50" p={{ base: 4, md: 6 }} maxW="100%" overflowX="hidden">
       <DailyPayPageHeader
         loading={dailyPay.loading}
-        onExcelOpen={exportDisclosure.onOpen}
-        onResetSearch={dailyPay.handleResetSearch}
       />
 
       <DailyPaySummaryCards cards={statCards} />
 
       <DailyPayFilterBar
+        onExcelOpen={exportDisclosure.onOpen}
+        onResetSearch={dailyPay.handleResetSearch}
         adminWorkPlaces={dailyPay.adminWorkPlaces}
         loading={dailyPay.loading}
         searchUserName={dailyPay.searchUserName}

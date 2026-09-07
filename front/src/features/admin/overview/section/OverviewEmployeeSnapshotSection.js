@@ -1,4 +1,5 @@
-import { Box, Button, SimpleGrid, Text } from "@chakra-ui/react";
+import { Box, SimpleGrid, Text } from "@chakra-ui/react";
+import DetailButton from "../components/DetailButton";
 
 import DashboardCard from "../components/DashboardCard";
 import SectionHeader from "../components/SectionHeader";
@@ -14,7 +15,7 @@ export default function OverviewEmployeeSnapshotSection({
       <SectionHeader
         title="직원 및 일급 요약"
         onRemove={onRemove}
-        action={<Button size="xs" variant="outline" onClick={onNavigateEmployee}>관리</Button>}
+        action={<DetailButton onClick={onNavigateEmployee} />}
       />
       <SimpleGrid columns={3} spacing={2}>
         <Box p={2} bg="gray.50" borderRadius="md">

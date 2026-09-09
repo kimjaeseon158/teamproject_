@@ -2,6 +2,7 @@
 # 관리자 인증·사용자·근무·일정·재무 API를 제공하는 패키지
 
 from .admin_auth import AdminLogoutAPIView, CheckAdminLoginAPIView
+from .widget_layouts import AdminWidgetLayoutAPIView
 from .finance import (
     Expense3MonthsTotalsAPIView,
     ExpenseAddAPIView,

@@ -10,8 +10,10 @@ from .schedules import (
 )
 from .tokens import AdminRefreshToken, UserRefreshToken
 from .work import AdminWorkPlace, User_WorkDay, User_WorkDetail, WorkPlaceRate
+from .widget_layouts import AdminWidgetLayout
 
 __all__ = [
+    "AdminWidgetLayout",
     "Admin_Login_Info",
     "AdminRefreshToken",
     "AdminWorkPlace",

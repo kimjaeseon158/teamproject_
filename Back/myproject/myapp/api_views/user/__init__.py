@@ -5,6 +5,7 @@ from .auth import CheckUserLoginAPIView, UserLogoutAPIView
 from .contacts import UserContactListAPIView
 from .notices import (
     UserNoticeDetailAPIView,
+    UserNoticeImageDetailAPIView,
     UserNoticeListCreateAPIView,
     UserNoticeReadAPIView,
 )
@@ -19,6 +20,7 @@ __all__ = [
     "UserLogoutAPIView",
     "UserContactListAPIView",
     "UserNoticeDetailAPIView",
+    "UserNoticeImageDetailAPIView",
     "UserNoticeListCreateAPIView",
     "UserNoticeReadAPIView",
     "UserMonthlyWorkSummaryAPIView",

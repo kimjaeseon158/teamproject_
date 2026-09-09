@@ -10,16 +10,16 @@ env = environ.Env(
     DEBUG=(bool, False)
 )
 
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
-SECRET_KEY = env('SECRET_KEY')
-REFRESH_TOKEN_HASH_SECRET = env('REFRESH_TOKEN_HASH_SECRET')
-FIELD_ENCRYPTION_KEY_ID = env('FIELD_ENCRYPTION_KEY_ID')
-FIELD_ENCRYPTION_KEYS = env.json('FIELD_ENCRYPTION_KEYS')
-FIELD_BLIND_INDEX_KEY = env('FIELD_BLIND_INDEX_KEY')
-DEBUG = env.bool('DEBUG', default=False)
+SECRET_KEY = env("SECRET_KEY")
+REFRESH_TOKEN_HASH_SECRET = env("REFRESH_TOKEN_HASH_SECRET")
+FIELD_ENCRYPTION_KEY_ID = env("FIELD_ENCRYPTION_KEY_ID")
+FIELD_ENCRYPTION_KEYS = env.json("FIELD_ENCRYPTION_KEYS")
+FIELD_BLIND_INDEX_KEY = env("FIELD_BLIND_INDEX_KEY")
+DEBUG = env.bool("DEBUG", default=False)
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=["127.0.0.1", "localhost"])
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost"])
 
 INSTALLED_APPS = [
     "daphne",
@@ -31,29 +31,29 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "myapp",
-    "django_apscheduler"
+    "django_apscheduler",
 ]
 
 # --------------------------
 # REST Framework + JWT
 # --------------------------
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     )
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME"   : timedelta(minutes=30),
-    "REFRESH_TOKEN_LIFETIME"  : timedelta(days=7),
-    "ROTATE_REFRESH_TOKENS"   : False,
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
-    'USER_ID_CLAIM': 'sub',
+    "USER_ID_CLAIM": "sub",
 }
 
-GOOGLE_CLIENT_ID     = env('GOOGLE_CLIENT_ID')
-GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET')
-GOOGLE_REDIRECT_URI  = env('GOOGLE_REDIRECT_URI')
+GOOGLE_CLIENT_ID = env("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = env("GOOGLE_CLIENT_SECRET")
+GOOGLE_REDIRECT_URI = env("GOOGLE_REDIRECT_URI")
 
 GOOGLE_OAUTH2_CLIENT_CONFIG = {
     "web": {
@@ -70,7 +70,7 @@ GOOGLE_OAUTH2_CLIENT_CONFIG = {
 # --------------------------
 # Middleware
 # --------------------------
-    
+
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
@@ -78,7 +78,7 @@ MIDDLEWARE = [
 
 # [수정] 배포 환경(DEBUG=False)에서만 WhiteNoise 자동 활성화
 if not DEBUG:
-    MIDDLEWARE.append('whitenoise.middleware.WhiteNoiseMiddleware')
+    MIDDLEWARE.append("whitenoise.middleware.WhiteNoiseMiddleware")
 
 MIDDLEWARE += [
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -88,21 +88,27 @@ MIDDLEWARE += [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-    
+
 # --------------------------
 # CORS
 # --------------------------
-CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=["http://localhost:3000"])
-CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=["http://localhost:3000"])
+CORS_ALLOWED_ORIGINS = env.list(
+    "CORS_ALLOWED_ORIGINS", default=["http://localhost:3000"]
+)
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS", default=["http://localhost:3000"]
+)
 
 # [수정] 보안 설정 자동화 (DEBUG 상태에 따라 연동)
 SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = not DEBUG  # 배포 시 True
 CSRF_COOKIE_SAMESITE = "Lax"
-CSRF_COOKIE_SECURE = not DEBUG     # 배포 시 True
+CSRF_COOKIE_SECURE = not DEBUG  # 배포 시 True
 SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=False)
 SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=0)
-SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
+    "SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False
+)
 SECURE_HSTS_PRELOAD = env.bool("SECURE_HSTS_PRELOAD", default=False)
 
 if env.bool("USE_X_FORWARDED_PROTO", default=False):
@@ -112,15 +118,14 @@ if env.bool("USE_X_FORWARDED_PROTO", default=False):
 # Database
 # --------------------------
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
         # .env에서 값 읽어오기
-        'NAME': env('DB_NAME'),
-        'USER': env('DB_USER'),
-        'PASSWORD': env('DB_PASSWORD'),
-        'HOST': env('DB_HOST'),
-        'PORT': env('DB_PORT'),
+        "NAME": env("DB_NAME"),
+        "USER": env("DB_USER"),
+        "PASSWORD": env("DB_PASSWORD"),
+        "HOST": env("DB_HOST"),
+        "PORT": env("DB_PORT"),
     }
 }
 
@@ -130,10 +135,8 @@ CACHES = {
         "LOCATION": env("UPSTASH_REDIS_REST_URL"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "CONNECTION_POOL_KWARGS": {
-                "ssl_cert_reqs": None  # Upstash TLS 연결 허용
-            }
-        }
+            "CONNECTION_POOL_KWARGS": {"ssl_cert_reqs": None},  # Upstash TLS 연결 허용
+        },
     }
 }
 
@@ -150,7 +153,7 @@ CHANNEL_LAYERS = {
 # --------------------------
 # Other
 # --------------------------
-FRONTEND_URL = env('FRONTEND_URL', default="http://localhost:3000") # 추가
+FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")  # 추가
 
 ROOT_URLCONF = "myproject.urls"
 WSGI_APPLICATION = "myproject.wsgi.application"
@@ -160,4 +163,6 @@ TIME_ZONE = "Asia/Seoul"
 USE_I18N = True
 USE_TZ = False
 STATIC_URL = "static/"
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

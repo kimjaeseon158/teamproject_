@@ -1,8 +1,14 @@
 # 공지사항 모델
 
 import uuid
+from pathlib import Path
 
 from django.db import models
+
+
+def notice_image_upload_to(instance, filename):
+    extension = Path(filename).suffix.lower()
+    return f"notices/{instance.notice_id}/{instance.image_uuid}{extension}"
 
 
 class Notice(models.Model):
@@ -41,5 +47,26 @@ class NoticeRead(models.Model):
             models.UniqueConstraint(
                 fields=["user", "notice"],
                 name="unique_notice_read_per_user",
+            )
+        ]
+
+
+class NoticeImage(models.Model):
+    image_uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    notice = models.ForeignKey(
+        Notice,
+        on_delete=models.CASCADE,
+        related_name="images",
+    )
+    image = models.ImageField(upload_to=notice_image_upload_to)
+    display_order = models.PositiveSmallIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["display_order", "created_at", "image_uuid"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["notice", "display_order"],
+                name="unique_notice_image_display_order",
             )
         ]

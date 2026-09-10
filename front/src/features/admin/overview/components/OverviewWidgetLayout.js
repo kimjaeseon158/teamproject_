@@ -39,6 +39,8 @@ export default function OverviewWidgetLayout({ widgets, editRequest = 0 }) {
       // Keep the existing local layout as a safe offline fallback.
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
+  // Load the saved layout once when the widget editor mounts.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

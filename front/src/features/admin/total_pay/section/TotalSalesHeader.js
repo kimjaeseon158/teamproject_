@@ -4,7 +4,13 @@ import { Badge, Box, Button, Flex, Heading, HStack, Image, Text, Tooltip } from 
 import excelIcon from "../../../../assets/img/excel.png";
 import MonthPicker from "../../../common/MonthPicker";
 
-export default function TotalSalesHeader({ apiMonth, onMonthChange, onExcelOpen }) {
+export default function TotalSalesHeader({
+  apiMonth,
+  onMonthChange,
+  onExcelOpen,
+  onIncomeOpen,
+  onExpenseOpen,
+}) {
   return (
     <Flex
       justify="space-between"
@@ -22,12 +28,15 @@ export default function TotalSalesHeader({ apiMonth, onMonthChange, onExcelOpen 
             {apiMonth}
           </Badge>
         </HStack>
-        <Text color="gray.500" fontSize="sm">
-          최근 3개월 지급 흐름과 선택 월 상세 급여를 확인합니다.
-        </Text>
       </Box>
 
       <HStack spacing={2}>
+        <Button colorScheme="green" variant="solid" size="sm" onClick={onIncomeOpen}>
+          수입 관리
+        </Button>
+        <Button colorScheme="red" variant="outline" size="sm" onClick={onExpenseOpen}>
+          지출 관리
+        </Button>
         <MonthPicker value={apiMonth} onChange={onMonthChange} size="sm" />
         <Tooltip label="Excel 생성" hasArrow>
           <Button

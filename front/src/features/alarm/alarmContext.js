@@ -4,15 +4,31 @@ import { useUser } from "../auth/userContext";
 const AlarmContext = createContext(null);
 
 export function AlarmProvider({ children }) {
-  const { alarmCount, alarms, wsConnected } = useUser();
+  const {
+    alarms,
+    combinedAlarmCount,
+    noticeAlarms,
+    noticeWsConnected,
+    wsConnected,
+    markNoticeAsRead,
+  } = useUser();
+  const mergedAlarms = [
+    ...(Array.isArray(noticeAlarms) ? noticeAlarms : []),
+    ...(Array.isArray(alarms) ? alarms : []),
+  ];
+  const markAsRead = (id) => {
+    const target = mergedAlarms.find((alarm) => alarm.id === id);
+    if (target?.type === "notice") {
+      markNoticeAsRead?.(target.title);
+    }
+  };
   return (
     <AlarmContext.Provider
       value={{
-        alarms: Array.isArray(alarms) ? alarms : [],
-        unreadCount:
-          typeof alarmCount === "number" ? alarmCount : 0,
-        wsConnected,
-        markAsRead: () => {},
+        alarms: mergedAlarms,
+        unreadCount: typeof combinedAlarmCount === "number" ? combinedAlarmCount : 0,
+        wsConnected: wsConnected || noticeWsConnected,
+        markAsRead,
       }}
     >
       {children}

@@ -14,6 +14,7 @@ import {
   Text,
   Divider,
   useDisclosure,
+  Portal,
 } from "@chakra-ui/react";
 import { BellIcon } from "@chakra-ui/icons";
 import { useNavigate } from "react-router-dom";
@@ -68,7 +69,19 @@ const Alarm = () => {
         </Box>
       </PopoverTrigger>
 
-      <PopoverContent w="320px">
+      <Portal>
+      <PopoverContent
+        w="320px"
+        bg="white"
+        opacity={1}
+        zIndex={20}
+        boxShadow="0 12px 32px rgba(15, 23, 42, 0.18)"
+        sx={{
+          backgroundColor: "#fff !important",
+          opacity: "1 !important",
+          isolation: "isolate",
+        }}
+      >
         <PopoverArrow />
 
         {/* 🔔 헤더 */}
@@ -93,7 +106,7 @@ const Alarm = () => {
         </PopoverHeader>
 
         {/* 🔔 본문 */}
-        <PopoverBody>
+        <PopoverBody bg="white" opacity={1}>
           <VStack
             align="stretch"
             spacing={3}
@@ -114,7 +127,7 @@ const Alarm = () => {
                   fontWeight="bold"
                   color="red.600"
                 >
-                  미승인 알림이 {unreadCount}건 있습니다.
+                  확인할 알림이 {unreadCount}건 있습니다.
                 </Text>
               </Box>
             )}
@@ -146,6 +159,9 @@ const Alarm = () => {
                 }
                 _hover={{ bg: "gray.50" }}
                 onClick={() => {
+                  if (alarm.type === "notice") {
+                    navigate("/note");
+                  }
                   if (typeof markAsRead === "function") {
                     markAsRead(alarm.id);
                   }
@@ -162,7 +178,7 @@ const Alarm = () => {
                     color="red.500"
                     mt={1}
                   >
-                    사유: {alarm.description}
+                  {alarm.type === "notice" ? alarm.description : `사유: ${alarm.description}`}
                   </Text>
                 )}
 
@@ -181,12 +197,13 @@ const Alarm = () => {
         <Divider />
 
         {/* 🔥 닫기 버튼 */}
-        <PopoverFooter textAlign="right">
+        <PopoverFooter textAlign="right" bg="white" opacity={1}>
           <Button size="xs" onClick={onClose}>
             닫기
           </Button>
         </PopoverFooter>
       </PopoverContent>
+      </Portal>
     </Popover>
   );
 };

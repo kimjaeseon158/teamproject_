@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Badge, Box, Button, Heading, HStack, Input, Spinner, Text, useToast } from "@chakra-ui/react";
+import { Badge, Box, Button, Heading, HStack, Input, Spinner, useToast } from "@chakra-ui/react";
 import { FiCalendar, FiChevronLeft, FiChevronRight, FiRefreshCw, FiSave } from "react-icons/fi";
 
 import { getAdminWorkPlaceList } from "../../features/admin/work_place/api/adminWorkPlace";
@@ -57,7 +57,6 @@ export default function WorkScheduleManagementPage() {
       <HStack align={{ base: "stretch", md: "center" }} mb={4} flexDirection={{ base: "column", md: "row" }}>
         <Box>
           <HStack><FiCalendar /><Heading size="lg">주간 근무표 관리</Heading></HStack>
-          <Text mt={1} color="gray.500" fontSize="sm">직원별 일정을 편집하고 한 주 변경분을 한 번에 저장합니다.</Text>
         </Box>
       </HStack>
 
@@ -76,7 +75,6 @@ export default function WorkScheduleManagementPage() {
       >
         <HStack spacing={3} flexWrap="wrap">
           <Badge colorScheme="cyan" px={3} py={1.5} borderRadius="full">기준일 {schedule.date}</Badge>
-          <Text color="gray.600" fontSize="sm">표시 범위 {schedule.data.week_start || "-"} ~ {schedule.data.week_end || "-"}</Text>
           {schedule.loading && <Spinner size="sm" />}
         </HStack>
 

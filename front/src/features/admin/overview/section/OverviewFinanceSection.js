@@ -1,4 +1,5 @@
-import { Box, Button, Divider, Flex, Text, VStack } from "@chakra-ui/react";
+import { Box, Divider, Flex, Text, VStack } from "@chakra-ui/react";
+import DetailButton from "../components/DetailButton";
 
 import DashboardCard from "../components/DashboardCard";
 import SectionHeader from "../components/SectionHeader";
@@ -17,7 +18,7 @@ export default function OverviewFinanceSection({
       <SectionHeader
         title="급여 현황"
         onRemove={onRemove}
-        action={<Button size="xs" variant="outline" onClick={onNavigateFinance}>상세</Button>}
+        action={<DetailButton onClick={onNavigateFinance} />}
       />
       <Flex align="end" gap={3} flex="1" minH="180px" px={1}>
         {threeMonthData.map((item) => {

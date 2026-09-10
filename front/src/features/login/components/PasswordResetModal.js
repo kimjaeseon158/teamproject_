@@ -53,7 +53,6 @@ export default function PasswordResetModal({ isOpen, onClose, initialUserId, onS
             </Alert>
           ) : (
             <>
-              <Text fontSize="sm" color="gray.600" mb={4}>아이디와 주민등록번호 전체를 입력해 주세요.</Text>
               <FormControl isRequired mb={4}><FormLabel>아이디</FormLabel>
                 <Input value={userId} onChange={(e) => setUserId(e.target.value)} autoComplete="username" />
               </FormControl>

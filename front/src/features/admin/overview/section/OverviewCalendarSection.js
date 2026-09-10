@@ -45,13 +45,14 @@ export default function OverviewCalendarSection({
       <Box
         flex="1"
         minH={0}
+        minW={0}
+        position="relative"
         overflow="hidden"
         sx={{
-          ".fc": { height: "100%", fontSize: "12px" },
-          ".fc-view-harness": { height: "100% !important" },
-          ".fc-scroller": { overflow: "hidden !important" },
+          ".fc": { fontSize: "12px" },
+          ".fc .fc-view-harness": { height: "auto !important", flex: "1 1 0", minHeight: 0 },
           ".fc-daygrid-body": { width: "100% !important" },
-          ".fc-daygrid-day-frame": { minHeight: "0", height: "100%" },
+          ".fc .fc-daygrid-day-frame": { minHeight: "0 !important", height: "100% !important", display: "block" },
           ".fc-daygrid-day-top": { lineHeight: 1, minHeight: "18px" },
           ".fc-daygrid-day-number": { padding: "2px 4px", fontSize: "11px" },
           ".fc-daygrid-day-events": { minHeight: "16px", marginTop: "0" },
@@ -64,6 +65,7 @@ export default function OverviewCalendarSection({
           selectedDate={currentDate}
           isMobile={false}
           height="100%"
+          observeContainerResize
           onEventClick={onNavigateApproval}
           renderEventContent={(arg) => {
             const data = arg.event.extendedProps;

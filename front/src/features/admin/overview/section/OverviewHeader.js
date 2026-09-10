@@ -10,7 +10,7 @@ import {
   Tag,
   Text,
 } from "@chakra-ui/react";
-import { RepeatIcon } from "@chakra-ui/icons";
+import { EditIcon, RepeatIcon } from "@chakra-ui/icons";
 import { FcGoogle } from "react-icons/fc";
 
 import MonthPicker from "../../../common/MonthPicker";
@@ -23,21 +23,19 @@ export default function OverviewHeader({
   onGoogleLogin,
   onMonthChange,
   onRefresh,
+  onEdit,
 }) {
   return (
     <Flex justify="space-between" align="center" gap={3}>
       <Box>
         <HStack spacing={3} mb={1}>
-          <Heading size="md" color="gray.900">
-            통합 Overview
+          <Heading size="lg" color="gray.900">
+            홈 화면
           </Heading>
           <Badge colorScheme="blue" borderRadius="full" px={3}>
             {formatMonth(currentDate)}
           </Badge>
         </HStack>
-        <Text color="gray.500" fontSize="sm">
-          필요한 현황만 모아서 관리자 첫 화면을 구성합니다.
-        </Text>
       </Box>
 
       <HStack spacing={2}>
@@ -70,6 +68,11 @@ export default function OverviewHeader({
           isLoading={isLoading}
           onClick={onRefresh}
         />
+        {onEdit && (
+          <Button leftIcon={<EditIcon />} variant="outline" size="sm" onClick={onEdit}>
+            편집
+          </Button>
+        )}
       </HStack>
     </Flex>
   );

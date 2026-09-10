@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -56,6 +56,7 @@ export default function CalendarView({
   isMobile: isMobileProp,
   renderEventContent,
   height: calendarHeight,
+  observeContainerResize = false,
 }) {
   const isMobileValue = useBreakpointValue({
     base: true,
@@ -64,7 +65,33 @@ export default function CalendarView({
   const isMobile = isMobileProp !== undefined ? isMobileProp : isMobileValue;
 
   const calendarRef = useRef(null);
+  const containerRef = useRef(null);
   const lastYmRef = useRef(null);
+  const [containerSize, setContainerSize] = useState(null);
+
+  useEffect(() => {
+    if (!observeContainerResize || !containerRef.current) return;
+    let frame;
+    const observer = new ResizeObserver(([entry]) => {
+      const width = Math.round(entry.contentRect.width);
+      const height = Math.round(entry.contentRect.height);
+      // Ignore temporary zero-size frames while the widget is being laid out.
+      if (width <= 0 || height <= 0) return;
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        setContainerSize((previous) => previous?.width === width && previous?.height === height
+          ? previous : { width, height });
+      });
+    });
+    observer.observe(containerRef.current);
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); };
+  }, [observeContainerResize]);
+
+  useEffect(() => {
+    if (!observeContainerResize || !containerSize) return;
+    const frame = requestAnimationFrame(() => calendarRef.current?.getApi().updateSize());
+    return () => cancelAnimationFrame(frame);
+  }, [observeContainerResize, containerSize]);
 
   useEffect(() => {
     window.calendarRef = calendarRef.current;
@@ -82,7 +109,7 @@ export default function CalendarView({
 
   const initialDateValue = selectedDate?.formatted || selectedDate || new Date();
 
-  return (
+  const calendar = (
     <FullCalendar
       ref={calendarRef}
       plugins={[dayGridPlugin, interactionPlugin]}
@@ -90,7 +117,8 @@ export default function CalendarView({
       initialDate={initialDateValue}
       locale={koLocale}
       headerToolbar={false}
-      height={calendarHeight ?? (isMobile ? "auto" : "calc(100vh - 140px)")}
+      height={(observeContainerResize ? containerSize?.height : undefined)
+        ?? calendarHeight ?? (isMobile ? "auto" : "calc(100vh - 140px)")}
       events={events}
       dayMaxEvents={2}
       moreLinkClick="popover"
@@ -228,4 +256,7 @@ export default function CalendarView({
       )}
     />
   );
+  return observeContainerResize
+    ? <div ref={containerRef} style={{ position: "absolute", inset: 0, minWidth: 0, minHeight: 0 }}>{calendar}</div>
+    : calendar;
 }

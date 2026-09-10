@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useDisclosure, useToast } from "@chakra-ui/react";
 
 import { useApproveList } from "./useApproveList";
@@ -17,12 +18,34 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
   const detailDisclosure = useDisclosure();
   const { rows, loading, fetchList } = useApproveList(toast);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const filters = useApprovalFilters();
+  const [searchParams] = useSearchParams();
+  const detailDate = searchParams.get("date");
+  const detailOpened = useRef(false);
+  const filters = useApprovalFilters(detailDate);
   const selection = useApprovalSelection(rows);
   const summary = useApprovalSummary(rows);
   const table = useApprovalTableState(rows);
   const approvalExport = useApprovalExport({ onExcelExportClose, toast });
   const workPlaceOptions = useAdminWorkPlaceOptions(toast);
+
+  useEffect(() => {
+    if (detailOpened.current || loading || !detailDate || !rows.length) return;
+    const workdayId = searchParams.get("workday");
+    const matches = rows.filter((row) =>
+      workdayId
+        ? String(row.id) === workdayId
+        : row.user_uuid === searchParams.get("user") &&
+          row.date === detailDate &&
+          row.workShift === searchParams.get("shift") &&
+          row.location === searchParams.get("place")
+    );
+    // Never open an arbitrary record when the link is ambiguous.
+    if (matches.length === 1) {
+      detailOpened.current = true;
+      setSelectedEmployee(matches[0]);
+      detailDisclosure.onOpen();
+    }
+  }, [detailDate, detailDisclosure, loading, rows, searchParams]);
 
   const searchWithFilters = (nextFilters = {}) => {
     const searchParams = filters.getSearchParams(nextFilters);

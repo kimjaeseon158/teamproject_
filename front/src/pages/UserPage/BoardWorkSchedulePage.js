@@ -1,4 +1,5 @@
-import { Badge, Button, HStack, Input, InputGroup, InputLeftElement, Select, Spinner, Text, VStack } from "@chakra-ui/react";
+import { Badge, Box, Button, HStack, Input, InputGroup, InputLeftElement, Select, Spinner, Text, VStack } from "@chakra-ui/react";
+import BoardMobileSchedule from "../../features/board/work_schedule/components/BoardMobileSchedule";
 import { FiChevronLeft, FiChevronRight, FiSearch } from "react-icons/fi";
 
 import BoardLayout from "../../features/board/layout/BoardLayout";
@@ -18,7 +19,8 @@ export default function BoardWorkSchedulePage(props) {
 
   return (
     <BoardLayout activeSection="work-schedule" {...props}>
-      <VStack align="stretch" spacing={4}>
+      <Box display={{ base: "block", md: "none" }}><BoardMobileSchedule schedule={schedule} /></Box>
+      <VStack display={{ base: "none", md: "flex" }} align="stretch" spacing={4}>
         <HStack justify="space-between" align={{ base: "stretch", lg: "flex-start" }} flexDirection={{ base: "column", lg: "row" }}>
           <VStack align="stretch" spacing={3}>
             <BoardPageTitle

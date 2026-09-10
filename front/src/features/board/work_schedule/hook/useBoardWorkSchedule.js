@@ -46,29 +46,36 @@ export default function useBoardWorkSchedule() {
   const [selectedMonth, setSelectedMonth] = useState(() => monthOf(today));
   const [data, setData] = useState({ dates: [], users: [] });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [status, setStatus] = useState("ALL");
   const [searchType, setSearchType] = useState("user_name");
   const [keyword, setKeyword] = useState("");
   const [appliedKeyword, setAppliedKeyword] = useState("");
   const [appliedSearchType, setAppliedSearchType] = useState("user_name");
   const appliedSearch = useRef({ keyword: "", type: "user_name" });
+  const requestId = useRef(0);
 
   const load = useCallback(async (targetDate, targetKeyword = "", targetSearchType = "user_name") => {
+    const id = ++requestId.current;
     const normalizedKeyword = targetKeyword.trim();
     setLoading(true);
+    setError(null);
     try {
       const filters = normalizedKeyword ? { [targetSearchType]: normalizedKeyword } : {};
       const response = loginType === "admin"
         ? await fetchAdminWorkSchedules(targetDate, { toast })
         : await fetchUserWorkSchedule({ date: targetDate, ...filters }, { toast });
+      if (id !== requestId.current) return;
       setData(response || { dates: [], users: [] });
       setAppliedKeyword(normalizedKeyword);
       setAppliedSearchType(targetSearchType);
       appliedSearch.current = { keyword: normalizedKeyword, type: targetSearchType };
     } catch (error) {
+      if (id !== requestId.current) return;
+      setError(error);
       toast({ title: "근무표 조회에 실패했습니다.", description: error.message, status: "error" });
     } finally {
-      setLoading(false);
+      if (id === requestId.current) setLoading(false);
     }
   }, [loginType, toast]);
 
@@ -113,6 +120,8 @@ export default function useBoardWorkSchedule() {
     appliedKeyword,
     appliedSearchType,
     data: { ...data, users },
+    sourceData: data,
+    error,
     date,
     keyword,
     loading,

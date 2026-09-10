@@ -13,20 +13,25 @@ export const WIDGET_LIMITS = {
 };
 export const DEFAULT_LAYOUT = {
   kpis: { x: 0, y: 0, w: 12, h: 2, visible: true },
-  calendar: { x: 0, y: 2, w: 7, h: 13, visible: true },
-  approvalQueue: { x: 7, y: 2, w: 5, h: 4, visible: true },
-  finance: { x: 7, y: 6, w: 5, h: 6, visible: true },
-  employeeSnapshot: { x: 7, y: 12, w: 5, h: 2, visible: true },
+  calendar: { x: 0, y: 2, w: 8, h: 13, visible: true },
+  approvalQueue: { x: 8, y: 2, w: 4, h: 4, visible: true },
+  finance: { x: 8, y: 6, w: 4, h: 6, visible: true },
+  employeeSnapshot: { x: 8, y: 12, w: 4, h: 2, visible: true },
 };
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const integer = (value, fallback) => Number.isFinite(value) ? Math.round(value) : fallback;
 
-export function getKpiHeight(w, canvasWidth = 900) {
-  const pixelWidth = (canvasWidth + GAP) / COLUMNS * w - GAP;
-  const columns = Math.max(1, Math.min(6, Math.floor((pixelWidth + GAP) / (140 + GAP))));
+export function getKpiContentHeight(w, canvasWidth = 900, editing = false) {
+  // Match the KPI container queries using the available inner width.
+  const pixelWidth = (canvasWidth + GAP) / COLUMNS * w - GAP - (editing ? 4 : 0);
+  const columns = pixelWidth >= 1000 ? 6 : pixelWidth >= 480 ? 3 : pixelWidth >= 300 ? 2 : 1;
   const rows = Math.ceil(6 / columns);
-  // Reserve the editor handle (28px); individual cards always stay 80px tall.
-  return Math.ceil((rows * 88 + (rows - 1) * GAP + 28 + GAP) / (ROW_HEIGHT + GAP));
+  return rows * 88 + (rows - 1) * GAP;
+}
+
+export function getKpiHeight(w, canvasWidth = 900) {
+  // Reserve the editor handle (28px) and borders; cards stay 88px tall.
+  return Math.ceil((getKpiContentHeight(w, canvasWidth, true) + 28 + 4 + GAP) / (ROW_HEIGHT + GAP));
 }
 
 export function constrainWidget(key, value, canvasWidth = 900) {

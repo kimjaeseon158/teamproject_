@@ -10,14 +10,20 @@ const ALLOWED_COLORS = new Set([
 ]);
 const ALLOWED_ALIGNMENTS = new Set(["left", "center", "right"]);
 
-export default function sanitizeNoticeHtml(html = "") {
+export default function sanitizeNoticeHtml(html = "", images = []) {
   const sanitized = DOMPurify.sanitize(String(html), {
-    ALLOWED_TAGS,
-    ALLOWED_ATTR: ["href", "target", "rel", "style"],
+    ALLOWED_TAGS: [...ALLOWED_TAGS, "img"],
+    ALLOWED_ATTR: ["href", "target", "rel", "style", "data-notice-image"],
     ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i,
   });
   const template = document.createElement("template");
   template.innerHTML = sanitized;
+  template.content.querySelectorAll("img").forEach((element) => {
+    const match = images.find((image) => element.getAttribute("data-notice-image") === `order:${image.display_order}`);
+    if (!match || !/^(https?:\/\/|\/(?!\/))/i.test(match.image_url)) { element.remove(); return; }
+    element.setAttribute("src", match.image_url);
+    element.setAttribute("alt", "첨부 이미지");
+  });
 
   template.content.querySelectorAll("[style]").forEach((element) => {
     const color = element.style.color.toLowerCase();

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Box, Button, Checkbox, Flex, HStack, IconButton, Text, useToast } from "@chakra-ui/react";
 import { CloseIcon } from "@chakra-ui/icons";
+import { requestJson } from "../../../../services/api/requestJson";
 import { OVERVIEW_WIDGET_LABELS } from "../constants/overviewWidgets";
 import {
-  COLUMNS, DEFAULT_LAYOUT, GAP, LAYOUT_STORAGE_KEY, ROW_HEIGHT,
-  fitKpiHeight, loadWidgetLayout, updateWidget,
+  COLUMNS, DEFAULT_LAYOUT, GAP, ROW_HEIGHT,
+  fitKpiHeight, getKpiContentHeight, loadWidgetLayout, updateWidget,
 } from "../utils/widgetLayout";
 
 const STEP = ROW_HEIGHT + GAP;
@@ -15,6 +16,8 @@ export default function OverviewWidgetLayout({ widgets, editRequest = 0 }) {
     try { return loadWidgetLayout(window.localStorage); }
     catch { return structuredClone(DEFAULT_LAYOUT); }
   });
+  const [version, setVersion] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState(null);
   const [gesture, setGesture] = useState(null);
   const [width, setWidth] = useState(0);
@@ -26,6 +29,19 @@ export default function OverviewWidgetLayout({ widgets, editRequest = 0 }) {
   const desktop = width >= 900;
 
   useEffect(() => {
+    let active = true;
+    requestJson("/api/admin/widget-layout/").then((data) => {
+      if (!active) return;
+      const next = data?.layout ? fitKpiHeight(data.layout, width || 900) : saved;
+      setSaved(next);
+      setVersion(Number.isFinite(data?.version) ? data.version : 0);
+    }).catch(() => {
+      // Keep the existing local layout as a safe offline fallback.
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
     if (editRequest > handledEditRequest.current) {
       handledEditRequest.current = editRequest;
       if (!editing) setDraft(structuredClone(saved));
@@ -34,28 +50,59 @@ export default function OverviewWidgetLayout({ widgets, editRequest = 0 }) {
   const columnStep = (width + GAP) / COLUMNS;
   const visibleKeys = Object.keys(layout).filter((key) => layout[key].visible)
     .sort((a, b) => layout[a].y - layout[b].y || layout[a].x - layout[b].x);
-  // The saved grid reserves a 2-row editor header for KPIs. In view mode,
-  // collapse only that header half-row while keeping the 80px KPI cards visible.
-  const normalEditorOffset = !editing && layout.kpis?.visible ? 1.25 : 0;
-  const getRenderItem = (key) => {
-    const item = layout[key];
-    if (!editing && key !== "kpis" && layout.kpis?.visible) {
+  // Remove both editor chrome and grid rounding space in view mode.
+  const normalEditorOffset = !editing && layout.kpis?.visible
+    ? layout.kpis.h - (getKpiContentHeight(layout.kpis.w, width || 900) + GAP) / STEP
+    : 0;
+  const getBaseRenderItem = (key) => {
+    let item = layout[key];
+    if (!editing && layout.employeeSnapshot?.visible) {
+      const summary = layout.employeeSnapshot;
+      const extraHeight = Math.max(0, (120 + GAP) / STEP - summary.h);
+      if (key === "employeeSnapshot") item = { ...item, h: item.h + extraHeight };
+      else if (item.y >= summary.y + summary.h
+        && item.x < summary.x + summary.w && summary.x < item.x + item.w) {
+        item = { ...item, y: item.y + extraHeight };
+      }
+    }
+    if (!editing && key !== "kpis" && layout.kpis?.visible
+      && item.y >= layout.kpis.y + layout.kpis.h) {
       return { ...item, y: Math.max(0, item.y - normalEditorOffset) };
     }
-    if (!editing && key === "kpis") return { ...item, h: 1.75 };
-    if (!editing && key === "employeeSnapshot") return { ...item, h: 2 };
+    if (!editing && key === "kpis") return { ...item, h: item.h - normalEditorOffset };
     return item;
   };
+  const renderItems = Object.fromEntries(visibleKeys.map((key) => [key, getBaseRenderItem(key)]));
+  if (!editing && desktop) {
+    const { calendar, approvalQueue, finance, employeeSnapshot } = renderItems;
+    // Use the remaining space for approvals and align the right column with the calendar.
+    if (calendar && approvalQueue && finance && employeeSnapshot
+      && approvalQueue.x >= calendar.x + calendar.w
+      && approvalQueue.x === finance.x && finance.x === employeeSnapshot.x
+      && approvalQueue.w === finance.w && finance.w === employeeSnapshot.w
+      // Compare saved grid coordinates before fractional view-mode offsets.
+      && layout.approvalQueue.y + layout.approvalQueue.h <= layout.finance.y
+      && layout.finance.y + layout.finance.h <= layout.employeeSnapshot.y) {
+      const extra = calendar.y + calendar.h - (employeeSnapshot.y + employeeSnapshot.h);
+      if (extra > 0) {
+        renderItems.approvalQueue = { ...approvalQueue, h: approvalQueue.h + extra };
+        renderItems.finance = { ...finance, y: finance.y + extra };
+        renderItems.employeeSnapshot = { ...employeeSnapshot, y: employeeSnapshot.y + extra };
+      }
+    }
+  }
+  const getRenderItem = (key) => renderItems[key];
   const height = Math.max(1, ...visibleKeys.map((key) => {
     const item = getRenderItem(key);
     return item.y + item.h;
   })) * STEP - GAP;
 
   useEffect(() => {
+    if (!canvas.current) return undefined;
     const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
     observer.observe(canvas.current);
     return () => observer.disconnect();
-  }, []);
+  }, [loading]);
 
   useEffect(() => {
     if (!editing) return;
@@ -109,16 +156,22 @@ export default function OverviewWidgetLayout({ widgets, editRequest = 0 }) {
     onKeyDown: (event) => keyboardGesture(event, key, mode),
   });
 
-  const save = () => {
+  const save = async () => {
     try {
-      window.localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout));
-      setSaved(layout);
+      const data = await requestJson("/api/admin/widget-layout/", {
+        method: "PATCH",
+        body: { layout, version },
+      });
+      setSaved(data.layout || layout);
+      setVersion(Number.isFinite(data.version) ? data.version : version + 1);
       setDraft(null);
       toast({ title: "배치가 저장되었습니다.", status: "success", duration: 2000 });
-    } catch {
-      toast({ title: "배치를 저장하지 못했습니다.", description: "브라우저 저장 공간 설정을 확인해주세요. 편집 내용은 유지됩니다.", status: "error" });
+    } catch (error) {
+      toast({ title: error.status === 409 ? "배치가 충돌했습니다." : "배치를 저장하지 못했습니다.", description: error.status === 409 ? "다른 화면에서 변경된 최신 배치를 새로고침한 뒤 다시 저장해주세요." : error.message, status: "error" });
     }
   };
+
+  if (loading) return <Box minH="120px" />;
 
   return (
     <Box position="relative">

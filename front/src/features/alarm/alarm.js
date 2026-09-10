@@ -14,6 +14,7 @@ import {
   Text,
   Divider,
   useDisclosure,
+  Portal,
 } from "@chakra-ui/react";
 import { BellIcon } from "@chakra-ui/icons";
 import { useNavigate } from "react-router-dom";
@@ -68,7 +69,19 @@ const Alarm = () => {
         </Box>
       </PopoverTrigger>
 
-      <PopoverContent w="320px">
+      <Portal>
+      <PopoverContent
+        w="320px"
+        bg="white"
+        opacity={1}
+        zIndex={20}
+        boxShadow="0 12px 32px rgba(15, 23, 42, 0.18)"
+        sx={{
+          backgroundColor: "#fff !important",
+          opacity: "1 !important",
+          isolation: "isolate",
+        }}
+      >
         <PopoverArrow />
 
         {/* 🔔 헤더 */}
@@ -93,7 +106,7 @@ const Alarm = () => {
         </PopoverHeader>
 
         {/* 🔔 본문 */}
-        <PopoverBody>
+        <PopoverBody bg="white" opacity={1}>
           <VStack
             align="stretch"
             spacing={3}
@@ -184,12 +197,13 @@ const Alarm = () => {
         <Divider />
 
         {/* 🔥 닫기 버튼 */}
-        <PopoverFooter textAlign="right">
+        <PopoverFooter textAlign="right" bg="white" opacity={1}>
           <Button size="xs" onClick={onClose}>
             닫기
           </Button>
         </PopoverFooter>
       </PopoverContent>
+      </Portal>
     </Popover>
   );
 };

@@ -17,6 +17,7 @@ const normalizeNotice = (notice = {}) => ({
   author_name: notice.author_name || "",
   created_at: notice.created_at || "",
   updated_at: notice.updated_at || "",
+  images: Array.isArray(notice.images) ? notice.images : [],
 });
 
 export async function fetchNotices(
@@ -52,6 +53,9 @@ export const updateNotice = (
 
 export const deleteNotice = ({ loginType, noticeUuid }, options = {}) =>
   ApiDelete(`${getBasePath(loginType)}/${noticeUuid}/`, undefined, options);
+
+export const deleteNoticeImage = ({ loginType, noticeUuid, imageUuid }, options = {}) =>
+  ApiDelete(`${getBasePath(loginType)}/${noticeUuid}/images/${imageUuid}/`, undefined, options);
 
 export const markNoticeRead = ({ noticeUuid }, options = {}) =>
   ApiPost(`/api/user/notices/${noticeUuid}/read/`, {}, options);

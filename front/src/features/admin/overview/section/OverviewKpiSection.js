@@ -5,7 +5,7 @@ import DashboardCard from "../components/DashboardCard";
 
 export default function OverviewKpiSection({ kpis, onNavigate, onRemove }) {
   return (
-    <Box bg="transparent">
+    <Box bg="transparent" sx={{ containerType: "inline-size" }}>
       {onRemove && <HStack justify="flex-end" mb={1}>
         <IconButton
           aria-label="상단 요약 카드 숨기기"
@@ -15,7 +15,12 @@ export default function OverviewKpiSection({ kpis, onNavigate, onRemove }) {
           onClick={onRemove}
         />
       </HStack>}
-      <SimpleGrid templateColumns="repeat(auto-fit, minmax(140px, 1fr))" spacing={3} alignContent="start">
+      <SimpleGrid spacing={3} alignContent="start" sx={{
+        gridTemplateColumns: "repeat(1, minmax(0, 1fr))",
+        "@container (min-width: 300px)": { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" },
+        "@container (min-width: 480px)": { gridTemplateColumns: "repeat(3, minmax(0, 1fr))" },
+        "@container (min-width: 1000px)": { gridTemplateColumns: "repeat(6, minmax(0, 1fr))" },
+      }}>
         {kpis.map((item) => (
           <DashboardCard
             key={item.label}

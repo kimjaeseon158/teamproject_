@@ -262,7 +262,7 @@ export function UserProvider({ children, loginType: initialLoginType }) {
   });
   const { connected: noticeWsConnected } = useNoticeSocket({
     token: !loading && token && userUuid ? token : null,
-    enabled: loginType === "user",
+    enabled: Boolean(loginType),
     onConnect: clearNoticeAlarms,
     onMessage: addNoticeAlarm,
   });

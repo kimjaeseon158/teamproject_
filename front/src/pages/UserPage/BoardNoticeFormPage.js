@@ -1,11 +1,13 @@
-import { Badge, Box, Button, Divider, Flex, FormControl, FormErrorMessage, FormLabel, Grid, GridItem, HStack, Icon, Input, Text, VStack, useToast } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { Badge, Box, Button, Divider, Flex, FormControl, FormErrorMessage, FormLabel, Grid, GridItem, HStack, Icon, Input, Text, VStack, SimpleGrid, Image, IconButton, useToast } from "@chakra-ui/react";
+import { useEffect, useRef, useState } from "react";
+import sanitizeNoticeHtml from "../../features/board/notices/utils/sanitizeNoticeHtml";
+import { prepareNoticeContent } from "../../features/board/notices/utils/noticeImages";
 import { useNavigate, useParams } from "react-router-dom";
-import { FiEdit3, FiUser } from "react-icons/fi";
+import { FiEdit3, FiUser, FiX } from "react-icons/fi";
 
 import BoardPageTitle from "../../features/board/components/BoardPageTitle";
 import BoardLayout from "../../features/board/layout/BoardLayout";
-import { createNotice, fetchNotice, updateNotice } from "../../features/board/notices/api/boardNotices";
+import { createNotice, deleteNoticeImage, fetchNotice, updateNotice } from "../../features/board/notices/api/boardNotices";
 import { useUser } from "../../features/auth/userContext";
 import NoticeRichTextEditor, { NOTICE_CONTENT_LIMIT } from "../../features/board/notices/components/NoticeRichTextEditor";
 
@@ -20,6 +22,35 @@ export default function BoardNoticeFormPage() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(editing);
   const [saving, setSaving] = useState(false);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+  const previewUrls = useRef([]);
+  useEffect(() => () => previewUrls.current.forEach(URL.revokeObjectURL), []);
+  const addImages = (files) => {
+    const available = 5 - existingImages.length - selectedImages.length;
+    if (files.length > available || files.some((file) => !["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024)) {
+      toast({ title: "이미지는 총 5개까지, JPEG·PNG·WebP 파일당 5MB 이하로 선택해주세요.", status: "warning" });
+      return [];
+    }
+    files.forEach((file) => {
+      file.noticeRef = `new:${crypto.randomUUID()}`;
+      file.previewUrl = URL.createObjectURL(file);
+      previewUrls.current.push(file.previewUrl);
+    });
+    setSelectedImages((current) => [...current, ...files]);
+    return files.map((file) => ({ imageRef: file.noticeRef, src: file.previewUrl }));
+  };
+  const removeInlineImage = (ref) => {
+    setValues((current) => {
+      const doc = new DOMParser().parseFromString(current.content, "text/html");
+      doc.querySelectorAll("img").forEach((image) => {
+        if (image.getAttribute("data-notice-image") === ref) image.remove();
+      });
+      const text = doc.body.textContent || "";
+      setContentMeta({ isEmpty: !text.trim() && !doc.querySelector("img"), textLength: text.length });
+      return { ...current, content: doc.body.innerHTML };
+    });
+  };
 
   useEffect(() => {
     if (!editing || !loginType) return;
@@ -28,9 +59,10 @@ export default function BoardNoticeFormPage() {
     fetchNotice({ loginType, noticeUuid }, { toast })
       .then((notice) => {
         if (!active) return;
-        setValues({ title: notice.title, content: notice.content });
+        setValues({ title: notice.title, content: sanitizeNoticeHtml(notice.content, notice.images) });
+        setExistingImages(notice.images || []);
         const text = new DOMParser().parseFromString(notice.content || "", "text/html").body.textContent || "";
-        setContentMeta({ isEmpty: !text.trim(), textLength: text.length });
+        setContentMeta({ isEmpty: !text.trim() && !sanitizeNoticeHtml(notice.content, notice.images).includes("<img"), textLength: text.length });
       })
       .catch((error) => {
         toast({ title: "공지사항을 불러오지 못했습니다.", description: error.message, status: "error" });
@@ -60,7 +92,8 @@ export default function BoardNoticeFormPage() {
 
     setSaving(true);
     try {
-      const payload = { title: values.title.trim(), content: values.content };
+      const savedContent = prepareNoticeContent(values.content, existingImages, selectedImages);
+      const payload = selectedImages.length ? (() => { const form = new FormData(); form.append("title", values.title.trim()); form.append("content", savedContent); selectedImages.forEach((file) => form.append("images", file)); return form; })() : { title: values.title.trim(), content: savedContent };
       const notice = editing
         ? await updateNotice({ loginType, noticeUuid, values: payload }, { toast })
         : await createNotice({ loginType, values: payload }, { toast });
@@ -100,9 +133,10 @@ export default function BoardNoticeFormPage() {
 
             <FormControl isInvalid={Boolean(errors.content)} isRequired>
               <FormLabel>내용</FormLabel>
-              <NoticeRichTextEditor content={values.content} onChange={changeContent} disabled={loading || saving} isInvalid={Boolean(errors.content)} />
+              <NoticeRichTextEditor content={values.content} onChange={changeContent} onAddImages={addImages} disabled={loading || saving} isInvalid={Boolean(errors.content)} />
               <FormErrorMessage>{errors.content}</FormErrorMessage>
             </FormControl>
+            <FormControl><FormLabel>첨부 이미지 ({existingImages.length + selectedImages.length}/5)</FormLabel><Input type="file" multiple accept="image/jpeg,image/png,image/webp" disabled={existingImages.length + selectedImages.length >= 5} onChange={(event) => { addImages(Array.from(event.target.files || [])); event.target.value = ""; }} /><SimpleGrid columns={{ base: 2, md: 4 }} spacing={3} mt={3}>{existingImages.map((image) => <Box key={image.image_uuid} position="relative"><Image src={image.image_url} alt="첨부 이미지" h="90px" w="100%" objectFit="cover" borderRadius="md" /><IconButton aria-label="이미지 삭제" icon={<FiX />} size="xs" position="absolute" top={1} right={1} onClick={async () => { if (!window.confirm("이 이미지를 삭제하시겠습니까?")) return; await deleteNoticeImage({ loginType, noticeUuid, imageUuid: image.image_uuid }, { toast }); removeInlineImage(`order:${image.display_order}`); setExistingImages((items) => items.filter((item) => item.image_uuid !== image.image_uuid)); }} /></Box>)}{selectedImages.map((file, index) => <Box key={`${file.name}-${index}`} position="relative"><Image src={file.previewUrl} alt="새 이미지" h="90px" w="100%" objectFit="cover" borderRadius="md" /><IconButton aria-label="이미지 제거" icon={<FiX />} size="xs" position="absolute" top={1} right={1} onClick={() => { removeInlineImage(file.noticeRef); setSelectedImages((items) => items.filter((_, itemIndex) => itemIndex !== index)); }} /></Box>)}</SimpleGrid><Text fontSize="xs" color="gray.500" mt={1}>JPEG·PNG·WebP, 파일당 5MB 이하</Text></FormControl>
           </VStack>
         </GridItem>
 

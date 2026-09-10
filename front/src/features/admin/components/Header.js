@@ -16,8 +16,8 @@ export default function Header() {
       align="center"
       justify="space-between"
     >
-      <Box fontWeight="bold" fontSize="lg">
-        Dashboard
+      <Box display={{ base: "block", md: "block" }} w={{ base: "42px", md: "auto" }} fontWeight="bold" fontSize="lg">
+        <Box display={{ base: "none", md: "block" }}>Dashboard</Box>
       </Box>
 
       <Flex align="center" gap="3">

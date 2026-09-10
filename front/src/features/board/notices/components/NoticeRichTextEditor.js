@@ -30,7 +30,8 @@ import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import NoticeImage from "./NoticeImage";
 import {
   FiAlignCenter,
   FiAlignLeft,
@@ -40,6 +41,7 @@ import {
   FiCornerUpRight,
   FiItalic,
   FiLink,
+  FiImage,
   FiList,
   FiMinus,
 } from "react-icons/fi";
@@ -60,12 +62,15 @@ export default function NoticeRichTextEditor({
   disabled = false,
   isInvalid = false,
   onChange,
+  onAddImages,
 }) {
   const linkModal = useDisclosure();
+  const imageInput = useRef(null);
   const [linkUrl, setLinkUrl] = useState("");
   const editor = useEditor({
     extensions: [
       StarterKit,
+      NoticeImage,
       TextStyle,
       Color,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
@@ -82,7 +87,7 @@ export default function NoticeRichTextEditor({
         html: currentEditor.getHTML(),
         text,
         textLength: currentEditor.storage.characterCount.characters(),
-        isEmpty: !text.trim(),
+        isEmpty: currentEditor.isEmpty,
       });
     },
   });
@@ -137,6 +142,14 @@ export default function NoticeRichTextEditor({
 
   return <>
     <Box borderWidth="1px" borderColor={isInvalid ? "red.500" : "gray.200"} borderRadius="md" bg="gray.50" overflow="hidden" _focusWithin={{ bg: "white", borderColor: isInvalid ? "red.500" : "blue.400", boxShadow: `0 0 0 1px var(--chakra-colors-${isInvalid ? "red" : "blue"}-400)` }}>
+      {onAddImages && <Flex px={3} py={3} gap={3} align="center" wrap="wrap" bg="white" borderBottomWidth="1px">
+        <Button type="button" size="sm" colorScheme="blue" variant="outline" leftIcon={<FiImage />}
+          onClick={() => imageInput.current?.click()} isDisabled={disabled}>
+          본문에 사진 넣기
+        </Button>
+        <Text fontSize="xs" color="gray.600">본문에서 위치를 선택한 뒤 사진을 넣고, 아래에 글을 이어 쓰세요.</Text>
+        <Text w="100%" fontSize="xs" color="orange.700">현재는 작성 화면에서만 배치할 수 있습니다. 저장 후에는 사진이 하단 첨부로 표시됩니다.</Text>
+      </Flex>}
       <Flex px={2} py={2} gap={1} align="center" borderBottomWidth="1px" bg="white" overflowX="auto" flexWrap={{ base: "nowrap", xl: "wrap" }}>
         <Select aria-label="문단 스타일" size="sm" w="112px" flexShrink={0} value={toolbarState.block} onChange={(event) => setBlock(editor, event.target.value)} isDisabled={disabled} borderColor={toolbarState.block !== "paragraph" ? "blue.400" : "gray.200"} bg={toolbarState.block !== "paragraph" ? "blue.50" : "white"} fontWeight={toolbarState.block !== "paragraph" ? "700" : "normal"}>
           <option value="paragraph">본문</option><option value="1">제목 1</option><option value="2">제목 2</option><option value="3">제목 3</option>
@@ -156,6 +169,13 @@ export default function NoticeRichTextEditor({
         <ToolbarButton label="가운데 정렬" icon={FiAlignCenter} active={toolbarState.alignCenter} onClick={() => editor.chain().focus().setTextAlign("center").run()} disabled={disabled} />
         <ToolbarButton label="오른쪽 정렬" icon={FiAlignRight} active={toolbarState.alignRight} onClick={() => editor.chain().focus().setTextAlign("right").run()} disabled={disabled} />
         <ToolbarButton label="링크" icon={FiLink} active={toolbarState.link} onClick={openLinkModal} disabled={disabled} />
+        <input ref={imageInput} type="file" hidden multiple accept="image/jpeg,image/png,image/webp" onChange={(event) => {
+          const pictures = onAddImages?.(Array.from(event.target.files || [])) || [];
+          event.target.value = "";
+          if (pictures.length) editor.chain().focus().insertContent(pictures.flatMap((attrs) => [
+            { type: "noticeImage", attrs }, { type: "paragraph" },
+          ])).run();
+        }} />
         <ToolbarButton label="실행 취소" icon={FiCornerUpLeft} onClick={() => editor.chain().focus().undo().run()} disabled={disabled || !toolbarState.canUndo} />
         <ToolbarButton label="다시 실행" icon={FiCornerUpRight} onClick={() => editor.chain().focus().redo().run()} disabled={disabled || !toolbarState.canRedo} />
       </Flex>
@@ -199,6 +219,8 @@ function setBlock(editor, value) {
 }
 
 export const noticeContentStyles = {
+  "& img": { display: "block", maxW: "100%", height: "auto", maxH: "600px", objectFit: "contain", borderRadius: "md", my: 4 },
+  "& img.ProseMirror-selectednode": { outline: "2px solid", outlineColor: "blue.400" },
   "& p.is-editor-empty:first-of-type::before": { color: "gray.400", content: "attr(data-placeholder)", float: "left", height: 0, pointerEvents: "none" },
   "& h1": { fontSize: "2xl", fontWeight: "800", mt: 6, mb: 3 },
   "& h2": { fontSize: "xl", fontWeight: "800", mt: 5, mb: 2 },

@@ -1,4 +1,5 @@
-import { Badge, Box, Button, Center, Divider, Grid, GridItem, HStack, Spinner, Text, VStack, useToast } from "@chakra-ui/react";
+import { referencedImageOrders } from "../../features/board/notices/utils/noticeImages";
+import { Badge, Box, Button, Center, Divider, Grid, GridItem, HStack, Spinner, Text, VStack, Image, SimpleGrid, useToast } from "@chakra-ui/react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -27,6 +28,7 @@ export default function BoardNoticeDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showList, setShowList] = useState(false);
   const noticeList = useBoardNotices();
 
   useEffect(() => {
@@ -76,7 +78,7 @@ export default function BoardNoticeDetailPage() {
     <Box maxW="1280px" mx="auto">
       {loading ? <Center minH="300px"><Spinner size="lg" /></Center>
         : notFound || !notice ? <Center minH="300px"><VStack><Text fontWeight="700">존재하지 않는 공지사항입니다.</Text><Button onClick={() => navigate("/note")}>목록으로</Button></VStack></Center>
-        : <Grid templateColumns={{ base: "1fr", lg: "minmax(0, 3fr) minmax(300px, 1fr)" }} gap={6} alignItems="start">
+        : <Grid templateColumns={{ base: "1fr", lg: showList ? "minmax(0, 3fr) minmax(300px, 1fr)" : "1fr" }} gap={6} alignItems="start">
           <GridItem>
             <Box bg="white" borderWidth="1px" borderRadius="xl" boxShadow="sm" overflow="hidden">
               <HStack justify="space-between" align="flex-start" gap={4} p={{ base: 5, md: 8 }} pb={{ base: 5, md: 6 }}>
@@ -84,11 +86,12 @@ export default function BoardNoticeDetailPage() {
                   <Text as="h1" fontSize={{ base: "xl", md: "2xl" }} fontWeight="800" color="gray.900" wordBreak="break-word">{notice.title}</Text>
                   <Text mt={2} fontSize="sm" color="gray.500">{notice.author_name} · {formatDateTime(notice.created_at)}</Text>
                 </Box>
-                <Button flexShrink={0} variant="outline" onClick={() => navigate("/note")}>목록</Button>
+                <HStack><Button variant="outline" onClick={() => setShowList((value) => !value)}>{showList ? "목록 닫기" : "목록 열기"}</Button><Button variant="ghost" onClick={() => navigate("/note")}>전체보기</Button></HStack>
               </HStack>
               <Divider />
               <Box p={{ base: 5, md: 8 }} minH={{ base: "240px", md: "320px" }}>
-                <Box className="tiptap" lineHeight="1.8" sx={noticeContentStyles} dangerouslySetInnerHTML={{ __html: sanitizeNoticeHtml(notice.content) }} />
+                <Box className="tiptap" lineHeight="1.8" sx={noticeContentStyles} dangerouslySetInnerHTML={{ __html: sanitizeNoticeHtml(notice.content, notice.images) }} />
+                {notice.images?.some((image) => !referencedImageOrders(notice.content).has(`order:${image.display_order}`)) && <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mt={8} pt={6} borderTopWidth="1px">{notice.images.filter((image) => !referencedImageOrders(notice.content).has(`order:${image.display_order}`)).map((image) => <a key={image.image_uuid} href={image.image_url} target="_blank" rel="noreferrer"><Image src={image.image_url} alt="공지 첨부 이미지" w="100%" maxH="360px" objectFit="contain" borderRadius="md" bg="gray.50" /></a>)}</SimpleGrid>}
               </Box>
               {canManage && <><Divider /><HStack justify="flex-end" p={4}>
                 <Button colorScheme="red" variant="outline" isLoading={deleting} onClick={remove}>삭제</Button>
@@ -97,7 +100,7 @@ export default function BoardNoticeDetailPage() {
             </Box>
           </GridItem>
 
-          <GridItem position={{ lg: "sticky" }} top={{ lg: "24px" }}>
+          <GridItem display={showList ? "block" : "none"} position={{ lg: "sticky" }} top={{ lg: "24px" }}>
             <Box bg="white" borderWidth="1px" borderRadius="xl" boxShadow="sm" overflow="hidden">
               <HStack justify="space-between" px={5} py={4} borderBottomWidth="1px">
                 <Text fontWeight="800">공지 목록</Text><Badge colorScheme="blue">전체 {noticeList.count}건</Badge>

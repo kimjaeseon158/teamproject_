@@ -29,7 +29,11 @@ const navItems = [
   { label: "승인 관리", path: "/dashboard/approval", icon: FiCalendar },
   { label: "일급 관리", path: "/dashboard/daily-pay", icon: FiDollarSign },
   { label: "근무표 관리", path: "/dashboard/work-schedules", icon: FiCalendar },
+];
+const boardMenuItems = [
   { label: "공지사항", path: "/note", icon: FiMessageSquare },
+  { label: "연락처", path: "/note/contacts", icon: FiUsers },
+  { label: "근무표 조회", path: "/note/work-schedule", icon: FiCalendar },
 ];
 
 const totalMenuItems = [
@@ -45,6 +49,8 @@ export default function Sidebar() {
   const { userUuid, loading } = useUser();
   const isTotalPath = location.pathname.startsWith("/dashboard/total-sales");
   const [isTotalOpen, setIsTotalOpen] = useState(isTotalPath);
+  const isBoardPath = location.pathname.startsWith("/note");
+  const [isBoardOpen, setIsBoardOpen] = useState(isBoardPath);
 
   useEffect(() => {
     if (isTotalPath) setIsTotalOpen(true);
@@ -77,10 +83,14 @@ export default function Sidebar() {
 
   const isActive = (item) =>
     item.exact ? location.pathname === item.path : location.pathname.startsWith(item.path);
+  // Board links must match exactly; `/note` otherwise also matches contacts/work-schedule.
+  const isBoardChildActive = boardMenuItems.some((item) => location.pathname === item.path);
 
   return (
     <Box
       w="250px"
+      minH="100vh"
+      h="100%"
       bg="#111827"
       color="white"
       px={4}
@@ -137,6 +147,32 @@ export default function Sidebar() {
             </HStack>
           );
         })}
+
+        <Box>
+          <HStack as="button" type="button" spacing={3} w="100%" px={3} py={3} borderRadius="md" textAlign="left"
+            bg={isBoardPath && !isBoardChildActive ? "whiteAlpha.100" : "transparent"} color={isBoardPath && !isBoardChildActive ? "white" : "gray.300"}
+            fontWeight={isBoardPath && !isBoardChildActive ? "800" : "600"} _hover={{ bg: "whiteAlpha.100", color: "white" }}
+            onClick={() => setIsBoardOpen((open) => !open)} aria-expanded={isBoardOpen}>
+            <Icon as={FiMessageSquare} boxSize={4} color={isBoardPath ? "blue.300" : "gray.400"} />
+            <Text fontSize="sm" flex="1">공지사항</Text>
+            <Box as="span" role="button" aria-label={isBoardOpen ? "게시판 메뉴 접기" : "게시판 메뉴 펼치기"} p={1} m={-1}
+              onClick={(event) => { event.stopPropagation(); setIsBoardOpen((open) => !open); }}>
+              <Icon as={FiChevronDown} boxSize={4} color="gray.400" transform={isBoardOpen ? "rotate(180deg)" : "rotate(0deg)"} transition="transform 0.2s ease" />
+            </Box>
+          </HStack>
+          <Collapse in={isBoardOpen} animateOpacity>
+            <VStack align="stretch" spacing={1} mt={1} pl={6}>
+              {boardMenuItems.map((item) => {
+                const active = location.pathname === item.path;
+                return <HStack key={item.path} as="button" type="button" spacing={3} w="100%" px={3} py={2.5} borderRadius="md" textAlign="left"
+                  bg={active ? "whiteAlpha.100" : "transparent"} color={active ? "white" : "gray.400"} fontWeight={active ? "800" : "600"}
+                  _hover={{ bg: "whiteAlpha.100", color: "white" }} onClick={() => handleProtectedNav(item.path)}>
+                  <Icon as={item.icon} boxSize={3.5} color={active ? "blue.300" : "gray.500"} /><Text fontSize="sm">{item.label}</Text>
+                </HStack>;
+              })}
+            </VStack>
+          </Collapse>
+        </Box>
 
         <Box>
           <HStack

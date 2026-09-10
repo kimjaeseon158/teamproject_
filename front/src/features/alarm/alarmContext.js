@@ -10,18 +10,25 @@ export function AlarmProvider({ children }) {
     noticeAlarms,
     noticeWsConnected,
     wsConnected,
+    markNoticeAsRead,
   } = useUser();
   const mergedAlarms = [
     ...(Array.isArray(noticeAlarms) ? noticeAlarms : []),
     ...(Array.isArray(alarms) ? alarms : []),
   ];
+  const markAsRead = (id) => {
+    const target = mergedAlarms.find((alarm) => alarm.id === id);
+    if (target?.type === "notice") {
+      markNoticeAsRead?.(target.title);
+    }
+  };
   return (
     <AlarmContext.Provider
       value={{
         alarms: mergedAlarms,
         unreadCount: typeof combinedAlarmCount === "number" ? combinedAlarmCount : 0,
         wsConnected: wsConnected || noticeWsConnected,
-        markAsRead: () => {},
+        markAsRead,
       }}
     >
       {children}

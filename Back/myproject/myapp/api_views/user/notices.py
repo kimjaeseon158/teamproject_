@@ -78,7 +78,7 @@ class UserNoticeDetailAPIView(APIView):
             notice, data=request.data, partial=True, context={"request": request, "uploaded_images": images}
         )
         serializer.is_valid(raise_exception=True)
-        save_notice_with_images(serializer, images)
+        notice = save_notice_with_images(serializer, images)
         return Response(NoticeSerializer(notice, context={"request": request}).data)
 
     def delete(self, request, notice_uuid):

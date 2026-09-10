@@ -5,7 +5,7 @@ from pathlib import Path
 from PIL import Image as PillowImage
 from ..models import Notice, NoticeImage
 from ..sanitizers import extract_notice_text, sanitize_notice_html
-from ..sanitizers.notices import NOTICE_HTML_MAX_LENGTH, NOTICE_TEXT_MAX_LENGTH
+from ..sanitizers.notices import NOTICE_HTML_MAX_LENGTH, NOTICE_TEXT_MAX_LENGTH, notice_image_references
 
 
 class StrictStringField(serializers.CharField):
@@ -117,6 +117,10 @@ class NoticeSerializer(serializers.ModelSerializer):
             )
 
         cleaned = sanitize_notice_html(value)
+        try:
+            notice_image_references(cleaned)
+        except ValueError as exc:
+            raise serializers.ValidationError(str(exc))
         plain_text = extract_notice_text(cleaned)
         if len(plain_text) > NOTICE_TEXT_MAX_LENGTH:
             raise serializers.ValidationError(

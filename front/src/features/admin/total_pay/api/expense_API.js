@@ -1,4 +1,4 @@
-import { ApiPost } from "../../../../services/api/requestJson";
+import { ApiPatch, ApiPost } from "../../../../services/api/requestJson";
 
 export async function createExpense(payload, toast) {
   try {
@@ -13,6 +13,21 @@ export async function createExpense(payload, toast) {
         isClosable: true,
       });
     }
+    return null;
+  }
+}
+
+export async function updateExpense(payload, toast) {
+  try {
+    return await ApiPatch("/api/expense-update/", payload, { toast });
+  } catch (err) {
+    toast?.({
+      title: "지출 수정 실패",
+      description: err.message,
+      status: "error",
+      duration: 3000,
+      isClosable: true,
+    });
     return null;
   }
 }

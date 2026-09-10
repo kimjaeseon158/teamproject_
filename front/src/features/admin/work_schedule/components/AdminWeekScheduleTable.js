@@ -73,7 +73,6 @@ export default function AdminWeekScheduleTable({ data, selectedDate, workPlaces,
     <HStack mb={2} justify="space-between" align={{ base: "flex-start", md: "center" }} flexDirection={{ base: "column", md: "row" }}>
       <Box>
         <Text fontSize="sm" fontWeight="800">{dates[0]?.slice(5).replace("-", ".")} {dates[0] && dayLabel(dates[0])} — {dates[dates.length - 1]?.slice(5).replace("-", ".")} {dates[dates.length - 1] && dayLabel(dates[dates.length - 1])}</Text>
-        <Text fontSize="xs" color="gray.500">선택한 날짜가 포함된 월요일~일요일</Text>
       </Box>
       <HStack fontSize="xs" color="gray.600"><Badge colorScheme="cyan">선택일</Badge><Badge colorScheme="blue">편집일</Badge></HStack>
     </HStack>

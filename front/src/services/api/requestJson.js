@@ -1,4 +1,3 @@
-import { resolveApiUrl } from "../../config/api/apiEnv";
 import { fetchWithAuth } from "./fetchWithAuth";
 import { ERROR_MESSAGES } from "../../constants/errorMessages";
 
@@ -29,6 +28,7 @@ export async function requestJson(
       data.detail || data.message || data.error || ERROR_MESSAGES.common.requestFailed;
     const error = new Error(message);
     error.status = res.status;
+    error.data = data;
     throw error;
   }
 
@@ -55,7 +55,7 @@ export async function requestApiResponse(
     options.body = isFormData ? body : JSON.stringify(body);
   }
 
-  return await fetchWithAuth(resolveApiUrl(url), options, { toast });
+  return await fetchWithAuth(url, options, { toast });
 }
 
 export const ApiGet = (url, { toast, headers } = {}) =>

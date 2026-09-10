@@ -9,25 +9,12 @@ import useApproveCalendar from "./useApproveCalendar";
 import useApproveSummary from "./useApproveSummary";
 import useGoogleLinkStatus from "../../api/google/useGoogleLinkStatus";
 import useOverviewWorkPlaces from "./useOverviewWorkPlaces";
-import {
-  DEFAULT_OVERVIEW_WIDGETS,
-  OVERVIEW_STORAGE_KEY,
-  OVERVIEW_WIDGET_LABELS,
-} from "../constants/overviewWidgets";
 import { average, formatMonth, formatNumber } from "../utils/overviewFormat";
 
-const loadWidgets = () => {
-  try {
-    const saved = JSON.parse(localStorage.getItem(OVERVIEW_STORAGE_KEY));
-    return { ...DEFAULT_OVERVIEW_WIDGETS, ...(saved || {}) };
-  } catch {
-    return DEFAULT_OVERVIEW_WIDGETS;
-  }
-};
 
 export default function useOverviewPage() {
   const toast = useToast();
-  const [widgets, setWidgets] = useState(loadWidgets);
+
   const [currentDate, setCurrentDate] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -56,9 +43,7 @@ export default function useOverviewPage() {
     setApiMonth(formatMonth(currentDate));
   }, [currentDate, setApiMonth]);
 
-  useEffect(() => {
-    localStorage.setItem(OVERVIEW_STORAGE_KEY, JSON.stringify(widgets));
-  }, [widgets]);
+
 
   const dailyPaySummary = useMemo(() => {
     const basePays = [];
@@ -142,22 +127,6 @@ export default function useOverviewPage() {
     ]
   );
 
-  const hiddenWidgets = useMemo(
-    () => Object.entries(OVERVIEW_WIDGET_LABELS).filter(([key]) => !widgets[key]),
-    [widgets]
-  );
-
-  const rightPanelRows = useMemo(() => {
-    const rowTemplates = [
-      widgets.approvalQueue ? "1fr" : null,
-      widgets.finance ? "1.45fr" : null,
-      widgets.employeeSnapshot ? "0.55fr" : null,
-    ].filter(Boolean);
-
-    const count = rowTemplates.length || 1;
-    return rowTemplates.join(" ") || `repeat(${count}, minmax(0, 1fr))`;
-  }, [widgets]);
-
   const handleMonthChange = (ym) => {
     const [year, month] = ym.split("-").map(Number);
     setCurrentDate(new Date(year, month - 1, 1));
@@ -167,14 +136,6 @@ export default function useOverviewPage() {
     setCurrentDate(
       (prev) => new Date(prev.getFullYear(), prev.getMonth() + amount, 1)
     );
-  };
-
-  const showWidget = (key) => {
-    setWidgets((prev) => ({ ...prev, [key]: true }));
-  };
-
-  const hideWidget = (key) => {
-    setWidgets((prev) => ({ ...prev, [key]: false }));
   };
 
   const refresh = () => {
@@ -197,15 +158,10 @@ export default function useOverviewPage() {
     googleStatus,
     handleGoogleLogin,
     handleMonthChange,
-    hiddenWidgets,
-    hideWidget,
     kpis,
     moveMonth,
     pendingPreview,
     refresh,
-    rightPanelRows,
-    showWidget,
     threeMonthData,
-    widgets,
   };
 }

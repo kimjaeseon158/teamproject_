@@ -2,6 +2,7 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 from django.contrib.auth.models import AnonymousUser  # 인증 확인을 위해 임포트
+from ..models import Notice
 
 class RequestMonitorConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -128,3 +129,32 @@ class UserRejectMonitorConsumer(AsyncWebsocketConsumer):
             }))
         else:
             self.last_count = new_count
+
+
+class UserNoticeConsumer(AsyncWebsocketConsumer):
+    group_name = "user_notices"
+
+    async def connect(self):
+        self.user = self.scope.get("user")
+        if self.user is None or isinstance(self.user, AnonymousUser):
+            await self.close()
+            return
+
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        subprotocols = self.scope.get("subprotocols", [])
+        await self.accept(subprotocols[0] if subprotocols else None)
+
+        unread_titles = await sync_to_async(list)(
+            Notice.objects.exclude(read_records__user=self.user).values_list(
+                "title",
+                flat=True,
+            )
+        )
+        for title in unread_titles:
+            await self.send(text_data=json.dumps({"title": title}))
+
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    async def notice_created_message(self, event):
+        await self.send(text_data=json.dumps({"title": event["title"]}))

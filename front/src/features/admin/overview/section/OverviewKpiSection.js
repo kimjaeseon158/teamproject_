@@ -5,8 +5,8 @@ import DashboardCard from "../components/DashboardCard";
 
 export default function OverviewKpiSection({ kpis, onNavigate, onRemove }) {
   return (
-    <Box>
-      <HStack justify="flex-end" mb={1}>
+    <Box bg="transparent" sx={{ containerType: "inline-size" }}>
+      {onRemove && <HStack justify="flex-end" mb={1}>
         <IconButton
           aria-label="상단 요약 카드 숨기기"
           icon={<MinusIcon />}
@@ -14,17 +14,25 @@ export default function OverviewKpiSection({ kpis, onNavigate, onRemove }) {
           variant="ghost"
           onClick={onRemove}
         />
-      </HStack>
-      <SimpleGrid columns={{ base: 2, lg: 3, xl: 6 }} spacing={3}>
+      </HStack>}
+      <SimpleGrid spacing={3} alignContent="start" sx={{
+        gridTemplateColumns: "repeat(1, minmax(0, 1fr))",
+        "@container (min-width: 300px)": { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" },
+        "@container (min-width: 480px)": { gridTemplateColumns: "repeat(3, minmax(0, 1fr))" },
+        "@container (min-width: 1000px)": { gridTemplateColumns: "repeat(6, minmax(0, 1fr))" },
+      }}>
         {kpis.map((item) => (
           <DashboardCard
             key={item.label}
             p={3}
+            h="88px"
+            borderColor="gray.200"
+            boxShadow="none"
             cursor="pointer"
             role="button"
             aria-label={`${item.label} 페이지로 이동`}
-            _hover={{ borderColor: item.color, transform: "translateY(-1px)" }}
-            transition="all 0.15s"
+            _hover={{ borderColor: item.color, boxShadow: "sm" }}
+            transition="border-color 0.15s, box-shadow 0.15s"
             onClick={() => onNavigate(item.path)}
           >
             <HStack justify="space-between" align="start">
@@ -32,7 +40,7 @@ export default function OverviewKpiSection({ kpis, onNavigate, onRemove }) {
                 <Text fontSize="xs" fontWeight="800" color="gray.500" mb={1}>
                   {item.label}
                 </Text>
-                <Text fontSize="2xl" fontWeight="900" color="gray.900" noOfLines={1}>
+                <Text fontSize="xl" fontWeight="900" color="gray.900" noOfLines={1}>
                   {item.value}
                 </Text>
               </Box>

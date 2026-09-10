@@ -1,29 +1,45 @@
 import {
   Box,
   Divider,
+  Collapse,
   HStack,
   Icon,
   Text,
   VStack,
   useToast,
 } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   FiBarChart2,
   FiCalendar,
+  FiChevronDown,
   FiDollarSign,
   FiHome,
+  FiMessageSquare,
+  FiTrendingDown,
+  FiTrendingUp,
   FiUsers,
 } from "react-icons/fi";
 import { useUser } from "../../auth/userContext";
 
 const navItems = [
-  { label: "Overview", path: "/dashboard", icon: FiHome, exact: true },
+  { label: "홈", path: "/dashboard", icon: FiHome, exact: true },
   { label: "직원 관리", path: "/dashboard/admin", icon: FiUsers },
   { label: "승인 관리", path: "/dashboard/approval", icon: FiCalendar },
   { label: "일급 관리", path: "/dashboard/daily-pay", icon: FiDollarSign },
   { label: "근무표 관리", path: "/dashboard/work-schedules", icon: FiCalendar },
-  { label: "급여 현황", path: "/dashboard/total-sales", icon: FiBarChart2 },
+];
+const boardMenuItems = [
+  { label: "공지사항", path: "/note", icon: FiMessageSquare },
+  { label: "연락처", path: "/note/contacts", icon: FiUsers },
+  { label: "근무표 조회", path: "/note/work-schedule", icon: FiCalendar },
+];
+
+const totalMenuItems = [
+  { label: "수입", path: "/dashboard/total-sales/company", icon: FiTrendingUp },
+  { label: "지출", path: "/dashboard/total-sales/expense", icon: FiTrendingDown },
+  { label: "급여", path: "/dashboard/total-sales/salary", icon: FiDollarSign },
 ];
 
 export default function Sidebar() {
@@ -31,6 +47,14 @@ export default function Sidebar() {
   const location = useLocation();
   const toast = useToast();
   const { userUuid, loading } = useUser();
+  const isTotalPath = location.pathname.startsWith("/dashboard/total-sales");
+  const [isTotalOpen, setIsTotalOpen] = useState(isTotalPath);
+  const isBoardPath = location.pathname.startsWith("/note");
+  const [isBoardOpen, setIsBoardOpen] = useState(isBoardPath);
+
+  useEffect(() => {
+    if (isTotalPath) setIsTotalOpen(true);
+  }, [isTotalPath]);
 
   const handleProtectedNav = (path) => {
     if (loading) {
@@ -59,10 +83,14 @@ export default function Sidebar() {
 
   const isActive = (item) =>
     item.exact ? location.pathname === item.path : location.pathname.startsWith(item.path);
+  // Board links must match exactly; `/note` otherwise also matches contacts/work-schedule.
+  const isBoardChildActive = boardMenuItems.some((item) => location.pathname === item.path);
 
   return (
     <Box
       w="250px"
+      minH="100vh"
+      h="100%"
       bg="#111827"
       color="white"
       px={4}
@@ -119,6 +147,108 @@ export default function Sidebar() {
             </HStack>
           );
         })}
+
+        <Box>
+          <HStack as="button" type="button" spacing={3} w="100%" px={3} py={3} borderRadius="md" textAlign="left"
+            bg={isBoardPath && !isBoardChildActive ? "whiteAlpha.100" : "transparent"} color={isBoardPath && !isBoardChildActive ? "white" : "gray.300"}
+            fontWeight={isBoardPath && !isBoardChildActive ? "800" : "600"} _hover={{ bg: "whiteAlpha.100", color: "white" }}
+            onClick={() => setIsBoardOpen((open) => !open)} aria-expanded={isBoardOpen}>
+            <Icon as={FiMessageSquare} boxSize={4} color={isBoardPath ? "blue.300" : "gray.400"} />
+            <Text fontSize="sm" flex="1">공지사항</Text>
+            <Box as="span" role="button" aria-label={isBoardOpen ? "게시판 메뉴 접기" : "게시판 메뉴 펼치기"} p={1} m={-1}
+              onClick={(event) => { event.stopPropagation(); setIsBoardOpen((open) => !open); }}>
+              <Icon as={FiChevronDown} boxSize={4} color="gray.400" transform={isBoardOpen ? "rotate(180deg)" : "rotate(0deg)"} transition="transform 0.2s ease" />
+            </Box>
+          </HStack>
+          <Collapse in={isBoardOpen} animateOpacity>
+            <VStack align="stretch" spacing={1} mt={1} pl={6}>
+              {boardMenuItems.map((item) => {
+                const active = location.pathname === item.path;
+                return <HStack key={item.path} as="button" type="button" spacing={3} w="100%" px={3} py={2.5} borderRadius="md" textAlign="left"
+                  bg={active ? "whiteAlpha.100" : "transparent"} color={active ? "white" : "gray.400"} fontWeight={active ? "800" : "600"}
+                  _hover={{ bg: "whiteAlpha.100", color: "white" }} onClick={() => handleProtectedNav(item.path)}>
+                  <Icon as={item.icon} boxSize={3.5} color={active ? "blue.300" : "gray.500"} /><Text fontSize="sm">{item.label}</Text>
+                </HStack>;
+              })}
+            </VStack>
+          </Collapse>
+        </Box>
+
+        <Box>
+          <HStack
+            as="button"
+            type="button"
+            spacing={3}
+            w="100%"
+            px={3}
+            py={3}
+            borderRadius="md"
+            textAlign="left"
+            bg={isTotalPath ? "whiteAlpha.100" : "transparent"}
+            color={isTotalPath ? "white" : "gray.300"}
+            fontWeight={isTotalPath ? "800" : "600"}
+            _hover={{ bg: "whiteAlpha.100", color: "white" }}
+            onClick={() => {
+              setIsTotalOpen(true);
+              handleProtectedNav("/dashboard/total-sales");
+            }}
+            aria-expanded={isTotalOpen}
+          >
+            <Icon as={FiBarChart2} boxSize={4} color={isTotalPath ? "blue.300" : "gray.400"} />
+            <Text fontSize="sm" flex="1">
+              총 매출 관리
+            </Text>
+            <Box
+              as="span"
+              role="button"
+              aria-label={isTotalOpen ? "통합 메뉴 접기" : "통합 메뉴 펼치기"}
+              p={1}
+              m={-1}
+              onClick={(event) => {
+                event.stopPropagation();
+                setIsTotalOpen((open) => !open);
+              }}
+            >
+              <Icon
+                as={FiChevronDown}
+                boxSize={4}
+                color="gray.400"
+                transform={isTotalOpen ? "rotate(180deg)" : "rotate(0deg)"}
+                transition="transform 0.2s ease"
+              />
+            </Box>
+          </HStack>
+
+          <Collapse in={isTotalOpen} animateOpacity>
+            <VStack align="stretch" spacing={1} mt={1} pl={6}>
+              {totalMenuItems.map((item) => {
+                const active = isActive(item);
+
+                return (
+                  <HStack
+                    key={item.path}
+                    as="button"
+                    type="button"
+                    spacing={3}
+                    w="100%"
+                    px={3}
+                    py={2.5}
+                    borderRadius="md"
+                    textAlign="left"
+                    bg={active ? "whiteAlpha.100" : "transparent"}
+                    color={active ? "white" : "gray.400"}
+                    fontWeight={active ? "800" : "600"}
+                    _hover={{ bg: "whiteAlpha.100", color: "white" }}
+                    onClick={() => handleProtectedNav(item.path)}
+                  >
+                    <Icon as={item.icon} boxSize={3.5} color={active ? "blue.300" : "gray.500"} />
+                    <Text fontSize="sm">{item.label}</Text>
+                  </HStack>
+                );
+              })}
+            </VStack>
+          </Collapse>
+        </Box>
       </VStack>
 
       <Box mt="auto">

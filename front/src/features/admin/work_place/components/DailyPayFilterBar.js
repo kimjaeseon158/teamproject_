@@ -1,4 +1,5 @@
 import { Box, Button, Flex, Input, Select } from "@chakra-ui/react";
+import DailyPayActions from "./DailyPayActions";
 
 export default function DailyPayFilterBar({
   adminWorkPlaces,
@@ -9,6 +10,8 @@ export default function DailyPayFilterBar({
   onSearch,
   onUserNameChange,
   onWorkPlaceChange,
+  onExcelOpen,
+  onResetSearch,
 }) {
   return (
     <Box
@@ -54,6 +57,13 @@ export default function DailyPayFilterBar({
         >
           조회
         </Button>
+        <Box ml={{ base: 0, md: "auto" }} w={{ base: "100%", md: "auto" }}>
+          <DailyPayActions
+            loading={loading}
+            onExcelOpen={onExcelOpen}
+            onResetSearch={onResetSearch}
+          />
+        </Box>
       </Flex>
     </Box>
   );

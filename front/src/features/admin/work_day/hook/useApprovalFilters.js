@@ -11,8 +11,18 @@ export const getInitialApprovalRange = () => {
   return { from, to };
 };
 
-export default function useApprovalFilters() {
-  const initialRange = useMemo(getInitialApprovalRange, []);
+export default function useApprovalFilters(detailDate) {
+  const initialRange = useMemo(() => {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(detailDate || "")) {
+      const date = new Date(`${detailDate}T00:00:00`);
+      if (!Number.isNaN(date.getTime()) && toYMD(date) === detailDate) {
+        return { from: date, to: date };
+      }
+    }
+    return getInitialApprovalRange();
+    // The URL determines the initial filters only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [status, setStatus] = useState(APPROVAL_INITIAL_STATUS);
   const [workPlace, setWorkPlace] = useState("");
   const [workType, setWorkType] = useState("");

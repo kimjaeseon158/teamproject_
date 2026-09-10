@@ -18,6 +18,7 @@ class Expense(models.Model):
     expense_name   = models.CharField(max_length=100)                                        # 지출명 (대분류, 자유 입력)
     expense_detail = models.CharField(max_length=100, blank=True, null=True)                 # 지출 상세 (자유 입력)
     amount         = models.IntegerField()                                                   # 지출 금액 (정수)
+    payment_method = models.CharField(max_length=20, blank=True, null=True)                  # 결제 방식 (자유 입력)
     # 급여 지출의 출처 , Expense에 저장된 work_day(FK)로 User_WorkDay를 조회
     work_day = models.OneToOneField(
         "User_WorkDay",

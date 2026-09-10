@@ -1,7 +1,7 @@
 # 관리자 수입/지출 관리
 
 from rest_framework.views import APIView
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, TruncMonth
 from ...models import Expense
 from ...serializers import ExpenseSerializer
 from ...models import Income
@@ -9,6 +9,7 @@ from ...serializers import IncomeSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.db.models import Sum
+from datetime import timedelta
 from ..shared import add_months
 from ..shared import get_date_range
 from ..shared import month_start_end
@@ -30,40 +31,100 @@ class FinanceTableDateFilteredAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # 프론트에서 날짜 범위 받기
+        # start_date와 end_date가 모두 있으면 기존 날짜 범위를 우선 사용한다.
         start_date, end_date = get_date_range(request.query_params)
 
+        # date=YYYY-MM만 있으면 해당 월을 포함한 최근 6개월을 조회한다.
+        if not start_date or not end_date:
+            month_str = request.query_params.get("date")
+            if month_str:
+                try:
+                    year, month = map(int, month_str.split("-"))
+                    if not 1 <= month <= 12:
+                        raise ValueError
+
+                    start_year, start_month = add_months(year, month, 5)
+                    start_date, _ = month_start_end(start_year, start_month)
+                    _, next_month_start = month_start_end(year, month)
+                    end_date = next_month_start - timedelta(days=1)
+                except (TypeError, ValueError):
+                    return Response(
+                        {
+                            "success": False,
+                            "message": "date must be in YYYY-MM format",
+                        }
+                    )
+
+        # 날짜 범위와 기준 월이 모두 없는 경우
         if not start_date or not end_date:
             return Response(
                 {
                     "success": False,
-                    "message": "start_date and end_date are required",
+                    "message": (
+                        "start_date and end_date are required, "
+                        "or provide date in YYYY-MM format"
+                    ),
                 }
             )
 
-        # Expense 합계 (날짜 필터링)
+        # 조회 범위의 모든 월을 먼저 생성해 데이터가 없는 월도 0원으로 반환한다.
+        monthly_totals = {}
+        current_month, _ = month_start_end(start_date.year, start_date.month)
+        last_month, _ = month_start_end(end_date.year, end_date.month)
+
+        while current_month <= last_month:
+            month_key = current_month.strftime("%Y-%m")
+            monthly_totals[month_key] = {
+                "date": month_key,
+                "expense_totals": {},
+                "income_totals": {},
+                "total_expense": 0,
+                "total_income": 0,
+            }
+            _, current_month = month_start_end(
+                current_month.year, current_month.month
+            )
+
+        # 지출을 월과 지출명 기준으로 합산한다.
         expense_qs = (
             _date_filtered_queryset(Expense, start_date, end_date)
-            .values("expense_name")
+            .annotate(month=TruncMonth("date"))
+            .values("month", "expense_name")
             .annotate(total_amount=Sum("amount"))
+            .order_by("month", "expense_name")
         )
-        expense_totals = {
-            item["expense_name"]: item["total_amount"] for item in expense_qs
-        }
+        total_expense = 0
+        for item in expense_qs:
+            month_key = item["month"].strftime("%Y-%m")
+            amount = int(item["total_amount"] or 0)
+            monthly_totals[month_key]["expense_totals"][item["expense_name"]] = amount
+            monthly_totals[month_key]["total_expense"] += amount
+            total_expense += amount
 
-        # Income 합계 (날짜 필터링)
+        # 수입을 월과 회사명 기준으로 합산한다.
         income_qs = (
             _date_filtered_queryset(Income, start_date, end_date)
-            .values("company_name")
+            .annotate(month=TruncMonth("date"))
+            .values("month", "company_name")
             .annotate(total_amount=Sum("amount"))
+            .order_by("month", "company_name")
         )
-        income_totals = {
-            item["company_name"]: item["total_amount"] for item in income_qs
-        }
+        total_income = 0
+        for item in income_qs:
+            month_key = item["month"].strftime("%Y-%m")
+            amount = int(item["total_amount"] or 0)
+            monthly_totals[month_key]["income_totals"][item["company_name"]] = amount
+            monthly_totals[month_key]["total_income"] += amount
+            total_income += amount
 
-        result = {"expense_totals": expense_totals, "income_totals": income_totals}
-
-        return Response({"success": True, "data": result})
+        return Response(
+            {
+                "success": True,
+                "total_expense": total_expense,
+                "total_income": total_income,
+                "data": list(monthly_totals.values()),
+            }
+        )
 
 
 class IncomeDateFilteredAPIView(APIView):
@@ -99,11 +160,41 @@ class ExpenseDateFilteredAPIView(APIView):
         if not start_date or not end_date:
             return Response({"success": False})
 
-        # 지정 날짜 범위의 모든 지출 가져오기
-        expenses = _date_filtered_queryset(Expense, start_date, end_date).values(
-            "expense_uuid", "date", "expense_name", "expense_detail", "amount"
+        expenses = _date_filtered_queryset(Expense, start_date, end_date)
+
+        # 일반 지출은 기존 응답 형식을 그대로 유지한다.
+        regular_expenses = list(
+            expenses.filter(work_day__isnull=True).values(
+                "expense_uuid", "date", "expense_name", "expense_detail", "amount",
+                "payment_method",
+            )
         )
-        result = list(expenses)
+
+        # 급여 지출은 월, 근무지, 주간/야간 기준으로 합산한다.
+        salary_totals = (
+            expenses.filter(work_day__isnull=False)
+            .annotate(salary_month=TruncMonth("date"))
+            .values(
+                "salary_month", "work_day__work_place", "work_day__work_shift",
+                "payment_method",
+            )
+            .annotate(amount=Sum("amount"))
+            .order_by(
+                "salary_month", "work_day__work_place", "work_day__work_shift"
+            )
+        )
+        grouped_salaries = [
+            {
+                "date": item["salary_month"].strftime("%Y-%m"),
+                "expense_name": f'{item["work_day__work_place"]} 급여',
+                "expense_detail": item["work_day__work_shift"],
+                "amount": item["amount"],
+                "payment_method": item["payment_method"],
+            }
+            for item in salary_totals
+        ]
+
+        result = regular_expenses + grouped_salaries
 
         return Response({"success": True, "data": result})
 
@@ -136,7 +227,11 @@ class Expense3MonthsTotalsAPIView(APIView):
 
             qs = (
                 Expense.objects
-                .filter(date__gte=start, date__lt=next_start)
+                .filter(
+                    date__gte=start,
+                    date__lt=next_start,
+                    work_day__isnull=False,
+                )
                 .values("expense_name")
                 .annotate(total=Coalesce(Sum("amount"), 0))
             )

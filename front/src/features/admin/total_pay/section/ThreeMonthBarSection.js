@@ -32,9 +32,6 @@ export default function ThreeMonthBarSection({
         <Heading size="sm" color="gray.800">
           최근 3개월 지급 그래프
         </Heading>
-        <Text fontSize="sm" color="gray.500" mt={1} mb={2}>
-          막대를 클릭하면 오른쪽 상세 내역이 바뀝니다.
-        </Text>
       </Box>
 
       <Box flex="1" minH="260px">

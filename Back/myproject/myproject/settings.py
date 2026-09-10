@@ -6,12 +6,10 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(
-    # env 디버깅 값 활성화 여부 선택
     DEBUG=(bool, False)
 )
 
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
-
+environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
 SECRET_KEY = env("SECRET_KEY")
 REFRESH_TOKEN_HASH_SECRET = env("REFRESH_TOKEN_HASH_SECRET")
@@ -20,7 +18,15 @@ FIELD_ENCRYPTION_KEYS = env.json("FIELD_ENCRYPTION_KEYS")
 FIELD_BLIND_INDEX_KEY = env("FIELD_BLIND_INDEX_KEY")
 DEBUG = env.bool("DEBUG", default=False)
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost"])
+ALLOWED_HOSTS = env.list(
+    "ALLOWED_HOSTS",
+    default=[
+        "127.0.0.1",
+        "localhost",
+        "api.sunsafe.thenano.dev",
+        "sunsafe.thenano.dev",
+    ],
+)
 
 INSTALLED_APPS = [
     "daphne",
@@ -33,13 +39,9 @@ INSTALLED_APPS = [
     "corsheaders",
     "myapp",
     "django_apscheduler",
-    "channels"
-
+    "channels",
 ]
 
-# --------------------------
-# REST Framework + JWT
-# --------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -54,9 +56,9 @@ SIMPLE_JWT = {
     "USER_ID_CLAIM": "sub",
 }
 
-GOOGLE_CLIENT_ID     = env('GOOGLE_CLIENT_ID')
-GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET')
-GOOGLE_REDIRECT_URI  = env('GOOGLE_REDIRECT_URI')
+GOOGLE_CLIENT_ID = env("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = env("GOOGLE_CLIENT_SECRET")
+GOOGLE_REDIRECT_URI = env("GOOGLE_REDIRECT_URI")
 
 GOOGLE_OAUTH2_CLIENT_CONFIG = {
     "web": {
@@ -64,66 +66,84 @@ GOOGLE_OAUTH2_CLIENT_CONFIG = {
         "project_id": "my-django-react-app",
         "auth_uri": "https://accounts.google.com/o/oauth2/auth",
         "token_uri": "https://oauth2.googleapis.com/token",
-        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+        "auth_provider_x509_cert_url": (
+            "https://www.googleapis.com/oauth2/v1/certs"
+        ),
         "client_secret": GOOGLE_CLIENT_SECRET,
         "redirect_uris": [GOOGLE_REDIRECT_URI],
     }
 }
 
-# --------------------------
-# Middleware
-# --------------------------
-
-
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",  # ✅ 맨 위 유지
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+]
+
+if not DEBUG:
+    MIDDLEWARE.append(
+        "whitenoise.middleware.WhiteNoiseMiddleware"
+    )
+
+MIDDLEWARE += [
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-# [수정] 배포 환경(DEBUG=False)에서만 WhiteNoise 자동 활성화
-if not DEBUG:
-    MIDDLEWARE.append("whitenoise.middleware.WhiteNoiseMiddleware")
-# --------------------------
-# CORS
-# --------------------------
+
 CORS_ALLOW_CREDENTIALS = True
+
 CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS",
-    default=["http://127.0.0.1:3000", "http://localhost:3000"]
+    default=[
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+        "https://sunsafe.thenano.dev",
+    ],
 )
 
-# 프런트 도메인을 CSRF 신뢰 도메인으로 등록 (쿠키 기반 요청 허용)
 CSRF_TRUSTED_ORIGINS = env.list(
     "CSRF_TRUSTED_ORIGINS",
-    default=["http://127.0.0.1:3000", "http://localhost:3000"]
+    default=[
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+        "https://sunsafe.thenano.dev",
+    ],
 )
 
-# (선택) 개발 편의용 쿠키 옵션 — 운영 배포 시 True/더 엄격하게 바꾸기
 SESSION_COOKIE_SAMESITE = "Lax"
-SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SAMESITE = "Lax"
-CSRF_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = not DEBUG  # 배포 시 True
-SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=False)
-SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=0)
-SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
-    "SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False
+CSRF_COOKIE_SECURE = not DEBUG
+
+SECURE_SSL_REDIRECT = env.bool(
+    "SECURE_SSL_REDIRECT",
+    default=False,
 )
-SECURE_HSTS_PRELOAD = env.bool("SECURE_HSTS_PRELOAD", default=False)
+SECURE_HSTS_SECONDS = env.int(
+    "SECURE_HSTS_SECONDS",
+    default=0,
+)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
+    "SECURE_HSTS_INCLUDE_SUBDOMAINS",
+    default=False,
+)
+SECURE_HSTS_PRELOAD = env.bool(
+    "SECURE_HSTS_PRELOAD",
+    default=False,
+)
 
 if env.bool("USE_X_FORWARDED_PROTO", default=False):
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_PROXY_SSL_HEADER = (
+        "HTTP_X_FORWARDED_PROTO",
+        "https",
+    )
 
-
-# --------------------------
-# Database
-# --------------------------
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        # .env에서 값 읽어오기
         "NAME": env("DB_NAME"),
         "USER": env("DB_USER"),
         "PASSWORD": env("DB_PASSWORD"),
@@ -138,33 +158,38 @@ CACHES = {
         "LOCATION": env("UPSTASH_REDIS_REST_URL"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "CONNECTION_POOL_KWARGS": {"ssl_cert_reqs": None},  # Upstash TLS 연결 허용
+            "CONNECTION_POOL_KWARGS": {
+                "ssl_cert_reqs": None,
+            },
         },
     }
 }
 
-# 2. Django Channels 설정 (WebSocket용)
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [env("UPSTASH_REDIS_REST_URL")],
         },
-    },
+    }
 }
 
-# --------------------------
-# Other
-# --------------------------
-FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")  # 추가
+FRONTEND_URL = env(
+    "FRONTEND_URL",
+    default="http://localhost:3000",
+)
+
 ROOT_URLCONF = "myproject.urls"
 WSGI_APPLICATION = "myproject.wsgi.application"
 ASGI_APPLICATION = "myproject.asgi.application"
+
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Seoul"
 USE_I18N = True
 USE_TZ = False
+
 STATIC_URL = "static/"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

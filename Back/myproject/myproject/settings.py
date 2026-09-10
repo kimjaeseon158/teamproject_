@@ -10,7 +10,8 @@ env = environ.Env(
     DEBUG=(bool, False)
 )
 
-environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
 
 SECRET_KEY = env("SECRET_KEY")
 REFRESH_TOKEN_HASH_SECRET = env("REFRESH_TOKEN_HASH_SECRET")
@@ -32,6 +33,8 @@ INSTALLED_APPS = [
     "corsheaders",
     "myapp",
     "django_apscheduler",
+    "channels"
+
 ]
 
 # --------------------------
@@ -51,9 +54,9 @@ SIMPLE_JWT = {
     "USER_ID_CLAIM": "sub",
 }
 
-GOOGLE_CLIENT_ID = env("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = env("GOOGLE_CLIENT_SECRET")
-GOOGLE_REDIRECT_URI = env("GOOGLE_REDIRECT_URI")
+GOOGLE_CLIENT_ID     = env('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET')
+GOOGLE_REDIRECT_URI  = env('GOOGLE_REDIRECT_URI')
 
 GOOGLE_OAUTH2_CLIENT_CONFIG = {
     "web": {
@@ -71,38 +74,37 @@ GOOGLE_OAUTH2_CLIENT_CONFIG = {
 # Middleware
 # --------------------------
 
+
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",  # ✅ 맨 위 유지
     "django.middleware.security.SecurityMiddleware",
-]
-
-# [수정] 배포 환경(DEBUG=False)에서만 WhiteNoise 자동 활성화
-if not DEBUG:
-    MIDDLEWARE.append("whitenoise.middleware.WhiteNoiseMiddleware")
-
-MIDDLEWARE += [
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
+# [수정] 배포 환경(DEBUG=False)에서만 WhiteNoise 자동 활성화
+if not DEBUG:
+    MIDDLEWARE.append("whitenoise.middleware.WhiteNoiseMiddleware")
 # --------------------------
 # CORS
 # --------------------------
+CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = env.list(
-    "CORS_ALLOWED_ORIGINS", default=["http://localhost:3000"]
-)
-CSRF_TRUSTED_ORIGINS = env.list(
-    "CSRF_TRUSTED_ORIGINS", default=["http://localhost:3000"]
+    "CORS_ALLOWED_ORIGINS",
+    default=["http://127.0.0.1:3000", "http://localhost:3000"]
 )
 
-# [수정] 보안 설정 자동화 (DEBUG 상태에 따라 연동)
+# 프런트 도메인을 CSRF 신뢰 도메인으로 등록 (쿠키 기반 요청 허용)
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS",
+    default=["http://127.0.0.1:3000", "http://localhost:3000"]
+)
+
+# (선택) 개발 편의용 쿠키 옵션 — 운영 배포 시 True/더 엄격하게 바꾸기
 SESSION_COOKIE_SAMESITE = "Lax"
-SESSION_COOKIE_SECURE = not DEBUG  # 배포 시 True
+SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = not DEBUG  # 배포 시 True
 SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=False)
 SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=0)
@@ -113,6 +115,7 @@ SECURE_HSTS_PRELOAD = env.bool("SECURE_HSTS_PRELOAD", default=False)
 
 if env.bool("USE_X_FORWARDED_PROTO", default=False):
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 
 # --------------------------
 # Database
@@ -154,7 +157,6 @@ CHANNEL_LAYERS = {
 # Other
 # --------------------------
 FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")  # 추가
-
 ROOT_URLCONF = "myproject.urls"
 WSGI_APPLICATION = "myproject.wsgi.application"
 ASGI_APPLICATION = "myproject.asgi.application"

@@ -1,5 +1,5 @@
 import { DownloadIcon } from "@chakra-ui/icons";
-import { Badge, Box, Button, Flex, Heading, HStack, Image, Tooltip } from "@chakra-ui/react";
+import { Badge, Box, Button, Flex, Heading, HStack, Image, Text, Tooltip } from "@chakra-ui/react";
 
 import excelIcon from "../../../../assets/img/excel.png";
 import MonthPicker from "../../../common/MonthPicker";

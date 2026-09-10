@@ -1,16 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { WS_BASE, WS_ENABLED } from "../../config/api/apiEnv";
-
-const buildSocketUrl = (loginType, uuid) => {
-  const baseUrl = WS_BASE.replace(/\/$/, "");
-  const wsPrefix = baseUrl.endsWith("/ws") ? "" : "/ws";
-  const path =
-    loginType === "admin"
-      ? `/admin/request-monitor/?admin_uuid=${uuid}`
-      : `/user/request-monitor/?user_uuid=${uuid}`;
-
-  return `${baseUrl}${wsPrefix}${path}`;
-};
 
 export function useNotifySocket({ token, uuid, loginType, onMessage }) {
   const wsRef = useRef(null);
@@ -25,10 +13,7 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
   }, [onMessage]);
 
   useEffect(() => {
-    if (!token || !uuid || !loginType || !WS_BASE || !WS_ENABLED) {
-      setConnected(false);
-      return;
-    }
+    if (!token || !uuid || !loginType) return;
 
     let closedByCleanup = false;
 
@@ -36,18 +21,15 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
       try {
         wsRef.current?.close(1000, "reconnect");
       } catch {}
-
       wsRef.current = null;
 
-      let ws;
-      try {
-        ws = new WebSocket(buildSocketUrl(loginType, uuid), [token]);
-      } catch (error) {
-        console.warn("WebSocket connection skipped", error);
-        setConnected(false);
-        return;
-      }
+      const baseUrl = process.env.REACT_APP_WS_BASE_URL;
+      const wsUrl =
+        loginType === "admin"
+          ? `${baseUrl}/admin/request-monitor/?admin_uuid=${uuid}`
+          : `${baseUrl}/user/request-monitor/?user_uuid=${uuid}`;
 
+      const ws = new WebSocket(wsUrl, [token]);
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -86,11 +68,9 @@ export function useNotifySocket({ token, uuid, loginType, onMessage }) {
     return () => {
       closedByCleanup = true;
       clearTimeout(retryTimerRef.current);
-
       try {
         wsRef.current?.close(1000, "cleanup");
       } catch {}
-
       wsRef.current = null;
       setConnected(false);
     };

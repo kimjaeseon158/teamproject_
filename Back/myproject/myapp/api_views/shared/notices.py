@@ -5,6 +5,7 @@ from django.db import transaction
 from django.db.models import Max
 
 from ...models import Notice, NoticeImage
+from ...sanitizers import extract_notice_text
 from ...serializers.notices import MAX_NOTICE_IMAGES, NoticeImageUploadSerializer
 
 
@@ -95,3 +96,13 @@ def get_notice_image(notice, image_uuid):
         return notice.images.get(image_uuid=image_uuid)
     except (NoticeImage.DoesNotExist, ValueError, TypeError):
         return None
+
+
+def delete_notice_image(notice, notice_image):
+    if not extract_notice_text(notice.content).strip() and not notice.images.exclude(
+        pk=notice_image.pk
+    ).exists():
+        raise ValidationError(
+            {"images": ["Content or at least one image is required."]}
+        )
+    notice_image.delete()

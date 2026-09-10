@@ -80,7 +80,7 @@ class NoticeImageUploadSerializer(serializers.Serializer):
 
 
 class NoticeSerializer(serializers.ModelSerializer):
-    content = StrictStringField(trim_whitespace=False)
+    content = StrictStringField(trim_whitespace=False, required=False, allow_blank=True, default="")
     images = NoticeImageSerializer(many=True, read_only=True)
 
     class Meta:
@@ -118,10 +118,19 @@ class NoticeSerializer(serializers.ModelSerializer):
 
         cleaned = sanitize_notice_html(value)
         plain_text = extract_notice_text(cleaned)
-        if not plain_text.strip():
-            raise serializers.ValidationError("Content must not be blank.")
         if len(plain_text) > NOTICE_TEXT_MAX_LENGTH:
             raise serializers.ValidationError(
                 "Content text must be 5000 characters or fewer."
             )
         return cleaned
+
+    def validate(self, attrs):
+        content = attrs.get("content", self.instance.content if self.instance else "")
+        has_images = bool(self.context.get("uploaded_images"))
+        if self.instance is not None:
+            has_images = has_images or self.instance.images.exists()
+        if not extract_notice_text(content).strip() and not has_images:
+            raise serializers.ValidationError(
+                {"content": "Content or at least one image is required."}
+            )
+        return attrs

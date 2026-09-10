@@ -11,6 +11,7 @@ from ..shared.notices import (
     filter_notices,
     get_notice,
     get_notice_image,
+    delete_notice_image,
     get_notice_images,
     save_notice_with_images,
     validate_notice_images,
@@ -33,7 +34,7 @@ class AdminNoticeListCreateAPIView(APIView):
 
     def post(self, request):
         images = validate_notice_images(get_notice_images(request))
-        serializer = NoticeSerializer(data=request.data, context={"request": request})
+        serializer = NoticeSerializer(data=request.data, context={"request": request, "uploaded_images": images})
         serializer.is_valid(raise_exception=True)
         notice = save_notice_with_images(
             serializer,
@@ -65,7 +66,7 @@ class AdminNoticeDetailAPIView(APIView):
             get_notice_images(request), existing_count=notice.images.count()
         )
         serializer = NoticeSerializer(
-            notice, data=request.data, partial=True, context={"request": request}
+            notice, data=request.data, partial=True, context={"request": request, "uploaded_images": images}
         )
         serializer.is_valid(raise_exception=True)
         save_notice_with_images(serializer, images)
@@ -90,5 +91,5 @@ class AdminNoticeImageDetailAPIView(APIView):
         notice_image = get_notice_image(notice, image_uuid)
         if notice_image is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        notice_image.delete()
+        delete_notice_image(notice, notice_image)
         return Response(status=status.HTTP_204_NO_CONTENT)

@@ -45,45 +45,60 @@
 
 ```text
 teamproject_/
-teamproject_/
 ├─ Back/
-│   └─ myproject/
-│      ├─ manage.py
-│      ├─ requirements.txt
-│      ├─ myproject/                 # Django 프로젝트 설정
-│      │  ├─ settings.py
-│      │  ├─ urls.py
-│      │  ├─ middlewares.py
-│      │  ├─ asgi.py
-│      │  └─ wsgi.py
-│      └─ myapp/                     # 백엔드 주요 Django 앱
-│         ├─ models/                  # 기능별 DB 모델
-│         │  ├─ accounts.py
-│         │  ├─ work.py
-│         │  ├─ schedules.py
-│         │  ├─ finance.py
-│         │  └─ tokens.py
-│         ├─ serializers/             # 기능별 DRF serializer
-│         │  ├─ accounts.py
-│         │  ├─ work.py
-│         │  ├─ schedules.py
-│         │  └─ finance.py
-│         ├─ api_views/               # API 요청 처리
-│         │  ├─ admin/           # 관리자 API
-│         │  ├─ user/            # 사용자 API
-│         │  ├─ google/          # Google 연동
-│         │  ├─ token/           # JWT·refresh token
-│         │  └─ shared/          # API 공통 로직
-│         ├─ encryption/              # 민감 정보 암호화
-│         ├─ management/              # Django 관리 명령
-│         ├─ migrations/              # DB migration 이력
-│         ├─ ws/                      # Channels WebSocket
-│         ├─ urls.py                  # 기존 HTTP URL 라우팅
-│         └─ views.py                 # URL import 호환 모듈
+│  └─ myproject/
+│     ├─ manage.py
+│     ├─ requirements.txt
+│     ├─ myproject/                 # Django 프로젝트 설정
+│     │  ├─ settings.py
+│     │  ├─ urls.py
+│     │  ├─ middlewares.py
+│     │  ├─ asgi.py
+│     │  └─ wsgi.py
+│     └─ myapp/                     # 백엔드 주요 Django 앱
+│        ├─ models/                 # 기능별 DB 모델
+│        │  ├─ accounts.py
+│        │  ├─ work.py
+│        │  ├─ schedules.py
+│        │  ├─ finance.py
+│        │  └─ tokens.py
+│        ├─ serializers/            # 기능별 DRF serializer
+│        │  ├─ accounts.py
+│        │  ├─ work.py
+│        │  ├─ schedules.py
+│        │  └─ finance.py
+│        ├─ api_views/              # API 요청 처리
+│        │  ├─ admin/               # 관리자 API
+│        │  ├─ user/                # 사용자 API
+│        │  ├─ google/              # Google 연동
+│        │  ├─ token/               # JWT·refresh token
+│        │  └─ shared/              # API 공통 로직
+│        ├─ encryption/             # 민감 정보 암호화
+│        ├─ management/             # Django 관리 명령
+│        ├─ migrations/             # DB migration 이력
+│        ├─ ws/                     # Channels WebSocket
+│        ├─ urls.py                 # HTTP URL 라우팅
+│        └─ views.py                # URL import 호환 모듈
+│
+├─ front/
 │  ├─ package.json
 │  ├─ vercel.json
 │  ├─ public/
-│  └─ src/
+│  └─ src/                          # 프론트 구조 정리 예정
+│     ├─ app/                       # 라우팅·인증 접근 제어·앱 설정
+│     ├─ pages/                     # 페이지 진입점
+│     │  ├─ admin/
+│     │  ├─ user/
+│     │  └─ board/                  # 관리자·사용자 공용
+│     ├─ features/                  # 기능별 UI·상태·API
+│     │  ├─ admin/
+│     │  ├─ user/
+│     │  ├─ board/
+│     │  ├─ auth/
+│     │  └─ notifications/
+│     ├─ shared/                    # 공통 UI·API 통신·유틸리티
+│     └─ assets/                    # 이미지·아이콘
+│
 └─ Readme/
    ├─ README.md
    └─ Code_Review/

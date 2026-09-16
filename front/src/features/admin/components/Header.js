@@ -10,15 +10,16 @@ export default function Header() {
       as="header"
       px="4"
       h="60px"
+      flexShrink={0}
       bg="white"
       borderBottom="1px solid"
       borderColor="gray.200"
       align="center"
       justify="space-between"
     >
-      <Box display={{ base: "block", md: "block" }} w={{ base: "42px", md: "auto" }} fontWeight="bold" fontSize="lg">
-        <Box display={{ base: "none", md: "block" }}>Dashboard</Box>
-      </Box>
+      <Flex align="center" gap={2}>
+        <Box fontWeight="bold" fontSize={{ base: "sm", md: "lg" }}>Dashboard</Box>
+      </Flex>
 
       <Flex align="center" gap="3">
         <Alarm />

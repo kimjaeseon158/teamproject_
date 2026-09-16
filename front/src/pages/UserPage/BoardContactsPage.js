@@ -1,4 +1,4 @@
-import { Box, Button, HStack, IconButton, Input, SimpleGrid, Spinner, Text, Tooltip, VStack } from "@chakra-ui/react";
+import { Box, Button, HStack, Icon, Input, SimpleGrid, Spinner, Text, VStack } from "@chakra-ui/react";
 import { FiPhone, FiSearch } from "react-icons/fi";
 
 import useBoardContacts from "../../features/board/contacts/hook/useBoardContacts";
@@ -34,24 +34,28 @@ export default function BoardContactsPage(props) {
             <Box key={group.initial} p={5} borderBottomWidth="1px" _last={{ borderBottomWidth: 0 }}>
               <Text mb={4} color="blue.600" fontWeight="900">{group.initial}</Text>
               <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} spacing={3}>
-                {group.items.map((contact) => (
-                  <HStack key={`${contact.user_name}-${contact.phone_number}`} p={4} borderWidth="1px" borderRadius="md">
+                {group.items.map((contact) => {
+                  const phone = String(contact.phone_number || "").replace(/[^\d+]/g, "");
+                  const canCall = /^\+?\d+$/.test(phone);
+                  return (
+                  <HStack
+                    key={`${contact.user_name}-${contact.phone_number}`}
+                    as={canCall ? "a" : "div"}
+                    href={canCall ? `tel:${phone}` : undefined}
+                    aria-label={canCall ? `${contact.user_name} ${contact.phone_number} 전화 걸기` : undefined}
+                    p={4} borderWidth="1px" borderRadius="md"
+                    cursor={canCall ? "pointer" : "default"}
+                    _hover={canCall ? { bg: "blue.50", borderColor: "blue.200" } : undefined}
+                    _active={canCall ? { bg: "blue.100" } : undefined}
+                    _focusVisible={{ outline: "2px solid", outlineColor: "blue.500", outlineOffset: "2px" }}
+                  >
                     <Text fontWeight="900">{contact.user_name}</Text>
                     <Text color="gray.600">{contact.phone_number || "등록된 번호 없음"}</Text>
                     <Box flex="1" />
-                    <Tooltip label={contact.phone_number ? "전화번호 복사" : "등록된 번호 없음"}>
-                      <IconButton
-                        aria-label={`${contact.user_name} 전화번호 복사`}
-                        icon={<FiPhone />}
-                        size="sm"
-                        variant="ghost"
-                        colorScheme="blue"
-                        isDisabled={!contact.phone_number}
-                        onClick={() => contacts.copyPhoneNumber(contact.phone_number)}
-                      />
-                    </Tooltip>
+                    <Icon as={FiPhone} color={canCall ? "blue.500" : "gray.300"} boxSize={5} flexShrink={0} aria-hidden="true" />
                   </HStack>
-                ))}
+                  );
+                })}
               </SimpleGrid>
             </Box>
           )) : (

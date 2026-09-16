@@ -1,11 +1,11 @@
-import { Badge, Box, Button, Drawer, DrawerBody, DrawerContent, DrawerOverlay, Flex, HStack, Icon, Text, useDisclosure } from "@chakra-ui/react";
+import { Badge, Box, Button, Flex, HStack, Text, useBreakpointValue } from "@chakra-ui/react";
 import { FiLogOut, FiBell, FiCalendar, FiUsers } from "react-icons/fi";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { Alarm } from "../../alarm";
 import { useUser } from "../../auth/userContext";
-import Sidebar from "../../admin/components/sideBar";
-import AdminHeader from "../../admin/components/Header";
+import AdminMobileLayout from "../../admin/layout/AdminMobileLayout";
+import AdminDesktopLayout from "../../admin/layout/AdminDesktopLayout";
 
 export const BOARD_SECTIONS = [
   { key: "notice", label: "공지사항" },
@@ -15,33 +15,16 @@ export const BOARD_SECTIONS = [
 
 export default function BoardLayout({ activeSection, children, onSectionChange, onExit }) {
   const navigate = useNavigate();
-  const location = useLocation();
+  const mobile = useBreakpointValue({ base: true, md: false });
   const { loginType, userName } = useUser();
-  const adminMenu = useDisclosure();
   const sectionPaths = {
     notice: "/note",
     contacts: "/note/contacts",
     "work-schedule": "/note/work-schedule",
   };
   if (loginType === "admin") {
-    return <Flex minH="100vh" h="100vh" bg="gray.50">
-      <Box display={{ base: "none", md: "block" }}><Sidebar /></Box>
-      <Flex direction="column" flex="1" minW={0}>
-        <Box position="relative"><AdminHeader /><Button display={{ base: "inline-flex", md: "none" }} position="absolute" left={3} top={3} zIndex={2} size="sm" variant="ghost" aria-label="관리자 메뉴 열기" onClick={adminMenu.onOpen}>☰</Button></Box>
-        <Box p={{ base: 4, md: 6 }} pb={{ base: "96px", md: 6 }} flex="1" minW={0} overflow="auto">{children}</Box>
-      </Flex>
-      <Drawer isOpen={adminMenu.isOpen} placement="left" onClose={adminMenu.onClose} size="xs">
-        <DrawerOverlay />
-        <DrawerContent maxW="250px" w="250px" bg="#111827">
-          <DrawerBody p={0} w="250px" overflow="hidden"><Sidebar /></DrawerBody>
-        </DrawerContent>
-      </Drawer>
-      <Flex as="nav" aria-label="게시판 메뉴" display={{ base: "flex", md: "none" }} position="fixed" bottom={0} left={0} right={0} zIndex={20} bg="white" borderTopWidth="1px" pb="env(safe-area-inset-bottom)">
-        {BOARD_SECTIONS.map((section, index) => <Button key={section.key} flex={1} minW={0} h="70px" variant="ghost" borderRadius={0} flexDirection="column" gap={2} fontSize="xs" color={location.pathname === sectionPaths[section.key] ? "blue.600" : "gray.500"} aria-current={location.pathname === sectionPaths[section.key] ? "page" : undefined} onClick={() => navigate(sectionPaths[section.key])}>
-          <Icon as={[FiBell, FiUsers, FiCalendar][index]} boxSize={5} />{section.label}
-        </Button>)}
-      </Flex>
-    </Flex>;
+    const Layout = mobile ? AdminMobileLayout : AdminDesktopLayout;
+    return <Layout board>{children}</Layout>;
   }
   const changeSection = (section) => {
     if (onSectionChange) onSectionChange(section);

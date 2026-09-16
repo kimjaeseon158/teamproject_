@@ -1,7 +1,7 @@
-import { Flex, Box } from "@chakra-ui/react";
-import { Routes, Route } from "react-router-dom";
-import Sidebar from "../features/admin/components/sideBar";
-import Header from "../features/admin/components/Header";
+import { useBreakpointValue } from "@chakra-ui/react";
+import { Navigate, Routes, Route } from "react-router-dom";
+import AdminMobileLayout from "../features/admin/layout/AdminMobileLayout";
+import AdminDesktopLayout from "../features/admin/layout/AdminDesktopLayout";
 
 import Overview from "./AdminPage/overview";
 import EmployeeList from "./AdminPage/EmployeeList";        // adminpage 연결
@@ -14,14 +14,12 @@ import CompanyPage from "./AdminPage/TotalEdit_company";
 import ExpensePage from "./AdminPage/TotalEdit_expense";
 
 export default function Dashboard() {
+  const desktop = useBreakpointValue({ base: false, md: true });
+  const Layout = desktop ? AdminDesktopLayout : AdminMobileLayout;
   return (
-    <Flex h="100vh">
-      <Sidebar />
-      <Flex direction="column" flex="1" minW={0}>
-        <Header />
-        <Box p="4" flex="1" bg="gray.50" overflow="auto" minW={0}>
+    <Layout>
           <Routes>
-            <Route path="/" element={<Overview />} />
+            <Route path="/" element={desktop === false ? <Navigate to="/dashboard/approval" replace /> : <Overview />} />
             <Route path="admin" element={<EmployeeList />} />
             <Route path="approval" element={<ApprovalPage />} />
             <Route path="daily-pay" element={<DailyPayPage />} />
@@ -31,8 +29,6 @@ export default function Dashboard() {
             <Route path="total-sales/company" element={<CompanyPage />} />
             <Route path="total-sales/expense" element={<ExpensePage />} />
           </Routes>
-        </Box>
-      </Flex>
-    </Flex>
+    </Layout>
   );
 }

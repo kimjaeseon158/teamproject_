@@ -1,22 +1,25 @@
-import { Badge, Box, Tab, TabList, TabPanel, TabPanels, Tabs, useToast } from "@chakra-ui/react";
+import { Badge, Box, Tab, TabList, TabPanel, TabPanels, Tabs, useBreakpointValue, useToast } from "@chakra-ui/react";
 import { useState } from "react";
 
 import AddPersonModal from "../../features/admin/userList/components/AddPersonModal";
 import AdminInformation from "../../features/admin/userList/components/AdminInformation";
-import EmployeeListHeader from "../../features/admin/userList/components/EmployeeListHeader";
-import EmployeeTableSection from "../../features/admin/userList/components/EmployeeTableSection";
 import SearchModal from "../../features/admin/userList/components/searchModal";
 import { useEmployeeListPage } from "../../features/admin/userList/hook/useEmployeeListPage";
 import PasswordResetRequestSection from "../../features/admin/userList/components/PasswordResetRequestSection";
 
+import EmployeeMobileLayout from "../../features/admin/userList/layout/EmployeeMobileLayout";
+import EmployeeDesktopLayout from "../../features/admin/userList/layout/EmployeeDesktopLayout";
+
 export default function EmployeeList() {
   const toast = useToast();
+  const mobile = useBreakpointValue({ base: true, md: false });
+  const Layout = mobile ? EmployeeMobileLayout : EmployeeDesktopLayout;
   const employeeList = useEmployeeListPage(toast);
   const { state, handlers } = employeeList;
   const [resetRequestCount, setResetRequestCount] = useState(0);
 
   return (
-    <Box minH="100vh" bg="gray.50" p={{ base: 4, md: 6 }}>
+    <Box minH="100%" bg={{ base: "white", md: "gray.50" }} p={{ base: 4, md: 6 }}>
       <Tabs colorScheme="blue" variant="enclosed">
         <TabList mb={5}>
           <Tab>직원 목록</Tab>
@@ -24,23 +27,7 @@ export default function EmployeeList() {
         </TabList>
         <TabPanels p={0}>
           <TabPanel p={0}>
-      <EmployeeListHeader
-        hasSearchFilter={employeeList.hasSearchFilter}
-        selectedCount={employeeList.selectedCount}
-        onAdd={() => state.setShowAddModal(true)}
-        onSearchOpen={() => state.setShowSearchModal(true)}
-        onShowAll={handlers.handleShowAll}
-        onDeleteSelected={handlers.handleDeleteSelected}
-      />
-
-      <EmployeeTableSection
-        peopleData={state.peopleData}
-        columns={employeeList.tableColumns}
-        checkedItems={state.checkedItems}
-        onCheck={handlers.handleCheckboxChange}
-        selectAll={employeeList.selectAll}
-        selectedCount={employeeList.selectedCount}
-      />
+            <Layout employeeList={employeeList} />
           </TabPanel>
           <TabPanel p={0}>
             <PasswordResetRequestSection onCountChange={setResetRequestCount} />

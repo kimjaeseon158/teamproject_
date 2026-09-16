@@ -22,7 +22,7 @@ export default function EmployeeListHeader({
           <Heading size="lg" color="gray.800">
             직원 관리
           </Heading>
-          <Badge
+          <Badge display={{ base: "none", md: "inline-flex" }}
             colorScheme={hasSearchFilter ? "blue" : "green"}
             borderRadius="full"
             px={3}
@@ -31,22 +31,24 @@ export default function EmployeeListHeader({
             {hasSearchFilter ? "검색 조건 입력됨" : "최신 데이터"}
           </Badge>
         </HStack>
-        <Text color="gray.500" fontSize="sm">
+        <Text display={{ base: "none", md: "block" }} color="gray.500" fontSize="sm">
           직원 정보를 등록, 검색, 수정하고 선택 삭제합니다.
         </Text>
       </Box>
 
-      <HStack spacing={2}>
-        <Button leftIcon={<AddIcon />} colorScheme="green" onClick={onAdd}>
+      <HStack spacing={2} flexWrap="wrap" rowGap={2}>
+        <Button size={{ base: "sm", md: "md" }} leftIcon={<AddIcon />} colorScheme="teal" onClick={onAdd}>
           직원 추가
         </Button>
-        <Button leftIcon={<SearchIcon />} colorScheme="blue" variant="outline" onClick={onSearchOpen}>
+        <Button size={{ base: "sm", md: "md" }} leftIcon={<SearchIcon />} colorScheme="teal" variant="outline" onClick={onSearchOpen}>
           직원 검색
         </Button>
-        <Button leftIcon={<RepeatIcon />} colorScheme="gray" variant="outline" onClick={onShowAll}>
+        <Button size={{ base: "sm", md: "md" }} leftIcon={<RepeatIcon />} colorScheme="gray" variant="ghost" onClick={onShowAll}>
           전체 보기
         </Button>
         <Button
+          display={{ base: selectedCount ? "inline-flex" : "none", md: "inline-flex" }}
+          size={{ base: "sm", md: "md" }}
           leftIcon={<DeleteIcon />}
           colorScheme="red"
           variant="outline"

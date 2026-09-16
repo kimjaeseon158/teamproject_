@@ -75,6 +75,13 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
     searchWithFilters();
   };
 
+  const handleStatusChange = (status) => {
+    filters.setStatus(status);
+    table.setCurrentPage(1);
+    selection.clearSelection();
+    searchWithFilters({ nextStatus: status });
+  };
+
   const actions = useApproveActions({
     toast,
     refresh: handleSearch,
@@ -128,6 +135,7 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
     handleRangeReset: filters.handleRangeReset,
     handleResetFilters,
     handleSearch,
+    handleStatusChange,
     handleSort: table.handleSort,
     handleTogglePage: selection.handleTogglePage,
     loading,

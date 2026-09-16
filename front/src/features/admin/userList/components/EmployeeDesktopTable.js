@@ -1,8 +1,7 @@
 import { Badge, Box, Flex, Heading, HStack, Text } from "@chakra-ui/react";
-
 import CommonTable from "../../../common/mytable";
 
-export default function EmployeeTableSection({
+export default function EmployeeDesktopTable({
   peopleData,
   columns,
   checkedItems,

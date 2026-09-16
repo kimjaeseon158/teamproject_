@@ -131,7 +131,7 @@ export default function ApproveBulkActionBar({
 
   return (
     <>
-      <HStack spacing={2}>
+      <HStack spacing={2} justify="space-between" w="100%" flexWrap="wrap">
         <Text fontSize="sm" color="gray.500" fontWeight="700">
           선택 {selectedCount.toLocaleString()}건
         </Text>
@@ -140,7 +140,7 @@ export default function ApproveBulkActionBar({
           colorScheme="green"
           variant="outline"
           onClick={() => openConfirm("approve")}
-          isDisabled={isDisabled}
+          isDisabled={isDisabled || !selectedCount}
         >
           선택 승인
         </Button>
@@ -149,7 +149,7 @@ export default function ApproveBulkActionBar({
           colorScheme="red"
           variant="outline"
           onClick={() => openConfirm("reject")}
-          isDisabled={isDisabled}
+          isDisabled={isDisabled || !selectedCount}
         >
           선택 반려
         </Button>

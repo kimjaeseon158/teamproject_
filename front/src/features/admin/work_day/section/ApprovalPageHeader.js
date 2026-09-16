@@ -5,7 +5,7 @@ import excelIcon from "../../../../assets/img/excel.png";
 
 export default function ApprovalPageHeader({ loading, totalCount, onExcelOpen }) {
   return (
-    <Flex justify="space-between" align={{ base: "stretch", md: "center" }} direction={{ base: "column", md: "row" }} gap={4} mb={5}>
+    <Flex justify="space-between" align="center" direction="row" gap={2} mb={5}>
       <Box>
         <HStack spacing={3} mb={2}>
           <Heading size="lg" color="gray.900">
@@ -15,12 +15,12 @@ export default function ApprovalPageHeader({ loading, totalCount, onExcelOpen })
             {loading ? "조회 중" : `총 ${totalCount.toLocaleString()}건`}
           </Badge>
         </HStack>
-        <Text color="gray.500" fontSize="sm">
+        <Text display={{ base: "none", md: "block" }} color="gray.500" fontSize="sm">
           근무 내역을 조건별로 조회하고 승인 또는 반려 처리합니다.
         </Text>
       </Box>
 
-      <HStack spacing={2} justify={{ base: "flex-start", md: "flex-end" }}>
+      <HStack display={{ base: "none", md: "flex" }} spacing={2} justify={{ base: "flex-start", md: "flex-end" }}>
         <Tooltip label="승인관리 문서 생성" hasArrow>
           <Button
             leftIcon={<DownloadIcon />}

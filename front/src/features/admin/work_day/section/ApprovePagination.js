@@ -28,13 +28,15 @@ export default function ApprovePagination({
   return (
     <HStack
       position="relative"
+      flexDirection={{ base: "column", md: "row" }}
+      gap={2}
       justify="center"
       px={5}
       py={4}
       borderTop="1px solid"
       borderColor="gray.100"
     >
-      <Text fontSize="sm" color="gray.500" position="absolute" left={5}>
+      <Text fontSize="sm" color="gray.500" position={{ base: "static", md: "absolute" }} left={5}>
         {start.toLocaleString()}-{end.toLocaleString()} / {totalCount.toLocaleString()}건
       </Text>
 

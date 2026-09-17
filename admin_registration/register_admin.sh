@@ -2,7 +2,7 @@
 # Compatible with macOS Bash 3.2. Secrets stay out of command-line arguments/files.
 set -euo pipefail
 
-server_url='https://sunsafe.thenano.dev'
+server_url='https://api.sunsafe.thenano.dev'
 allow_local_http=false
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -95,7 +95,10 @@ case "$status" in
             printf '%s\n' '응답을 확인할 수 없습니다. 운영자에게 계정 확인 및 인증번호 재발급을 요청하세요.' >&2; exit 1
         fi
         printf '%s\n' '[완료] 관리자 계정이 생성되었습니다.' "관리자 ID: $created_id" "로그인 인증번호: $code" \
-            '인증번호를 안전한 곳에 보관하세요. 다시 조회할 수 없습니다.' "접속 주소: $server_url/"
+            '인증번호를 안전한 곳에 보관하세요. 다시 조회할 수 없습니다.' "API 주소: $server_url/"
+        if [ "$server_url" = 'https://api.sunsafe.thenano.dev' ]; then
+            printf '%s\n' '로그인 주소: https://sunsafe.thenano.dev/'
+        fi
         ;;
     400) printf '%s\n' '입력값을 확인하세요. 비밀번호는 흔하거나 숫자만인 값, ID와 유사한 값을 사용할 수 없습니다.' >&2; exit 1 ;;
     403) printf '%s\n' '등록용 공통 비밀번호가 다르거나 서버에서 등록을 비활성화했습니다.' >&2; exit 1 ;;

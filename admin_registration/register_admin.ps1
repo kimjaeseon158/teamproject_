@@ -1,4 +1,4 @@
-﻿param([string]$ServerUrl = 'https://sunsafe.thenano.dev', [switch]$AllowLocalHttp)
+﻿param([string]$ServerUrl = 'https://api.sunsafe.thenano.dev', [switch]$AllowLocalHttp)
 
 $ErrorActionPreference = 'Stop'
 
@@ -64,12 +64,28 @@ function Start-AdminRegistration {
         Write-Host ('관리자 ID: ' + $response.admin_id)
         Write-Host ('로그인 인증번호: ' + $response.admin_code) -ForegroundColor Yellow
         Write-Host '인증번호를 안전한 곳에 보관하세요. 창을 닫으면 다시 조회할 수 없습니다.' -ForegroundColor Yellow
-        Write-Host ('로그인 주소: ' + $BaseUrl.TrimEnd('/') + '/')
+        if ($BaseUrl.TrimEnd('/') -eq 'https://api.sunsafe.thenano.dev') {
+            Write-Host '로그인 주소: https://sunsafe.thenano.dev/'
+        } else {
+            Write-Host ('API 주소: ' + $BaseUrl.TrimEnd('/') + '/')
+        }
     } catch {
         $statusCode = 0
         if ($_.Exception.Response) { $statusCode = [int]$_.Exception.Response.StatusCode }
+        if ($statusCode -gt 0) {
+            Write-Host ('진단 HTTP 상태 코드: ' + $statusCode) -ForegroundColor Yellow
+        } elseif ($_.Exception -is [Net.WebException]) {
+            Write-Host ('진단 연결 상태: ' + $_.Exception.Status) -ForegroundColor Yellow
+        } else {
+            Write-Host ('진단 오류 종류: ' + $_.Exception.GetType().Name) -ForegroundColor Yellow
+        }
         switch ($statusCode) {
             400 { Write-Host '입력값을 확인하세요. 흔한 비밀번호, 숫자만인 비밀번호, ID와 유사한 비밀번호는 사용할 수 없습니다.' }
+            404 { Write-Host '등록 API 경로를 찾을 수 없습니다. 서버 배포와 /api/ 프록시 경로를 확인하세요.' }
+            405 { Write-Host '서버가 POST 등록 요청을 허용하지 않습니다. 요청이 Django API로 전달되는지 확인하세요.' }
+            500 { Write-Host '서버 내부 오류입니다. 같은 시각의 Django 오류 로그를 확인하세요.' }
+            502 { Write-Host '프록시가 백엔드에 연결하지 못했습니다. Django 실행 상태와 프록시 설정을 확인하세요.' }
+            504 { Write-Host '프록시 응답 시간이 초과되었습니다. 계정 생성 여부와 서버 로그를 확인하세요.' }
             403 { Write-Host '등록용 공통 비밀번호가 다르거나 서버에서 등록을 비활성화했습니다.' }
             409 { Write-Host '이미 사용 중인 ID입니다. 기존 계정은 변경되지 않았습니다.' }
             429 { Write-Host '요청이 너무 많습니다. 1분 후 다시 시도하세요.' }

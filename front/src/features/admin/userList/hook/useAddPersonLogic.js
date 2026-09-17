@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createEmployee } from "../api/adminPageAddPerson";
 import { formatPhoneNumber, formatResidentNumber } from "../utils/format";
 
 export function useAddPersonLogic(onSave, onClose, toast) {
+  const submitting = useRef(false);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     user_name: "",
     resident_number: "",
@@ -52,6 +54,7 @@ export function useAddPersonLogic(onSave, onClose, toast) {
 
   const handleSubmitBase = async (e) => {
     e.preventDefault();
+    if (submitting.current) return;
 
     const {
       user_name,
@@ -99,10 +102,12 @@ export function useAddPersonLogic(onSave, onClose, toast) {
       address: address_detail ? `${address} ${address_detail}` : address,
     };
 
+    submitting.current = true;
+    setSaving(true);
     try {
       const result = await createEmployee(payload, { toast });
       if (result?.success) {
-        onSave(Array.isArray(result?.user_data) ? result.user_data : null);
+        await onSave(Array.isArray(result?.user_data) ? result.user_data : null);
         onClose();
         notify({
           title: "등록 완료",
@@ -122,10 +127,14 @@ export function useAddPersonLogic(onSave, onClose, toast) {
         description: err.message || "직원 등록 중 오류가 발생했습니다.",
         status: "error",
       });
+    } finally {
+      submitting.current = false;
+      setSaving(false);
     }
   };
 
   return {
+    saving,
     formData,
     setFormData,
     handleChange,

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useToast } from "@chakra-ui/react";
 
 import { fetchAdminWorkSchedules, saveAdminWorkSchedules } from "../api/adminWorkSchedules";
-import { toLocalDateValue } from "../../../common/utils/dateValue";
+import { addDaysToDateValue, toLocalDateValue } from "../../../common/utils/dateValue";
 
 const tempUuid = () => `new-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
@@ -27,7 +27,9 @@ export default function useAdminWorkSchedules() {
   const [copying, setCopying] = useState(false);
   const [pendingWorkDate, setPendingWorkDate] = useState("");
 
-  const load = useCallback(async (targetDate = date) => {
+  const weekStart = addDaysToDateValue(date, -((new Date(`${date}T00:00:00`).getDay() + 6) % 7));
+
+  const load = useCallback(async (targetDate) => {
     setLoading(true);
     try {
       const response = await fetchAdminWorkSchedules(targetDate, { toast });
@@ -39,11 +41,12 @@ export default function useAdminWorkSchedules() {
     } finally {
       setLoading(false);
     }
-  }, [date, toast]);
+  }, [toast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(weekStart); }, [load, weekStart]);
 
   const changeDate = (nextDate) => {
+    if (!nextDate || loading || saving || copying || changeCount > 0) return;
     setDate(nextDate);
   };
 

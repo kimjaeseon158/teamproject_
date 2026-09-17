@@ -1,4 +1,4 @@
-import { useBreakpointValue } from "@chakra-ui/react";
+import { useMediaQuery } from "@chakra-ui/react";
 import { Navigate, Routes, Route } from "react-router-dom";
 import AdminMobileLayout from "../features/admin/layout/AdminMobileLayout";
 import AdminDesktopLayout from "../features/admin/layout/AdminDesktopLayout";
@@ -14,7 +14,7 @@ import CompanyPage from "./AdminPage/TotalEdit_company";
 import ExpensePage from "./AdminPage/TotalEdit_expense";
 
 export default function Dashboard() {
-  const desktop = useBreakpointValue({ base: false, md: true });
+  const [desktop] = useMediaQuery("(min-width: 48em)", { ssr: false });
   const Layout = desktop ? AdminDesktopLayout : AdminMobileLayout;
   return (
     <Layout>

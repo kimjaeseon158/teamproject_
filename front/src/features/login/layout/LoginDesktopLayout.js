@@ -6,7 +6,7 @@ import LoginForm from "../components/LoginForm";
 const LoginDesktopLayout = ({ login }) => {
   return (
     <Flex
-      minH="100vh"
+      minH="100dvh"
       bg="#f8fafc"
       align="center"
       justify="center"
@@ -15,7 +15,7 @@ const LoginDesktopLayout = ({ login }) => {
       <Flex
         w="100%"
         maxW="1000px"
-        h="650px"
+        minH="650px"
         bg="white"
         borderRadius="3xl"
         boxShadow="2xl"
@@ -24,6 +24,7 @@ const LoginDesktopLayout = ({ login }) => {
         {/* 왼쪽 섹션: 브랜딩 및 안내 */}
         <Box
           flex="1"
+          minW={0}
           bg="blue.600"
           p={12}
           color="white"
@@ -88,14 +89,16 @@ const LoginDesktopLayout = ({ login }) => {
         {/* 오른쪽 섹션: 로그인 폼 */}
         <Box
           flex="1"
-          p={{ base: 8, md: 16 }}
+          minW={0}
+          px={{ base: 8, md: 12 }}
+          py={{ base: 8, md: 10 }}
           display="flex"
           flexDirection="column"
           justifyContent="center"
         >
           <Box w="100%" maxW="380px" mx="auto">
             {/* 상단 탭 */}
-            <Box mb={10} border="1px solid" borderColor="gray.100" borderRadius="xl">
+            <Box mb={6} border="1px solid" borderColor="gray.100" borderRadius="xl">
                 <RoleTabs role={login.role} setRole={login.setRole} />
             </Box>
 

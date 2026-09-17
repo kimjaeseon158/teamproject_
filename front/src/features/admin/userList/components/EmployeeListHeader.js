@@ -7,6 +7,7 @@ export default function EmployeeListHeader({
   onAdd,
   onSearchOpen,
   onShowAll,
+  showAllLoading = false,
   onDeleteSelected,
 }) {
   return (
@@ -36,14 +37,14 @@ export default function EmployeeListHeader({
         </Text>
       </Box>
 
-      <HStack spacing={2} flexWrap="wrap" rowGap={2}>
-        <Button size={{ base: "sm", md: "md" }} leftIcon={<AddIcon />} colorScheme="teal" onClick={onAdd}>
+      <HStack spacing={{ base: "clamp(8px, 2vw, 12px)", md: 2 }} flexWrap="wrap" rowGap={3} py={{ base: 1, md: 0 }}>
+        <Button size={{ base: "xs", md: "md" }} minH={{ base: "32px", md: "40px" }} px={{ base: 2, md: 4 }} leftIcon={<AddIcon />} colorScheme="teal" onClick={onAdd}>
           직원 추가
         </Button>
-        <Button size={{ base: "sm", md: "md" }} leftIcon={<SearchIcon />} colorScheme="teal" variant="outline" onClick={onSearchOpen}>
+        <Button size={{ base: "xs", md: "md" }} minH={{ base: "32px", md: "40px" }} px={{ base: 2, md: 4 }} leftIcon={<SearchIcon />} colorScheme="teal" variant="outline" onClick={onSearchOpen}>
           직원 검색
         </Button>
-        <Button size={{ base: "sm", md: "md" }} leftIcon={<RepeatIcon />} colorScheme="gray" variant="ghost" onClick={onShowAll}>
+        <Button size={{ base: "sm", md: "md" }} leftIcon={<RepeatIcon />} colorScheme="gray" variant="ghost" onClick={onShowAll} isLoading={showAllLoading} loadingText="불러오는 중">
           전체 보기
         </Button>
         <Button

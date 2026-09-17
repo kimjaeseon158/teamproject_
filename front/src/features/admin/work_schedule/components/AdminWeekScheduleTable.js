@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Box, Button, HStack, Input, Select, SimpleGrid, Table, Tbody, Td, Text, Th, Thead, Tr, VStack } from "@chakra-ui/react";
-import { FiEdit2, FiPlus, FiSave, FiTrash2, FiX } from "react-icons/fi";
+import { FiChevronLeft, FiChevronRight, FiEdit2, FiPlus, FiSave, FiTrash2, FiX } from "react-icons/fi";
 
 import { getScheduleStatus, SCHEDULE_STATUSES } from "../constants/scheduleStatus";
+import { addDaysToDateValue } from "../../../common/utils/dateValue";
 import WorkSchedulePagination from "./WorkSchedulePagination";
 
 const PAGE_SIZE = 8;
@@ -10,27 +11,20 @@ const draftId = () => `draft-${Date.now()}-${Math.random().toString(16).slice(2)
 const scheduleKey = (item) => item.schedule_uuid || item.__client_uuid || item.__draft_id;
 const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 const dayLabel = (date) => DAY_LABELS[new Date(`${date}T00:00:00`).getDay()];
-const editDateLabel = (date, selectedDate) => {
-  const relation = date === selectedDate ? " · 선택일" : "";
-  return `${dayLabel(date)} ${date.slice(5).replace("-", ".")}${relation}`;
-};
 
-function ScheduleCard({ schedule, compact }) {
-  const status = getScheduleStatus(schedule.status);
-  return <Box minW={0} minH={compact ? "62px" : "70px"} p={compact ? 1.5 : 2} borderWidth="1px" borderLeftWidth="3px" borderColor={`${status.colorScheme}.300`} borderRadius="md" bg={`${status.colorScheme}.50`} title={[status.label, schedule.work_place, schedule.work_place_detail].filter(Boolean).join(" · ")}>
-    <Badge colorScheme={status.colorScheme} fontSize={compact ? "9px" : "10px"}>{status.label}</Badge>
-    {schedule.work_place && <Text mt={1} fontSize={compact ? "10px" : "xs"} fontWeight="800" noOfLines={1}>{schedule.work_place}</Text>}
-    {schedule.work_place_detail && <Text fontSize="9px" color="gray.600" noOfLines={1}>{schedule.work_place_detail}</Text>}
-  </Box>;
-}
 
 function ScheduleCell({ schedules }) {
-  if (!schedules.length) return <Text py={3} textAlign="center" color="gray.300">+</Text>;
-  const multiple = schedules.length > 1;
-  return <Box position="relative">
-    {multiple && <Badge position="absolute" zIndex={1} top="-7px" right="-5px" borderRadius="full" colorScheme="blue" fontSize="9px">{schedules.length}건</Badge>}
-    <SimpleGrid columns={multiple ? 2 : 1} spacing={1}>{schedules.map((item, index) => <ScheduleCard key={scheduleKey(item) || index} schedule={item} compact={multiple} />)}</SimpleGrid>
-  </Box>;
+  if (!schedules.length) return <Text textAlign="center" color="gray.400">–</Text>;
+  return <SimpleGrid columns={schedules.length > 1 ? 2 : 1} spacing={1.5}>
+    {schedules.map((schedule, index) => {
+      const status = getScheduleStatus(schedule.status);
+      return <Box key={scheduleKey(schedule) || index} minW={0} minH="54px" p={1.5} borderWidth="1px" borderLeftWidth="3px" borderColor={`${status.colorScheme}.300`} borderRadius="md" bg={`${status.colorScheme}.50`} title={[status.label, schedule.work_place, schedule.work_place_detail].filter(Boolean).join(" · ")}>
+        <Badge colorScheme={status.colorScheme} fontSize="10px">{status.label}</Badge>
+        {schedule.work_place && <Text mt={0.5} fontSize="xs" fontWeight="700" noOfLines={1}>{schedule.work_place}</Text>}
+        {schedule.work_place_detail && <Text fontSize="10px" color="gray.600" noOfLines={1}>{schedule.work_place_detail}</Text>}
+      </Box>;
+    })}
+  </SimpleGrid>;
 }
 
 function ScheduleEditor({ schedule, workPlaces, onChange, onRemove, compact = false }) {
@@ -46,7 +40,9 @@ function ScheduleEditor({ schedule, workPlaces, onChange, onRemove, compact = fa
   </VStack>;
 }
 
-export default function AdminWeekScheduleTable({ data, selectedDate, workPlaces, onApplyRows }) {
+export default function AdminWeekScheduleTable({ data, selectedDate, workPlaces, onApplyRows, onDateChange, onEditingChange, dateChangeDisabled = false, isBusy = false }) {
+  const scrollContainer = useRef(null);
+  const selectedColumn = useRef(null);
   const [editing, setEditing] = useState(false);
   const [editDate, setEditDate] = useState(selectedDate);
   const [draftRows, setDraftRows] = useState({});
@@ -64,29 +60,47 @@ export default function AdminWeekScheduleTable({ data, selectedDate, workPlaces,
   useEffect(() => setCurrentPage(1), [nameFilter, placeFilter, statusFilter]);
   useEffect(() => setCurrentPage((page) => Math.min(page, totalPages)), [totalPages]);
 
+  useEffect(() => { onEditingChange?.(editing); }, [editing, onEditingChange]);
+  useEffect(() => {
+    const container = scrollContainer.current;
+    const column = selectedColumn.current;
+    if (!container || !column) return;
+    const stickyWidth = container.querySelector("th")?.getBoundingClientRect().width || 150;
+    const left = container.scrollLeft + column.getBoundingClientRect().left - container.getBoundingClientRect().left - stickyWidth - 8;
+    container.scrollTo({ left: Math.max(0, left), behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }, [selectedDate, dates, editing]);
+
   const startEditing = () => { setDraftRows(Object.fromEntries(visibleUsers.map((user) => [user.user_uuid, { [editDate]: (user.days?.[editDate] || []).map((item) => ({ ...item })) }] ))); setEditing(true); };
   const cancelEditing = () => { setDraftRows({}); setEditing(false); };
   const updateDay = (userUuid, updater) => setDraftRows((current) => ({ ...current, [userUuid]: { [editDate]: updater(current[userUuid][editDate]) } }));
   const applyEditing = () => { const rows = visibleUsers.map((user) => ({ user, draftDays: draftRows[user.user_uuid] })); if (onApplyRows(rows, [editDate]) !== false) cancelEditing(); };
 
   return <Box>
-    <HStack mb={2} justify="space-between" align={{ base: "flex-start", md: "center" }} flexDirection={{ base: "column", md: "row" }}>
-      <Box>
-        <Text fontSize="sm" fontWeight="800">{dates[0]?.slice(5).replace("-", ".")} {dates[0] && dayLabel(dates[0])} — {dates[dates.length - 1]?.slice(5).replace("-", ".")} {dates[dates.length - 1] && dayLabel(dates[dates.length - 1])}</Text>
-      </Box>
-      <HStack fontSize="xs" color="gray.600"><Badge colorScheme="cyan">선택일</Badge><Badge colorScheme="blue">편집일</Badge></HStack>
+    <HStack mb={2} p={2} bg="white" borderWidth="1px" borderColor="gray.200" borderRadius="xl" justify="space-between" align="center" flexWrap="wrap" spacing={3}>
+      <HStack spacing={2} flexWrap="wrap" flex="1" minW={0}>
+      <Input aria-label="직원 이름 검색" size="sm" w={{ base: "100%", md: "180px" }} bg="white" placeholder="직원 이름 검색" value={nameFilter} onChange={(e) => setNameFilter(e.target.value)} isDisabled={editing} />
+      <Select aria-label="근무지 필터" size="sm" w="150px" bg="white" value={placeFilter} onChange={(e) => setPlaceFilter(e.target.value)} isDisabled={editing}><option value="">전체 근무지</option>{placeNames.map((name) => <option key={name} value={name}>{name}</option>)}</Select>
+      <Select aria-label="근무 상태 필터" size="sm" w="120px" bg="white" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} isDisabled={editing}><option value="">전체 상태</option>{SCHEDULE_STATUSES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</Select>
+
     </HStack>
-    <HStack mb={3} spacing={2} flexWrap="wrap">
-      <Input maxW="260px" bg="white" placeholder="직원 이름 검색" value={nameFilter} onChange={(e) => setNameFilter(e.target.value)} isDisabled={editing} />
-      <Select maxW="210px" bg="white" value={placeFilter} onChange={(e) => setPlaceFilter(e.target.value)} isDisabled={editing}><option value="">전체 근무지</option>{placeNames.map((name) => <option key={name} value={name}>{name}</option>)}</Select>
-      <Select maxW="170px" bg="white" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} isDisabled={editing}><option value="">전체 상태</option>{SCHEDULE_STATUSES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</Select>
-      <Box flex="1" />
-      {editing ? <><Text fontSize="sm" color="blue.600" fontWeight="700">{editDateLabel(editDate, selectedDate)} · {visibleUsers.length}명 편집 중</Text><Button leftIcon={<FiX />} variant="outline" onClick={cancelEditing}>편집 취소</Button><Button leftIcon={<FiSave />} colorScheme="blue" onClick={applyEditing}>변경 적용</Button></> : <HStack spacing={0} borderWidth="2px" borderColor="blue.400" borderRadius="md" overflow="hidden" bg="white"><Text px={3} fontSize="xs" fontWeight="800" color="blue.700" whiteSpace="nowrap">편집할 날짜</Text><Select w="190px" borderWidth="0" borderLeftWidth="1px" borderRadius="0" value={editDate} onChange={(e) => setEditDate(e.target.value)}>{dates.map((date) => <option key={date} value={date}>{editDateLabel(date, selectedDate)}</option>)}</Select><Button h="40px" borderRadius="0" leftIcon={<FiEdit2 />} colorScheme="blue" onClick={startEditing} isDisabled={!visibleUsers.length || !editDate}>이 날짜 편집</Button></HStack>}
+      <HStack spacing={2} flexWrap="wrap">
+        <Text fontSize="sm" fontWeight="800" color="gray.700">작업 날짜</Text>
+        <HStack spacing={0} borderWidth="1px" borderColor="gray.200" borderRadius="md" overflow="hidden">
+          <Button size="sm" variant="ghost" borderRadius={0} aria-label="이전 날짜" isDisabled={dateChangeDisabled} onClick={() => onDateChange(addDaysToDateValue(selectedDate, -1))}><FiChevronLeft /></Button>
+          <Input aria-label="작업 날짜" type="date" size="sm" w="155px" minW={0} borderWidth={0} borderRadius={0} value={selectedDate} isDisabled={dateChangeDisabled} onChange={(event) => onDateChange(event.target.value)} />
+          <Button size="sm" variant="ghost" borderRadius={0} aria-label="다음 날짜" isDisabled={dateChangeDisabled} onClick={() => onDateChange(addDaysToDateValue(selectedDate, 1))}><FiChevronRight /></Button>
+        </HStack>
+        {editing ? <>
+          <Badge colorScheme="blue">{visibleUsers.length}명 편집 중</Badge>
+          <Button size="sm" leftIcon={<FiX />} variant="outline" onClick={cancelEditing}>편집 취소</Button>
+          <Button size="sm" leftIcon={<FiSave />} colorScheme="blue" onClick={applyEditing}>변경 적용</Button>
+        </> : <Button size="sm" leftIcon={<FiEdit2 />} colorScheme="blue" onClick={startEditing} isDisabled={isBusy || !visibleUsers.length || !dates.includes(selectedDate) || !editDate}>이 날짜 편집</Button>}
+      </HStack>
     </HStack>
     <Box bg="white" borderWidth="1px" borderRadius="xl" overflow="hidden">
-      <Box overflowX="auto">
-      <Table size="sm" minW="1320px"><Thead bg="gray.50"><Tr><Th minW="150px" position="sticky" left={0} zIndex={3} bg="gray.50" boxShadow="2px 0 0 #E2E8F0">직원</Th>{dates.map((date) => { const day = new Date(`${date}T00:00:00`).getDay(); const baseline = date === selectedDate; const active = editing && date === editDate; return <Th key={date} minW={active ? "250px" : "165px"} textAlign="center" bg={active ? "blue.200" : baseline ? "cyan.50" : undefined} borderLeftWidth={active ? "3px" : baseline ? "2px" : undefined} borderRightWidth={active ? "3px" : baseline ? "2px" : undefined} borderTopWidth={baseline ? "3px" : undefined} borderColor={active ? "blue.500" : baseline ? "cyan.400" : undefined} color={active ? "blue.900" : baseline ? "cyan.800" : day === 0 ? "red.500" : day === 6 ? "blue.500" : "gray.700"}><Text fontSize="10px" mb={1}>{dayLabel(date)}</Text>{baseline && <Badge mr={2} colorScheme="cyan">선택</Badge>}{active && <Badge mr={2} colorScheme="blue">편집</Badge>}{date.slice(5).replace("-", ".")}</Th>; })}</Tr></Thead>
-        <Tbody>{visibleUsers.map((user) => <Tr key={user.user_uuid} _hover={{ bg: "gray.50" }}><Td verticalAlign="top" py={4} position="sticky" left={0} zIndex={2} bg="white" boxShadow="2px 0 0 #E2E8F0"><Text fontWeight="900">{user.user_name}</Text></Td>{dates.map((date) => { const baseline = date === selectedDate; const active = editing && date === editDate; const schedules = active ? draftRows[user.user_uuid]?.[date] || [] : user.days?.[date] || []; const limitReached = schedules.length >= 2; return <Td key={date} p={2} verticalAlign="top" minW={active ? "250px" : undefined} bg={active ? "blue.50" : baseline ? "cyan.50" : undefined} borderLeftWidth={active ? "3px" : baseline ? "2px" : undefined} borderRightWidth={active ? "3px" : baseline ? "2px" : undefined} borderColor={active ? "blue.500" : baseline ? "cyan.300" : undefined}>{active ? <VStack align="stretch" spacing={1.5}><SimpleGrid columns={schedules.length > 1 ? 2 : 1} spacing={1.5}>{schedules.map((item) => <ScheduleEditor compact={schedules.length > 1} key={scheduleKey(item)} schedule={item} workPlaces={workPlaces} onChange={(next) => updateDay(user.user_uuid, (items) => items.map((current) => scheduleKey(current) === scheduleKey(item) ? next : current))} onRemove={() => updateDay(user.user_uuid, (items) => items.filter((current) => scheduleKey(current) !== scheduleKey(item)))} />)}</SimpleGrid><Button size="xs" variant="outline" colorScheme="blue" leftIcon={<FiPlus />} isDisabled={limitReached} title={limitReached ? "하루에 최대 2개 일정만 등록할 수 있습니다." : ""} onClick={() => updateDay(user.user_uuid, (items) => items.length >= 2 ? items : [...items, { __draft_id: draftId(), status: "DAY", status_label: "주간", admin_work_place_uuid: "", work_place: "", work_place_detail: "" }])}>{limitReached ? "최대 2개" : "일정 추가"}</Button></VStack> : <ScheduleCell schedules={schedules} />}</Td>; })}</Tr>)}</Tbody>
+      <Box ref={scrollContainer} overflowX="auto">
+      <Table size="sm" minW={editing ? "1160px" : "880px"} sx={{ tableLayout: "fixed" }}><Thead bg="gray.50"><Tr><Th w="120px" px={3} py={2} position="sticky" left={0} zIndex={3} bg="gray.50" boxShadow="2px 0 0 #E2E8F0">직원</Th>{dates.map((date) => { const day = new Date(`${date}T00:00:00`).getDay(); const baseline = date === selectedDate; const active = editing && date === editDate; return <Th key={date} ref={baseline ? selectedColumn : null} w={active ? "280px" : undefined} px={1} py={1.5} textAlign="center" bg={active ? "blue.200" : baseline ? "cyan.50" : undefined} borderLeftWidth={active ? "3px" : baseline ? "2px" : undefined} borderRightWidth={active ? "3px" : baseline ? "2px" : undefined} borderTopWidth={baseline ? "3px" : undefined} borderColor={active ? "blue.500" : baseline ? "cyan.400" : undefined} color={active ? "blue.900" : baseline ? "cyan.800" : day === 0 ? "red.500" : day === 6 ? "blue.500" : "gray.700"}><Text fontSize="10px" mb={1}>{dayLabel(date)}</Text>{baseline && <Badge mr={2} colorScheme="cyan">선택</Badge>}{active && <Badge mr={2} colorScheme="blue">편집</Badge>}{date.slice(5).replace("-", ".")}</Th>; })}</Tr></Thead>
+        <Tbody>{visibleUsers.map((user) => <Tr key={user.user_uuid} _hover={{ bg: "gray.50" }}><Td verticalAlign="middle" h="max(68px, calc((100dvh - 350px) / 8))" px={3} py={3} position="sticky" left={0} zIndex={2} bg="white" boxShadow="2px 0 0 #E2E8F0"><Text fontWeight="900">{user.user_name}</Text></Td>{dates.map((date) => { const baseline = date === selectedDate; const active = editing && date === editDate; const schedules = active ? draftRows[user.user_uuid]?.[date] || [] : user.days?.[date] || []; const limitReached = schedules.length >= 2; return <Td key={date} px={2} py={2} verticalAlign={active ? "top" : "middle"} bg={active ? "blue.50" : baseline ? "cyan.50" : undefined} borderLeftWidth={active ? "3px" : baseline ? "2px" : undefined} borderRightWidth={active ? "3px" : baseline ? "2px" : undefined} borderColor={active ? "blue.500" : baseline ? "cyan.300" : undefined}>{active ? <VStack align="stretch" spacing={1.5}><SimpleGrid columns={schedules.length > 1 ? 2 : 1} spacing={1.5}>{schedules.map((item) => <ScheduleEditor compact={schedules.length > 1} key={scheduleKey(item)} schedule={item} workPlaces={workPlaces} onChange={(next) => updateDay(user.user_uuid, (items) => items.map((current) => scheduleKey(current) === scheduleKey(item) ? next : current))} onRemove={() => updateDay(user.user_uuid, (items) => items.filter((current) => scheduleKey(current) !== scheduleKey(item)))} />)}</SimpleGrid><Button size="xs" variant="outline" colorScheme="blue" leftIcon={<FiPlus />} isDisabled={limitReached} title={limitReached ? "하루에 최대 2개 일정만 등록할 수 있습니다." : ""} onClick={() => updateDay(user.user_uuid, (items) => items.length >= 2 ? items : [...items, { __draft_id: draftId(), status: "DAY", status_label: "주간", admin_work_place_uuid: "", work_place: "", work_place_detail: "" }])}>{limitReached ? "최대 2개" : "일정 추가"}</Button></VStack> : <ScheduleCell schedules={schedules} />}</Td>; })}</Tr>)}</Tbody>
       </Table>
       </Box>
       {!filteredUsers.length && <Text py={14} textAlign="center" color="gray.500">조건에 맞는 직원이 없습니다.</Text>}

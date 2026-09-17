@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
-import { Badge, Box, Button, Heading, HStack, Input, Spinner, useToast } from "@chakra-ui/react";
-import { FiCalendar, FiChevronLeft, FiChevronRight, FiRefreshCw, FiSave } from "react-icons/fi";
+import { Badge, Box, Button, Heading, HStack, Text, useToast } from "@chakra-ui/react";
+import { FiCalendar, FiRefreshCw, FiSave } from "react-icons/fi";
 
 import { getAdminWorkPlaceList } from "../../features/admin/work_place/api/adminWorkPlace";
 import AdminWeekScheduleTable from "../../features/admin/work_schedule/components/AdminWeekScheduleTable";
 import useAdminWorkSchedules from "../../features/admin/work_schedule/hook/useAdminWorkSchedules";
-import { addDaysToDateValue } from "../../features/common/utils/dateValue";
 
 export default function WorkScheduleManagementPage() {
   const schedule = useAdminWorkSchedules();
   const toast = useToast();
+  const [editing, setEditing] = useState(false);
+  const dateChangeDisabled = editing || schedule.changeCount > 0 || schedule.loading || schedule.saving || schedule.copying;
   const [workPlaces, setWorkPlaces] = useState([]);
 
   useEffect(() => {
@@ -49,73 +50,29 @@ export default function WorkScheduleManagementPage() {
     return true;
   };
 
-  const previousDate = addDaysToDateValue(schedule.date, -1);
-  const nextDate = addDaysToDateValue(schedule.date, 1);
 
   return (
     <Box minH="100%" bg="gray.50" p={{ base: 1, md: 2 }}>
-      <HStack align={{ base: "stretch", md: "center" }} mb={4} flexDirection={{ base: "column", md: "row" }}>
-        <Box>
-          <HStack><FiCalendar /><Heading size="lg">주간 근무표 관리</Heading></HStack>
-        </Box>
-      </HStack>
-
-      <HStack
-        mb={4}
-        px={4}
-        py={3}
-        justify="space-between"
-        align={{ base: "stretch", lg: "center" }}
-        flexDirection={{ base: "column", lg: "row" }}
-        bg="white"
-        borderWidth="1px"
-        borderColor="gray.200"
-        borderRadius="xl"
-        boxShadow="sm"
-      >
+      <HStack justify="space-between" align="center" mb={3} flexWrap="wrap" spacing={3}>
         <HStack spacing={3} flexWrap="wrap">
-          <Badge colorScheme="cyan" px={3} py={1.5} borderRadius="full">기준일 {schedule.date}</Badge>
-          {schedule.loading && <Spinner size="sm" />}
+          <FiCalendar /><Heading size="md">주간 근무표 관리</Heading>
+          {schedule.data.week_start && <Text fontSize="sm" fontWeight="600" color="gray.600" borderLeftWidth="1px" pl={3}>{schedule.data.week_start.slice(5).replace("-", ".")} – {schedule.data.week_end?.slice(5).replace("-", ".")}</Text>}
         </HStack>
-
         <HStack flexWrap="wrap" justify={{ base: "flex-start", lg: "flex-end" }}>
           <Button
             size="sm"
             colorScheme="blue"
             variant="outline"
             leftIcon={<FiRefreshCw />}
-            title="이번 주의 직원별 최근 과거 근무를 기준일에 덮어쓰기"
+            title="이번 주의 직원별 최근 과거 근무를 작업 날짜에 덮어쓰기"
             onClick={() => schedule.copyPreviousDay("replace")}
             isLoading={schedule.copying}
-            isDisabled={schedule.changeCount > 0 || schedule.loading || !schedule.canCopyRecent}
+            isDisabled={dateChangeDisabled || !schedule.canCopyRecent}
           >
             최근 근무 덮어쓰기
           </Button>
-          <Button
-            aria-label="이전 날짜"
-            size="sm"
-            variant="outline"
-            onClick={() => schedule.setDate(previousDate)}
-            isDisabled={schedule.changeCount > 0}
-          ><FiChevronLeft /></Button>
-          <Input
-            type="date"
-            value={schedule.date}
-            onChange={(event) => schedule.setDate(event.target.value)}
-            maxW="170px"
-            size="sm"
-            bg="white"
-            isDisabled={schedule.changeCount > 0 || schedule.saving}
-          />
-          <Button
-            aria-label="다음 날짜"
-            size="sm"
-            variant="outline"
-            onClick={() => schedule.setDate(nextDate)}
-            isDisabled={schedule.changeCount > 0}
-          ><FiChevronRight /></Button>
           {schedule.changeCount > 0 && (
-            <Button leftIcon={<FiRefreshCw />} variant="outline" onClick={schedule.reload} isDisabled={schedule.saving}>
+            <Button leftIcon={<FiRefreshCw />} variant="outline" onClick={schedule.reload} isDisabled={schedule.saving || editing}>
               변경 취소
             </Button>
           )}
@@ -125,16 +82,19 @@ export default function WorkScheduleManagementPage() {
             leftIcon={<FiSave />}
             onClick={schedule.save}
             isLoading={schedule.saving}
-            isDisabled={!schedule.changeCount}
+            isDisabled={!schedule.changeCount || editing || schedule.loading || schedule.copying}
           >
             일괄 저장 {schedule.changeCount > 0 && <Badge ml={2}>{schedule.changeCount}</Badge>}
           </Button>
-        </HStack>
-      </HStack>
+        </HStack>      </HStack>
 
       <AdminWeekScheduleTable
         data={schedule.data}
         selectedDate={schedule.date}
+        onDateChange={schedule.setDate}
+        onEditingChange={setEditing}
+        dateChangeDisabled={dateChangeDisabled}
+        isBusy={schedule.loading || schedule.saving || schedule.copying}
         workPlaces={workPlaces}
         onApplyRows={handleApplyRows}
       />

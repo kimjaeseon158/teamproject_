@@ -38,10 +38,11 @@ const scheduleMatches = (user, dates, searchType, keyword) => {
   ));
 };
 
-export default function useBoardWorkSchedule() {
+export default function useBoardWorkSchedule({ enabled = true } = {}) {
   const toast = useToast();
   const { loginType } = useUser();
   const today = toLocalDateValue();
+  const [selectedDate, setSelectedDate] = useState(today);
   const [date, setDate] = useState(() => mondayOf(today));
   const [selectedMonth, setSelectedMonth] = useState(() => monthOf(today));
   const [data, setData] = useState({ dates: [], users: [] });
@@ -80,8 +81,9 @@ export default function useBoardWorkSchedule() {
   }, [loginType, toast]);
 
   useEffect(() => {
-    load(date, appliedSearch.current.keyword, appliedSearch.current.type);
-  }, [date, load]);
+    if (enabled) load(date, appliedSearch.current.keyword, appliedSearch.current.type);
+    return () => { requestId.current += 1; };
+  }, [date, enabled, load]);
 
   const dates = useMemo(() => data.dates || [], [data.dates]);
   const users = useMemo(() => {
@@ -103,12 +105,13 @@ export default function useBoardWorkSchedule() {
     0
   ), [dates, users]);
 
-  const selectWeek = (weekStart) => setDate(mondayOf(weekStart));
+  const selectWeek = (weekStart) => { setSelectedDate(weekStart); setDate(mondayOf(weekStart)); };
+  const selectDate = (value) => { if (!value) return; setSelectedMonth(monthOf(value)); selectWeek(value); };
   const selectMonth = (monthValue) => {
     const firstWeek = getMonthWeeks(monthValue)[0];
     if (!firstWeek) return;
     setSelectedMonth(monthValue);
-    selectWeek(firstWeek.start);
+    selectWeek(`${monthValue}-01`);
   };
   const goCurrentWeek = () => {
     setSelectedMonth(monthOf(today));
@@ -129,10 +132,18 @@ export default function useBoardWorkSchedule() {
     scheduleCount,
     searchType,
     selectedMonth,
+    selectedDate,
+    selectDate,
     status,
     goCurrentWeek,
     moveMonth: (amount) => selectMonth(addMonths(selectedMonth, amount)),
     search: () => load(date, keyword, searchType),
+    resetFilters: () => {
+      setKeyword("");
+      setSearchType("user_name");
+      setStatus("ALL");
+      return load(date, "", "user_name");
+    },
     selectMonth,
     selectWeek,
     setKeyword,

@@ -135,6 +135,7 @@ export default function ApproveBulkActionBar({
         <Text fontSize="sm" color="gray.500" fontWeight="700">
           선택 {selectedCount.toLocaleString()}건
         </Text>
+        <HStack spacing={2}>
         <Button
           size="sm"
           colorScheme="green"
@@ -153,6 +154,7 @@ export default function ApproveBulkActionBar({
         >
           선택 반려
         </Button>
+        </HStack>
       </HStack>
 
       <Modal isOpen={isOpen} onClose={saving ? undefined : onClose} isCentered closeOnOverlayClick={false} closeOnEsc={false}>

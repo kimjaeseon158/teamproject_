@@ -23,6 +23,7 @@ import { CARRIER_OPTIONS } from "../constants/carrierConstants";
 
 const AddPersonModal = ({ isOpen, onClose, onSave, toast }) => {
   const {
+    saving,
     formData,
     handleChange,
     handleSubmitBase,
@@ -52,15 +53,15 @@ const AddPersonModal = ({ isOpen, onClose, onSave, toast }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered closeOnOverlayClick={false} closeOnEsc={false}>
+    <Modal isOpen={isOpen} onClose={saving ? () => {} : onClose} size="lg" isCentered closeOnOverlayClick={false} closeOnEsc={false}>
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent w={{ base: "90%", md: "100%" }} maxH="90dvh" my="5dvh" borderRadius="xl" overflow="hidden">
         <ModalHeader>직원 추가</ModalHeader>
-        <ModalCloseButton />
+        <ModalCloseButton isDisabled={saving} />
 
-        <form onSubmit={handleSubmitBase}>
-          <ModalBody>
-            <VStack spacing={4}>
+        <form onSubmit={handleSubmitBase} style={{ display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
+          <ModalBody overflowY="auto" px={{ base: 4, md: 6 }}>
+            <VStack as="fieldset" disabled={saving} spacing={4} border={0} p={0} m={0} minW={0}>
               <FormControl isRequired>
                 <FormLabel>이름</FormLabel>
                 <Input
@@ -150,11 +151,11 @@ const AddPersonModal = ({ isOpen, onClose, onSave, toast }) => {
             </VStack>
           </ModalBody>
 
-          <ModalFooter>
-            <Button type="submit" colorScheme="teal">
+          <ModalFooter flexShrink={0} px={{ base: 4, md: 6 }} py={4}>
+            <Button type="submit" colorScheme="teal" isLoading={saving} loadingText="등록 중...">
               저장
             </Button>
-            <Button ml={2} onClick={onClose}>
+            <Button ml={2} onClick={onClose} isDisabled={saving}>
               취소
             </Button>
           </ModalFooter>

@@ -19,7 +19,7 @@ export default function EmployeeList() {
   const [resetRequestCount, setResetRequestCount] = useState(0);
 
   return (
-    <Box minH="100%" bg={{ base: "white", md: "gray.50" }} p={{ base: 4, md: 6 }}>
+    <Box minH="100%" bg={{ base: "white", md: "gray.50" }} px={{ base: "clamp(18px, 5vw, 32px)", md: "clamp(24px, 2.5vw, 40px)" }} py={{ base: 5, md: 6 }}>
       <Tabs colorScheme="blue" variant="enclosed">
         <TabList mb={5}>
           <Tab>직원 목록</Tab>

@@ -7,11 +7,10 @@ const initialSearchForm = {
   mobile_carrier: "",
   user_uuid: "",
   address: "",
-  sorting: "",
-  direction: "",
 };
 
 export function useAdminState() {
+  const [sort, setSort] = useState({ field: "", direction: "asc" });
   const [peopleData, setPeopleData] = useState([]);
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [checkedItems, setCheckedItems] = useState({});
@@ -22,6 +21,7 @@ export function useAdminState() {
 
   return {
     peopleData, setPeopleData,
+    sort, setSort,
     selectedPerson, setSelectedPerson,
     checkedItems, setCheckedItems,
     showAddModal, setShowAddModal,

@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { deleteEmployees } from "../api/adminPageDelete";
 import { updateEmployee } from "../api/adminPageUpdate";
 import { fetchFilteredPeople } from "../api/adminPageLogic";
@@ -11,13 +12,14 @@ const initialSearchForm = {
   mobile_carrier: "",
   user_uuid: "",
   address: "",
-  sorting: "",
-  direction: "",
 };
 
 export function useAdminHandlers(state, toast) {
+  const [showAllLoading, setShowAllLoading] = useState(false);
+  const showAllPending = useRef(false);
   const {
     setPeopleData,
+    setSort,
     checkedItems,
     setCheckedItems,
     setSelectedPerson,
@@ -156,28 +158,44 @@ export function useAdminHandlers(state, toast) {
   };
 
   const handleShowAll = async () => {
-    const res = await fetchEmployees({}, toast);
+    if (showAllPending.current) return false;
+    showAllPending.current = true;
+    setShowAllLoading(true);
+    try {
+      const res = await fetchEmployees({}, toast);
 
-    if (res?.success && Array.isArray(res.users)) {
-      setPeopleData(res.users);
-      setSearchForm(initialSearchForm);
-      setIsSearchActive(false);
-      setCheckedItems({});
-      setSelectedPerson(null);
+      if (res?.success && Array.isArray(res.users)) {
+        setPeopleData(res.users);
+        setSort({ field: "", direction: "asc" });
+        setSearchForm(initialSearchForm);
+        setIsSearchActive(false);
+        setCheckedItems({});
+        setSelectedPerson(null);
+        notify({
+          title: "전체 보기",
+          description: `${res.users.length.toLocaleString()}건의 직원 정보를 불러왔습니다.`,
+          status: "success",
+        });
+        return true;
+      }
+
       notify({
-        title: "전체 보기",
-        description: `${res.users.length.toLocaleString()}건의 직원 정보를 불러왔습니다.`,
-        status: "success",
+        title: "전체 목록 조회 실패",
+        description: "직원 목록을 다시 불러오지 못했습니다.",
+        status: "error",
       });
-      return true;
+      return false;
+    } catch (error) {
+      notify({
+        title: "전체 목록 조회 실패",
+        description: error.message || "직원 목록을 다시 불러오지 못했습니다.",
+        status: "error",
+      });
+      return false;
+    } finally {
+      showAllPending.current = false;
+      setShowAllLoading(false);
     }
-
-    notify({
-      title: "전체 목록 조회 실패",
-      description: "직원 목록을 다시 불러오지 못했습니다.",
-      status: "error",
-    });
-    return false;
   };
 
   const handleCloseSearch = () => {
@@ -185,7 +203,13 @@ export function useAdminHandlers(state, toast) {
     setSearchForm(initialSearchForm);
   };
 
+  const openSearch = () => {
+    setShowSearchModal(true);
+  };
+
   return {
+    showAllLoading,
+    openSearch,
     handleCheckboxChange,
     handleDeleteSelected,
     handleSave,

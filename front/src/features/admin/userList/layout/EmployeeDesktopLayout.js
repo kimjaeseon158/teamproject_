@@ -9,13 +9,14 @@ export default function EmployeeDesktopLayout({ employeeList }) {
         hasSearchFilter={employeeList.hasSearchFilter}
         selectedCount={employeeList.selectedCount}
         onAdd={() => state.setShowAddModal(true)}
-        onSearchOpen={() => state.setShowSearchModal(true)}
+        onSearchOpen={handlers.openSearch}
         onShowAll={handlers.handleShowAll}
+        showAllLoading={handlers.showAllLoading}
         onDeleteSelected={handlers.handleDeleteSelected}
       />
 
       <EmployeeDesktopTable
-        peopleData={state.peopleData}
+        peopleData={employeeList.sortedPeople}
         columns={employeeList.tableColumns}
         checkedItems={state.checkedItems}
         onCheck={handlers.handleCheckboxChange}

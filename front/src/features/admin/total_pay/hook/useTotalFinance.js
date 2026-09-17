@@ -1,103 +1,42 @@
-import { useCallback, useEffect, useState } from "react";
-
+import { useEffect, useMemo, useRef, useState } from "react";
 import { three_month_totals } from "../api/expense3month";
-
-const sumMonth = (obj) =>
-  Object.values(obj || {}).reduce((sum, value) => sum + Number(value), 0);
-
-const formatKoreanMonth = (key) => {
-  const [year, month] = key.split("-");
-
-  return `${year}년 ${month}월`;
-};
-
-const addMonth = (year, month, delta) => {
-  const date = new Date(year, month - 1);
-  date.setMonth(date.getMonth() + delta);
-
+const monthKey = (year, month) => {
+  const date = new Date(year, month - 1, 1);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 };
-
-const getCenteredMonths = (year, month) => {
-  const base = new Date(year, month - 1);
-  const months = [];
-
-  for (let i = -1; i <= 1; i++) {
-    const date = new Date(base);
-    date.setMonth(base.getMonth() + i);
-
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, "0");
-
-    months.push(`${yyyy}-${mm}`);
-  }
-
-  return months;
-};
-
+const sum = (data) => Object.values(data || {}).reduce((total, value) => total + Number(value), 0);
 export function useTotalFinance({ toast }) {
   const today = new Date();
-  const initialMonth = `${today.getFullYear()}-${String(
-    today.getMonth() + 1
-  ).padStart(2, "0")}`;
-
-  const [apiMonth, setApiMonth] = useState(initialMonth);
+  const [apiMonth, setApiMonth] = useState(() => monthKey(today.getFullYear(), today.getMonth() + 1));
   const [selectedDetailMonth, setSelectedDetailMonth] = useState(null);
   const [rawMonthMap, setRawMonthMap] = useState({});
   const [threeMonthData, setThreeMonthData] = useState([]);
-  const [detailData, setDetailData] = useState([]);
-  const [totalExpense, setTotalExpense] = useState(0);
-
-  const fetchAll = useCallback(async (monthStr) => {
-    const [year, monthStrNum] = monthStr.split("-");
-    const monthNum = Number(monthStrNum);
-    const requestMonth = addMonth(Number(year), monthNum, 1);
-
-    const res = await three_month_totals({ month: requestMonth }, toast);
-    if (!res?.data) return;
-
-    const monthKeys = getCenteredMonths(Number(year), monthNum);
-    const monthMap = {};
-
-    monthKeys.forEach((key) => {
-      monthMap[key] = res.data[`expense_totals_${key}`] || {};
-    });
-
-    setRawMonthMap(monthMap);
-    setThreeMonthData(
-      monthKeys.map((key) => ({
-        key,
-        label: formatKoreanMonth(key),
-        total: sumMonth(monthMap[key]),
-      }))
-    );
-    setSelectedDetailMonth(monthStr);
-  }, [toast]);
-
+  const [loading, setLoading] = useState(true);
+  const requestId = useRef(0);
   useEffect(() => {
-    fetchAll(apiMonth);
-  }, [apiMonth, fetchAll]);
-
-  useEffect(() => {
-    if (!selectedDetailMonth) return;
-
-    const selectedData = rawMonthMap[String(selectedDetailMonth).trim()] || {};
-    const parsed = Object.entries(selectedData).map(([name, amount]) => ({
-      name,
-      amount: Number(amount),
-    }));
-
-    setDetailData(parsed);
-    setTotalExpense(sumMonth(selectedData));
-  }, [selectedDetailMonth, rawMonthMap]);
-
-  return {
-    apiMonth,
-    setApiMonth,
-    selectedDetailMonth,
-    setSelectedDetailMonth,
-    threeMonthData,
-    detailData,
-    totalExpense,
-  };
+    const id = ++requestId.current;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [year, month] = apiMonth.split("-").map(Number);
+        const res = await three_month_totals({ month: monthKey(year, month + 1) }, toast);
+        if (id !== requestId.current) return;
+        if (!res?.data) throw new Error("조회 실패");
+        const keys = [-1, 0, 1].map((offset) => monthKey(year, month + offset));
+        const map = Object.fromEntries(keys.map((key) => [key, res.data[`expense_totals_${key}`] || {}]));
+        setRawMonthMap(map);
+        setThreeMonthData(keys.map((key) => ({ key, label: key.replace("-", "년 ") + "월", total: sum(map[key]) })));
+        setSelectedDetailMonth(apiMonth);
+      } catch (error) {
+        if (id === requestId.current) toast({ title: "급여 현황을 불러오지 못했습니다.", status: "error" });
+      } finally {
+        if (id === requestId.current) setLoading(false);
+      }
+    };
+    load();
+    return () => { requestId.current += 1; };
+  }, [apiMonth, toast]);
+  const detailData = useMemo(() => Object.entries(rawMonthMap[selectedDetailMonth] || {}).map(([name, amount]) => ({ name, amount: Number(amount) })), [rawMonthMap, selectedDetailMonth]);
+  const totalExpense = useMemo(() => sum(rawMonthMap[selectedDetailMonth]), [rawMonthMap, selectedDetailMonth]);
+  return { apiMonth, setApiMonth, selectedDetailMonth, setSelectedDetailMonth, threeMonthData, detailData, totalExpense, loading };
 }

@@ -8,8 +8,6 @@ export default function TotalSalesHeader({
   apiMonth,
   onMonthChange,
   onExcelOpen,
-  onIncomeOpen,
-  onExpenseOpen,
 }) {
   return (
     <Flex
@@ -31,12 +29,6 @@ export default function TotalSalesHeader({
       </Box>
 
       <HStack spacing={2}>
-        <Button colorScheme="green" variant="solid" size="sm" onClick={onIncomeOpen}>
-          수입 관리
-        </Button>
-        <Button colorScheme="red" variant="outline" size="sm" onClick={onExpenseOpen}>
-          지출 관리
-        </Button>
         <MonthPicker value={apiMonth} onChange={onMonthChange} size="sm" />
         <Tooltip label="Excel 생성" hasArrow>
           <Button

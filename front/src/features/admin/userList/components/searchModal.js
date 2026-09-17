@@ -26,14 +26,14 @@ export default function SearchModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered closeOnOverlayClick={false} closeOnEsc={false}>
       <ModalOverlay backdropFilter="blur(4px)" />
-      <ModalContent borderRadius="xl" p={2}>
+      <ModalContent w={{ base: "90%", md: "100%" }} maxH="90dvh" my="5dvh" borderRadius="xl" overflow="hidden" p={{ base: 0, md: 2 }}>
         <ModalHeader fontSize="lg" fontWeight="bold">
           직원 검색
         </ModalHeader>
 
         <Divider mb={4} />
 
-        <ModalBody>
+        <ModalBody overflowY="auto" px={{ base: 4, md: 6 }}>
           <Stack spacing={5}>
             <Box>
               <Text fontSize="sm" mb={1} color="gray.600">
@@ -89,32 +89,10 @@ export default function SearchModal({
               />
             </Box>
 
-            <Divider />
-            <HStack mt={3}>
-              <Select
-                placeholder="정렬 필드"
-                name="sorting"
-                value={searchForm.sorting || ""}
-                onChange={onChange}
-              >
-                <option value="user_name">이름</option>
-                <option value="phone_number">전화번호</option>
-              </Select>
-
-              <Select
-                placeholder="정렬 방향"
-                name="direction"
-                value={searchForm.direction || ""}
-                onChange={onChange}
-              >
-                <option value="asc">오름차순</option>
-                <option value="desc">내림차순</option>
-              </Select>
-            </HStack>
           </Stack>
         </ModalBody>
 
-        <ModalFooter>
+        <ModalFooter flexShrink={0} px={{ base: 4, md: 6 }}>
           <Button
             mr={3}
             colorScheme="blue"

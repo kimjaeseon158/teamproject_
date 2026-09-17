@@ -144,8 +144,11 @@ const LoginForm = ({ role, values, errors, loginError, onChange, onSubmit, isLoa
           </Alert>
         )}
 
-        {loginError && failureCount === 0 && (
-          <Alert status="error" borderRadius="md" fontSize="sm"><AlertIcon />{loginError}</Alert>
+        {loginError && (role === "admin" || failureCount === 0) && (
+          <Alert status="error" borderRadius="md" fontSize="sm" alignItems="flex-start">
+            <AlertIcon mt="2px" flexShrink={0} />
+            <Text flex="1" minW={0} whiteSpace="normal" overflowWrap="anywhere">{loginError}</Text>
+          </Alert>
         )}
 
         {role === "user" && (

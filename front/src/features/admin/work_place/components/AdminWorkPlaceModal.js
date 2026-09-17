@@ -20,6 +20,7 @@ import { CheckIcon } from "@chakra-ui/icons";
 import AdminWorkPlaceFormPanel from "./AdminWorkPlaceFormPanel";
 import AdminWorkPlaceListPanel from "./AdminWorkPlaceListPanel";
 import useAdminWorkPlaceModal from "../hook/useAdminWorkPlaceModal";
+import WorkPlaceRegistrationConfirmModal from "./WorkPlaceRegistrationConfirmModal";
 
 export default function AdminWorkPlaceModal({
   isOpen,
@@ -38,6 +39,7 @@ export default function AdminWorkPlaceModal({
   });
 
   return (
+    <>
     <Modal isOpen={isOpen} onClose={modal.handleClose} isCentered size="6xl" closeOnOverlayClick={false} closeOnEsc={false}>
       <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(8px)" />
       <ModalContent borderRadius="2xl" overflow="hidden" maxH="92vh" mx={4}>
@@ -112,5 +114,12 @@ export default function AdminWorkPlaceModal({
         </ModalFooter>
       </ModalContent>
     </Modal>
+    <WorkPlaceRegistrationConfirmModal
+      registration={modal.registration}
+      saving={modal.saving}
+      onClose={modal.cancelRegistration}
+      onConfirm={modal.confirmRegistration}
+    />
+    </>
   );
 }

@@ -1,6 +1,8 @@
+import { sortEmployees } from "../utils/sortEmployees";
 import { useMemo } from "react";
 import { Button } from "@chakra-ui/react";
 import { EditIcon } from "@chakra-ui/icons";
+import SortableHeaderLabel from "../../../common/SortableHeaderLabel";
 
 import { useAdminData } from "./useAdminData";
 import { useAdminHandlers } from "./useAdminHandlers";
@@ -11,6 +13,8 @@ export function useEmployeeListPage(toast) {
   const state = useAdminState();
   const handlers = useAdminHandlers(state, toast);
   useAdminData(state.setPeopleData);
+
+  const sortedPeople = useMemo(() => sortEmployees(state.peopleData, state.sort), [state.peopleData, state.sort]);
 
   const selectedCount = useMemo(
     () => Object.values(state.checkedItems).filter(Boolean).length,
@@ -55,7 +59,22 @@ export function useEmployeeListPage(toast) {
 
   const tableColumns = useMemo(
     () => [
-      ...userListColumns,
+      ...userListColumns.map((column) => !["user_name", "phone_number"].includes(column.key) ? column : {
+        ...column,
+        label: (
+          <SortableHeaderLabel
+            sortKey={column.key}
+            sortField={state.sort.field}
+            sortOrder={state.sort.direction}
+            onSort={(field) => state.setSort((current) => ({
+              field,
+              direction: current.field === field && current.direction === "asc" ? "desc" : "asc",
+            }))}
+          >
+            {column.label}
+          </SortableHeaderLabel>
+        ),
+      }),
       {
         key: "edit",
         label: "수정",
@@ -81,6 +100,7 @@ export function useEmployeeListPage(toast) {
 
   return {
     handlers,
+    sortedPeople,
     hasSearchFilter,
     selectAll,
     selectedCount,

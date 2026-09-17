@@ -1,5 +1,4 @@
-import { Box, Flex } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
+import { Box, Flex, Spinner, Text } from "@chakra-ui/react";
 
 import ExcelExportModal from "../../features/admin/total_pay/section/ExcelExportModal";
 import PayDetailSection from "../../features/admin/total_pay/section/PayDetailSection";
@@ -11,10 +10,11 @@ import useTotalSalesPage from "../../features/admin/total_pay/hook/useTotalSales
 
 export default function TotalSalesPage() {
   const totalSales = useTotalSalesPage();
-  const navigate = useNavigate();
 
   return (
     <Box
+      position="relative"
+      aria-busy={totalSales.loading}
       h="calc(100vh - 92px)"
       bg="gray.50"
       p={{ base: 4, md: 5 }}
@@ -27,10 +27,9 @@ export default function TotalSalesPage() {
         apiMonth={totalSales.apiMonth}
         onMonthChange={totalSales.setApiMonth}
         onExcelOpen={totalSales.exportDisclosure.onOpen}
-        onIncomeOpen={() => navigate("/dashboard/total-sales/company")}
-        onExpenseOpen={() => navigate("/dashboard/total-sales/expense")}
       />
 
+      {totalSales.loading && <Flex position="absolute" inset={0} zIndex={5} bg="whiteAlpha.900" align="center" justify="center" role="status"><Spinner color="blue.500" mr={3} /><Text>3개월 급여 현황을 불러오는 중입니다.</Text></Flex>}
       <TotalSalesSummaryCards
         selectedMonthTotal={totalSales.selectedMonthTotal}
         threeMonthTotal={totalSales.threeMonthTotal}
@@ -54,10 +53,8 @@ export default function TotalSalesPage() {
             <ThreeMonthBarSection
               data={totalSales.threeMonthData}
               selectedMonth={totalSales.selectedDetailMonth}
+              onMonthClick={totalSales.setSelectedDetailMonth}
               height="100%"
-              onMonthClick={(month) => {
-                totalSales.setSelectedDetailMonth(String(month).trim());
-              }}
             />
           </Box>
 

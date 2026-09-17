@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
+import { toWorkPlaceForm, buildWorkPlacePayload } from "../utils/workPlaceForm";
 import { RATE_FIELDS, initialRateForm } from "../constants/rateFields";
-import { notify, toNumberOrNull } from "../utils/rateFormat";
+import { notify } from "../utils/rateFormat";
 import {
   createAdminWorkPlace,
   deleteAdminWorkPlace,
@@ -9,13 +10,6 @@ import {
 } from "../api/adminWorkPlace";
 import { ERROR_MESSAGES, getErrorMessage } from "../../../../constants/errorMessages";
 
-const toForm = (place = {}) => ({
-  ...initialRateForm,
-  ...Object.keys(initialRateForm).reduce((next, key) => {
-    next[key] = place[key] ?? "";
-    return next;
-  }, {}),
-});
 
 export default function useAdminWorkPlaceModal({
   isOpen,
@@ -29,6 +23,30 @@ export default function useAdminWorkPlaceModal({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [registration, setRegistration] = useState(null);
+  const submitting = useRef(false);
+  const cancelRegistration = () => {
+    if (!submitting.current) setRegistration(null);
+  };
+  const confirmRegistration = async () => {
+    if (!registration || submitting.current) return;
+    submitting.current = true;
+    setSaving(true);
+    try {
+      const result = await createAdminWorkPlace(registration.place, toast);
+      if (result?.success === false) throw new Error(result.message || "근무지 등록에 실패했습니다.");
+      setForm(toWorkPlaceForm(result?.work_places?.[0] || workPlaces[0]));
+      setSearch("");
+      setIsAdding(false);
+      setRegistration(null);
+      await onSuccess?.();
+    } catch (err) {
+      notify(toast, { title: "근무지 등록 중 오류가 발생했습니다.", description: getErrorMessage(err, ERROR_MESSAGES.workplace.createFailed), status: "error" });
+    } finally {
+      submitting.current = false;
+      setSaving(false);
+    }
+  };
 
   const isEditMode = !isAdding && Boolean(form.admin_work_place_uuid);
 
@@ -41,7 +59,7 @@ export default function useAdminWorkPlaceModal({
   useEffect(() => {
     if (!isOpen) return;
     if (!isAdding && !form.admin_work_place_uuid && workPlaces.length > 0) {
-      setForm(toForm(workPlaces[0]));
+      setForm(toWorkPlaceForm(workPlaces[0]));
     }
   }, [form.admin_work_place_uuid, isAdding, isOpen, workPlaces]);
 
@@ -56,27 +74,20 @@ export default function useAdminWorkPlaceModal({
 
   const handleSelect = (place) => {
     setIsAdding(false);
-    setForm(toForm(place));
+    setForm(toWorkPlaceForm(place));
   };
 
   const handleClose = () => {
-    if (saving || deleting) return;
+    if (saving || deleting || registration) return;
     setForm(initialRateForm);
     setSearch("");
     setIsAdding(false);
     onClose?.();
   };
 
-  const buildPayload = () => ({
-    ...(isEditMode ? { admin_work_place_uuid: form.admin_work_place_uuid } : {}),
-    work_place: form.work_place.trim(),
-    ...RATE_FIELDS.reduce((next, field) => {
-      next[field.key] = toNumberOrNull(form[field.key]);
-      return next;
-    }, {}),
-  });
 
   const handleSubmit = async () => {
+    if (saving || deleting || registration) return;
     if (!form.work_place.trim()) {
       notify(toast, {
         title: ERROR_MESSAGES.workplace.nameRequired,
@@ -109,25 +120,21 @@ export default function useAdminWorkPlaceModal({
       return;
     }
 
+    const payload = buildWorkPlacePayload(form, isEditMode);
+    if (!isEditMode) {
+      setRegistration({ name: payload.work_place, place: payload });
+      return;
+    }
     try {
       setSaving(true);
-      const result = isEditMode
-        ? await updateAdminWorkPlace(buildPayload(), toast)
-        : await createAdminWorkPlace(buildPayload(), toast);
+      const result = await updateAdminWorkPlace(payload, toast);
 
       if (result?.success === false) {
         throw new Error(result?.message || "근무지 저장에 실패했습니다.");
       }
 
-      notify(toast, {
-        title: isEditMode ? "근무지를 수정했습니다." : "근무지를 등록했습니다.",
-        status: "success",
-      });
-      onSuccess?.();
-      if (!isEditMode) {
-        setIsAdding(true);
-        setForm(initialRateForm);
-      }
+      notify(toast, { title: "근무지를 수정했습니다.", status: "success" });
+      await onSuccess?.();
     } catch (err) {
       notify(toast, {
         title: "근무지 저장 중 오류가 발생했습니다.",
@@ -174,6 +181,9 @@ export default function useAdminWorkPlaceModal({
   };
 
   return {
+    registration,
+    cancelRegistration,
+    confirmRegistration,
     deleting,
     filteredWorkPlaces,
     form,

@@ -39,23 +39,15 @@ export default function ThreeMonthBarSection({
           <BarChart
             data={data}
             margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
-            onClick={(state) => {
-              if (state && state.activeIndex != null) {
-                const index = Number(state.activeIndex);
-                const clicked = data[index];
-
-                if (clicked?.key && onMonthClick) {
-                  onMonthClick(clicked.key);
-                }
-              }
-            }}
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="label" />
             <YAxis width={72} />
             <Tooltip />
 
-            <Bar dataKey="total" barSize={82} radius={[8, 8, 0, 0]}>
+            <Bar dataKey="total" barSize={82} radius={[8, 8, 0, 0]} isAnimationActive={false} cursor="pointer" onClick={(entry) => {
+              if (entry?.payload?.key) onMonthClick?.(entry.payload.key);
+            }}>
               {data.map((entry, index) => {
                 const isSelected = entry.key === selectedMonth;
 

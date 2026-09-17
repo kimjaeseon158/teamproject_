@@ -11,6 +11,7 @@ export default function useTotalSalesPage() {
   const [exportLoading, setExportLoading] = useState(false);
 
   const {
+    loading,
     apiMonth,
     setApiMonth,
     selectedDetailMonth,
@@ -72,6 +73,7 @@ export default function useTotalSalesPage() {
   };
 
   return {
+    loading,
     apiMonth,
     detailData,
     exportDisclosure,

@@ -27,7 +27,7 @@ const TEXT = {
 
 const EditAction = ({ canEdit, onEdit }) =>
   canEdit ? (
-    <Button size="sm" colorScheme="blue" onClick={onEdit}>
+    <Button size="xs" minH="32px" px={3} variant="outline" colorScheme="blue" color="blue.200" flexShrink={0} onClick={onEdit}>
       {TEXT.edit}
     </Button>
   ) : (
@@ -115,11 +115,12 @@ export default function WorkDetailView({
                     </Badge>
                   </HStack>
                   <EditAction
-                    canEdit={item.is_approved === null}
+                    canEdit={(item.is_approved === null || item.is_approved === false)}
                     onEdit={() => onEditWork?.(item)}
                   />
                 </HStack>
 
+                {item.is_approved === false && (item.rejection_reason || item.reject_reason) && <Text fontSize="sm" color="red.200" mb={2}>반려 사유: {item.rejection_reason || item.reject_reason}</Text>}
                 <Text fontSize="lg" fontWeight="900" mb={2}>
                   {item.work_place || TEXT.workPlaceMissing}
                 </Text>
@@ -161,7 +162,7 @@ export default function WorkDetailView({
           </Text>
         </HStack>
         <EditAction
-          canEdit={data.is_approved === null}
+          canEdit={(data.is_approved === null || data.is_approved === false)}
           onEdit={() => onEditWork?.(data)}
         />
       </HStack>

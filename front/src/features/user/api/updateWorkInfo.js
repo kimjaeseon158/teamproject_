@@ -1,4 +1,5 @@
 import { ApiDelete, ApiPatch, toQueryString } from "../../../services/api/requestJson";
+import submitWorkInfo from "./submitWorkInfo";
 
 const toYYYYMMDD = (date) => {
   if (!date) return "";
@@ -54,6 +55,23 @@ export const buildUpdateWorkInfoPayload = ({
 export const updateWorkInfo = async (input, { toast } = {}) => {
   const body = buildUpdateWorkInfoPayload(input);
   return await ApiPatch(buildTargetUrl(input), body, { toast });
+};
+
+export const resubmitWorkInfo = async (input, { toast } = {}) => {
+  if (!input.targetWorkShift || !input.targetWorkDate) {
+    throw new Error("기존 근무 정보를 확인할 수 없습니다. 새로고침 후 다시 시도해주세요.");
+  }
+  return submitWorkInfo({
+    user_uuid: input.userUuid,
+    user_name: input.userName,
+    work_date: input.targetWorkDate,
+    work_shift: input.targetWorkShift,
+    startTime: input.startTime,
+    finishTime: input.finishTime,
+    location: input.location,
+    note: input.note,
+    details: input.details,
+  }, { toast });
 };
 
 export const deleteWorkInfo = async (input, { toast } = {}) =>

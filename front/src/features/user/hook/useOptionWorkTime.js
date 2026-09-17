@@ -7,6 +7,10 @@ export const DEFAULT_MOBILE_START_TIME = "08:00";
 export const DEFAULT_MOBILE_FINISH_TIME = "17:00";
 export const DEFAULT_MOBILE_WORK_TIME = `${DEFAULT_MOBILE_START_TIME}~${DEFAULT_MOBILE_FINISH_TIME}`;
 
+const getDefaultTime = (shift) => shift === "야간"
+  ? workTimeList.find((time) => time.shift === "야간")
+  : { startTime: DEFAULT_MOBILE_START_TIME, finishTime: DEFAULT_MOBILE_FINISH_TIME };
+
 export default function useOptionWorkTime(isMobile) {
   const [workTime, setWorkTime] = useState("");
   const [startTime, setStartTime] = useState("");
@@ -22,10 +26,11 @@ export default function useOptionWorkTime(isMobile) {
   useEffect(() => {
     if (!isMobile) return;
 
-    setStartTime((prev) => prev || DEFAULT_MOBILE_START_TIME);
-    setFinishTime((prev) => prev || DEFAULT_MOBILE_FINISH_TIME);
-    setWorkTime((prev) => prev || DEFAULT_MOBILE_WORK_TIME);
-  }, [isMobile]);
+    const defaults = getDefaultTime(baseShift);
+    setStartTime((prev) => prev || defaults.startTime);
+    setFinishTime((prev) => prev || defaults.finishTime);
+    setWorkTime((prev) => prev || `${defaults.startTime}~${defaults.finishTime}`);
+  }, [isMobile, baseShift]);
 
   const baseWorkMinutes = useMemo(() => {
     if (!startTime || !finishTime) return 0;
@@ -34,9 +39,10 @@ export default function useOptionWorkTime(isMobile) {
 
   const handleShiftChange = (shift) => {
     setBaseShift(shift);
-    setWorkTime("");
-    setStartTime("");
-    setFinishTime("");
+    const defaults = getDefaultTime(shift);
+    setWorkTime(`${defaults.startTime}~${defaults.finishTime}`);
+    setStartTime(defaults.startTime);
+    setFinishTime(defaults.finishTime);
   };
 
   const handleSelectWorkTime = (start, finish) => {
@@ -56,9 +62,10 @@ export default function useOptionWorkTime(isMobile) {
   };
 
   const resetWorkTime = () => {
-    setWorkTime(isMobile ? DEFAULT_MOBILE_WORK_TIME : "");
-    setStartTime(isMobile ? DEFAULT_MOBILE_START_TIME : "");
-    setFinishTime(isMobile ? DEFAULT_MOBILE_FINISH_TIME : "");
+    const defaults = getDefaultTime(baseShift);
+    setWorkTime(isMobile ? `${defaults.startTime}~${defaults.finishTime}` : "");
+    setStartTime(isMobile ? defaults.startTime : "");
+    setFinishTime(isMobile ? defaults.finishTime : "");
     setIsSpecial(false);
   };
 

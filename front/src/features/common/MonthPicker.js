@@ -81,7 +81,7 @@ export default function MonthPicker({
 
           <PopoverContent w="280px" borderRadius="xl" boxShadow="2xl" zIndex={2000}>
             <PopoverArrow />
-            <PopoverCloseButton />
+            <PopoverCloseButton aria-label="닫기" />
             <PopoverHeader fontWeight="700" borderBottom="1px solid" borderColor="gray.100">
               월 선택
             </PopoverHeader>
@@ -101,7 +101,7 @@ export default function MonthPicker({
                     onClose();
                   }}
                 >
-                  Today
+                  오늘
                 </Button>
               )}
 
@@ -111,7 +111,7 @@ export default function MonthPicker({
                   variant="ghost"
                   icon={<ChevronLeftIcon />}
                   onClick={() => setYear((y) => y - 1)}
-                  aria-label="Previous Year"
+                  aria-label="이전 연도"
                 />
                 <Text fontWeight="800" fontSize="md">{year}년</Text>
                 <IconButton
@@ -119,7 +119,7 @@ export default function MonthPicker({
                   variant="ghost"
                   icon={<ChevronRightIcon />}
                   onClick={() => setYear((y) => y + 1)}
-                  aria-label="Next Year"
+                  aria-label="다음 연도"
                 />
               </HStack>
 

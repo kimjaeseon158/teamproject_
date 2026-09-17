@@ -223,7 +223,7 @@ export default function CalendarHeader({
           />
 
           <Button size="sm" variant="outline" borderRadius="xl" onClick={goToday}>
-            Today
+            오늘
           </Button>
 
           <MonthPicker

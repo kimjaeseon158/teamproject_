@@ -49,6 +49,13 @@ export default function DatePicker({ value, onChange, width = "100%", size = "md
                 <DayPicker
                   mode="single"
                   locale={ko}
+                  labels={{
+                    labelPrevious: () => "이전 달",
+                    labelNext: () => "다음 달",
+                    labelMonthDropdown: () => "월 선택",
+                    labelYearDropdown: () => "연도 선택",
+                    labelDayButton: (date, modifiers) => `${date.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "long" })}${modifiers.today ? ", 오늘" : ""}${modifiers.selected ? ", 선택됨" : ""}`,
+                  }}
                   weekStartsOn={1}
                   selected={selected}
                   defaultMonth={selected || new Date()}

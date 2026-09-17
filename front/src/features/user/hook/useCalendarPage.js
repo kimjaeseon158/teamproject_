@@ -116,7 +116,7 @@ export default function useCalendarPage() {
 
   const handleEventClick = (event) => {
     const workItems = getWorkItemsForDate(event);
-    const pendingItems = workItems.filter((item) => item.is_approved === null);
+    const pendingItems = workItems.filter((item) => (item.is_approved === null || item.is_approved === false));
     const targetDate = workItems[0]?.date || event.startStr;
 
     if (isMobile) {

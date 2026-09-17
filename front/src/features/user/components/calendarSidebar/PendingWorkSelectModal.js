@@ -77,7 +77,7 @@ export default function PendingWorkSelectModal({
         <ModalHeader px={6} pt={6} pb={2}>
           <Text fontSize="lg" fontWeight="900">{TEXT.title}</Text>
           <Text fontSize="sm" color="gray.400" mt={1}>
-            {TEXT.subtitle}
+            {"승인 대기 또는 반려된 근무를 선택해 수정할 수 있습니다."}
           </Text>
         </ModalHeader>
         <ModalCloseButton
@@ -92,7 +92,7 @@ export default function PendingWorkSelectModal({
           <VStack align="stretch" spacing={3}>
             {items.map((item, index) => {
               const status = getApprovalStatus(item.is_approved);
-              const canEdit = item.is_approved === null;
+              const canEdit = (item.is_approved === null || item.is_approved === false);
               const timeLabel = `${toTime(item.work_start)} ~ ${toTime(item.work_end)}`;
 
               return (

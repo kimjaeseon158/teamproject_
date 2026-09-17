@@ -1,3 +1,4 @@
+import { ko } from "date-fns/locale";
 import {
   Modal,
   ModalOverlay,
@@ -23,6 +24,8 @@ export default function ExpenseRangeModal({
         <ModalHeader>기간 선택</ModalHeader>
         <ModalBody>
           <DayPicker
+            locale={ko}
+            labels={{ labelPrevious: () => "이전 달", labelNext: () => "다음 달", labelMonthDropdown: () => "월 선택", labelYearDropdown: () => "연도 선택" }}
             mode="range"
             selected={range}
             onSelect={(r) => setRange(r || { from: null, to: null })}

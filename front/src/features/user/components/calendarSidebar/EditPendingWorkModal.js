@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Badge,
   Box,
@@ -28,9 +28,9 @@ import { useUser } from "../../../auth/userContext";
 import { EXTRA_WORK_TYPES, getExtraWorkTypeByLabel } from "../../../common/workTypes";
 import { addMinutesToTime } from "../../../common/workTimeUtils";
 import { fetchUserWorkPlaces } from "../../api/userWorkPlaces";
-import { deleteWorkInfo, updateWorkInfo } from "../../api/updateWorkInfo";
+import { deleteWorkInfo, resubmitWorkInfo, updateWorkInfo } from "../../api/updateWorkInfo";
 import workTimeList from "../../data/workTimeList";
-import { calculateNetMinutes, diffMinutes } from "../../utils/timeUtils";
+import { calculateNetMinutes, diffMinutes, minutesToHM } from "../../utils/timeUtils";
 import TimeWheelPicker from "../../../common/TimeWheelPicker";
 
 const TEXT = {
@@ -146,10 +146,14 @@ export default function EditPendingWorkModal({
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false);
 
   const workDayId = getWorkDayId(work);
-  const canEdit = work?.is_approved === null;
+  const isRejected = work?.is_approved === false;
+  const canEdit = work?.is_approved === null || isRejected;
   const selectedWorkTime = `${startTime}~${finishTime}`;
+  const baseMinutes = calculateNetMinutes(startTime, finishTime);
+  const totalMinutes = baseMinutes + (extraEnabled ? extraRows.reduce((sum, row) => sum + (row.type && row.start && row.finish ? diffMinutes(row.start, row.finish) : 0), 0) : 0);
 
   const filteredWorkTimes = useMemo(
     () => workTimeList.filter((time) => time.shift === baseShift),
@@ -164,7 +168,7 @@ export default function EditPendingWorkModal({
     const primaryWorkType = work.details?.[0]?.work_type || work.work_type || "";
     const nextExtraRows = toExtraRows(work.details || [], nextFinishTime);
 
-    setBaseShift(getInitialShift(work));
+    setBaseShift(work.is_approved === false ? work.work_shift : getInitialShift(work));
     setIsSpecial(primaryWorkType.includes(SPECIAL));
     setLocation(work.work_place || "");
     setNote(work.note || "");
@@ -206,6 +210,7 @@ export default function EditPendingWorkModal({
   };
 
   const handleShiftChange = (nextShift) => {
+    if (isRejected) return;
     setBaseShift(nextShift);
     const nextTime = workTimeList.find((time) => time.shift === nextShift);
     if (nextTime) {
@@ -236,7 +241,7 @@ export default function EditPendingWorkModal({
   };
 
   const handleDelete = async () => {
-    if (!canEdit || isDeleting || isSaving) return;
+    if (work?.is_approved !== null || isDeleting || isSaving) return;
 
     try {
       setIsDeleting(true);
@@ -257,7 +262,7 @@ export default function EditPendingWorkModal({
   };
 
   const handleSave = async () => {
-    if (!canEdit || isSaving || isDeleting) return;
+    if (!canEdit || savingRef.current || isSaving || isDeleting) return;
     if (!location || !startTime || !finishTime) {
       toast({ title: TEXT.invalidForm, status: "warning" });
       return;
@@ -284,8 +289,10 @@ export default function EditPendingWorkModal({
     ];
 
     try {
+      savingRef.current = true;
       setIsSaving(true);
-      await updateWorkInfo(
+      const saveWork = isRejected ? resubmitWorkInfo : updateWorkInfo;
+      await saveWork(
         {
           ...buildTarget(),
           details,
@@ -302,7 +309,7 @@ export default function EditPendingWorkModal({
         { toast }
       );
 
-      toast({ title: TEXT.saveSuccess, status: "success" });
+      toast({ title: isRejected ? "근무를 재등록했습니다. 승인 대기 중입니다." : TEXT.saveSuccess, status: "success" });
       onClose();
       await refreshMonth();
     } catch (error) {
@@ -312,6 +319,7 @@ export default function EditPendingWorkModal({
         status: "error",
       });
     } finally {
+      savingRef.current = false;
       setIsSaving(false);
     }
   };
@@ -352,15 +360,16 @@ export default function EditPendingWorkModal({
             <Box>
               <Text fontSize="lg" fontWeight="900">{TEXT.title}</Text>
               <Text fontSize="sm" color="gray.400" mt={1}>
-                {TEXT.subtitle}
+                {isRejected ? "반려 사유를 확인하고 수정 후 재등록하세요." : TEXT.subtitle}
               </Text>
             </Box>
             <Badge colorScheme={canEdit ? "orange" : "gray"} borderRadius="full" px={3}>
-              {canEdit ? TEXT.pending : TEXT.editDisabled}
+              {isRejected ? "반려됨" : canEdit ? TEXT.pending : TEXT.editDisabled}
             </Badge>
           </HStack>
         </ModalHeader>
         <ModalCloseButton
+          isDisabled={isSaving || isDeleting}
           top={isBottomSheet ? 5 : 5}
           right={5}
           bg={isBottomSheet ? "whiteAlpha.100" : undefined}
@@ -370,10 +379,11 @@ export default function EditPendingWorkModal({
 
         <ModalBody px={5} py={3} overflowY="auto">
           <VStack align="stretch" spacing={4}>
+            {isRejected && (work?.reject_reason || work?.rejection_reason) && <Box bg="red.900" borderRadius="md" p={3}><Text fontSize="sm">반려 사유: {work.reject_reason || work.rejection_reason}</Text></Box>}
             {!canEdit && (
               <Box bg="orange.900" border="1px solid" borderColor="orange.600" borderRadius="14px" p={3}>
                 <Text fontSize="sm" color="orange.100">
-                  {TEXT.pendingOnly}
+                  {"승인 대기 또는 반려된 근무만 수정할 수 있습니다."}
                 </Text>
               </Box>
             )}
@@ -383,7 +393,7 @@ export default function EditPendingWorkModal({
                 <FormControl>
                   <FormLabel fontSize="xs" color="gray.400">{TEXT.shift}</FormLabel>
                   <HStack align="center">
-                    <Select value={baseShift} onChange={(e) => handleShiftChange(e.target.value)} {...fieldStyle}>
+                    <Select value={baseShift} isDisabled={isRejected} onChange={(e) => handleShiftChange(e.target.value)} {...fieldStyle}>
                       <option value={DAY_SHIFT}>{DAY_SHIFT}</option>
                       <option value={NIGHT_SHIFT}>{NIGHT_SHIFT}</option>
                     </Select>
@@ -392,6 +402,7 @@ export default function EditPendingWorkModal({
                       <Text fontSize="sm" color="gray.200">{TEXT.special}</Text>
                     </HStack>
                   </HStack>
+                  {isRejected && <Text mt={2} fontSize="xs" color="gray.400">재등록 시 기존 주간·야간 구분은 유지됩니다.</Text>}
                 </FormControl>
 
                 <FormControl>
@@ -419,6 +430,10 @@ export default function EditPendingWorkModal({
                   )}
                 </FormControl>
 
+                <Box border="1px dashed" borderColor="blue.500" borderRadius="12px" p={3} textAlign="center" aria-live="polite">
+                  <Text fontSize="sm" color="blue.200" fontWeight="bold">총 근무 시간: {minutesToHM(totalMinutes)}</Text>
+                  <Text mt={1} fontSize="xs" color="gray.400">기본 {minutesToHM(baseMinutes)} · 휴게 {minutesToHM(diffMinutes(startTime, finishTime) - baseMinutes)} 제외</Text>
+                </Box>
                 <FormControl>
                   <FormLabel fontSize="xs" color="gray.400">{TEXT.location}</FormLabel>
                   <Select value={location} onChange={(e) => setLocation(e.target.value)} {...fieldStyle}>
@@ -550,7 +565,7 @@ export default function EditPendingWorkModal({
             colorScheme="red"
             variant="outline"
             onClick={() => setIsDeleteConfirmOpen(true)}
-            isDisabled={!canEdit || isSaving || isDeleting}
+            isDisabled={work?.is_approved !== null || isSaving || isDeleting}
             flex={isBottomSheet ? 1 : undefined}
           >
             {TEXT.delete}
@@ -562,7 +577,7 @@ export default function EditPendingWorkModal({
             isDisabled={!canEdit || isDeleting}
             flex={isBottomSheet ? 1.35 : undefined}
           >
-            {TEXT.save}
+            {isRejected ? "수정 후 재등록" : TEXT.save}
           </Button>
         </ModalFooter>
       </ModalContent>

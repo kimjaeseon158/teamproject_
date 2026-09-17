@@ -1,3 +1,4 @@
+import MonthPicker from "../../common/MonthPicker";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Badge,
@@ -300,7 +301,7 @@ export default function WorkSchedulePreviewPanel({ isOpen, onClose, selectedDate
                 <Text minW={{ base: "160px", md: "260px" }} textAlign="center" fontSize={{ base: "lg", md: "2xl" }} fontWeight="900">{rangeLabel}</Text>
                 <Button aria-label="다음 달" variant="outline" onClick={() => moveMonth(1)}><FiChevronRight /></Button>
                 <Button variant="outline" onClick={moveToCurrentWeek}>이번 주</Button>
-                <Input type="month" value={selectedMonth} onChange={(event) => selectMonth(event.target.value)} maxW="160px" bg="white" />
+                <MonthPicker value={selectedMonth} onChange={selectMonth} width="160px" />
                 <Select maxW="190px" value={data.week_start || date} onChange={(event) => selectWeek(event.target.value)} bg="white">
                   {monthWeeks.map((week, index) => <option key={week.start} value={week.start}>{index + 1}주차 · {week.start.slice(5)}~{week.end.slice(5)}</option>)}
                 </Select>
@@ -334,7 +335,7 @@ export default function WorkSchedulePreviewPanel({ isOpen, onClose, selectedDate
                   <HStack spacing={2} flex="1" justify="flex-end" flexWrap="wrap">
                     <HStack spacing={0} borderWidth="1px" borderRadius="md" overflow="hidden" bg="white">
                       <Button size="sm" borderRadius="0" variant="ghost" aria-label="이전 달" onClick={() => moveMonth(-1)}><FiChevronLeft /></Button>
-                      <Input size="sm" type="month" value={selectedMonth} onChange={(event) => selectMonth(event.target.value)} w="135px" borderWidth="0" borderLeftWidth="1px" borderRightWidth="1px" borderRadius="0" />
+                      <MonthPicker size="sm" value={selectedMonth} onChange={selectMonth} width="135px" borderRadius="0" />
                       <Button size="sm" borderRadius="0" variant="ghost" aria-label="다음 달" onClick={() => moveMonth(1)}><FiChevronRight /></Button>
                     </HStack>
                     <Button size="sm" variant="outline" onClick={moveToCurrentWeek}>이번 주</Button>

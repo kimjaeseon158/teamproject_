@@ -88,7 +88,7 @@ status=${response##*$'\n'}
 body=${response%$'\n'*}
 case "$status" in
     201)
-        if ! code=$(printf '%s' "$body" | jq -er '.admin_code | select(type == "string") | select(test("^[A-HJ-NP-Z2-9]{4}(-[A-HJ-NP-Z2-9]{4}){3}$"))'); then
+        if ! code=$(printf '%s' "$body" | jq -er '.admin_code | select(type == "string") | select(test("^[0-9]{6}$"))'); then
             printf '%s\n' '응답을 확인할 수 없습니다. 운영자에게 계정 확인 및 인증번호 재발급을 요청하세요.' >&2; exit 1
         fi
         if ! created_id=$(printf '%s' "$body" | jq -er '.admin_id | select(type == "string" and length > 0)'); then

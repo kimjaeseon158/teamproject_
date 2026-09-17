@@ -2,6 +2,7 @@
 
 from .accounts import User_InfoSerializer, User_Login_InfoSerializer
 from .finance import ExpenseSerializer, IncomeSerializer
+from .registration import AdminRegistrationSerializer
 from .notices import (
     NoticeImageSerializer,
     NoticeImageUploadSerializer,
@@ -18,6 +19,7 @@ from .work import (
 )
 
 __all__ = [
+    "AdminRegistrationSerializer",
     "AdminWorkPlaceCreateSerializer",
     "AdminWorkPlaceSerializer",
     "EmployeeWorkScheduleWriteSerializer",

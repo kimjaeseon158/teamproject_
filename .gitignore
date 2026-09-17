@@ -1,3 +1,5 @@
 
 .vscode/
+admin_registration/*.zip
+admin_registration/__pycache__/
 

@@ -1,6 +1,7 @@
 # myapp/urls.py
 from django.urls import path
 from .views import (
+    AdminRegistrationAPIView,
     AdminWidgetLayoutAPIView,
     CheckAdminLoginAPIView,
     UserWorkInfoAPIView,
@@ -57,6 +58,7 @@ from .views import (
 
 # fmt:off
 urlpatterns = [
+    path('admin/register/', AdminRegistrationAPIView.as_view(), name='admin-register'),
     # Login-Home
     path('check-admin-login/',           CheckAdminLoginAPIView.as_view(),          name='check-admin-login'),
     path('admin-logout/',                AdminLogoutAPIView.as_view(),              name='admin-logout'),

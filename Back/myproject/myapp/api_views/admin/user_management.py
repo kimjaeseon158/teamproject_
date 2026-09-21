@@ -12,7 +12,8 @@ from ...serializers import User_InfoSerializer, User_Login_InfoSerializer
 from ..token import AdminJWTAuthentication
 
 
-USER_LIST_PAGE_SIZE = 10
+DEFAULT_USER_LIST_PAGE_SIZE = 10
+MAX_USER_LIST_PAGE_SIZE = 100
 USER_LIST_ORDERING = {
     "user_name": "user_name",
     "phone_number": "phone_number",
@@ -68,10 +69,14 @@ class UserInfoListAPIView(APIView):
             return Response({"success": False}, status=400)
 
         page_str = request.query_params.get("page", "1")
+        page_size_str = request.query_params.get("page_size", DEFAULT_USER_LIST_PAGE_SIZE)
         ordering = request.query_params.get("ordering", "user_name")
         try:
             page_number = int(page_str)
             if page_number < 1:
+                raise ValueError
+            page_size = int(page_size_str)
+            if not 1 <= page_size <= MAX_USER_LIST_PAGE_SIZE:
                 raise ValueError
         except (TypeError, ValueError):
             return Response(
@@ -90,7 +95,7 @@ class UserInfoListAPIView(APIView):
 
         order_by = f"-{ordering_field}" if descending else ordering_field
         queryset = queryset.order_by(order_by, "user_uuid")
-        paginator = Paginator(queryset, USER_LIST_PAGE_SIZE)
+        paginator = Paginator(queryset, page_size)
         try:
             page = paginator.page(page_number)
         except EmptyPage:
@@ -105,7 +110,7 @@ class UserInfoListAPIView(APIView):
                 "users": User_InfoSerializer(page.object_list, many=True).data,
                 "pagination": {
                     "page": page.number,
-                    "page_size": USER_LIST_PAGE_SIZE,
+                    "page_size": page_size,
                     "total_count": paginator.count,
                     "total_pages": paginator.num_pages,
                 },

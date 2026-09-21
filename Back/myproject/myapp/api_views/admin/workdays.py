@@ -18,7 +18,8 @@ class AdminPageWorkDayListAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    PAGE_SIZE = 10
+    DEFAULT_PAGE_SIZE = 10
+    MAX_PAGE_SIZE = 100
     ORDERING_FIELDS = {
         "work_date": "work_date",
         "user_name": "user_name",
@@ -53,11 +54,15 @@ class AdminPageWorkDayListAPIView(APIView):
         end_date_str = request.query_params.get("end_date")  # YYYY-MM-DD
 
         page_str = request.query_params.get("page", "1")
+        page_size_str = request.query_params.get("page_size", self.DEFAULT_PAGE_SIZE)
         ordering = request.query_params.get("ordering", "-work_date")
 
         try:
             page_number = int(page_str)
             if page_number < 1:
+                raise ValueError
+            page_size = int(page_size_str)
+            if not 1 <= page_size <= self.MAX_PAGE_SIZE:
                 raise ValueError
         except (TypeError, ValueError):
             return Response(
@@ -143,7 +148,7 @@ class AdminPageWorkDayListAPIView(APIView):
         # Keep date as a stable secondary sort order for records with equal values.
         user_work_day = user_work_day.order_by(order_by, "-work_date", "-pk")
 
-        paginator = Paginator(user_work_day, self.PAGE_SIZE)
+        paginator = Paginator(user_work_day, page_size)
         try:
             page = paginator.page(page_number)
         except EmptyPage:
@@ -160,7 +165,7 @@ class AdminPageWorkDayListAPIView(APIView):
                 "data": serializer.data,
                 "pagination": {
                     "page": page.number,
-                    "page_size": self.PAGE_SIZE,
+                    "page_size": page_size,
                     "total_count": paginator.count,
                     "total_pages": paginator.num_pages,
                 },

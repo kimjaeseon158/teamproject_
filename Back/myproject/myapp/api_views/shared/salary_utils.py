@@ -154,6 +154,11 @@ def get_rates_for_workday(work_day) -> WageRates:
     except ObjectDoesNotExist:
         raise ValueError("해당 근무지의 시급표(WorkPlaceRate)가 없습니다.")
     
+    return wage_rates_from_model(rate)
+
+
+def wage_rates_from_model(rate: WorkPlaceRate) -> WageRates:
+    """Convert one persisted workplace rate into the calculation value object."""
     return WageRates(
         base_hourly_wage=rate.base_hourly_wage,
         overtime_hourly_wage=rate.overtime_hourly_wage,
@@ -165,6 +170,14 @@ def get_rates_for_workday(work_day) -> WageRates:
         overnight_ot_hourly_wage=rate.overnight_ot_hourly_wage,
         early_hourly_wage=rate.early_hourly_wage,
     )
+
+
+def get_rates_by_work_place(user) -> dict[str, WageRates]:
+    """Load all of one user's workplace rates in a single query."""
+    return {
+        rate.work_place: wage_rates_from_model(rate)
+        for rate in WorkPlaceRate.objects.filter(user=user)
+    }
 
 @transaction.atomic
 def sync_salary_expense_for_workday(work_day):

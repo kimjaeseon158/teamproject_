@@ -1,12 +1,14 @@
 # 사용자 월별 근무와 급여 요약 API
 
+from datetime import date, datetime
+
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from ...models import User_WorkDay
 from ..shared import normalize_work_type
-from ..shared.salary_utils import calculate_daily_salary_breakdown, get_rates_for_workday
+from ..shared.salary_utils import calculate_daily_salary_breakdown, get_rates_by_work_place
 from ..token import UserJWTAuthentication
 
 
@@ -22,14 +24,26 @@ class UserMonthlyWorkSummaryAPIView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        date_str    = request.query_params.get("date")
-        year, month = map(int, date_str.split("-"))
+        date_str = request.query_params.get("date")
+        try:
+            month_start = datetime.strptime(date_str or "", "%Y-%m").date()
+        except ValueError:
+            return Response(
+                {"success": False},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        year, month = month_start.year, month_start.month
+        next_month_start = date(
+            year + (1 if month == 12 else 0), 1 if month == 12 else month + 1, 1
+        )
 
         work_days = User_WorkDay.objects.filter(
             user_uuid=user,
-            work_date__year=year,
-            work_date__month=month
-        ).prefetch_related("details", "salary_expense").order_by('work_date')
+            work_date__gte=month_start,
+            work_date__lt=next_month_start,
+        ).prefetch_related("details").order_by("work_date")
+        rates_by_work_place = get_rates_by_work_place(user)
 
         daily_list      = []
         total_amount    = 0
@@ -62,7 +76,12 @@ class UserMonthlyWorkSummaryAPIView(APIView):
             # 승인 여부와 관계없이 현재 시급표를 기준으로 같은 방식으로 계산한다.
             # Expense는 승인 시점의 저장값이라 시급 변경 후 상세 합계와 달라질 수 있다.
             if is_approved is not False:
-                rates = get_rates_for_workday(wd)
+                rates = rates_by_work_place.get(wd.work_place)
+                if rates is None:
+                    return Response(
+                        {"success": False},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
                 breakdown = calculate_daily_salary_breakdown(details, rates, wd.work_shift)
                 day_amount = breakdown["total_amount"]
                 amount_breakdown = breakdown["by_work_type"]

@@ -37,6 +37,12 @@ class User_WorkDay(models.Model):
                 name="uniq_user_date_shift_not_rejected",
             )
         ]
+        indexes = [
+            models.Index(fields=["user_uuid", "work_date"], name="workday_user_date_idx"),
+            models.Index(
+                fields=["is_approved", "-work_date"], name="workday_status_date_idx"
+            ),
+        ]
 
 
 class User_WorkDetail(models.Model):
@@ -45,6 +51,11 @@ class User_WorkDetail(models.Model):
     work_type            = models.CharField(max_length=20)                               # DAY, NIGHT, OVERTIME, MEAL_OT 등
     minutes              = models.PositiveIntegerField()                                 # 근무 시간 (분)
     is_overtime_approved = models.BooleanField(default=False)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["work_type", "work_date"], name="detail_type_workday_idx"),
+        ]
 
 
 class WorkPlaceRate(models.Model):

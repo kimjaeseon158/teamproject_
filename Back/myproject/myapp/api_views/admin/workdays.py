@@ -1,11 +1,14 @@
 # 관리자 근무일 조회와 승인 상태 변경 API
 
 from datetime import datetime
+from django.core.paginator import EmptyPage, Paginator
 from django.db import transaction
+from django.db.models import Count, IntegerField, OuterRef, Q, Subquery, Sum, Value
+from django.db.models.functions import Coalesce
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from ...models import User_WorkDay
+from ...models import User_WorkDay, User_WorkDetail
 from ...serializers import UserWorkDaySerializer
 from ..shared.salary_utils import sync_salary_expense_for_workday
 from ..token import AdminJWTAuthentication
@@ -14,6 +17,31 @@ from ..token import AdminJWTAuthentication
 class AdminPageWorkDayListAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
     permission_classes = [IsAuthenticated]
+
+    PAGE_SIZE = 10
+    ORDERING_FIELDS = {
+        "work_date": "work_date",
+        "user_name": "user_name",
+        "total_work_minutes": "total_work_minutes",
+    }
+
+    @staticmethod
+    def _summary(queryset):
+        return queryset.aggregate(
+            total=Count("pk", distinct=True),
+            pending=Count(
+                "pk", filter=Q(is_approved__isnull=True), distinct=True
+            ),
+            approved=Count("pk", filter=Q(is_approved=True), distinct=True),
+            rejected=Count("pk", filter=Q(is_approved=False), distinct=True),
+            day=Count("pk", filter=Q(work_shift="주간"), distinct=True),
+            night=Count("pk", filter=Q(work_shift="야간"), distinct=True),
+            special=Count(
+                "pk",
+                filter=Q(details__work_type__icontains="특근"),
+                distinct=True,
+            ),
+        )
 
     def get(self, request):
         status = request.query_params.get("status")  # 대기, 승인, 거절, 전체
@@ -24,9 +52,29 @@ class AdminPageWorkDayListAPIView(APIView):
         start_date_str = request.query_params.get("start_date")  # YYYY-MM-DD
         end_date_str = request.query_params.get("end_date")  # YYYY-MM-DD
 
-        user_work_day = User_WorkDay.objects.prefetch_related("details").order_by(
-            "-work_date"
-        )
+        page_str = request.query_params.get("page", "1")
+        ordering = request.query_params.get("ordering", "-work_date")
+
+        try:
+            page_number = int(page_str)
+            if page_number < 1:
+                raise ValueError
+        except (TypeError, ValueError):
+            return Response(
+                {"success": False},
+                status=400,
+            )
+
+        descending = ordering.startswith("-")
+        ordering_key = ordering[1:] if descending else ordering
+        ordering_field = self.ORDERING_FIELDS.get(ordering_key)
+        if ordering_field is None:
+            return Response(
+                {"success": False},
+                status=400,
+            )
+
+        user_work_day = User_WorkDay.objects.all()
 
         # 상태 필터 (선택)
         if status == "대기":
@@ -38,7 +86,9 @@ class AdminPageWorkDayListAPIView(APIView):
         elif status == "전체":
             pass
         else:
-            return Response({"success": False})
+            return Response(
+                {"success": False}, status=400
+            )
 
         # 근무 형태 / 근무지 필터 (선택)
         if work_shift:
@@ -56,19 +106,67 @@ class AdminPageWorkDayListAPIView(APIView):
             ).distinct()
 
         # 날짜 필터 (선택)
+        if bool(start_date_str) != bool(end_date_str):
+            return Response(
+                {"success": False},
+                status=400,
+            )
         if start_date_str and end_date_str:
             try:
                 start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
                 end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
             except ValueError:
-                return Response({"success": False})
+                return Response(
+                    {"success": False},
+                    status=400,
+                )
 
             user_work_day = user_work_day.filter(
                 work_date__gte=start_date, work_date__lte=end_date
             )
 
-        serializer = UserWorkDaySerializer(user_work_day, many=True)
-        return Response({"success": True, "data": serializer.data})
+        summary = self._summary(user_work_day)
+
+        detail_total = (
+            User_WorkDetail.objects.filter(work_date_id=OuterRef("pk"))
+            .order_by()
+            .values("work_date")
+            .annotate(total=Sum("minutes"))
+            .values("total")[:1]
+        )
+        user_work_day = user_work_day.annotate(
+            total_work_minutes=Coalesce(
+                Subquery(detail_total, output_field=IntegerField()), Value(0)
+            )
+        )
+        order_by = f"-{ordering_field}" if descending else ordering_field
+        # Keep date as a stable secondary sort order for records with equal values.
+        user_work_day = user_work_day.order_by(order_by, "-work_date", "-pk")
+
+        paginator = Paginator(user_work_day, self.PAGE_SIZE)
+        try:
+            page = paginator.page(page_number)
+        except EmptyPage:
+            return Response(
+                {"success": False},
+                status=400,
+            )
+
+        page_queryset = page.object_list.prefetch_related("details")
+        serializer = UserWorkDaySerializer(page_queryset, many=True)
+        return Response(
+            {
+                "success": True,
+                "data": serializer.data,
+                "pagination": {
+                    "page": page.number,
+                    "page_size": self.PAGE_SIZE,
+                    "total_count": paginator.count,
+                    "total_pages": paginator.num_pages,
+                },
+                "summary": summary,
+            }
+        )
 
 
 class AdminWorkDayStatusUpdateAPIView(APIView):

@@ -1,6 +1,7 @@
 # 사용자와 관리자 계정 및 비밀번호 재설정 모델
 
 import uuid
+from django.contrib.postgres.indexes import GinIndex
 from django.contrib.auth.hashers import make_password
 from django.db import models
 from django.db.models import Q
@@ -23,6 +24,13 @@ class User_Login_Info(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['phone_number'],    name='unique_phone_number'),
+        ]
+        indexes = [
+            GinIndex(
+                fields=["user_name"],
+                opclasses=["gin_trgm_ops"],
+                name="user_name_trgm_idx",
+            ),
         ]
 
     def save(self, *args, **kwargs):

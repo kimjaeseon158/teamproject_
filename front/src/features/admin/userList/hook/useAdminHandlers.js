@@ -1,8 +1,6 @@
 import { useRef, useState } from "react";
 import { deleteEmployees } from "../api/adminPageDelete";
 import { updateEmployee } from "../api/adminPageUpdate";
-import { fetchFilteredPeople } from "../api/adminPageLogic";
-import { fetchEmployees } from "../api/admnsdbPost";
 import { formatResidentNumber, formatPhoneNumber } from "../utils/format";
 
 const initialSearchForm = {
@@ -14,12 +12,14 @@ const initialSearchForm = {
   address: "",
 };
 
-export function useAdminHandlers(state, toast) {
+export function useAdminHandlers(state, toast, loadEmployees) {
   const [showAllLoading, setShowAllLoading] = useState(false);
   const showAllPending = useRef(false);
   const {
     setPeopleData,
-    setSort,
+    setPagination,
+    setOrdering,
+    setActiveFilters,
     checkedItems,
     setCheckedItems,
     setSelectedPerson,
@@ -54,8 +54,8 @@ export function useAdminHandlers(state, toast) {
     const res = await deleteEmployees(uuids, { toast });
 
     if (res?.success) {
-      setPeopleData((prev) => prev.filter((person) => !uuids.includes(person.user_uuid)));
       setCheckedItems({});
+      await loadEmployees();
       notify({
         title: "삭제 완료",
         description: `${uuids.length.toLocaleString()}명의 직원이 삭제되었습니다.`,
@@ -77,7 +77,9 @@ export function useAdminHandlers(state, toast) {
 
     if (res?.success) {
       setPeopleData((prev) =>
-        prev.map((item) => (item.user_uuid === person.user_uuid ? person : item))
+        prev.map((item) =>
+          item.user_uuid === person.user_uuid ? (res.updated || person) : item
+        )
       );
       setSelectedPerson(null);
       notify({
@@ -142,9 +144,8 @@ export function useAdminHandlers(state, toast) {
       return;
     }
 
-    const people = await fetchFilteredPeople({ filters }, { toast });
-
-    setPeopleData(people);
+    setActiveFilters(filters);
+    setPagination((current) => ({ ...current, page: 1 }));
     setShowSearchModal(false);
     setSearchForm(initialSearchForm);
     setIsSearchActive(true);
@@ -152,7 +153,7 @@ export function useAdminHandlers(state, toast) {
 
     notify({
       title: "검색 완료",
-      description: `${people.length.toLocaleString()}건의 직원 정보를 찾았습니다.`,
+      description: "검색 조건을 적용했습니다.",
       status: "success",
     });
   };
@@ -162,29 +163,19 @@ export function useAdminHandlers(state, toast) {
     showAllPending.current = true;
     setShowAllLoading(true);
     try {
-      const res = await fetchEmployees({}, toast);
-
-      if (res?.success && Array.isArray(res.users)) {
-        setPeopleData(res.users);
-        setSort({ field: "", direction: "asc" });
-        setSearchForm(initialSearchForm);
-        setIsSearchActive(false);
-        setCheckedItems({});
-        setSelectedPerson(null);
-        notify({
-          title: "전체 보기",
-          description: `${res.users.length.toLocaleString()}건의 직원 정보를 불러왔습니다.`,
-          status: "success",
-        });
-        return true;
-      }
-
+      setActiveFilters({});
+      setOrdering("user_name");
+      setPagination((current) => ({ ...current, page: 1 }));
+      setSearchForm(initialSearchForm);
+      setIsSearchActive(false);
+      setCheckedItems({});
+      setSelectedPerson(null);
       notify({
-        title: "전체 목록 조회 실패",
-        description: "직원 목록을 다시 불러오지 못했습니다.",
-        status: "error",
+        title: "전체 보기",
+        description: "전체 직원 목록을 불러옵니다.",
+        status: "success",
       });
-      return false;
+      return true;
     } catch (error) {
       notify({
         title: "전체 목록 조회 실패",
@@ -207,6 +198,27 @@ export function useAdminHandlers(state, toast) {
     setShowSearchModal(true);
   };
 
+  const handlePageChange = (page) => {
+    setCheckedItems({});
+    setPagination((current) => ({ ...current, page }));
+  };
+
+  const handleOrderingChange = (field) => {
+    const nextOrdering = state.ordering === field ? `-${field}` : field;
+    setOrdering(nextOrdering);
+    setPagination((current) => ({ ...current, page: 1 }));
+    setCheckedItems({});
+  };
+
+  const handleAddSuccess = () => {
+    setActiveFilters({});
+    setOrdering("user_name");
+    setPagination((current) => ({ ...current, page: 1 }));
+    setCheckedItems({});
+    setShowSearchModal(false);
+    setIsSearchActive(false);
+  };
+
   return {
     showAllLoading,
     openSearch,
@@ -217,5 +229,8 @@ export function useAdminHandlers(state, toast) {
     applySearch,
     handleShowAll,
     handleCloseSearch,
+    handlePageChange,
+    handleOrderingChange,
+    handleAddSuccess,
   };
 }

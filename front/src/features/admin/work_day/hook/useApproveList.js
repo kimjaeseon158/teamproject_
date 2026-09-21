@@ -70,6 +70,21 @@ const getExtraWorkDetails = (details = [], workStartHM, workEndHM) => {
 
 export function useApproveList(toast) {
   const [rows, setRows] = useState([]);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    page_size: 10,
+    total_count: 0,
+    total_pages: 1,
+  });
+  const [summary, setSummary] = useState({
+    total: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    day: 0,
+    night: 0,
+    special: 0,
+  });
   const [loading, setLoading] = useState(false);
 
   const fetchList = async ({
@@ -80,12 +95,14 @@ export function useApproveList(toast) {
     workType = "",
     userName = "",
     extraWork = "",
+    page = 1,
+    ordering = "-work_date",
   }) => {
     try {
       setLoading(true);
       const workFilters = getWorkFilterPayload(workType, extraWork);
 
-      const workDays = await getAdminWorkDays(
+      const response = await getAdminWorkDays(
         {
           status,
           start_date: startDate,
@@ -94,11 +111,14 @@ export function useApproveList(toast) {
           work_shift: workFilters.work_shift,
           user_name: userName.trim(),
           extra_work: workFilters.extra_work,
+          page,
+          page_size: 10,
+          ordering,
         },
         { toast }
       );
 
-      const mapped = workDays
+      const mapped = response.data
         .map((workDay, index) => {
           const day = getMinutesByType(workDay.details, "주간");
           const totalWorkMinutes = getTotalWorkMinutes(workDay.details);
@@ -139,10 +159,12 @@ export function useApproveList(toast) {
             totalWorkDisplay,
             status: deriveStatus(workDay),
           };
-        })
-        .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+        });
 
       setRows(mapped);
+      setPagination(response.pagination);
+      setSummary(response.summary);
+      return response.pagination;
     } catch (err) {
       toast?.({
         title: "조회 실패",
@@ -156,5 +178,5 @@ export function useApproveList(toast) {
     }
   };
 
-  return { rows, loading, fetchList };
+  return { rows, pagination, summary, loading, fetchList };
 }

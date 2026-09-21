@@ -11,6 +11,9 @@ export async function getAdminWorkDays(
     work_shift,
     user_name,
     extra_work,
+    page = 1,
+    page_size = 10,
+    ordering = "-work_date",
   } = {},
   { toast } = {}
 ) {
@@ -28,9 +31,29 @@ export async function getAdminWorkDays(
       work_shift,
       user_name,
       extra_work,
+      page,
+      page_size,
+      ordering,
     })}`,
     { toast }
   );
 
-  return json?.data || [];
+  return {
+    data: Array.isArray(json?.data) ? json.data : [],
+    pagination: json?.pagination || {
+      page,
+      page_size,
+      total_count: 0,
+      total_pages: 1,
+    },
+    summary: json?.summary || {
+      total: 0,
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      day: 0,
+      night: 0,
+      special: 0,
+    },
+  };
 }

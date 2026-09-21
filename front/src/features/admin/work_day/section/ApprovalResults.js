@@ -1,6 +1,5 @@
 import ApproveTable from "./ApproveTable";
 import ApprovePagination from "./ApprovePagination";
-import { APPROVAL_PAGE_SIZE } from "../constants/approvalConstants";
 
 export default function ApprovalResults({ approval }) {
  return <>
@@ -18,8 +17,8 @@ export default function ApprovalResults({ approval }) {
         <ApprovePagination
           currentPage={approval.currentPage}
           totalPages={approval.totalPages}
-          totalCount={approval.sortedRows.length}
-          pageSize={APPROVAL_PAGE_SIZE}
+          totalCount={approval.totalCount}
+          pageSize={approval.pageSize}
           onChange={approval.handlePageChange}
         />
 

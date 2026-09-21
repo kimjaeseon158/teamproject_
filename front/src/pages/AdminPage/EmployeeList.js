@@ -47,8 +47,8 @@ export default function EmployeeList() {
       {state.showAddModal && (
         <AddPersonModal
           isOpen
-          onSave={(users) => {
-            if (Array.isArray(users)) state.setPeopleData(users);
+          onSave={() => {
+            handlers.handleAddSuccess();
             state.setShowAddModal(false);
           }}
           onClose={() => state.setShowAddModal(false)}

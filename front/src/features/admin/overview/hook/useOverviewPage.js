@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useToast } from "@chakra-ui/react";
 
-import { useAdminData } from "../../userList/hook/useAdminData";
+import { fetchEmployees } from "../../userList/api/admnsdbPost";
 import { useDailyPay } from "../../work_place/hook/useWorkList";
 import { useTotalFinance } from "../../total_pay/hook/useTotalFinance";
 import { login as googleLogin } from "../../api/google/googleAuth";
@@ -19,7 +19,7 @@ export default function useOverviewPage() {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
-  const [peopleData, setPeopleData] = useState([]);
+  const [employeeCount, setEmployeeCount] = useState(0);
 
   const googleStatus = useGoogleLinkStatus();
   const adminWorkPlaces = useOverviewWorkPlaces(toast);
@@ -33,7 +33,13 @@ export default function useOverviewPage() {
   } = useDailyPay();
   const { setApiMonth, threeMonthData } = useTotalFinance({ toast });
 
-  useAdminData(setPeopleData);
+  useEffect(() => {
+    const loadEmployeeCount = async () => {
+      const response = await fetchEmployees({ page: 1, page_size: 1, ordering: "user_name" }, toast);
+      setEmployeeCount(Number(response?.pagination?.total_count) || 0);
+    };
+    loadEmployeeCount();
+  }, [toast]);
 
   useEffect(() => {
     fetchDailyPay({}, toast);
@@ -81,7 +87,7 @@ export default function useOverviewPage() {
     () => [
       {
         label: "전체 직원(명)",
-        value: formatNumber(peopleData.length),
+        value: formatNumber(employeeCount),
         color: "blue.400",
         path: "/dashboard/admin",
       },
@@ -123,7 +129,7 @@ export default function useOverviewPage() {
       dailyPaySummary.averageBasePay,
       dailyPaySummary.places,
       events.length,
-      peopleData.length,
+      employeeCount,
     ]
   );
 

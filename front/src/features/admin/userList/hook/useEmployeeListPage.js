@@ -1,4 +1,3 @@
-import { sortEmployees } from "../utils/sortEmployees";
 import { useMemo } from "react";
 import { Button } from "@chakra-ui/react";
 import { EditIcon } from "@chakra-ui/icons";
@@ -11,10 +10,10 @@ import { userListColumns } from "../constants/userListColumns";
 
 export function useEmployeeListPage(toast) {
   const state = useAdminState();
-  const handlers = useAdminHandlers(state, toast);
-  useAdminData(state.setPeopleData);
-
-  const sortedPeople = useMemo(() => sortEmployees(state.peopleData, state.sort), [state.peopleData, state.sort]);
+  const { loadEmployees } = useAdminData(state, toast);
+  const handlers = useAdminHandlers(state, toast, loadEmployees);
+  const { ordering, setSelectedPerson } = state;
+  const { handleOrderingChange } = handlers;
 
   const selectedCount = useMemo(
     () => Object.values(state.checkedItems).filter(Boolean).length,
@@ -64,12 +63,9 @@ export function useEmployeeListPage(toast) {
         label: (
           <SortableHeaderLabel
             sortKey={column.key}
-            sortField={state.sort.field}
-            sortOrder={state.sort.direction}
-            onSort={(field) => state.setSort((current) => ({
-              field,
-              direction: current.field === field && current.direction === "asc" ? "desc" : "asc",
-            }))}
+            sortField={ordering.replace(/^-/, "")}
+            sortOrder={ordering.startsWith("-") ? "desc" : "asc"}
+            onSort={handleOrderingChange}
           >
             {column.label}
           </SortableHeaderLabel>
@@ -87,7 +83,7 @@ export function useEmployeeListPage(toast) {
             variant="ghost"
             onClick={(e) => {
               e.stopPropagation();
-              state.setSelectedPerson(row);
+              setSelectedPerson(row);
             }}
           >
             수정
@@ -95,12 +91,12 @@ export function useEmployeeListPage(toast) {
         ),
       },
     ],
-    [state]
+    [handleOrderingChange, ordering, setSelectedPerson]
   );
 
   return {
     handlers,
-    sortedPeople,
+    sortedPeople: state.peopleData,
     hasSearchFilter,
     selectAll,
     selectedCount,

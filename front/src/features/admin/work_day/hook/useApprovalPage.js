@@ -7,7 +7,6 @@ import useApproveActions from "./useApproveActions";
 import useApprovalExport from "./useApprovalExport";
 import useApprovalFilters from "./useApprovalFilters";
 import useApprovalSelection from "./useApprovalSelection";
-import useApprovalSummary from "./useApprovalSummary";
 import useApprovalTableState from "./useApprovalTableState";
 import useAdminWorkPlaceOptions from "../../../common/hooks/useAdminWorkPlaceOptions";
 import { APPROVAL_INITIAL_STATUS } from "../constants/approvalConstants";
@@ -16,15 +15,14 @@ import { toYMD } from "../utils/approveUtils";
 export default function useApprovalPage({ onExcelExportClose } = {}) {
   const toast = useToast();
   const detailDisclosure = useDisclosure();
-  const { rows, loading, fetchList } = useApproveList(toast);
+  const { rows, pagination, summary, loading, fetchList } = useApproveList(toast);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [searchParams] = useSearchParams();
   const detailDate = searchParams.get("date");
   const detailOpened = useRef(false);
   const filters = useApprovalFilters(detailDate);
   const selection = useApprovalSelection(rows);
-  const summary = useApprovalSummary(rows);
-  const table = useApprovalTableState(rows);
+  const table = useApprovalTableState();
   const approvalExport = useApprovalExport({ onExcelExportClose, toast });
   const workPlaceOptions = useAdminWorkPlaceOptions(toast);
 
@@ -47,7 +45,11 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
     }
   }, [detailDate, detailDisclosure, loading, rows, searchParams]);
 
-  const searchWithFilters = (nextFilters = {}) => {
+  const searchWithFilters = async (
+    nextFilters = {},
+    requestedPage = table.currentPage,
+    requestedOrdering = table.getOrdering()
+  ) => {
     const searchParams = filters.getSearchParams(nextFilters);
     if (!searchParams.range?.from) {
       toast({
@@ -58,7 +60,7 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
       return;
     }
 
-    fetchList({
+    const request = {
       status: searchParams.status,
       workPlace: searchParams.workPlace,
       workType: searchParams.workType,
@@ -66,25 +68,42 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
       extraWork: searchParams.extraWork,
       startDate: toYMD(searchParams.range.from),
       endDate: toYMD(searchParams.range.to ?? searchParams.range.from),
-    });
+      page: requestedPage,
+      ordering: requestedOrdering,
+    };
+    const nextPagination = await fetchList(request);
+
+    if (
+      nextPagination &&
+      requestedPage > Math.max(1, Number(nextPagination.total_pages) || 1)
+    ) {
+      const lastPage = Math.max(1, Number(nextPagination.total_pages) || 1);
+      table.setCurrentPage(lastPage);
+      await fetchList({ ...request, page: lastPage });
+    }
   };
 
   const handleSearch = () => {
     table.setCurrentPage(1);
     selection.clearSelection();
-    searchWithFilters();
+    searchWithFilters({}, 1);
   };
 
   const handleStatusChange = (status) => {
     filters.setStatus(status);
     table.setCurrentPage(1);
     selection.clearSelection();
-    searchWithFilters({ nextStatus: status });
+    searchWithFilters({ nextStatus: status }, 1);
+  };
+
+  const refreshCurrentPage = () => {
+    selection.clearSelection();
+    searchWithFilters({}, table.currentPage);
   };
 
   const actions = useApproveActions({
     toast,
-    refresh: handleSearch,
+    refresh: refreshCurrentPage,
     closeDetail: detailDisclosure.onClose,
     clearSelection: selection.clearSelection,
   });
@@ -97,7 +116,7 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
       nextUserName: "",
       nextExtraWork: "",
       nextRange: filters.initialRange,
-    });
+    }, 1, "-work_date");
     // initial load only
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -105,6 +124,13 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
   const handlePageChange = (page) => {
     selection.clearSelection();
     table.setCurrentPage(page);
+    searchWithFilters({}, page);
+  };
+
+  const handleSort = (field) => {
+    const ordering = table.handleSort(field);
+    selection.clearSelection();
+    searchWithFilters({}, 1, ordering);
   };
 
   const handleResetFilters = () => {
@@ -112,6 +138,14 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
     table.resetSort();
     table.setCurrentPage(1);
     selection.clearSelection();
+    searchWithFilters({
+      nextStatus: APPROVAL_INITIAL_STATUS,
+      nextWorkPlace: "",
+      nextWorkType: "",
+      nextUserName: "",
+      nextExtraWork: "",
+      nextRange: filters.initialRange,
+    }, 1, "-work_date");
   };
 
   const openDetail = (employee) => {
@@ -136,11 +170,11 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
     handleResetFilters,
     handleSearch,
     handleStatusChange,
-    handleSort: table.handleSort,
+    handleSort,
     handleTogglePage: selection.handleTogglePage,
     loading,
     openDetail,
-    paginatedRows: table.paginatedRows,
+    paginatedRows: rows,
     range: filters.range,
     rangeLabel: filters.rangeLabel,
     rejectEmployee: actions.rejectEmployee,
@@ -155,12 +189,13 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
     setWorkType: filters.setWorkType,
     sortField: table.sortField,
     sortOrder: table.sortOrder,
-    sortedRows: table.sortedRows,
     status: filters.status,
     summary,
     toast,
     toggleOne: selection.toggleOne,
-    totalPages: table.totalPages,
+    totalCount: pagination.total_count,
+    totalPages: pagination.total_pages,
+    pageSize: pagination.page_size,
     updateBulkStatus: actions.updateBulkStatus,
     userName: filters.userName,
     workPlace: filters.workPlace,

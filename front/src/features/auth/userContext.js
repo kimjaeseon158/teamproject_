@@ -262,7 +262,9 @@ export function UserProvider({ children, loginType: initialLoginType }) {
   });
   const { connected: noticeWsConnected } = useNoticeSocket({
     token: !loading && token && userUuid ? token : null,
-    enabled: Boolean(loginType),
+    // The notice socket is a user-only endpoint. Enabling it for admins makes
+    // the rejected connection enter the hook's reconnect loop indefinitely.
+    enabled: loginType === "user",
     onConnect: clearNoticeAlarms,
     onMessage: addNoticeAlarm,
   });

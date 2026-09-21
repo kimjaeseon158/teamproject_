@@ -8,6 +8,7 @@ export default function EmployeeDesktopTable({
   onCheck,
   selectAll,
   selectedCount,
+  totalCount,
 }) {
   return (
     <Box
@@ -44,7 +45,7 @@ export default function EmployeeDesktopTable({
             </Badge>
           )}
           <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
-            {peopleData.length.toLocaleString()}명
+            {totalCount.toLocaleString()}명
           </Badge>
         </HStack>
       </Flex>

@@ -10,8 +10,16 @@ const initialSearchForm = {
 };
 
 export function useAdminState() {
-  const [sort, setSort] = useState({ field: "", direction: "asc" });
   const [peopleData, setPeopleData] = useState([]);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    page_size: 10,
+    total_count: 0,
+    total_pages: 1,
+  });
+  const [ordering, setOrdering] = useState("user_name");
+  const [activeFilters, setActiveFilters] = useState({});
+  const [loading, setLoading] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [checkedItems, setCheckedItems] = useState({});
   const [showAddModal, setShowAddModal] = useState(false);
@@ -21,7 +29,10 @@ export function useAdminState() {
 
   return {
     peopleData, setPeopleData,
-    sort, setSort,
+    pagination, setPagination,
+    ordering, setOrdering,
+    activeFilters, setActiveFilters,
+    loading, setLoading,
     selectedPerson, setSelectedPerson,
     checkedItems, setCheckedItems,
     showAddModal, setShowAddModal,

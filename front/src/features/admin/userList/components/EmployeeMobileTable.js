@@ -9,6 +9,7 @@ export default function EmployeeMobileTable({
   selectAll,
   selectedCount,
   onOpenPerson,
+  totalCount,
 }) {
   const [query, setQuery] = useState("");
   const people = peopleData.filter((person) => `${person.user_name || ""} ${person.phone_number || ""}`.includes(query.trim()));
@@ -16,7 +17,7 @@ export default function EmployeeMobileTable({
     <Input aria-label="직원 이름 또는 전화번호 검색" placeholder="이름 또는 전화번호 검색" value={query} onChange={(e) => setQuery(e.target.value)} mb={4} bg="gray.50" />
     <Flex justify="space-between" align="center" py={3} borderBottomWidth="1px" borderColor="gray.100">
       <Checkbox colorScheme="teal" isChecked={selectAll.isChecked} isIndeterminate={selectAll.isIndeterminate} isDisabled={selectAll.isDisabled} onChange={(e) => selectAll.onChange(e.target.checked)}>전체 선택</Checkbox>
-      <Text fontSize="sm" color="gray.500">{selectedCount > 0 ? `${selectedCount}명 선택 · ` : ""}전체 <Box as="span" color="teal.600" fontWeight="700">{peopleData.length}명</Box></Text>
+      <Text fontSize="sm" color="gray.500">{selectedCount > 0 ? `${selectedCount}명 선택 · ` : ""}전체 <Box as="span" color="teal.600" fontWeight="700">{totalCount}명</Box></Text>
     </Flex>
     {!people.length && <Text py={16} textAlign="center" color="gray.500">검색된 직원이 없습니다.</Text>}
     {people.map((person) => <Flex key={person.user_uuid} gap={2} py={4} align="center" borderBottomWidth="1px" borderColor="gray.100" bg={checkedItems[person.user_uuid] ? "teal.50" : "white"}>

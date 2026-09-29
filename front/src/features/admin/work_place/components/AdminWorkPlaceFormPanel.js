@@ -3,6 +3,11 @@ import { DeleteIcon } from "@chakra-ui/icons";
 
 import { RATE_FIELDS } from "../constants/rateFields";
 
+const formatRateInput = (value) => {
+  const digits = String(value ?? "").replace(/,/g, "");
+  return digits ? digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "";
+};
+
 export default function AdminWorkPlaceFormPanel({
   deleting,
   form,
@@ -62,9 +67,17 @@ export default function AdminWorkPlaceFormPanel({
             </Text>
             <Input
               w="100%"
-              type="number"
-              value={form[field.key]}
-              onChange={(e) => onChange(field.key, e.target.value)}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={formatRateInput(form[field.key])}
+              onKeyDown={(e) => {
+                if ([".", ",", "e", "E", "+", "-"].includes(e.key)) e.preventDefault();
+              }}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/,/g, "");
+                if (/^\d*$/.test(digits)) onChange(field.key, digits);
+              }}
               placeholder="금액 입력"
             />
           </Box>

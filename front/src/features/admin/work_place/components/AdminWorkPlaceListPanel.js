@@ -4,6 +4,7 @@ import { formatWon } from "../utils/rateFormat";
 
 export default function AdminWorkPlaceListPanel({
   form,
+  hasWorkPlaces,
   isAdding,
   onNew,
   onSearchChange,
@@ -30,18 +31,16 @@ export default function AdminWorkPlaceListPanel({
             항목을 선택하면 오른쪽에서 수정합니다.
           </Text>
         </Box>
-        <Button size="sm" colorScheme="blue" onClick={onNew}>
-          추가
-        </Button>
+        {hasWorkPlaces && <Button size="sm" colorScheme="blue" onClick={onNew} isDisabled={isAdding}>추가</Button>}
       </Flex>
 
-      <Input
+      {hasWorkPlaces && <Input
         size="sm"
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
         placeholder="근무지 검색"
         mb={3}
-      />
+      />}
 
       <VStack align="stretch" spacing={2} maxH="420px" overflowY="auto" pr={1}>
         {isAdding && (

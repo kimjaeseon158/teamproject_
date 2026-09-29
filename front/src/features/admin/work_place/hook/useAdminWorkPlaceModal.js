@@ -19,12 +19,37 @@ export default function useAdminWorkPlaceModal({
   workPlaces,
 }) {
   const [form, setForm] = useState(initialRateForm);
+  const [initialForm, setInitialForm] = useState(initialRateForm);
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [registration, setRegistration] = useState(null);
+  const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
   const submitting = useRef(false);
+  const pendingDiscardAction = useRef(null);
+
+  const isDirty = Object.keys(initialRateForm).some(
+    (key) => String(form[key] ?? "") !== String(initialForm[key] ?? "")
+  );
+
+  const runWithDiscardCheck = (action) => {
+    if (!isDirty) return action();
+    pendingDiscardAction.current = action;
+    setDiscardConfirmOpen(true);
+  };
+
+  const cancelDiscard = () => {
+    pendingDiscardAction.current = null;
+    setDiscardConfirmOpen(false);
+  };
+
+  const confirmDiscard = () => {
+    const action = pendingDiscardAction.current;
+    pendingDiscardAction.current = null;
+    setDiscardConfirmOpen(false);
+    action?.();
+  };
   const cancelRegistration = () => {
     if (!submitting.current) setRegistration(null);
   };
@@ -35,7 +60,9 @@ export default function useAdminWorkPlaceModal({
     try {
       const result = await createAdminWorkPlace(registration.place, toast);
       if (result?.success === false) throw new Error(result.message || "근무지 등록에 실패했습니다.");
-      setForm(toWorkPlaceForm(result?.work_places?.[0] || workPlaces[0]));
+      const savedForm = toWorkPlaceForm(result?.work_places?.[0] || workPlaces[0]);
+      setForm(savedForm);
+      setInitialForm(savedForm);
       setSearch("");
       setIsAdding(false);
       setRegistration(null);
@@ -58,8 +85,16 @@ export default function useAdminWorkPlaceModal({
 
   useEffect(() => {
     if (!isOpen) return;
+    if (workPlaces.length === 0 && !isAdding) {
+      setIsAdding(true);
+      setForm(initialRateForm);
+      setInitialForm(initialRateForm);
+      return;
+    }
     if (!isAdding && !form.admin_work_place_uuid && workPlaces.length > 0) {
-      setForm(toWorkPlaceForm(workPlaces[0]));
+      const nextForm = toWorkPlaceForm(workPlaces[0]);
+      setForm(nextForm);
+      setInitialForm(nextForm);
     }
   }, [form.admin_work_place_uuid, isAdding, isOpen, workPlaces]);
 
@@ -68,18 +103,42 @@ export default function useAdminWorkPlaceModal({
   };
 
   const handleNew = () => {
-    setIsAdding(true);
-    setForm(initialRateForm);
+    if (isAdding) return;
+    runWithDiscardCheck(() => {
+      setIsAdding(true);
+      setForm(initialRateForm);
+      setInitialForm(initialRateForm);
+    });
   };
 
   const handleSelect = (place) => {
-    setIsAdding(false);
-    setForm(toWorkPlaceForm(place));
+    if (place.admin_work_place_uuid === form.admin_work_place_uuid) return;
+    runWithDiscardCheck(() => {
+      const nextForm = toWorkPlaceForm(place);
+      setIsAdding(false);
+      setForm(nextForm);
+      setInitialForm(nextForm);
+    });
   };
 
   const handleClose = () => {
     if (saving || deleting || registration) return;
+    if (isDirty) {
+      pendingDiscardAction.current = () => {
+        if (isAdding && workPlaces.length > 0) {
+          const firstForm = toWorkPlaceForm(workPlaces[0]);
+          setIsAdding(false);
+          setForm(firstForm);
+          setInitialForm(firstForm);
+          return;
+        }
+        setForm(initialForm);
+      };
+      setDiscardConfirmOpen(true);
+      return;
+    }
     setForm(initialRateForm);
+    setInitialForm(initialRateForm);
     setSearch("");
     setIsAdding(false);
     onClose?.();
@@ -93,6 +152,16 @@ export default function useAdminWorkPlaceModal({
         title: ERROR_MESSAGES.workplace.nameRequired,
         status: "warning",
       });
+      return;
+    }
+
+    const normalizedName = form.work_place.trim().replace(/\s+/g, " ").toLowerCase();
+    const duplicate = workPlaces.some((place) =>
+      place.admin_work_place_uuid !== form.admin_work_place_uuid
+      && place.work_place?.trim().replace(/\s+/g, " ").toLowerCase() === normalizedName
+    );
+    if (duplicate) {
+      notify(toast, { title: "이미 등록된 근무지명입니다.", status: "warning" });
       return;
     }
 
@@ -120,6 +189,18 @@ export default function useAdminWorkPlaceModal({
       return;
     }
 
+    const decimalRate = RATE_FIELDS.find(
+      (field) => !Number.isInteger(Number(form[field.key]))
+    );
+    if (decimalRate) {
+      notify(toast, {
+        title: "시급은 정수로 입력해주세요.",
+        description: `${decimalRate.label} 항목에는 소수점을 사용할 수 없습니다.`,
+        status: "warning",
+      });
+      return;
+    }
+
     const payload = buildWorkPlacePayload(form, isEditMode);
     if (!isEditMode) {
       setRegistration({ name: payload.work_place, place: payload });
@@ -134,6 +215,9 @@ export default function useAdminWorkPlaceModal({
       }
 
       notify(toast, { title: "근무지를 수정했습니다.", status: "success" });
+      const savedForm = { ...form, work_place: form.work_place.trim() };
+      setForm(savedForm);
+      setInitialForm(savedForm);
       await onSuccess?.();
     } catch (err) {
       notify(toast, {
@@ -166,9 +250,20 @@ export default function useAdminWorkPlaceModal({
         title: "근무지를 삭제했습니다.",
         status: "success",
       });
-      setIsAdding(true);
-      setForm(initialRateForm);
-      onSuccess?.();
+      const remainingWorkPlaces = workPlaces.filter(
+        (place) => place.admin_work_place_uuid !== form.admin_work_place_uuid
+      );
+      if (remainingWorkPlaces.length > 0) {
+        const firstForm = toWorkPlaceForm(remainingWorkPlaces[0]);
+        setIsAdding(false);
+        setForm(firstForm);
+        setInitialForm(firstForm);
+      } else {
+        setIsAdding(true);
+        setForm(initialRateForm);
+        setInitialForm(initialRateForm);
+      }
+      await onSuccess?.();
     } catch (err) {
       notify(toast, {
         title: "근무지 삭제 중 오류가 발생했습니다.",
@@ -183,8 +278,11 @@ export default function useAdminWorkPlaceModal({
   return {
     registration,
     cancelRegistration,
+    cancelDiscard,
     confirmRegistration,
+    confirmDiscard,
     deleting,
+    discardConfirmOpen,
     filteredWorkPlaces,
     form,
     handleChange,

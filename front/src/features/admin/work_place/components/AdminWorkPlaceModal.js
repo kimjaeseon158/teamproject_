@@ -21,6 +21,7 @@ import AdminWorkPlaceFormPanel from "./AdminWorkPlaceFormPanel";
 import AdminWorkPlaceListPanel from "./AdminWorkPlaceListPanel";
 import useAdminWorkPlaceModal from "../hook/useAdminWorkPlaceModal";
 import WorkPlaceRegistrationConfirmModal from "./WorkPlaceRegistrationConfirmModal";
+import WorkPlaceDiscardConfirmModal from "./WorkPlaceDiscardConfirmModal";
 
 export default function AdminWorkPlaceModal({
   isOpen,
@@ -68,6 +69,7 @@ export default function AdminWorkPlaceModal({
           <Flex direction={{ base: "column", lg: "row" }} gap={5} align="stretch">
             <AdminWorkPlaceListPanel
               form={modal.form}
+              hasWorkPlaces={workPlaces.length > 0}
               isAdding={modal.isAdding}
               onNew={modal.handleNew}
               onSearchChange={modal.setSearch}
@@ -119,6 +121,11 @@ export default function AdminWorkPlaceModal({
       saving={modal.saving}
       onClose={modal.cancelRegistration}
       onConfirm={modal.confirmRegistration}
+    />
+    <WorkPlaceDiscardConfirmModal
+      isOpen={modal.discardConfirmOpen}
+      onCancel={modal.cancelDiscard}
+      onConfirm={modal.confirmDiscard}
     />
     </>
   );

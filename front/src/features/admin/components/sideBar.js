@@ -28,12 +28,11 @@ const navItems = [
   { label: "직원 관리", path: "/dashboard/admin", icon: FiUsers },
   { label: "승인 관리", path: "/dashboard/approval", icon: FiCalendar },
   { label: "일급 관리", path: "/dashboard/daily-pay", icon: FiDollarSign },
-  { label: "근무표 관리", path: "/dashboard/work-schedules", icon: FiCalendar },
+  { label: "근무표", path: "/dashboard/work-schedules", icon: FiCalendar },
 ];
 const boardMenuItems = [
   { label: "공지사항", path: "/note", icon: FiMessageSquare },
   { label: "연락처", path: "/note/contacts", icon: FiUsers },
-  { label: "근무표 조회", path: "/note/work-schedule", icon: FiCalendar },
 ];
 
 const totalMenuItems = [

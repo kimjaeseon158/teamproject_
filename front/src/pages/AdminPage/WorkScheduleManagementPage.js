@@ -50,14 +50,13 @@ export default function WorkScheduleManagementPage() {
     return true;
   };
 
-
   return (
-    <Box minH="100%" bg="gray.50" p={{ base: 1, md: 2 }}>
+    <Box minH="100%" bg="gray.50" p={{ base: 2, md: 3 }}>
       <HStack justify="space-between" align="center" mb={3} flexWrap="wrap" spacing={3}>
-        <HStack spacing={3} flexWrap="wrap">
-          <FiCalendar /><Heading size="md">주간 근무표 관리</Heading>
-          {schedule.data.week_start && <Text fontSize="sm" fontWeight="600" color="gray.600" borderLeftWidth="1px" pl={3}>{schedule.data.week_start.slice(5).replace("-", ".")} – {schedule.data.week_end?.slice(5).replace("-", ".")}</Text>}
-        </HStack>
+        <Box>
+          <HStack spacing={2}><FiCalendar /><Heading size="lg">근무표</Heading></HStack>
+          <Text mt={1} color="gray.600" fontSize="sm">주를 이동하고 표의 날짜를 선택해 근무를 편집하세요.</Text>
+        </Box>
         <HStack flexWrap="wrap" justify={{ base: "flex-start", lg: "flex-end" }}>
           <Button
             size="sm"
@@ -86,7 +85,8 @@ export default function WorkScheduleManagementPage() {
           >
             일괄 저장 {schedule.changeCount > 0 && <Badge ml={2}>{schedule.changeCount}</Badge>}
           </Button>
-        </HStack>      </HStack>
+        </HStack>
+      </HStack>
 
       <AdminWeekScheduleTable
         data={schedule.data}

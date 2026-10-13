@@ -56,7 +56,19 @@ export default function ApproveMobileFilterBar({
             loading={loading}
             placement="bottom-start"
           />
-          <Button mt={2} size="sm" variant="outline" onClick={onReset}>초기화</Button>
+          <Button
+            mt={2}
+            size="sm"
+            variant="outline"
+            color="gray.700"
+            borderColor="gray.500"
+            borderWidth="1px"
+            fontWeight="600"
+            _hover={{ bg: "gray.50", borderColor: "gray.600" }}
+            onClick={onReset}
+          >
+            초기화
+          </Button>
         </Box>
       </Collapse>
       <Flex borderBottomWidth="1px" borderColor="gray.200" role="group" aria-label="승인 상태">

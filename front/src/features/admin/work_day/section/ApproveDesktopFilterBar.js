@@ -108,7 +108,17 @@ export default function ApproveDesktopFilterBar({
         조회
       </Button>
 
-      <Button size="sm" variant="outline" onClick={onReset} isDisabled={loading}>
+      <Button
+        size="sm"
+        variant="outline"
+        color="gray.700"
+        borderColor="gray.500"
+        borderWidth="1px"
+        fontWeight="600"
+        _hover={{ bg: "gray.50", borderColor: "gray.600" }}
+        onClick={onReset}
+        isDisabled={loading}
+      >
         초기화
       </Button>
 

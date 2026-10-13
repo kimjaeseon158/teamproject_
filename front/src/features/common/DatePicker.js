@@ -3,6 +3,7 @@ import {
 } from "@chakra-ui/react";
 import { ko } from "date-fns/locale";
 import { DayPicker } from "react-day-picker";
+import { FiCalendar } from "react-icons/fi";
 import "react-day-picker/dist/style.css";
 
 import { toLocalDateValue } from "./utils/dateValue";
@@ -19,6 +20,7 @@ export default function DatePicker({ value, onChange, width = "100%", size = "md
             <Button
               size={size}
               variant="outline"
+              leftIcon={<FiCalendar />}
               w={width}
               justifyContent="space-between"
               fontWeight="500"

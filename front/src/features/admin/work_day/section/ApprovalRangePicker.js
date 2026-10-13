@@ -5,6 +5,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import { ko } from "date-fns/locale";
+import { FiCalendar } from "react-icons/fi";
 import "react-day-picker/dist/style.css";
 
 import MonthPicker from "../../../common/MonthPicker";
@@ -52,7 +53,13 @@ export default function ApprovalRangePicker({
       <Box flex={{ base: 1, md: "initial" }} minW={0}>
         <Popover placement={placement}>
           <PopoverTrigger>
-            <Button size="sm" variant="outline" w={{ base: "100%", md: "auto" }} isDisabled={loading}>
+            <Button
+              size="sm"
+              variant="outline"
+              leftIcon={<FiCalendar />}
+              w={{ base: "100%", md: "auto" }}
+              isDisabled={loading}
+            >
               {rangeLabel}
             </Button>
           </PopoverTrigger>

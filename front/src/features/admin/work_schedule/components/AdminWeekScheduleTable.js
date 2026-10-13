@@ -86,10 +86,10 @@ export default function AdminWeekScheduleTable({ data, selectedDate, workPlaces,
 
     </HStack>
       <HStack spacing={2} flexWrap="wrap">
-        <HStack spacing={0} borderWidth="1px" borderColor="gray.200" borderRadius="md" overflow="hidden">
-          <Button size="sm" variant="ghost" borderRadius={0} aria-label="이전 주" isDisabled={dateChangeDisabled} onClick={() => onDateChange(addDaysToDateValue(selectedDate, -7))}><FiChevronLeft /></Button>
+        <HStack spacing={1}>
+          <Button size="sm" variant="outline" minW="32px" px={0} aria-label="이전 주" isDisabled={dateChangeDisabled} onClick={() => onDateChange(addDaysToDateValue(selectedDate, -7))}><FiChevronLeft /></Button>
           <WorkScheduleDatePicker value={selectedDate} onChange={onDateChange} isDisabled={dateChangeDisabled} />
-          <Button size="sm" variant="ghost" borderRadius={0} aria-label="다음 주" isDisabled={dateChangeDisabled} onClick={() => onDateChange(addDaysToDateValue(selectedDate, 7))}><FiChevronRight /></Button>
+          <Button size="sm" variant="outline" minW="32px" px={0} aria-label="다음 주" isDisabled={dateChangeDisabled} onClick={() => onDateChange(addDaysToDateValue(selectedDate, 7))}><FiChevronRight /></Button>
         </HStack>
         <TodayButton showIcon={false} isDisabled={dateChangeDisabled} tooltip="오늘이 포함된 주로 이동" onClick={() => onDateChange(toLocalDateValue())} />
         {editing ? <>

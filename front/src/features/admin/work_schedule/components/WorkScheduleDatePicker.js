@@ -2,6 +2,7 @@ import { Button, HStack, Popover, PopoverBody, PopoverCloseButton, PopoverConten
 import { useEffect, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import { ko } from "date-fns/locale";
+import { FiCalendar } from "react-icons/fi";
 import "react-day-picker/dist/style.css";
 
 import MonthPicker from "../../../common/MonthPicker";
@@ -23,7 +24,12 @@ export default function WorkScheduleDatePicker({ value, onChange, isDisabled = f
       {({ onClose }) => (
         <>
           <PopoverTrigger>
-            <Button size="sm" variant="outline" isDisabled={isDisabled}>
+        <Button
+          size="sm"
+          variant="outline"
+          leftIcon={<FiCalendar />}
+          isDisabled={isDisabled}
+        >
               {value || "날짜 선택"}
             </Button>
           </PopoverTrigger>

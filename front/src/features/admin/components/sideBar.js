@@ -37,6 +37,7 @@ const boardMenuItems = [
 ];
 
 const totalMenuItems = [
+  { label: "통합 매출 현황", path: "/dashboard/total-sales", icon: FiBarChart2, exact: true },
   { label: "수입", path: "/dashboard/total-sales/company", icon: FiTrendingUp },
   { label: "지출", path: "/dashboard/total-sales/expense", icon: FiTrendingDown },
   { label: "급여", path: "/dashboard/total-sales/salary", icon: FiDollarSign },
@@ -154,23 +155,32 @@ export default function Sidebar() {
             fontWeight={isBoardPath && !isBoardChildActive ? "800" : "600"} _hover={{ bg: "whiteAlpha.100", color: "white" }}
             onClick={() => setIsBoardOpen((open) => !open)} aria-expanded={isBoardOpen}>
             <Icon as={FiMessageSquare} boxSize={4} color={isBoardPath ? "blue.300" : "gray.400"} />
-            <Text fontSize="sm" flex="1">공지사항</Text>
+            <Text fontSize="sm" flex="1">커뮤니티</Text>
             <Box as="span" role="button" aria-label={isBoardOpen ? "게시판 메뉴 접기" : "게시판 메뉴 펼치기"} p={1} m={-1}
               onClick={(event) => { event.stopPropagation(); setIsBoardOpen((open) => !open); }}>
               <Icon as={FiChevronDown} boxSize={4} color="gray.400" transform={isBoardOpen ? "rotate(180deg)" : "rotate(0deg)"} transition="transform 0.2s ease" />
             </Box>
           </HStack>
-          <Collapse in={isBoardOpen} animateOpacity>
-            <VStack align="stretch" spacing={1} mt={1} pl={6}>
-              {boardMenuItems.map((item) => {
-                const active = location.pathname === item.path;
-                return <HStack key={item.path} as="button" type="button" spacing={3} w="100%" px={3} py={2.5} borderRadius="md" textAlign="left"
-                  bg={active ? "whiteAlpha.100" : "transparent"} color={active ? "white" : "gray.400"} fontWeight={active ? "800" : "600"}
-                  _hover={{ bg: "whiteAlpha.100", color: "white" }} onClick={() => handleProtectedNav(item.path)}>
-                  <Icon as={item.icon} boxSize={3.5} color={active ? "blue.300" : "gray.500"} /><Text fontSize="sm">{item.label}</Text>
-                </HStack>;
-              })}
-            </VStack>
+          <Collapse
+            in={isBoardOpen}
+            animateOpacity
+            transition={{ enter: { duration: 0.24, ease: "easeOut" }, exit: { duration: 0.18, ease: "easeIn" } }}
+          >
+            <Box
+              transform={isBoardOpen ? "translateY(0)" : "translateY(-6px)"}
+              transition="transform 0.24s ease"
+            >
+              <VStack align="stretch" spacing={1} mt={1} pl={6}>
+                {boardMenuItems.map((item) => {
+                  const active = location.pathname === item.path;
+                  return <HStack key={item.path} as="button" type="button" spacing={3} w="100%" px={3} py={2.5} borderRadius="md" textAlign="left"
+                    bg={active ? "whiteAlpha.100" : "transparent"} color={active ? "white" : "gray.400"} fontWeight={active ? "800" : "600"}
+                    _hover={{ bg: "whiteAlpha.100", color: "white" }} onClick={() => handleProtectedNav(item.path)}>
+                    <Icon as={item.icon} boxSize={3.5} color={active ? "blue.300" : "gray.500"} /><Text fontSize="sm">{item.label}</Text>
+                  </HStack>;
+                })}
+              </VStack>
+            </Box>
           </Collapse>
         </Box>
 
@@ -188,10 +198,7 @@ export default function Sidebar() {
             color={isTotalPath ? "white" : "gray.300"}
             fontWeight={isTotalPath ? "800" : "600"}
             _hover={{ bg: "whiteAlpha.100", color: "white" }}
-            onClick={() => {
-              setIsTotalOpen(true);
-              handleProtectedNav("/dashboard/total-sales");
-            }}
+            onClick={() => setIsTotalOpen((open) => !open)}
             aria-expanded={isTotalOpen}
           >
             <Icon as={FiBarChart2} boxSize={4} color={isTotalPath ? "blue.300" : "gray.400"} />

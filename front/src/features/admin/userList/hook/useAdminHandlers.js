@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { deleteEmployees } from "../api/adminPageDelete";
 import { updateEmployee } from "../api/adminPageUpdate";
-import { formatResidentNumber, formatPhoneNumber } from "../utils/format";
+import { formatResidentNumber, formatPhoneNumber, getEmployeeSaveErrorMessage } from "../utils/format";
 
 const initialSearchForm = {
   user_name: "",
@@ -92,7 +92,7 @@ export function useAdminHandlers(state, toast, loadEmployees) {
 
     notify({
       title: "수정 실패",
-      description: res?.error || "직원 정보를 수정하지 못했습니다.",
+      description: getEmployeeSaveErrorMessage(res?.error, "직원 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요."),
       status: "error",
     });
     return false;
@@ -180,6 +180,11 @@ export function useAdminHandlers(state, toast, loadEmployees) {
     setPagination((current) => ({ ...current, page }));
   };
 
+  const handlePageSizeChange = (pageSize) => {
+    setCheckedItems({});
+    setPagination((current) => ({ ...current, page: 1, page_size: pageSize }));
+  };
+
   const handleOrderingChange = (field) => {
     const nextOrdering = state.ordering === field ? `-${field}` : field;
     setOrdering(nextOrdering);
@@ -207,6 +212,7 @@ export function useAdminHandlers(state, toast, loadEmployees) {
     handleShowAll,
     handleCloseSearch,
     handlePageChange,
+    handlePageSizeChange,
     handleOrderingChange,
     handleAddSuccess,
   };

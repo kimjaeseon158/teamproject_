@@ -5,7 +5,6 @@ import { ko } from "date-fns/locale";
 import "react-day-picker/dist/style.css";
 
 import MonthPicker from "../../../common/MonthPicker";
-import TodayButton from "../../../common/TodayButton";
 import { toLocalDateValue } from "../../../common/utils/dateValue";
 
 const toDate = (value) => value ? new Date(`${value}T00:00:00`) : new Date();
@@ -69,16 +68,6 @@ export default function WorkScheduleDatePicker({ value, onChange, isDisabled = f
                   ),
                 }}
               />
-              <HStack mt={4} justify="flex-start">
-                <TodayButton
-                  size="xs"
-                  showIcon={false}
-                  onClick={() => {
-                    onChange(toLocalDateValue());
-                    onClose();
-                  }}
-                />
-              </HStack>
             </PopoverBody>
           </PopoverContent>
         </>

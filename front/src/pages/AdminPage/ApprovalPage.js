@@ -4,12 +4,20 @@ import ExcelExportModal from "../../features/admin/total_pay/section/ExcelExport
 import useApprovalPage from "../../features/admin/work_day/hook/useApprovalPage";
 import ApprovalMobileLayout from "../../features/admin/work_day/layout/ApprovalMobileLayout";
 import ApprovalDesktopLayout from "../../features/admin/work_day/layout/ApprovalDesktopLayout";
+import { useEffect } from "react";
+import { consumeGoogleExportReturnPath } from "../../features/admin/api/google/googleAuth";
 
 export default function ApprovePage() {
   const exportDisclosure = useDisclosure();
   const approval = useApprovalPage({
     onExcelExportClose: exportDisclosure.onClose,
   });
+
+  useEffect(() => {
+    if (consumeGoogleExportReturnPath(window.location.pathname)) {
+      exportDisclosure.onOpen();
+    }
+  }, [exportDisclosure]);
 
   const mobile = useBreakpointValue({ base: true, md: false });
   const Layout = mobile ? ApprovalMobileLayout : ApprovalDesktopLayout;

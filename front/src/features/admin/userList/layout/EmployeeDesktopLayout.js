@@ -25,6 +25,7 @@ export default function EmployeeDesktopLayout({ employeeList }) {
         totalCount={state.pagination.total_count}
         pageSize={state.pagination.page_size}
         onChange={handlers.handlePageChange}
+        onPageSizeChange={handlers.handlePageSizeChange}
       />
   </Box>;
 }

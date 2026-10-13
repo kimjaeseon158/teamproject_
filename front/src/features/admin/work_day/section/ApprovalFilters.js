@@ -21,7 +21,6 @@ export default function ApprovalFilters({ approval }) {
           rangeLabel={approval.rangeLabel}
           selectedMonth={approval.selectedMonth}
           onMonthChange={approval.handleMonthChange}
-          onRangeReset={approval.handleRangeReset}
           onReset={approval.handleResetFilters}
           loading={approval.loading}
           onSearch={approval.handleSearch}

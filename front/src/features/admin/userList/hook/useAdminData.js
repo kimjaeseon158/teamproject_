@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from "react";
 
 import { fetchEmployees } from "../api/admnsdbPost";
+import { DEFAULT_TABLE_PAGE_SIZE } from "../../../../constants/pagination";
 
 export function useAdminData(state, toast) {
   const {
@@ -17,7 +18,7 @@ export function useAdminData(state, toast) {
     try {
       const res = await fetchEmployees({
         page: requestedPage,
-        page_size: 10,
+        page_size: pagination.page_size,
         ...filters,
         ...overrides,
       }, toast);
@@ -25,7 +26,7 @@ export function useAdminData(state, toast) {
       if (res?.success && Array.isArray(res.users)) {
         const nextPagination = res.pagination || {
           page: requestedPage,
-          page_size: 10,
+          page_size: DEFAULT_TABLE_PAGE_SIZE,
           total_count: res.users.length,
           total_pages: 1,
         };
@@ -43,7 +44,7 @@ export function useAdminData(state, toast) {
     } finally {
       setLoading(false);
     }
-  }, [activeFilters, pagination.page, setLoading, setPagination, setPeopleData, toast]);
+  }, [activeFilters, pagination.page, pagination.page_size, setLoading, setPagination, setPeopleData, toast]);
 
   useEffect(() => {
     loadEmployees();

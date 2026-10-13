@@ -10,6 +10,7 @@ export default function useRateEditSummary(tableData) {
         (row) => row.work_place && row.work_place !== EMPTY_PLACE
       ).length,
       base: average(tableData.map((row) => row.base_hourly_wage)),
+      night: average(tableData.map((row) => row.overnight_hourly_wage)),
       daySpecial: averageWithFallback(
         tableData,
         "day_special_hourly_wage",

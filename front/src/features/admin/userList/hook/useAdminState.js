@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DEFAULT_TABLE_PAGE_SIZE } from "../../../../constants/pagination";
 
 const initialSearchForm = {
   user_name: "",
@@ -13,7 +14,7 @@ export function useAdminState() {
   const [peopleData, setPeopleData] = useState([]);
   const [pagination, setPagination] = useState({
     page: 1,
-    page_size: 10,
+    page_size: DEFAULT_TABLE_PAGE_SIZE,
     total_count: 0,
     total_pages: 1,
   });

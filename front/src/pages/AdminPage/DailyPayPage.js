@@ -1,4 +1,5 @@
 import { Box, useDisclosure } from "@chakra-ui/react";
+import { useEffect } from "react";
 
 import ExcelExportModal from "../../features/admin/total_pay/section/ExcelExportModal";
 import AddRateModal from "../../features/admin/work_place/components/AddRateModal";
@@ -7,6 +8,7 @@ import DailyPayFilterBar from "../../features/admin/work_place/components/DailyP
 import DailyPaySummaryCards from "../../features/admin/work_place/components/DailyPaySummaryCards";
 import DailyPayTableSection from "../../features/admin/work_place/components/DailyPayTableSection";
 import useDailyPayPage from "../../features/admin/work_place/hook/useDailyPayPage";
+import { consumeGoogleExportReturnPath } from "../../features/admin/api/google/googleAuth";
 
 export default function DailyPayPage() {
   const exportDisclosure = useDisclosure();
@@ -14,6 +16,12 @@ export default function DailyPayPage() {
   const dailyPay = useDailyPayPage({
     onExcelExportClose: exportDisclosure.onClose,
   });
+
+  useEffect(() => {
+    if (consumeGoogleExportReturnPath(window.location.pathname)) {
+      exportDisclosure.onOpen();
+    }
+  }, [exportDisclosure]);
 
   const statCards = dailyPay.statCards.map((card) => (
     card.label === "근무지 수"

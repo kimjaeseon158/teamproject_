@@ -3,6 +3,7 @@ import { useState } from "react";
 import MonthPicker from "../../../common/MonthPicker";
 import { EXTRA_WORK_TYPES } from "../../../common/workTypes";
 import { APPROVAL_STATUS } from "../constants/approvalConstants";
+import ApprovalRangePicker from "./ApprovalRangePicker";
 
 export default function ApproveMobileFilterBar({
   status,
@@ -19,6 +20,7 @@ export default function ApproveMobileFilterBar({
   setExtraWork,
   range,
   setRange,
+  rangeLabel,
   selectedMonth,
   onMonthChange,
   onReset,
@@ -45,10 +47,15 @@ export default function ApproveMobileFilterBar({
             <Select aria-label="추가근무" value={extraWork} onChange={(e) => setExtraWork(e.target.value)}><option value="">추가근무 전체</option>{EXTRA_WORK_TYPES.map((type) => <option key={type.value} value={type.submitLabel}>{type.label}</option>)}</Select>
           </HStack>
           <Text fontSize="xs" color="gray.500" mb={1}>조회 기간</Text>
-          <HStack>
-            <Input minW={0} aria-label="시작일" type="date" value={range?.from ? `${range.from.getFullYear()}-${String(range.from.getMonth() + 1).padStart(2, "0")}-${String(range.from.getDate()).padStart(2, "0")}` : ""} onChange={(e) => setRange({ ...range, from: e.target.value ? new Date(`${e.target.value}T00:00:00`) : undefined })} />
-            <Input minW={0} aria-label="종료일" type="date" value={range?.to ? `${range.to.getFullYear()}-${String(range.to.getMonth() + 1).padStart(2, "0")}-${String(range.to.getDate()).padStart(2, "0")}` : ""} onChange={(e) => setRange({ ...range, to: e.target.value ? new Date(`${e.target.value}T00:00:00`) : undefined })} />
-          </HStack>
+          <ApprovalRangePicker
+            range={range}
+            setRange={setRange}
+            rangeLabel={rangeLabel}
+            selectedMonth={selectedMonth}
+            onMonthChange={onMonthChange}
+            loading={loading}
+            placement="bottom-start"
+          />
           <Button mt={2} size="sm" variant="outline" onClick={onReset}>초기화</Button>
         </Box>
       </Collapse>

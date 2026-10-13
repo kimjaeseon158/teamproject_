@@ -4,12 +4,14 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { FiArrowRight, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { Link as RouterLink } from "react-router-dom";
 import {
   CartesianGrid, Legend, Line, LineChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 
 import MonthPicker from "../../features/common/MonthPicker";
+import TodayButton from "../../features/common/TodayButton";
 import useTotalOverview from "../../features/admin/total_pay/hook/useTotalOverview";
 import { formatWon } from "../../features/admin/total_pay/utils/totalPayFormat";
 
@@ -61,7 +63,6 @@ const RecentTransactions = ({ overview }) => {
   const [filter, setFilter] = useState("all");
   const monthlyRows = [...overview.monthlyTrend].reverse();
   const currentMonth = getCurrentMonth();
-  const isCurrentMonth = overview.month >= currentMonth;
 
   return (
     <Card border="1px solid" borderColor="#e2e8f0" boxShadow="sm" borderRadius="8px" minW={0} h="100%">
@@ -90,8 +91,13 @@ const RecentTransactions = ({ overview }) => {
             icon={<FiChevronRight />}
             size="sm"
             variant="outline"
-            isDisabled={isCurrentMonth}
             onClick={() => overview.setMonth(moveMonth(overview.month, 1))}
+          />
+          <TodayButton
+            showIcon={false}
+            tooltip="오늘이 포함된 달로 이동"
+            isDisabled={overview.month === currentMonth}
+            onClick={() => overview.setMonth(currentMonth)}
           />
         </Flex>
 
@@ -147,10 +153,26 @@ const RecentTransactions = ({ overview }) => {
           </Flex>
         )}
 
-        <Flex mt="auto" pt={5} px={4} py={3} border="1px solid #e2e8f0" borderRadius="7px" justify="center" align="center" gap={3} color="#334155">
-          <Text fontSize="sm" fontWeight="700">월별 내역 보기</Text>
-          <Icon as={FiArrowRight} />
-        </Flex>
+        {filter !== "all" && (
+          <Flex
+            as={RouterLink}
+            to={filter === "income" ? "/dashboard/total-sales/company" : "/dashboard/total-sales/expense"}
+            mt="auto"
+            px={4}
+            py={3}
+            border="1px solid #e2e8f0"
+            borderRadius="7px"
+            justify="center"
+            align="center"
+            gap={3}
+            color="#334155"
+            _hover={{ bg: "#f8fafc", borderColor: "#cbd5e1", textDecoration: "none" }}
+            _focusVisible={{ boxShadow: "0 0 0 3px rgba(49, 130, 206, 0.35)" }}
+          >
+            <Text fontSize="sm" fontWeight="700">월별 내역 보기</Text>
+            <Icon as={FiArrowRight} />
+          </Flex>
+        )}
       </CardBody>
     </Card>
   );
@@ -161,9 +183,6 @@ export default function TotalOverviewPage() {
 
   return (
     <Box minH="calc(100vh - 92px)" bg="#f8fafc" p={{ base: 4, lg: 5 }}>
-      <Box mb={5}>
-        <Heading fontSize={{ base: "2xl", md: "28px" }} color="#0f172a" mb={1} letterSpacing="-1px">통합 매출 현황</Heading>
-      </Box>
 
       <Skeleton isLoaded={!overview.loading} borderRadius="lg">
         <Grid templateColumns={{ base: "1fr", xl: "minmax(0, 2.35fr) minmax(300px, 0.72fr)" }} gap={5} alignItems="stretch">

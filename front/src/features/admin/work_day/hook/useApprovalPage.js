@@ -61,7 +61,8 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
 
   const searchWithFilters = async (
     nextFilters = {},
-    requestedPage = table.currentPage
+    requestedPage = table.currentPage,
+    requestedPageSize = table.pageSize
   ) => {
     const searchParams = filters.getSearchParams(nextFilters);
     if (!searchParams.range?.from) {
@@ -82,6 +83,7 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
       startDate: toYMD(searchParams.range.from),
       endDate: toYMD(searchParams.range.to ?? searchParams.range.from),
       page: requestedPage,
+      pageSize: requestedPageSize,
     };
     const nextPagination = await fetchList(request);
 
@@ -139,8 +141,20 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
     searchWithFilters({}, page);
   };
 
+  const handlePageSizeChange = (pageSize) => {
+    selection.clearSelection();
+    table.setCurrentPage(1);
+    table.setPageSize(pageSize);
+    searchWithFilters({}, 1, pageSize);
+  };
+
   const handleSort = (field) => {
     table.handleSort(field);
+    selection.clearSelection();
+  };
+
+  const handleMobileSort = (field) => {
+    table.handleSortDescending(field);
     selection.clearSelection();
   };
 
@@ -164,7 +178,9 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
     extraWork: filters.extraWork,
     handleExcelExport: approvalExport.handleExcelExport,
     handleMonthChange: filters.handleMonthChange,
+    handleMobileSort,
     handlePageChange,
+    handlePageSizeChange,
     handleRangeChange: filters.handleRangeChange,
     handleRangeReset: filters.handleRangeReset,
     handleResetFilters,
@@ -195,7 +211,7 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
     toggleOne: selection.toggleOne,
     totalCount: pagination.total_count,
     totalPages: pagination.total_pages,
-    pageSize: pagination.page_size,
+    pageSize: table.pageSize,
     updateBulkStatus: actions.updateBulkStatus,
     userName: filters.userName,
     workPlace: filters.workPlace,

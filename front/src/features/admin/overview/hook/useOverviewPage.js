@@ -4,10 +4,8 @@ import { useToast } from "@chakra-ui/react";
 import { fetchEmployees } from "../../userList/api/admnsdbPost";
 import { useDailyPay } from "../../work_place/hook/useWorkList";
 import { useTotalFinance } from "../../total_pay/hook/useTotalFinance";
-import { login as googleLogin } from "../../api/google/googleAuth";
 import useApproveCalendar from "./useApproveCalendar";
 import useApproveSummary from "./useApproveSummary";
-import useGoogleLinkStatus from "../../api/google/useGoogleLinkStatus";
 import useOverviewWorkPlaces from "./useOverviewWorkPlaces";
 import { average, formatMonth, formatNumber } from "../utils/overviewFormat";
 
@@ -21,7 +19,6 @@ export default function useOverviewPage() {
   });
   const [employeeCount, setEmployeeCount] = useState(0);
 
-  const googleStatus = useGoogleLinkStatus();
   const adminWorkPlaces = useOverviewWorkPlaces(toast);
   const { events, loading: approvalLoading, rawData: pendingList, totalCount: pendingTotalCount } =
     useApproveCalendar(currentDate, toast);
@@ -153,10 +150,6 @@ export default function useOverviewPage() {
     setCurrentDate((prev) => new Date(prev));
   };
 
-  const handleGoogleLogin = () => {
-    googleLogin();
-  };
-
   return {
     approvalLoading,
     approvalSummary,
@@ -165,8 +158,6 @@ export default function useOverviewPage() {
     dailyPaySummary,
     events,
     financeTotal,
-    googleStatus,
-    handleGoogleLogin,
     handleMonthChange,
     kpis,
     moveMonth,

@@ -4,7 +4,6 @@ import ExcelExportModal from "../../features/admin/total_pay/section/ExcelExport
 import AddRateModal from "../../features/admin/work_place/components/AddRateModal";
 import AdminWorkPlaceModal from "../../features/admin/work_place/components/AdminWorkPlaceModal";
 import DailyPayFilterBar from "../../features/admin/work_place/components/DailyPayFilterBar";
-import DailyPayPageHeader from "../../features/admin/work_place/components/DailyPayPageHeader";
 import DailyPaySummaryCards from "../../features/admin/work_place/components/DailyPaySummaryCards";
 import DailyPayTableSection from "../../features/admin/work_place/components/DailyPayTableSection";
 import useDailyPayPage from "../../features/admin/work_place/hook/useDailyPayPage";
@@ -24,9 +23,6 @@ export default function DailyPayPage() {
 
   return (
     <Box minH="100%" bg="gray.50" p={{ base: 4, md: 6 }} maxW="100%" overflowX="hidden">
-      <DailyPayPageHeader
-        loading={dailyPay.loading}
-      />
 
       <DailyPaySummaryCards cards={statCards} />
 

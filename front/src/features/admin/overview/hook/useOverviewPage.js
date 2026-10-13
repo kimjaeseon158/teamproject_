@@ -23,9 +23,13 @@ export default function useOverviewPage() {
 
   const googleStatus = useGoogleLinkStatus();
   const adminWorkPlaces = useOverviewWorkPlaces(toast);
-  const { events, loading: approvalLoading, rawData: pendingList } =
+  const { events, loading: approvalLoading, rawData: pendingList, totalCount: pendingTotalCount } =
     useApproveCalendar(currentDate, toast);
-  const approvalSummary = useApproveSummary(pendingList);
+  const calculatedApprovalSummary = useApproveSummary(pendingList);
+  const approvalSummary = useMemo(() => ({
+    ...calculatedApprovalSummary,
+    total: pendingTotalCount,
+  }), [calculatedApprovalSummary, pendingTotalCount]);
   const {
     data: dailyPayData,
     loading: dailyPayLoading,
@@ -99,7 +103,7 @@ export default function useOverviewPage() {
       },
       {
         label: "오늘 근무(건)",
-        value: formatNumber(events.length),
+        value: formatNumber(pendingList.length),
         color: "green.400",
         path: "/dashboard/approval",
       },
@@ -128,7 +132,7 @@ export default function useOverviewPage() {
       currentMonthPay,
       dailyPaySummary.averageBasePay,
       dailyPaySummary.places,
-      events.length,
+      pendingList.length,
       employeeCount,
     ]
   );

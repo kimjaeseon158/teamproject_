@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Badge, Box, Button, Heading, HStack, Text, useToast } from "@chakra-ui/react";
-import { FiCalendar, FiRefreshCw, FiSave } from "react-icons/fi";
+import { FiRefreshCw, FiSave } from "react-icons/fi";
 
 import { getAdminWorkPlaceList } from "../../features/admin/work_place/api/adminWorkPlace";
 import AdminWeekScheduleTable from "../../features/admin/work_schedule/components/AdminWeekScheduleTable";
@@ -52,11 +52,7 @@ export default function WorkScheduleManagementPage() {
 
   return (
     <Box minH="100%" bg="gray.50" p={{ base: 2, md: 3 }}>
-      <HStack justify="space-between" align="center" mb={3} flexWrap="wrap" spacing={3}>
-        <Box>
-          <HStack spacing={2}><FiCalendar /><Heading size="lg">근무표</Heading></HStack>
-          <Text mt={1} color="gray.600" fontSize="sm">주를 이동하고 표의 날짜를 선택해 근무를 편집하세요.</Text>
-        </Box>
+      <HStack justify="flex-end" align="center" mb={3} flexWrap="wrap" spacing={3}>
         <HStack flexWrap="wrap" justify={{ base: "flex-start", lg: "flex-end" }}>
           <Button
             size="sm"

@@ -10,6 +10,8 @@ const toRatePayload = (values) => {
 };
 
 export default function useRateEditActions({
+  canAddRow,
+  hasAvailableWorkPlace,
   onClose,
   onSuccess,
   rows,
@@ -22,6 +24,23 @@ export default function useRateEditActions({
 
   const handleAddRow = () => {
     const { setCheckedItems, setTempRates } = rows;
+
+    if (!canAddRow) {
+      notify(toast, {
+        title: "추가 가능한 근무지가 없습니다.",
+        description: "미지정 근무지를 실제 근무지로 먼저 수정하거나 등록되지 않은 근무지를 확인해주세요.",
+        status: "warning",
+      });
+      return;
+    }
+    if (!hasAvailableWorkPlace) {
+      notify(toast, {
+        title: "추가 가능한 근무지가 없습니다.",
+        description: "이미 등록된 근무지를 제외하면 선택할 수 있는 근무지가 없습니다.",
+        status: "info",
+      });
+      return;
+    }
 
     const newRow = {
       rate_uuid: `temp-${Date.now()}`,
@@ -75,7 +94,6 @@ export default function useRateEditActions({
       if (tableData.length <= 1) {
         result = await handleUpdate({
           rate_uuid: selectedId,
-          work_place: EMPTY_PLACE,
           ...RATE_FIELDS.reduce((payload, field) => {
             payload[field.key] = null;
             return payload;
@@ -129,6 +147,25 @@ export default function useRateEditActions({
     if (missingPlace) {
       notify(toast, {
         title: "근무지를 선택해주세요.",
+        status: "warning",
+      });
+      return;
+    }
+
+    const savedRows = tableData.filter(
+      (row) =>
+        !row.isNew &&
+        row.rate_uuid !== editingId &&
+        row.work_place &&
+        row.work_place !== EMPTY_PLACE
+    );
+    const placeKeys = [...savedRows, ...pendingRows].map((row) =>
+      row.admin_work_place_uuid || String(row.work_place).trim().toLowerCase()
+    );
+    if (new Set(placeKeys).size !== placeKeys.length) {
+      notify(toast, {
+        title: "이미 등록된 근무지입니다.",
+        description: "같은 근무지는 직원별로 한 번만 등록할 수 있습니다.",
         status: "warning",
       });
       return;

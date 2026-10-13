@@ -1,12 +1,12 @@
 import {
   Box, Button, HStack, Popover, PopoverBody, PopoverContent, PopoverTrigger,
 } from "@chakra-ui/react";
-import { CalendarIcon } from "@chakra-ui/icons";
 import { ko } from "date-fns/locale";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 
 import { toLocalDateValue } from "./utils/dateValue";
+import TodayButton from "./TodayButton";
 
 export default function DatePicker({ value, onChange, width = "100%", size = "md" }) {
   const selected = value ? new Date(`${value}T00:00:00`) : undefined;
@@ -22,7 +22,6 @@ export default function DatePicker({ value, onChange, width = "100%", size = "md
               w={width}
               justifyContent="space-between"
               fontWeight="500"
-              rightIcon={<CalendarIcon color="gray.500" />}
             >
               {value || "날짜 선택"}
             </Button>
@@ -78,16 +77,13 @@ export default function DatePicker({ value, onChange, width = "100%", size = "md
                 />
               </Box>
               <HStack justify="flex-end" mt={2}>
-                <Button
+                <TodayButton
                   size="xs"
-                  variant="ghost"
                   onClick={() => {
                     onChange(toLocalDateValue(new Date()));
                     onClose();
                   }}
-                >
-                  오늘
-                </Button>
+                />
               </HStack>
             </PopoverBody>
           </PopoverContent>

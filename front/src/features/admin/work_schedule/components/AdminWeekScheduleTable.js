@@ -5,6 +5,8 @@ import { FiChevronLeft, FiChevronRight, FiEdit2, FiPlus, FiSave, FiTrash2, FiX }
 import { getScheduleStatus, SCHEDULE_STATUSES } from "../constants/scheduleStatus";
 import { addDaysToDateValue, toLocalDateValue } from "../../../common/utils/dateValue";
 import WorkSchedulePagination from "./WorkSchedulePagination";
+import TodayButton from "../../../common/TodayButton";
+import WorkScheduleDatePicker from "./WorkScheduleDatePicker";
 
 const PAGE_SIZE = 8;
 const draftId = () => `draft-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -84,17 +86,13 @@ export default function AdminWeekScheduleTable({ data, selectedDate, workPlaces,
 
     </HStack>
       <HStack spacing={2} flexWrap="wrap">
-        <HStack spacing={0} borderWidth="1px" borderColor="gray.200" borderRadius="md" overflow="hidden">
-          <Button size="sm" borderRadius={0} colorScheme="blue" variant={!editing ? "solid" : "ghost"} onClick={cancelEditing} isDisabled={!editing}>조회 모드</Button>
-          <Button size="sm" borderRadius={0} colorScheme="blue" variant={editing ? "solid" : "ghost"} onClick={startEditing} isDisabled={editing || isBusy || !visibleUsers.length || !dates.includes(selectedDate) || !editDate}>편집 모드</Button>
-        </HStack>
         <Text fontSize="sm" fontWeight="800" color="gray.700">기준 주</Text>
         <HStack spacing={0} borderWidth="1px" borderColor="gray.200" borderRadius="md" overflow="hidden">
           <Button size="sm" variant="ghost" borderRadius={0} aria-label="이전 주" isDisabled={dateChangeDisabled} onClick={() => onDateChange(addDaysToDateValue(selectedDate, -7))}><FiChevronLeft /></Button>
-          <Input aria-label="기준 주 선택" type="date" size="sm" w="155px" minW={0} borderWidth={0} borderRadius={0} value={selectedDate} isDisabled={dateChangeDisabled} onChange={(event) => onDateChange(event.target.value)} />
+          <WorkScheduleDatePicker value={selectedDate} onChange={onDateChange} isDisabled={dateChangeDisabled} />
           <Button size="sm" variant="ghost" borderRadius={0} aria-label="다음 주" isDisabled={dateChangeDisabled} onClick={() => onDateChange(addDaysToDateValue(selectedDate, 7))}><FiChevronRight /></Button>
         </HStack>
-        <Button size="sm" variant="outline" isDisabled={dateChangeDisabled} onClick={() => onDateChange(toLocalDateValue())}>이번 주</Button>
+        <TodayButton showIcon={false} isDisabled={dateChangeDisabled} tooltip="오늘이 포함된 주로 이동" onClick={() => onDateChange(toLocalDateValue())} />
         {editing ? <>
           <Badge colorScheme="blue">{visibleUsers.length}명 편집 중</Badge>
           <Button size="sm" leftIcon={<FiX />} variant="outline" onClick={cancelEditing}>편집 취소</Button>

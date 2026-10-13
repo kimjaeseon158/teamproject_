@@ -7,17 +7,6 @@ export default function ApprovalPageHeader({ loading, totalCount, onExcelOpen })
   return (
     <Flex justify="space-between" align="center" direction="row" gap={2} mb={5}>
       <Box>
-        <HStack spacing={3} mb={2}>
-          <Heading size="lg" color="gray.900">
-            승인 관리
-          </Heading>
-          <Badge colorScheme={loading ? "gray" : "orange"} borderRadius="full" px={3} py={1}>
-            {loading ? "조회 중" : `총 ${totalCount.toLocaleString()}건`}
-          </Badge>
-        </HStack>
-        <Text display={{ base: "none", md: "block" }} color="gray.500" fontSize="sm">
-          근무 내역을 조건별로 조회하고 승인 또는 반려 처리합니다.
-        </Text>
       </Box>
 
       <HStack display={{ base: "none", md: "flex" }} spacing={2} justify={{ base: "flex-start", md: "flex-end" }}>

@@ -13,7 +13,7 @@ const formatDate = (value) => {
 
 export default function BoardNoticePage(props) {
   const navigate = useNavigate();
-  const { results, count, error, filters, loading, page, search, setFilters, setPage, totalPages } = useBoardNotices();
+  const { results, count, error, filters, loading, page, resetFilters, search, setFilters, setPage, totalPages } = useBoardNotices();
   const updateFilter = (key) => (event) => setFilters((current) => ({ ...current, [key]: event.target.value }));
   const submitSearch = (event) => { event.preventDefault(); search(); };
 
@@ -28,6 +28,7 @@ export default function BoardNoticePage(props) {
           <Input flex={{ base: "1 1 100%", md: "0 1 auto" }} minW={0} bg="white" maxW={{ base: "none", md: "260px" }} placeholder="제목 검색" value={filters.title} onChange={updateFilter("title")} />
           <Input flex={{ base: "1 1 calc(100% - 70px)", md: "0 1 auto" }} minW={0} bg="white" maxW={{ base: "none", md: "220px" }} placeholder="작성자 검색" value={filters.author} onChange={updateFilter("author")} />
           <Button flexShrink={0} type="submit" colorScheme="teal">검색</Button>
+          <Button flexShrink={0} type="button" variant="outline" onClick={resetFilters} isDisabled={loading}>초기화</Button>
         </HStack>
         <Box display={{ base: "block", md: "none" }}>
           <HStack justify="space-between" align="center" mb={4}>
@@ -37,6 +38,7 @@ export default function BoardNoticePage(props) {
           <HStack as="form" onSubmit={submitSearch} spacing={2} mb={3}>
             <Input flex="1" minW={0} bg="white" placeholder="제목 또는 작성자 검색" value={filters.title} onChange={updateFilter("title")} />
             <Button type="submit" colorScheme="teal">검색</Button>
+            <Button type="button" variant="outline" onClick={resetFilters} isDisabled={loading}>초기화</Button>
           </HStack>
           <HStack spacing={2} overflowX="auto" pb={1} mb={4}>
             {["전체", "안전", "근무"].map((label, index) => <Button key={label} size="sm" flexShrink={0} borderRadius="full" colorScheme={index === 0 ? "blue" : "gray"} variant={index === 0 ? "solid" : "outline"} bg={index === 0 ? undefined : "white"}>{label}</Button>)}

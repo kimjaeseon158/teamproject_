@@ -43,6 +43,7 @@ export default function OverviewPage() {
           approvalQueue: <OverviewApprovalQueueSection
             summary={overview.approvalSummary}
             pendingPreview={overview.pendingPreview}
+            loading={overview.approvalLoading}
             onNavigateApproval={goApproval}
           />,
           finance: <OverviewFinanceSection

@@ -20,6 +20,7 @@ import "react-day-picker/dist/style.css";
 import MonthPicker from "../../../common/MonthPicker";
 import { EXTRA_WORK_TYPES } from "../../../common/workTypes";
 import { APPROVAL_STATUS } from "../constants/approvalConstants";
+import TodayButton from "../../../common/TodayButton";
 
 const getDisplayMonth = (monthValue, range) => {
   if (monthValue) {
@@ -201,9 +202,7 @@ export default function ApproveDesktopFilterBar({
               />
 
               <HStack mt={4} justify="space-between">
-                <Button size="xs" variant="ghost" onClick={handleTodayClick}>
-                  오늘
-                </Button>
+                <TodayButton size="xs" showIcon={false} onClick={handleTodayClick} />
 
                 <Button size="xs" variant="ghost" onClick={onRangeReset}>
                   초기화

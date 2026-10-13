@@ -3,7 +3,7 @@ import {
   Skeleton, Stack, Tab, TabList, Tabs, Text,
 } from "@chakra-ui/react";
 import { useState } from "react";
-import { FiArrowRight, FiCalendar, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiArrowRight, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import {
   CartesianGrid, Legend, Line, LineChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -143,7 +143,6 @@ const RecentTransactions = ({ overview }) => {
 
         {!monthlyRows.length && (
           <Flex flex="1" minH="280px" direction="column" align="center" justify="center" color="#94a3b8">
-            <Icon as={FiCalendar} boxSize={10} mb={3} />
             <Text>최근 6개월 금액 데이터가 없습니다.</Text>
           </Flex>
         )}

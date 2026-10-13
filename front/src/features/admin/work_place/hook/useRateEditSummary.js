@@ -10,8 +10,6 @@ export default function useRateEditSummary(tableData) {
         (row) => row.work_place && row.work_place !== EMPTY_PLACE
       ).length,
       base: average(tableData.map((row) => row.base_hourly_wage)),
-      overtime: average(tableData.map((row) => row.overtime_hourly_wage)),
-      early: average(tableData.map((row) => row.early_hourly_wage)),
       daySpecial: averageWithFallback(
         tableData,
         "day_special_hourly_wage",

@@ -96,7 +96,6 @@ export function useApproveList(toast) {
     userName = "",
     extraWork = "",
     page = 1,
-    ordering = "-work_date",
   }) => {
     try {
       setLoading(true);
@@ -113,7 +112,6 @@ export function useApproveList(toast) {
           extra_work: workFilters.extra_work,
           page,
           page_size: 10,
-          ordering,
         },
         { toast }
       );

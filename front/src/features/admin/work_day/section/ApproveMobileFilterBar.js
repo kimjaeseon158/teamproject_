@@ -49,7 +49,7 @@ export default function ApproveMobileFilterBar({
             <Input minW={0} aria-label="시작일" type="date" value={range?.from ? `${range.from.getFullYear()}-${String(range.from.getMonth() + 1).padStart(2, "0")}-${String(range.from.getDate()).padStart(2, "0")}` : ""} onChange={(e) => setRange({ ...range, from: e.target.value ? new Date(`${e.target.value}T00:00:00`) : undefined })} />
             <Input minW={0} aria-label="종료일" type="date" value={range?.to ? `${range.to.getFullYear()}-${String(range.to.getMonth() + 1).padStart(2, "0")}-${String(range.to.getDate()).padStart(2, "0")}` : ""} onChange={(e) => setRange({ ...range, to: e.target.value ? new Date(`${e.target.value}T00:00:00`) : undefined })} />
           </HStack>
-          <Button mt={2} size="sm" variant="ghost" onClick={onReset}>조건 초기화</Button>
+          <Button mt={2} size="sm" variant="outline" onClick={onReset}>초기화</Button>
         </Box>
       </Collapse>
       <Flex borderBottomWidth="1px" borderColor="gray.200" role="group" aria-label="승인 상태">

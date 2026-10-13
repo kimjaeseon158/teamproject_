@@ -2,6 +2,7 @@ import { Button, Flex, HStack, Text } from "@chakra-ui/react";
 import { AddIcon, DeleteIcon, InfoOutlineIcon } from "@chakra-ui/icons";
 
 export default function RateEditToolbar({
+  canAddRow,
   deleting,
   onAddRow,
   onDelete,
@@ -22,7 +23,14 @@ export default function RateEditToolbar({
       </HStack>
 
       <HStack spacing={2}>
-        <Button size="sm" leftIcon={<AddIcon />} colorScheme="green" onClick={onAddRow}>
+        <Button
+          size="sm"
+          leftIcon={<AddIcon />}
+          colorScheme="green"
+          onClick={onAddRow}
+          isDisabled={!canAddRow}
+          title={!canAddRow ? "첫 근무지를 등록하거나 추가 가능한 근무지를 확인해주세요." : undefined}
+        >
           근무지 추가
         </Button>
         <Button

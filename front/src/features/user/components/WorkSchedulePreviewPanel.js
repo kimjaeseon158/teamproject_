@@ -34,6 +34,7 @@ import { FiChevronLeft, FiChevronRight, FiSearch } from "react-icons/fi";
 import { fetchUserWorkSchedule } from "../api/userWorkSchedule";
 import { addDaysToDateValue, toLocalDateValue } from "../../common/utils/dateValue";
 import { useUser } from "../../auth/userContext";
+import TodayButton from "../../common/TodayButton";
 
 const statusColor = { DAY: "green", NIGHT: "blue", OFF: "gray", TRAINING: "orange" };
 const PAGE_SIZE = 8;
@@ -300,7 +301,7 @@ export default function WorkSchedulePreviewPanel({ isOpen, onClose, selectedDate
                 <Button aria-label="이전 달" variant="outline" onClick={() => moveMonth(-1)}><FiChevronLeft /></Button>
                 <Text minW={{ base: "160px", md: "260px" }} textAlign="center" fontSize={{ base: "lg", md: "2xl" }} fontWeight="900">{rangeLabel}</Text>
                 <Button aria-label="다음 달" variant="outline" onClick={() => moveMonth(1)}><FiChevronRight /></Button>
-                <Button variant="outline" onClick={moveToCurrentWeek}>이번 주</Button>
+                <TodayButton size="md" tooltip="오늘이 포함된 주로 이동" onClick={moveToCurrentWeek} />
                 <MonthPicker value={selectedMonth} onChange={selectMonth} width="160px" />
                 <Select maxW="190px" value={data.week_start || date} onChange={(event) => selectWeek(event.target.value)} bg="white">
                   {monthWeeks.map((week, index) => <option key={week.start} value={week.start}>{index + 1}주차 · {week.start.slice(5)}~{week.end.slice(5)}</option>)}
@@ -338,7 +339,7 @@ export default function WorkSchedulePreviewPanel({ isOpen, onClose, selectedDate
                       <MonthPicker size="sm" value={selectedMonth} onChange={selectMonth} width="135px" borderRadius="0" />
                       <Button size="sm" borderRadius="0" variant="ghost" aria-label="다음 달" onClick={() => moveMonth(1)}><FiChevronRight /></Button>
                     </HStack>
-                    <Button size="sm" variant="outline" onClick={moveToCurrentWeek}>이번 주</Button>
+                    <TodayButton tooltip="오늘이 포함된 주로 이동" onClick={moveToCurrentWeek} />
                     <HStack spacing={0} borderWidth="1px" borderRadius="md" overflow="hidden" bg="white">
                       <Select size="sm" w="90px" borderWidth="0" borderRightWidth="1px" borderRadius="0" value={searchType} onChange={(event) => setSearchType(event.target.value)}><option value="user_name">직원</option><option value="work_place">근무지</option><option value="work_place_detail">세부</option></Select>
                       <InputGroup size="sm" w="165px"><InputLeftElement pointerEvents="none"><FiSearch color="#A0AEC0" /></InputLeftElement><Input borderWidth="0" value={keyword} onChange={(event) => setKeyword(event.target.value)} onKeyDown={(event) => event.key === "Enter" && handleSearch()} placeholder="검색" /></InputGroup>

@@ -37,9 +37,6 @@ export default function DailyPayTableSection({
           <Heading size="sm" color="gray.800">
             직원별 일급 평균
           </Heading>
-          <Text fontSize="sm" color="gray.500" mt={1}>
-            평균 금액은 등록된 근무지 단가를 기준으로 계산합니다.
-          </Text>
         </Box>
         <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
           {totalCount.toLocaleString()}건

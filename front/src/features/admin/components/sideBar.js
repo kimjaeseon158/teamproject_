@@ -12,10 +12,11 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   FiBarChart2,
-  FiCalendar,
+  FiCheckSquare,
   FiChevronDown,
   FiDollarSign,
   FiHome,
+  FiGrid,
   FiMessageSquare,
   FiTrendingDown,
   FiTrendingUp,
@@ -26,9 +27,9 @@ import { useUser } from "../../auth/userContext";
 const navItems = [
   { label: "홈", path: "/dashboard", icon: FiHome, exact: true },
   { label: "직원 관리", path: "/dashboard/admin", icon: FiUsers },
-  { label: "승인 관리", path: "/dashboard/approval", icon: FiCalendar },
+  { label: "승인 관리", path: "/dashboard/approval", icon: FiCheckSquare },
   { label: "일급 관리", path: "/dashboard/daily-pay", icon: FiDollarSign },
-  { label: "근무표", path: "/dashboard/work-schedules", icon: FiCalendar },
+  { label: "근무표", path: "/dashboard/work-schedules", icon: FiGrid },
 ];
 const boardMenuItems = [
   { label: "공지사항", path: "/note", icon: FiMessageSquare },

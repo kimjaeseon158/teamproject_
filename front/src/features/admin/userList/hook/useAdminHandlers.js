@@ -162,31 +162,8 @@ export function useAdminHandlers(state, toast, loadEmployees) {
     if (showAllPending.current) return false;
     showAllPending.current = true;
     setShowAllLoading(true);
-    try {
-      setActiveFilters({});
-      setOrdering("user_name");
-      setPagination((current) => ({ ...current, page: 1 }));
-      setSearchForm(initialSearchForm);
-      setIsSearchActive(false);
-      setCheckedItems({});
-      setSelectedPerson(null);
-      notify({
-        title: "전체 보기",
-        description: "전체 직원 목록을 불러옵니다.",
-        status: "success",
-      });
-      return true;
-    } catch (error) {
-      notify({
-        title: "전체 목록 조회 실패",
-        description: error.message || "직원 목록을 다시 불러오지 못했습니다.",
-        status: "error",
-      });
-      return false;
-    } finally {
-      showAllPending.current = false;
-      setShowAllLoading(false);
-    }
+    window.location.reload();
+    return true;
   };
 
   const handleCloseSearch = () => {

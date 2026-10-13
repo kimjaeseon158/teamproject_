@@ -5,7 +5,6 @@ import { fetchEmployees } from "../api/admnsdbPost";
 export function useAdminData(state, toast) {
   const {
     activeFilters,
-    ordering,
     pagination,
     setLoading,
     setPagination,
@@ -19,7 +18,6 @@ export function useAdminData(state, toast) {
       const res = await fetchEmployees({
         page: requestedPage,
         page_size: 10,
-        ordering,
         ...filters,
         ...overrides,
       }, toast);
@@ -45,7 +43,7 @@ export function useAdminData(state, toast) {
     } finally {
       setLoading(false);
     }
-  }, [activeFilters, ordering, pagination.page, setLoading, setPagination, setPeopleData, toast]);
+  }, [activeFilters, pagination.page, setLoading, setPagination, setPeopleData, toast]);
 
   useEffect(() => {
     loadEmployees();

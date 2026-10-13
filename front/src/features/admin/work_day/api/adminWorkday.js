@@ -13,7 +13,6 @@ export async function getAdminWorkDays(
     extra_work,
     page = 1,
     page_size = 10,
-    ordering = "-work_date",
   } = {},
   { toast } = {}
 ) {
@@ -33,7 +32,6 @@ export async function getAdminWorkDays(
       extra_work,
       page,
       page_size,
-      ordering,
     })}`,
     { toast }
   );

@@ -30,11 +30,7 @@ export default function OverviewHeader({
       <Box>
         <HStack spacing={3} mb={1}>
           <Heading size="lg" color="gray.900">
-            홈 화면
           </Heading>
-          <Badge colorScheme="blue" borderRadius="full" px={3}>
-            {formatMonth(currentDate)}
-          </Badge>
         </HStack>
       </Box>
 
@@ -60,19 +56,11 @@ export default function OverviewHeader({
           size="sm"
           borderRadius="lg"
         />
-        <IconButton
-          aria-label="새로고침"
-          icon={<RepeatIcon />}
-          size="sm"
-          variant="outline"
-          isLoading={isLoading}
-          onClick={onRefresh}
-        />
-        {onEdit && (
+        {/* {onEdit && (
           <Button leftIcon={<EditIcon />} variant="outline" size="sm" onClick={onEdit}>
             편집
           </Button>
-        )}
+        )} */}
       </HStack>
     </Flex>
   );

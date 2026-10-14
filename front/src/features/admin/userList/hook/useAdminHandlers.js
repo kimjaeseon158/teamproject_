@@ -1,15 +1,11 @@
 import { useRef, useState } from "react";
 import { deleteEmployees } from "../api/adminPageDelete";
 import { updateEmployee } from "../api/adminPageUpdate";
-import { formatResidentNumber, formatPhoneNumber, getEmployeeSaveErrorMessage } from "../utils/format";
+import { formatResidentNumber, getEmployeeSaveErrorMessage } from "../utils/format";
 
 const initialSearchForm = {
   user_name: "",
-  phone_number: "010-",
   resident_number: "",
-  mobile_carrier: "",
-  user_uuid: "",
-  address: "",
 };
 
 export function useAdminHandlers(state, toast, loadEmployees) {
@@ -103,13 +99,6 @@ export function useAdminHandlers(state, toast, loadEmployees) {
     let nextValue = value;
 
     if (name === "resident_number") nextValue = formatResidentNumber(value);
-    if (name === "phone_number") {
-      let numeric = value.replace(/[^0-9]/g, "");
-      if (!numeric.startsWith("010")) {
-        numeric = "010";
-      }
-      nextValue = formatPhoneNumber(numeric);
-    }
 
     setSearchForm((prev) => ({
       ...prev,
@@ -119,18 +108,10 @@ export function useAdminHandlers(state, toast, loadEmployees) {
 
   const applySearch = async () => {
     const filters = {};
-    const allowedFilterKeys = [
-      "user_name",
-      "phone_number",
-      "resident_number",
-      "mobile_carrier",
-      "user_uuid",
-      "address",
-    ];
+    const allowedFilterKeys = ["user_name", "resident_number"];
 
     allowedFilterKeys.forEach((key) => {
       if (searchForm[key]?.trim()) {
-        if (key === "phone_number" && searchForm[key].trim() === "010-") return;
         filters[key] = searchForm[key].trim();
       }
     });

@@ -111,9 +111,7 @@ const Option = ({
 
       <OptionSegmentedControl
         baseShift={form.baseShift}
-        isSpecial={form.isSpecial}
         onShiftChange={form.handleShiftChange}
-        onSpecialToggle={() => form.setIsSpecial((prev) => !prev)}
       />
 
       <Button

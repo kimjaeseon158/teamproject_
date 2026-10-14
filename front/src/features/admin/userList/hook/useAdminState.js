@@ -3,11 +3,7 @@ import { DEFAULT_TABLE_PAGE_SIZE } from "../../../../constants/pagination";
 
 const initialSearchForm = {
   user_name: "",
-  phone_number: "010-",
   resident_number: "",
-  mobile_carrier: "",
-  user_uuid: "",
-  address: "",
 };
 
 export function useAdminState() {

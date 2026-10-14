@@ -4,6 +4,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import koLocale from "@fullcalendar/core/locales/ko";
 import { useBreakpointValue } from "@chakra-ui/react";
+import { getHolidayDates } from "./holidayCalendar";
 import "./css/calendar.css";
 
 const formatWon = (value) => {
@@ -13,6 +14,24 @@ const formatWon = (value) => {
 
 const isOvertimeType = (workType) =>
   String(workType || "").includes("잔업") || String(workType || "").includes("연장");
+
+const formatLocalDate = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const getVisibleYears = (start, end) => {
+  const lastVisibleDate = new Date(end);
+  lastVisibleDate.setDate(lastVisibleDate.getDate() - 1);
+
+  const years = [];
+  for (let year = start.getFullYear(); year <= lastVisibleDate.getFullYear(); year += 1) {
+    years.push(year);
+  }
+  return years;
+};
 
 const getDesktopPayLines = (props = {}) => {
   const breakdown = props.amount_breakdown || {};
@@ -68,6 +87,7 @@ export default function CalendarView({
   const containerRef = useRef(null);
   const lastYmRef = useRef(null);
   const [containerSize, setContainerSize] = useState(null);
+  const [holidayDates, setHolidayDates] = useState(() => new Set());
 
   useEffect(() => {
     if (!observeContainerResize || !containerRef.current) return;
@@ -218,15 +238,13 @@ export default function CalendarView({
         );
       }}
       dayCellClassNames={(arg) => {
-        const d = arg.date;
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, "0");
-        const day = String(d.getDate()).padStart(2, "0");
-        const dateStr = `${year}-${month}-${day}`;
+        const dateStr = formatLocalDate(arg.date);
+        const classNames = [];
 
         const target = selectedDate?.formatted || selectedDate;
-        if (dateStr === target) return ["selected-day"];
-        return [];
+        if (dateStr === target) classNames.push("selected-day");
+        if (holidayDates.has(dateStr)) classNames.push("holiday-day");
+        return classNames;
       }}
       dateClick={(arg) => {
         onDateClick?.(arg.dateStr);
@@ -244,16 +262,41 @@ export default function CalendarView({
         const month = String(date.getMonth() + 1).padStart(2, "0");
         const ym = `${year}-${month}`;
 
+        getHolidayDates(getVisibleYears(arg.start, arg.end))
+          .then((dates) => {
+            setHolidayDates((previous) => {
+              const hasNewDate = [...dates].some((holidayDate) => !previous.has(holidayDate));
+              if (!hasNewDate) return previous;
+              const merged = new Set([...previous, ...dates]);
+              return merged;
+            });
+          })
+          .catch((error) => {
+            console.error("공휴일 정보를 불러오지 못했습니다.", error);
+          });
+
         if (lastYmRef.current !== ym) {
           lastYmRef.current = ym;
           onTitleChange?.(ym);
         }
       }}
-      dayCellContent={(arg) => (
-        <div style={{ textAlign: "left", padding: "2px" }}>
-          <div>{arg.dayNumberText.replace("일", "")}</div>
-        </div>
-      )}
+      dayCellContent={(arg) => {
+        const dateStr = formatLocalDate(arg.date);
+        const target = selectedDate?.formatted || selectedDate;
+        const isSelected = dateStr === target;
+        const isHoliday = holidayDates.has(dateStr);
+
+        return (
+          <div style={{ textAlign: "left", padding: "2px" }}>
+            <div style={{
+              color: isSelected ? "white" : isHoliday ? "#e53e3e" : undefined,
+              fontWeight: isHoliday ? 500 : undefined,
+            }}>
+              {arg.dayNumberText.replace("일", "")}
+            </div>
+          </div>
+        );
+      }}
     />
   );
   return observeContainerResize

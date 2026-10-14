@@ -41,7 +41,18 @@ export default function EmployeeListHeader({
         <Button size={{ base: "xs", md: "md" }} minH={{ base: "32px", md: "40px" }} px={{ base: 2, md: 4 }} leftIcon={<SearchIcon />} colorScheme="teal" variant="outline" onClick={onSearchOpen}>
           직원 검색
         </Button>
-        <Button size={{ base: "sm", md: "md" }} leftIcon={<RepeatIcon />} colorScheme="Black" variant="outline"  onClick={onShowAll} isLoading={showAllLoading} loadingText="불러오는 중">
+        <Button
+          size={{ base: "sm", md: "md" }}
+          leftIcon={<RepeatIcon />}
+          color="gray.700"
+          borderColor="gray.400"
+          borderWidth="1px"
+          variant="outline"
+          _hover={{ bg: "gray.50", borderColor: "gray.500" }}
+          onClick={onShowAll}
+          isLoading={showAllLoading}
+          loadingText="불러오는 중"
+        >
           초기화
         </Button>
         <Button

@@ -50,7 +50,13 @@ export function useOptionHandlers({
     }
 
     const extraRows = extraEnabled
-      ? extraWorks.filter((row) => row.type && row.start && row.finish)
+      ? extraWorks.filter(
+          (row) =>
+            row.type &&
+            row.start &&
+            row.finish &&
+            !(isSpecial && row.type === "holiday_special")
+        )
       : [];
 
     const baseWorkType = isSpecial ? `${baseShift} 특근` : baseShift;

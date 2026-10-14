@@ -35,7 +35,6 @@ export default function DailyPayPage() {
       <DailyPaySummaryCards cards={statCards} />
 
       <DailyPayFilterBar
-        onExcelOpen={exportDisclosure.onOpen}
         onResetSearch={dailyPay.handleResetSearch}
         adminWorkPlaces={dailyPay.adminWorkPlaces}
         loading={dailyPay.loading}
@@ -58,6 +57,7 @@ export default function DailyPayPage() {
         onSort={dailyPay.handleSort}
         sortField={dailyPay.sortField}
         sortOrder={dailyPay.sortOrder}
+        onExcelOpen={exportDisclosure.onOpen}
       />
 
       {dailyPay.selectedUser && (

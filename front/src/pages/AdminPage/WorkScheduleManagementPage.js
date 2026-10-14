@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Badge, Box, Button, Heading, HStack, Text, useToast } from "@chakra-ui/react";
+import { Badge, Box, Button, HStack, useToast } from "@chakra-ui/react";
 import { FiRefreshCw, FiSave } from "react-icons/fi";
 
 import { getAdminWorkPlaceList } from "../../features/admin/work_place/api/adminWorkPlace";

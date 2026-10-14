@@ -1,8 +1,7 @@
 import { DownloadIcon } from "@chakra-ui/icons";
-import { Badge, Box, Button, Flex, Heading, HStack, Icon, Image, Tooltip } from "@chakra-ui/react";
+import { Badge, Box, Button, Flex, Heading, HStack, Icon, Tooltip } from "@chakra-ui/react";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
-import excelIcon from "../../../../assets/img/excel.png";
 import MonthPicker from "../../../common/MonthPicker";
 import TodayButton from "../../../common/TodayButton";
 
@@ -77,7 +76,6 @@ export default function TotalSalesHeader({
         <Tooltip label="Excel 생성" hasArrow>
           <Button
             leftIcon={<DownloadIcon />}
-            rightIcon={<Image src={excelIcon} w="22px" h="22px" alt="excel" />}
             colorScheme="green"
             variant="outline"
             size="sm"

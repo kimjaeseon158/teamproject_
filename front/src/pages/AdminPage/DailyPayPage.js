@@ -52,8 +52,13 @@ export default function DailyPayPage() {
         data={dailyPay.pagedData}
         totalCount={dailyPay.mergedData.length}
         totalPages={dailyPay.totalPages}
+        pageSize={dailyPay.pageSize}
         onEdit={dailyPay.handleEdit}
         onPageChange={dailyPay.setCurrentPage}
+        onPageSizeChange={(pageSize) => {
+          dailyPay.setPageSize(pageSize);
+          dailyPay.setCurrentPage(1);
+        }}
         onSort={dailyPay.handleSort}
         sortField={dailyPay.sortField}
         sortOrder={dailyPay.sortOrder}

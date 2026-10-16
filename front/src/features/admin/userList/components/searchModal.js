@@ -11,7 +11,6 @@ import {
   FormControl,
   FormLabel,
   SimpleGrid,
-  Text,
 } from "@chakra-ui/react";
 
 export default function SearchModal({

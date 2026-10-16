@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-
-const PAGE_SIZE = 8;
+import { DEFAULT_TABLE_PAGE_SIZE } from "../../../../constants/pagination";
 
 const compareText = (aValue, bValue, compareDirection = 1) =>
   String(aValue || "").localeCompare(String(bValue || ""), "ko") * compareDirection;
 
 export default function useDailyPayTableState(mergedData) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_TABLE_PAGE_SIZE);
   const [sortField, setSortField] = useState("user_name");
   const [sortOrder, setSortOrder] = useState("desc");
 
@@ -38,11 +38,11 @@ export default function useDailyPayTableState(mergedData) {
     return nextData;
   }, [mergedData, sortField, sortOrder]);
 
-  const totalPages = Math.max(1, Math.ceil(sortedData.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(sortedData.length / pageSize));
   const pagedData = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return sortedData.slice(start, start + PAGE_SIZE);
-  }, [currentPage, sortedData]);
+    const start = (currentPage - 1) * pageSize;
+    return sortedData.slice(start, start + pageSize);
+  }, [currentPage, pageSize, sortedData]);
 
   useEffect(() => {
     setCurrentPage((page) => Math.min(page, totalPages));
@@ -65,7 +65,9 @@ export default function useDailyPayTableState(mergedData) {
     currentPage,
     handleSort,
     pagedData,
+    pageSize,
     setCurrentPage,
+    setPageSize,
     sortField,
     sortOrder,
     totalPages,

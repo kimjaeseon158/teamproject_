@@ -10,8 +10,10 @@ export default function DailyPayTableSection({
   data,
   totalCount,
   totalPages,
+  pageSize,
   onEdit,
   onPageChange,
+  onPageSizeChange,
   onSort,
   sortField,
   sortOrder,
@@ -73,7 +75,10 @@ export default function DailyPayTableSection({
         <DailyPayPagination
           currentPage={currentPage}
           totalPages={totalPages}
+          totalCount={totalCount}
+          pageSize={pageSize}
           onChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
         />
       </Box>
     </Box>

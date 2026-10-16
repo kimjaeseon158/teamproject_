@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Badge, Box, Button, HStack, Input, Select, SimpleGrid, Table, Tbody, Td, Text, Th, Thead, Tr, VStack } from "@chakra-ui/react";
+import { Badge, Box, Button, Flex, Heading, HStack, Input, Select, SimpleGrid, Table, Tbody, Td, Text, Th, Thead, Tr, VStack } from "@chakra-ui/react";
 import { FiChevronLeft, FiChevronRight, FiEdit2, FiPlus, FiSave, FiTrash2, FiX } from "react-icons/fi";
 
 import { getScheduleStatus, SCHEDULE_STATUSES } from "../constants/scheduleStatus";
@@ -7,8 +7,8 @@ import { addDaysToDateValue, toLocalDateValue } from "../../../common/utils/date
 import WorkSchedulePagination from "./WorkSchedulePagination";
 import TodayButton from "../../../common/TodayButton";
 import WorkScheduleDatePicker from "./WorkScheduleDatePicker";
+import { DEFAULT_TABLE_PAGE_SIZE } from "../../../../constants/pagination";
 
-const PAGE_SIZE = 8;
 const draftId = () => `draft-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const scheduleKey = (item) => item.schedule_uuid || item.__client_uuid || item.__draft_id;
 const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -42,21 +42,22 @@ function ScheduleEditor({ schedule, workPlaces, onChange, onRemove, compact = fa
   </VStack>;
 }
 
-export default function AdminWeekScheduleTable({ data, selectedDate, workPlaces, onApplyRows, onDateChange, onEditingChange, dateChangeDisabled = false, isBusy = false }) {
+export default function AdminWeekScheduleTable({ data, selectedDate, workPlaces, onApplyRows, onDateChange, onEditingChange, actionControls, dateChangeDisabled = false, isBusy = false }) {
   const scrollContainer = useRef(null);
   const selectedColumn = useRef(null);
   const [editing, setEditing] = useState(false);
   const [editDate, setEditDate] = useState(selectedDate);
   const [draftRows, setDraftRows] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_TABLE_PAGE_SIZE);
   const [nameFilter, setNameFilter] = useState("");
   const [placeFilter, setPlaceFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const dates = useMemo(() => (data.dates || []).filter((date) => date >= data.week_start && date <= data.week_end), [data.dates, data.week_end, data.week_start]);
   const placeNames = useMemo(() => [...new Set(workPlaces.map((place) => place.work_place).filter(Boolean))].sort(), [workPlaces]);
   const filteredUsers = useMemo(() => data.users.filter((user) => { const schedules = dates.flatMap((date) => user.days?.[date] || []); return (!nameFilter.trim() || user.user_name?.toLowerCase().includes(nameFilter.trim().toLowerCase())) && (!placeFilter || schedules.some((item) => item.work_place === placeFilter)) && (!statusFilter || schedules.some((item) => item.status === statusFilter)); }), [data.users, dates, nameFilter, placeFilter, statusFilter]);
-  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
-  const visibleUsers = useMemo(() => filteredUsers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE), [currentPage, filteredUsers]);
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / pageSize));
+  const visibleUsers = useMemo(() => filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize), [currentPage, filteredUsers, pageSize]);
 
   useEffect(() => { setCurrentPage(1); setEditing(false); setDraftRows({}); setEditDate(dates.includes(selectedDate) ? selectedDate : dates[0] || ""); }, [data.week_start, dates, selectedDate]);
   useEffect(() => setCurrentPage(1), [nameFilter, placeFilter, statusFilter]);
@@ -78,14 +79,22 @@ export default function AdminWeekScheduleTable({ data, selectedDate, workPlaces,
   const applyEditing = () => { const rows = visibleUsers.map((user) => ({ user, draftDays: draftRows[user.user_uuid] })); if (onApplyRows(rows, [editDate]) !== false) cancelEditing(); };
 
   return <Box>
-    <HStack mb={2} p={2} bg="white" borderWidth="1px" borderColor="gray.200" borderRadius="xl" justify="space-between" align="center" flexWrap="wrap" spacing={3}>
+    <HStack mb={3} px={{ base: 4, md: 6 }} py={3} bg="white" borderWidth="1px" borderColor="gray.200" borderRadius="xl" justify="space-between" align="center" flexWrap="wrap" spacing={3}>
       <HStack spacing={2} flexWrap="wrap" flex="1" minW={0}>
       <Input aria-label="직원 이름 검색" size="sm" w={{ base: "100%", md: "180px" }} bg="white" placeholder="직원 이름 검색" value={nameFilter} onChange={(e) => setNameFilter(e.target.value)} isDisabled={editing} />
       <Select aria-label="근무지 필터" size="sm" w="150px" bg="white" value={placeFilter} onChange={(e) => setPlaceFilter(e.target.value)} isDisabled={editing}><option value="">전체 근무지</option>{placeNames.map((name) => <option key={name} value={name}>{name}</option>)}</Select>
       <Select aria-label="근무 상태 필터" size="sm" w="120px" bg="white" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} isDisabled={editing}><option value="">전체 상태</option>{SCHEDULE_STATUSES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</Select>
 
     </HStack>
-      <HStack spacing={2} flexWrap="wrap">
+      {actionControls}
+    </HStack>
+    <Box bg="white" borderWidth="1px" borderRadius="xl" overflow="hidden">
+      <Flex px={6} py={5} minH="72px" borderBottomWidth="1px" borderColor="gray.100" justify="space-between" align="center" gap={4} flexWrap="wrap">
+        <HStack spacing={3}>
+          <Heading as="h2" size="sm">근무표</Heading>
+          <Badge px={2.5} py={1} borderRadius="full" colorScheme="blue">{filteredUsers.length}명</Badge>
+        </HStack>
+        <HStack spacing={2} flexWrap="wrap" justify="flex-end">
         <HStack spacing={1}>
           <Button size="sm" variant="outline" minW="32px" px={0} aria-label="이전 주" isDisabled={dateChangeDisabled} onClick={() => onDateChange(addDaysToDateValue(selectedDate, -7))}><FiChevronLeft /></Button>
           <WorkScheduleDatePicker value={selectedDate} onChange={onDateChange} isDisabled={dateChangeDisabled} />
@@ -97,16 +106,17 @@ export default function AdminWeekScheduleTable({ data, selectedDate, workPlaces,
           <Button size="sm" leftIcon={<FiX />} variant="outline" onClick={cancelEditing}>편집 취소</Button>
           <Button size="sm" leftIcon={<FiSave />} colorScheme="blue" onClick={applyEditing}>변경 적용</Button>
         </> : <Button size="sm" leftIcon={<FiEdit2 />} colorScheme="blue" onClick={startEditing} isDisabled={isBusy || !visibleUsers.length || !dates.includes(selectedDate) || !editDate}>이 날짜 편집</Button>}
-      </HStack>
-    </HStack>
-    <Box bg="white" borderWidth="1px" borderRadius="xl" overflow="hidden">
+        </HStack>
+      </Flex>
+      <Box p={{ base: 3, md: 6 }}>
       <Box ref={scrollContainer} overflowX="auto">
-      <Table size="sm" minW={editing ? "1160px" : "880px"} sx={{ tableLayout: "fixed" }}><Thead bg="gray.50"><Tr><Th w="120px" px={3} py={2} position="sticky" left={0} zIndex={3} bg="gray.50" boxShadow="2px 0 0 #E2E8F0">직원</Th>{dates.map((date) => { const day = new Date(`${date}T00:00:00`).getDay(); const baseline = date === selectedDate; const active = editing && date === editDate; return <Th key={date} ref={baseline ? selectedColumn : null} w={active ? "280px" : undefined} px={1} py={1.5} textAlign="center" bg={active ? "blue.200" : baseline ? "cyan.50" : undefined} borderLeftWidth={active ? "3px" : baseline ? "2px" : undefined} borderRightWidth={active ? "3px" : baseline ? "2px" : undefined} borderTopWidth={baseline ? "3px" : undefined} borderColor={active ? "blue.500" : baseline ? "cyan.400" : undefined} color={active ? "blue.900" : baseline ? "cyan.800" : day === 0 ? "red.500" : day === 6 ? "blue.500" : "gray.700"} cursor={dateChangeDisabled ? "default" : "pointer"} _hover={dateChangeDisabled ? undefined : { bg: baseline ? "cyan.100" : "blue.50" }} onClick={() => { if (!dateChangeDisabled) onDateChange(date); }} aria-label={`${date} ${dayLabel(date)}요일${baseline ? ", 선택됨" : ", 선택"}`}><Text fontSize="10px" mb={1}>{dayLabel(date)}</Text>{active && <Badge mr={2} colorScheme="blue">편집</Badge>}{date.slice(5).replace("-", ".")}</Th>; })}</Tr></Thead>
-        <Tbody>{visibleUsers.map((user) => <Tr key={user.user_uuid} _hover={{ bg: "gray.50" }}><Td verticalAlign="middle" h="max(68px, calc((100dvh - 350px) / 8))" px={3} py={3} position="sticky" left={0} zIndex={2} bg="white" boxShadow="2px 0 0 #E2E8F0"><Text fontWeight="900">{user.user_name}</Text></Td>{dates.map((date) => { const baseline = date === selectedDate; const active = editing && date === editDate; const schedules = active ? draftRows[user.user_uuid]?.[date] || [] : user.days?.[date] || []; const limitReached = schedules.length >= 2; return <Td key={date} px={2} py={2} verticalAlign={active ? "top" : "middle"} bg={active ? "blue.50" : baseline ? "cyan.50" : undefined} borderLeftWidth={active ? "3px" : baseline ? "2px" : undefined} borderRightWidth={active ? "3px" : baseline ? "2px" : undefined} borderColor={active ? "blue.500" : baseline ? "cyan.300" : undefined} cursor={!editing && !dateChangeDisabled ? "pointer" : "default"} _hover={!editing && !dateChangeDisabled ? { bg: baseline ? "cyan.100" : "blue.50" } : undefined} onClick={() => { if (!editing && !dateChangeDisabled) onDateChange(date); }} aria-label={`${user.user_name}, ${date}${baseline ? ", 선택한 날짜" : ", 날짜 선택"}`}>{active ? <VStack align="stretch" spacing={1.5}><SimpleGrid columns={schedules.length > 1 ? 2 : 1} spacing={1.5}>{schedules.map((item) => <ScheduleEditor compact={schedules.length > 1} key={scheduleKey(item)} schedule={item} workPlaces={workPlaces} onChange={(next) => updateDay(user.user_uuid, (items) => items.map((current) => scheduleKey(current) === scheduleKey(item) ? next : current))} onRemove={() => updateDay(user.user_uuid, (items) => items.filter((current) => scheduleKey(current) !== scheduleKey(item)))} />)}</SimpleGrid><Button size="xs" variant="outline" colorScheme="blue" leftIcon={<FiPlus />} isDisabled={limitReached} title={limitReached ? "하루에 최대 2개 일정만 등록할 수 있습니다." : ""} onClick={() => updateDay(user.user_uuid, (items) => items.length >= 2 ? items : [...items, { __draft_id: draftId(), status: "DAY", status_label: "주간", admin_work_place_uuid: "", work_place: "", work_place_detail: "" }])}>{limitReached ? "최대 2개" : "일정 추가"}</Button></VStack> : <ScheduleCell schedules={schedules} />}</Td>; })}</Tr>)}</Tbody>
+      <Table size="sm" minW={editing ? "1160px" : "880px"} sx={{ tableLayout: "fixed" }}><Thead bg="gray.50" h="60px"><Tr><Th w="120px" h="60px" px={3} py={4} position="sticky" left={0} zIndex={3} bg="gray.50" boxShadow="2px 0 0 #E2E8F0">직원</Th>{dates.map((date) => { const day = new Date(`${date}T00:00:00`).getDay(); const baseline = date === selectedDate; const active = editing && date === editDate; return <Th key={date} ref={baseline ? selectedColumn : null} w={active ? "280px" : undefined} h="60px" px={2} py={4} textAlign="center" bg={active ? "blue.600" : baseline ? "gray.700" : undefined} borderLeftWidth={baseline ? "1px" : undefined} borderRightWidth={baseline ? "1px" : undefined} borderColor={active ? "blue.700" : baseline ? "gray.500" : undefined} color={baseline ? "white" : day === 0 ? "red.500" : day === 6 ? "blue.500" : "gray.700"} cursor={dateChangeDisabled ? "default" : "pointer"} _hover={dateChangeDisabled ? undefined : { bg: baseline ? (active ? "blue.700" : "gray.800") : "blue.50" }} onClick={() => { if (!dateChangeDisabled) onDateChange(date); }} aria-label={`${date} ${dayLabel(date)}요일${baseline ? ", 선택됨" : ", 선택"}`}><HStack justify="center" spacing={2}>{active && <Badge colorScheme="blue">편집</Badge>}<Text fontSize="xs">{dayLabel(date)}</Text><Text>{date.slice(5).replace("-", ".")}</Text></HStack></Th>; })}</Tr></Thead>
+        <Tbody>{visibleUsers.map((user) => <Tr key={user.user_uuid} _hover={{ bg: "gray.50" }}><Td verticalAlign="middle" h="max(68px, calc((100dvh - 350px) / 8))" px={3} py={3} position="sticky" left={0} zIndex={2} bg="white" boxShadow="2px 0 0 #E2E8F0"><Text fontWeight="900">{user.user_name}</Text></Td>{dates.map((date) => { const baseline = date === selectedDate; const active = editing && date === editDate; const schedules = active ? draftRows[user.user_uuid]?.[date] || [] : user.days?.[date] || []; const limitReached = schedules.length >= 2; return <Td key={date} px={2} py={2} verticalAlign={active ? "top" : "middle"} bg={active ? "blue.50" : baseline ? "gray.50" : undefined} borderLeftWidth={active ? "3px" : baseline ? "1px" : undefined} borderRightWidth={active ? "3px" : baseline ? "1px" : undefined} borderColor={active ? "blue.500" : baseline ? "gray.300" : undefined} cursor={!editing && !dateChangeDisabled ? "pointer" : "default"} _hover={!editing && !dateChangeDisabled ? { bg: baseline ? "gray.100" : "blue.50" } : undefined} onClick={() => { if (!editing && !dateChangeDisabled) onDateChange(date); }} aria-label={`${user.user_name}, ${date}${baseline ? ", 선택한 날짜" : ", 날짜 선택"}`}>{active ? <VStack align="stretch" spacing={1.5}><SimpleGrid columns={schedules.length > 1 ? 2 : 1} spacing={1.5}>{schedules.map((item) => <ScheduleEditor compact={schedules.length > 1} key={scheduleKey(item)} schedule={item} workPlaces={workPlaces} onChange={(next) => updateDay(user.user_uuid, (items) => items.map((current) => scheduleKey(current) === scheduleKey(item) ? next : current))} onRemove={() => updateDay(user.user_uuid, (items) => items.filter((current) => scheduleKey(current) !== scheduleKey(item)))} />)}</SimpleGrid><Button size="xs" variant="outline" colorScheme="blue" leftIcon={<FiPlus />} isDisabled={limitReached} title={limitReached ? "하루에 최대 2개 일정만 등록할 수 있습니다." : ""} onClick={() => updateDay(user.user_uuid, (items) => items.length >= 2 ? items : [...items, { __draft_id: draftId(), status: "DAY", status_label: "주간", admin_work_place_uuid: "", work_place: "", work_place_detail: "" }])}>{limitReached ? "최대 2개" : "일정 추가"}</Button></VStack> : <ScheduleCell schedules={schedules} />}</Td>; })}</Tr>)}</Tbody>
       </Table>
       </Box>
+      </Box>
       {!filteredUsers.length && <Text py={14} textAlign="center" color="gray.500">조건에 맞는 직원이 없습니다.</Text>}
-      <WorkSchedulePagination currentPage={currentPage} totalPages={totalPages} totalCount={filteredUsers.length} pageSize={PAGE_SIZE} onChange={(page) => { if (!editing) setCurrentPage(page); }} />
+      <WorkSchedulePagination currentPage={currentPage} totalPages={totalPages} totalCount={filteredUsers.length} pageSize={pageSize} isDisabled={editing} onChange={(page) => { if (!editing) setCurrentPage(page); }} onPageSizeChange={(size) => { if (!editing) { setPageSize(size); setCurrentPage(1); } }} />
     </Box>
   </Box>;
 }

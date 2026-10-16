@@ -50,10 +50,8 @@ export default function WorkScheduleManagementPage() {
     return true;
   };
 
-  return (
-    <Box minH="100%" bg="gray.50" p={{ base: 2, md: 3 }}>
-      <HStack justify="flex-end" align="center" mb={3} flexWrap="wrap" spacing={3}>
-        <HStack flexWrap="wrap" justify={{ base: "flex-start", lg: "flex-end" }}>
+  const scheduleActions = (
+    <HStack flexWrap="wrap" justify={{ base: "flex-start", lg: "flex-end" }}>
           <Button
             size="sm"
             colorScheme="blue"
@@ -81,9 +79,11 @@ export default function WorkScheduleManagementPage() {
           >
             일괄 저장 {schedule.changeCount > 0 && <Badge ml={2}>{schedule.changeCount}</Badge>}
           </Button>
-        </HStack>
-      </HStack>
+    </HStack>
+  );
 
+  return (
+    <Box minH="100%" bg="gray.50" p={{ base: 4, md: 6 }} maxW="100%" overflowX="hidden">
       <AdminWeekScheduleTable
         data={schedule.data}
         selectedDate={schedule.date}
@@ -93,6 +93,7 @@ export default function WorkScheduleManagementPage() {
         isBusy={schedule.loading || schedule.saving || schedule.copying}
         workPlaces={workPlaces}
         onApplyRows={handleApplyRows}
+        actionControls={scheduleActions}
       />
     </Box>
   );

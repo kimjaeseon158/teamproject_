@@ -31,12 +31,6 @@ export default function TotalSalesPage() {
       overflowX="hidden"
       overflowY="auto"
     >
-      <TotalSalesHeader
-        apiMonth={totalSales.apiMonth}
-        onMonthChange={totalSales.setApiMonth}
-        onExcelOpen={totalSales.exportDisclosure.onOpen}
-      />
-
       {totalSales.loading && <Flex position="absolute" inset={0} zIndex={5} bg="whiteAlpha.900" align="center" justify="center" role="status"><Spinner color="blue.500" mr={3} /><Text>3개월 급여 현황을 불러오는 중입니다.</Text></Flex>}
       <TotalSalesSummaryCards
         selectedMonthTotal={totalSales.selectedMonthTotal}
@@ -63,12 +57,19 @@ export default function TotalSalesPage() {
               selectedMonth={totalSales.selectedDetailMonth}
               onMonthClick={totalSales.setSelectedDetailMonth}
               height="100%"
+              headerActions={(
+                <TotalSalesHeader
+                  apiMonth={totalSales.apiMonth}
+                  onMonthChange={totalSales.setApiMonth}
+                />
+              )}
             />
           </Box>
 
           <WorkerPaySummarySection
             selectedMonthTotal={totalSales.selectedMonthTotal}
             workerSummary={totalSales.workerSummary}
+            onExcelOpen={totalSales.exportDisclosure.onOpen}
           />
         </Box>
 

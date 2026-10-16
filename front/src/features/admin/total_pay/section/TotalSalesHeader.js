@@ -1,5 +1,4 @@
-import { DownloadIcon } from "@chakra-ui/icons";
-import { Badge, Box, Button, Flex, Heading, HStack, Icon, Tooltip } from "@chakra-ui/react";
+import { Button, HStack, Icon } from "@chakra-ui/react";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 import MonthPicker from "../../../common/MonthPicker";
@@ -19,7 +18,6 @@ const getCurrentMonth = () => {
 export default function TotalSalesHeader({
   apiMonth,
   onMonthChange,
-  onExcelOpen,
 }) {
   const currentMonth = getCurrentMonth();
   const changeMonth = (value) => {
@@ -27,25 +25,7 @@ export default function TotalSalesHeader({
   };
 
   return (
-    <Flex
-      justify="space-between"
-      align={{ base: "stretch", md: "center" }}
-      direction={{ base: "column", md: "row" }}
-      gap={4}
-      mb={3}
-    >
-      <Box>
-        <HStack spacing={3} mb={2}>
-          <Heading size="lg" color="gray.900">
-            급여 현황
-          </Heading>
-          <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
-            {apiMonth}
-          </Badge>
-        </HStack>
-      </Box>
-
-      <HStack spacing={2}>
+      <HStack spacing={2} flexWrap="wrap" justify="flex-end">
         <Button
           aria-label="이전 달"
           variant="outline"
@@ -73,19 +53,6 @@ export default function TotalSalesHeader({
           isDisabled={apiMonth === currentMonth}
           onClick={() => changeMonth(currentMonth)}
         />
-        <Tooltip label="Excel 생성" hasArrow>
-          <Button
-            leftIcon={<DownloadIcon />}
-            colorScheme="green"
-            variant="outline"
-            size="sm"
-            minW="92px"
-            onClick={onExcelOpen}
-          >
-            Excel
-          </Button>
-        </Tooltip>
       </HStack>
-    </Flex>
   );
 }

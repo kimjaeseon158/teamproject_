@@ -16,10 +16,12 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
   const toast = useToast();
   const detailDisclosure = useDisclosure();
   const { rows, pagination, summary, loading, fetchList } = useApproveList(toast);
+  const detailLookup = useApproveList(toast);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const detailDate = searchParams.get("date");
   const detailOpened = useRef(false);
+  const detailRequested = useRef(false);
   const filters = useApprovalFilters(detailDate);
   const selection = useApprovalSelection(rows);
   const table = useApprovalTableState();
@@ -41,9 +43,23 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
   }, [rows, table.sortField, table.sortOrder]);
 
   useEffect(() => {
-    if (detailOpened.current || loading || !detailDate || !rows.length) return;
+    if (detailRequested.current || !detailDate) return;
+    detailRequested.current = true;
+    detailLookup.fetchList({
+      status: APPROVAL_INITIAL_STATUS,
+      startDate: detailDate,
+      endDate: detailDate,
+      page: 1,
+      pageSize: 50,
+    });
+    // Fetch the linked record separately so the visible list can load the full month.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailDate]);
+
+  useEffect(() => {
+    if (detailOpened.current || detailLookup.loading || !detailDate || !detailLookup.rows.length) return;
     const workdayId = searchParams.get("workday");
-    const matches = rows.filter((row) =>
+    const matches = detailLookup.rows.filter((row) =>
       workdayId
         ? String(row.id) === workdayId
         : row.user_uuid === searchParams.get("user") &&
@@ -56,8 +72,9 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
       detailOpened.current = true;
       setSelectedEmployee(matches[0]);
       detailDisclosure.onOpen();
+      setSearchParams({}, { replace: true });
     }
-  }, [detailDate, detailDisclosure, loading, rows, searchParams]);
+  }, [detailDate, detailDisclosure, detailLookup.loading, detailLookup.rows, searchParams, setSearchParams]);
 
   const searchWithFilters = async (
     nextFilters = {},

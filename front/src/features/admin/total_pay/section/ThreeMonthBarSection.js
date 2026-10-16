@@ -15,6 +15,7 @@ export default function ThreeMonthBarSection({
   onMonthClick,
   selectedMonth,
   height = 420,
+  headerActions,
 }) {
   return (
     <Flex
@@ -28,11 +29,12 @@ export default function ThreeMonthBarSection({
       boxShadow="sm"
       overflow="hidden"
     >
-      <Box flexShrink={0}>
+      <Flex flexShrink={0} justify="space-between" align="center" gap={4} mb={2} flexWrap="wrap">
         <Heading size="sm" color="gray.800">
           최근 3개월 지급 그래프
         </Heading>
-      </Box>
+        {headerActions}
+      </Flex>
 
       <Box flex="1" minH="260px">
         <ResponsiveContainer width="100%" height={height}>

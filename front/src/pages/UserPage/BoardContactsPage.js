@@ -38,23 +38,44 @@ export default function BoardContactsPage(props) {
                 {group.items.map((contact) => {
                   const phone = String(contact.phone_number || "").replace(/[^\d+]/g, "");
                   const canCall = /^\+?\d+$/.test(phone);
+                  const cardContent = (
+                    <>
+                      <Text fontWeight="900">{contact.user_name}</Text>
+                      <Text color="gray.600">{contact.phone_number || "등록된 번호 없음"}</Text>
+                      <Box flex="1" />
+                      <Icon as={FiPhone} color={canCall ? "blue.500" : "gray.300"} boxSize={5} flexShrink={0} aria-hidden="true" />
+                    </>
+                  );
                   return (
-                  <HStack
-                    key={`${contact.user_name}-${contact.phone_number}`}
-                    as={canCall ? "a" : "div"}
-                    href={canCall ? `tel:${phone}` : undefined}
-                    aria-label={canCall ? `${contact.user_name} ${contact.phone_number} 전화 걸기` : undefined}
-                    p={4} borderWidth="1px" borderRadius="md"
-                    cursor={canCall ? "pointer" : "default"}
-                    _hover={canCall ? { bg: "blue.50", borderColor: "blue.200" } : undefined}
-                    _active={canCall ? { bg: "blue.100" } : undefined}
-                    _focusVisible={{ outline: "2px solid", outlineColor: "blue.500", outlineOffset: "2px" }}
-                  >
-                    <Text fontWeight="900">{contact.user_name}</Text>
-                    <Text color="gray.600">{contact.phone_number || "등록된 번호 없음"}</Text>
-                    <Box flex="1" />
-                    <Icon as={FiPhone} color={canCall ? "blue.500" : "gray.300"} boxSize={5} flexShrink={0} aria-hidden="true" />
-                  </HStack>
+                    <Box key={`${contact.user_name}-${contact.phone_number}`}>
+                      <HStack
+                        display={{ base: "none", md: "flex" }}
+                        as={canCall ? "button" : "div"}
+                        type={canCall ? "button" : undefined}
+                        onClick={canCall ? () => contacts.copyPhoneNumber(phone) : undefined}
+                        aria-label={canCall ? `${contact.user_name} 전화번호 복사` : undefined}
+                        w="100%" textAlign="left" p={4} borderWidth="1px" borderRadius="md"
+                        cursor={canCall ? "pointer" : "default"}
+                        _hover={canCall ? { bg: "blue.50", borderColor: "blue.200" } : undefined}
+                        _active={canCall ? { bg: "blue.100" } : undefined}
+                        _focusVisible={{ outline: "2px solid", outlineColor: "blue.500", outlineOffset: "2px" }}
+                      >
+                        {cardContent}
+                      </HStack>
+                      <HStack
+                        display={{ base: "flex", md: "none" }}
+                        as={canCall ? "a" : "div"}
+                        href={canCall ? `tel:${phone}` : undefined}
+                        aria-label={canCall ? `${contact.user_name} ${contact.phone_number} 전화 걸기` : undefined}
+                        w="100%" textAlign="left" p={4} borderWidth="1px" borderRadius="md"
+                        cursor={canCall ? "pointer" : "default"}
+                        _hover={canCall ? { bg: "blue.50", borderColor: "blue.200" } : undefined}
+                        _active={canCall ? { bg: "blue.100" } : undefined}
+                        _focusVisible={{ outline: "2px solid", outlineColor: "blue.500", outlineOffset: "2px" }}
+                      >
+                        {cardContent}
+                      </HStack>
+                    </Box>
                   );
                 })}
               </SimpleGrid>

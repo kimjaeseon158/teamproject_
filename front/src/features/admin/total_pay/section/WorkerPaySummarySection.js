@@ -1,24 +1,27 @@
-import { Badge, Box, Card, CardBody, Flex, Heading, SimpleGrid, Text } from "@chakra-ui/react";
+import { DownloadIcon } from "@chakra-ui/icons";
+import { Badge, Box, Button, Card, CardBody, Flex, Heading, HStack, SimpleGrid, Tooltip } from "@chakra-ui/react";
 
 import SelectedMonthSummary from "../components/SelectedMonthSummary";
 import WorkerPayCard from "../components/WorkerPayCard";
 
-export default function WorkerPaySummarySection({ selectedMonthTotal, workerSummary }) {
+export default function WorkerPaySummarySection({ selectedMonthTotal, workerSummary, onExcelOpen }) {
   return (
     <Card border="1px solid" borderColor="gray.100" boxShadow="sm" flexShrink={0}>
       <CardBody py={4}>
         <Flex justify="space-between" align="center" mb={3}>
-          <Box>
-            <Heading size="sm" color="gray.800">
-              근무자별 지급 현황
-            </Heading>
-            <Text fontSize="sm" color="gray.500" mt={1}>
-              선택 월 금액 기준 상위 근무자
-            </Text>
-          </Box>
-          <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
-            {workerSummary.length.toLocaleString()}명
-          </Badge>
+          <Heading size="sm" color="gray.800">
+            근무자별 지급 현황
+          </Heading>
+          <HStack spacing={3}>
+            <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
+              {workerSummary.length.toLocaleString()}명
+            </Badge>
+            <Tooltip label="Excel 생성" hasArrow>
+              <Button leftIcon={<DownloadIcon />} colorScheme="green" variant="outline" size="sm" minW="92px" onClick={onExcelOpen}>
+                Excel
+              </Button>
+            </Tooltip>
+          </HStack>
         </Flex>
 
         {workerSummary.length === 0 ? (

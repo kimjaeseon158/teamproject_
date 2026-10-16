@@ -16,7 +16,7 @@ export default function useApprovalFilters(detailDate) {
     if (/^\d{4}-\d{2}-\d{2}$/.test(detailDate || "")) {
       const date = new Date(`${detailDate}T00:00:00`);
       if (!Number.isNaN(date.getTime()) && toYMD(date) === detailDate) {
-        return { from: date, to: date };
+        return getMonthRange(toMonthValue(date));
       }
     }
     return getInitialApprovalRange();

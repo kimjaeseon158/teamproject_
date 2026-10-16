@@ -1,34 +1,13 @@
 import {
-  Box,
   Button,
   Flex,
-  HStack,
   Input,
-  Popover,
-  PopoverBody,
-  PopoverCloseButton,
-  PopoverContent,
-  PopoverTrigger,
   Select,
-  Text,
 } from "@chakra-ui/react";
-import { DayPicker } from "react-day-picker";
-import { ko } from "date-fns/locale";
-import { useEffect, useRef, useState } from "react";
-import "react-day-picker/dist/style.css";
 
-import MonthPicker from "../../../common/MonthPicker";
 import { EXTRA_WORK_TYPES } from "../../../common/workTypes";
 import { APPROVAL_STATUS } from "../constants/approvalConstants";
-
-const getDisplayMonth = (monthValue, range) => {
-  if (monthValue) {
-    const [year, month] = monthValue.split("-").map(Number);
-    if (year && month) return new Date(year, month - 1, 1);
-  }
-
-  return range?.from || new Date();
-};
+import ApprovalRangePicker from "./ApprovalRangePicker";
 
 export default function ApproveDesktopFilterBar({
   status,
@@ -48,30 +27,11 @@ export default function ApproveDesktopFilterBar({
   rangeLabel,
   selectedMonth,
   onMonthChange,
-  onRangeReset,
   onReset,
   onSearch,
   loading,
 }) {
-  const [calendarMonth, setCalendarMonth] = useState(() =>
-    getDisplayMonth(selectedMonth, range)
-  );
-  const previousSelectedMonthRef = useRef(selectedMonth);
   const isFilterDisabled = loading || workPlacesLoading;
-
-  const handleTodayClick = () => {
-    const today = new Date();
-    setRange({ from: today, to: today });
-    setCalendarMonth(new Date(today.getFullYear(), today.getMonth(), 1));
-  };
-
-  useEffect(() => {
-    if (selectedMonth && selectedMonth !== previousSelectedMonthRef.current) {
-      setCalendarMonth(getDisplayMonth(selectedMonth, range));
-    }
-
-    previousSelectedMonthRef.current = selectedMonth;
-  }, [selectedMonth, range]);
 
 
   return (
@@ -148,71 +108,29 @@ export default function ApproveDesktopFilterBar({
         조회
       </Button>
 
-      <Button size="sm" variant="outline" onClick={onReset} isDisabled={loading}>
+      <Button
+        size="sm"
+        variant="outline"
+        color="gray.700"
+        borderColor="gray.500"
+        borderWidth="1px"
+        fontWeight="600"
+        _hover={{ bg: "gray.50", borderColor: "gray.600" }}
+        onClick={onReset}
+        isDisabled={loading}
+      >
         초기화
       </Button>
 
-      <Box ml={{ base: 0, md: "auto" }} w={{ base: "100%", md: "auto" }}>
-        <Popover placement="bottom-end">
-          <PopoverTrigger>
-            <Button size="sm" variant="outline" w={{ base: "100%", md: "auto" }}>
-              {rangeLabel}
-            </Button>
-          </PopoverTrigger>
-
-          <PopoverContent w="auto" p={4}>
-            <PopoverCloseButton top="8px" right="8px" />
-
-            <PopoverBody>
-              <DayPicker
-                mode="range"
-                locale={ko}
-                weekStartsOn={1}
-                formatters={{
-                  formatCaption: (month) =>
-                    `${month.getFullYear()}년 ${month.getMonth() + 1}월`,
-                }}
-                month={calendarMonth}
-                onMonthChange={setCalendarMonth}
-                selected={range}
-                onSelect={setRange}
-                components={{
-                  MonthCaption: ({ calendarMonth, ...props }) => (
-                    <HStack {...props} justify="flex-start" spacing={3} mb={2}>
-                      <Text fontSize="sm" fontWeight="800" color="gray.800">
-                        {`${calendarMonth.date.getFullYear()}년 ${
-                          calendarMonth.date.getMonth() + 1
-                        }월`}
-                      </Text>
-                      <MonthPicker
-                        value={selectedMonth}
-                        onChange={onMonthChange}
-                        size="xs"
-                        width="68px"
-                        borderRadius="md"
-                        placement="bottom-start"
-                        placeholder="월 선택"
-                        labelFormat="month"
-                        buttonLabel="월 선택"
-                      />
-                    </HStack>
-                  ),
-                }}
-              />
-
-              <HStack mt={4} justify="space-between">
-                <Button size="xs" variant="ghost" onClick={handleTodayClick}>
-                  오늘
-                </Button>
-
-                <Button size="xs" variant="ghost" onClick={onRangeReset}>
-                  초기화
-                </Button>
-              </HStack>
-            </PopoverBody>
-          </PopoverContent>
-        </Popover>
-      </Box>
+      <ApprovalRangePicker
+        ml={{ base: 0, md: "auto" }}
+        range={range}
+        setRange={setRange}
+        rangeLabel={rangeLabel}
+        selectedMonth={selectedMonth}
+        onMonthChange={onMonthChange}
+        loading={loading}
+      />
     </Flex>
   );
 }

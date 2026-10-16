@@ -1,4 +1,16 @@
 import { ApiGet, toQueryString } from "../../../../services/api/requestJson";
+import { EMPTY_PLACE, RATE_FIELDS } from "../constants/rateFields";
+
+const normalizeEmptyRates = (users) => users.map((user) => ({
+  ...user,
+  rates: (user.rates || []).map((rate) => {
+    const isEmptyRate = RATE_FIELDS.every(
+      (field) => rate[field.key] == null || rate[field.key] === ""
+    );
+
+    return isEmptyRate ? { ...rate, work_place: EMPTY_PLACE } : rate;
+  }),
+}));
 
 export async function getWorkPlaceList(params = {}, toast) {
   try {
@@ -15,7 +27,7 @@ export async function getWorkPlaceList(params = {}, toast) {
     return {
       ...data,
       success: data?.success === true || data?.success === "true",
-      users: Array.isArray(data?.users) ? data.users : [],
+      users: Array.isArray(data?.users) ? normalizeEmptyRates(data.users) : [],
     };
   } catch (err) {
     if (toast) {

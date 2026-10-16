@@ -12,6 +12,7 @@ import {
 import { addMinutesToTime } from "../../../common/workTimeUtils";
 import { EXTRA_WORK_TYPES, getExtraWorkTypeByLabel } from "../../../common/workTypes";
 import { getAdminWorkDays } from "../api/adminWorkday";
+import { DEFAULT_TABLE_PAGE_SIZE } from "../../../../constants/pagination";
 
 const SPECIAL_WORK_SHIFT_MAP = {
   "주간 특근": { workShift: "주간", extraWork: "주간 특근" },
@@ -72,7 +73,7 @@ export function useApproveList(toast) {
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState({
     page: 1,
-    page_size: 10,
+    page_size: DEFAULT_TABLE_PAGE_SIZE,
     total_count: 0,
     total_pages: 1,
   });
@@ -96,7 +97,7 @@ export function useApproveList(toast) {
     userName = "",
     extraWork = "",
     page = 1,
-    ordering = "-work_date",
+    pageSize = DEFAULT_TABLE_PAGE_SIZE,
   }) => {
     try {
       setLoading(true);
@@ -112,8 +113,7 @@ export function useApproveList(toast) {
           user_name: userName.trim(),
           extra_work: workFilters.extra_work,
           page,
-          page_size: 10,
-          ordering,
+          page_size: pageSize,
         },
         { toast }
       );

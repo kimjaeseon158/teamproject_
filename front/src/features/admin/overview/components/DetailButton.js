@@ -1,10 +1,17 @@
 import { Button } from "@chakra-ui/react";
 import { ExternalLinkIcon } from "@chakra-ui/icons";
 
-export default function DetailButton({ onClick }) {
+export default function DetailButton({ onClick, label = "상세", ...buttonProps }) {
   return (
-    <Button size="xs" variant="outline" rightIcon={<ExternalLinkIcon />} onClick={onClick} flexShrink={0}>
-      상세
+    <Button
+      size="xs"
+      variant="outline"
+      rightIcon={<ExternalLinkIcon />}
+      onClick={onClick}
+      flexShrink={0}
+      {...buttonProps}
+    >
+      {label}
     </Button>
   );
 }

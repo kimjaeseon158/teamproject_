@@ -1,19 +1,16 @@
-import { CARRIER_OPTIONS } from "../constants/carrierConstants";
 import {
   Modal,
   ModalOverlay,
   ModalContent,
   ModalHeader,
+  ModalCloseButton,
   ModalBody,
   ModalFooter,
   Button,
   Input,
-  Stack,
-  Select,
-  Text,
-  Box,
-  Divider,
-  HStack,
+  FormControl,
+  FormLabel,
+  SimpleGrid,
 } from "@chakra-ui/react";
 
 export default function SearchModal({
@@ -24,87 +21,63 @@ export default function SearchModal({
   onSearch,
 }) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isCentered closeOnOverlayClick={false} closeOnEsc={false}>
+    <Modal isOpen={isOpen} onClose={onClose} isCentered size="lg">
       <ModalOverlay backdropFilter="blur(4px)" />
-      <ModalContent w={{ base: "90%", md: "100%" }} maxH="90dvh" my="5dvh" borderRadius="xl" overflow="hidden" p={{ base: 0, md: 2 }}>
-        <ModalHeader fontSize="lg" fontWeight="bold">
+      <ModalContent
+        w={{ base: "calc(100% - 32px)", md: "100%" }}
+        borderRadius="2xl"
+        overflow="hidden"
+      >
+        <ModalHeader px={{ base: 5, md: 6 }} pt={6} pb={1} fontSize="xl" fontWeight="800">
           직원 검색
         </ModalHeader>
+        <ModalCloseButton top={5} right={5} />
 
-        <Divider mb={4} />
-
-        <ModalBody overflowY="auto" px={{ base: 4, md: 6 }}>
-          <Stack spacing={5}>
-            <Box>
-              <Text fontSize="sm" mb={1} color="gray.600">
+        <ModalBody px={{ base: 5, md: 6 }} py={5}>
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+            <FormControl>
+              <FormLabel mb={2} fontSize="sm" color="gray.700">
                 이름
-              </Text>
+              </FormLabel>
               <Input
                 name="user_name"
                 value={searchForm.user_name || ""}
                 onChange={onChange}
+                onKeyDown={(event) => event.key === "Enter" && onSearch()}
+                placeholder="직원 이름"
                 focusBorderColor="blue.400"
+                autoFocus
               />
-            </Box>
+            </FormControl>
 
-            <Box>
-              <Text fontSize="sm" mb={1} color="gray.600">
-                전화번호
-              </Text>
-
-              <HStack>
-                <Select
-                  name="mobile_carrier"
-                  value={searchForm.mobile_carrier || ""}
-                  onChange={onChange}
-                  focusBorderColor="blue.400"
-                  maxW="120px"
-                >
-                  <option value="">통신사</option>
-                  {CARRIER_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Select>
-                <Input
-                  name="phone_number"
-                  value={searchForm.phone_number || "010-"}
-                  onChange={onChange}
-                  focusBorderColor="blue.400"
-                  placeholder="010-1234-5678"
-                />
-              </HStack>
-            </Box>
-
-            <Box>
-              <Text fontSize="sm" mb={1} color="gray.600">
-                주민번호
-              </Text>
+            <FormControl>
+              <FormLabel mb={2} fontSize="sm" color="gray.700">
+                주민등록번호
+              </FormLabel>
               <Input
                 name="resident_number"
                 value={searchForm.resident_number || ""}
                 onChange={onChange}
+                onKeyDown={(event) => event.key === "Enter" && onSearch()}
+                placeholder="000000-0000000"
                 focusBorderColor="blue.400"
+                inputMode="numeric"
               />
-            </Box>
-
-          </Stack>
+            </FormControl>
+          </SimpleGrid>
         </ModalBody>
 
-        <ModalFooter flexShrink={0} px={{ base: 4, md: 6 }}>
+        <ModalFooter px={{ base: 5, md: 6 }} pb={6} pt={1} gap={2}>
+          <Button variant="ghost" onClick={onClose}>
+            취소
+          </Button>
           <Button
-            mr={3}
             colorScheme="blue"
             borderRadius="lg"
             px={6}
             onClick={onSearch}
           >
             검색
-          </Button>
-
-          <Button variant="ghost" onClick={onClose}>
-            닫기
           </Button>
         </ModalFooter>
       </ModalContent>

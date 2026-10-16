@@ -78,12 +78,20 @@
 
 /* 일요일 */
 .fc-daygrid-day.fc-day-sun .fc-daygrid-day-number {
-  color: #feb2b2 ;
+  color: #e53e3e;
+  font-weight: 500;
+}
+
+/* 공휴일 */
+.fc-daygrid-day.holiday-day .fc-daygrid-day-number {
+  color: #e53e3e;
+  font-weight: 500;
 }
 
 /* 토요일 */
 .fc-daygrid-day.fc-day-sat .fc-daygrid-day-number {
-  color: #90cdf4;
+  color: #3182ce;
+  font-weight: 500;
 }
 
 /* 선택된 날짜 디자인 개선 */

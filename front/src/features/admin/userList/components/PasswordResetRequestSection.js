@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertDialog, AlertDialogBody, AlertDialogContent, AlertDialogFooter,
   AlertDialogHeader, AlertDialogOverlay, Box, Button, Center, Spinner,
@@ -6,6 +6,8 @@ import {
 } from "@chakra-ui/react";
 import { approvePasswordResetRequest, getPasswordResetRequests } from "../api/passwordResetRequests";
 import { ERROR_MESSAGES, getErrorMessage } from "../../../../constants/errorMessages";
+import { DEFAULT_TABLE_PAGE_SIZE } from "../../../../constants/pagination";
+import ApprovePagination from "../../work_day/section/ApprovePagination";
 
 const formatRequestedAt = (value) => {
   if (!value) return "-";
@@ -20,6 +22,13 @@ export default function PasswordResetRequestSection({ onCountChange }) {
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_TABLE_PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(requests.length / pageSize));
+  const pagedRequests = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return requests.slice(start, start + pageSize);
+  }, [currentPage, pageSize, requests]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -38,6 +47,7 @@ export default function PasswordResetRequestSection({ onCountChange }) {
   }, [onCountChange, toast]);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { setCurrentPage((page) => Math.min(page, totalPages)); }, [totalPages]);
 
   const openApproval = (request) => {
     setSelected(request);
@@ -67,12 +77,22 @@ export default function PasswordResetRequestSection({ onCountChange }) {
   if (!requests.length) return <Center minH="280px" bg="white" borderWidth="1px" borderRadius="lg"><Box textAlign="center"><Text fontWeight="bold">대기 중인 초기화 요청이 없습니다.</Text><Text fontSize="sm" color="gray.500" mt={2}>새 요청이 접수되면 이곳에서 확인할 수 있습니다.</Text></Box></Center>;
 
   return (
-    <Box bg="white" borderWidth="1px" borderRadius="lg" overflowX="auto">
+    <Box bg="white" borderWidth="1px" borderRadius="lg" overflow="hidden">
+      <Box overflowX="auto">
       <Table><Thead bg="gray.50"><Tr><Th>이름</Th><Th>아이디</Th><Th>요청 시각</Th><Th>상태</Th><Th textAlign="right">관리</Th></Tr></Thead>
-        <Tbody>{requests.map((request) => (
+        <Tbody>{pagedRequests.map((request) => (
           <Tr key={request.request_uuid}><Td fontWeight="bold">{request.user_name}</Td><Td>{request.user_id}</Td><Td>{formatRequestedAt(request.requested_at)}</Td><Td>대기</Td><Td textAlign="right"><Button size="sm" colorScheme="blue" onClick={() => openApproval(request)} isDisabled={!!approving}>승인</Button></Td></Tr>
         ))}</Tbody>
       </Table>
+      </Box>
+      <ApprovePagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalCount={requests.length}
+        pageSize={pageSize}
+        onChange={setCurrentPage}
+        onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
+      />
       <AlertDialog isOpen={disclosure.isOpen} onClose={disclosure.onClose} isCentered>
         <AlertDialogOverlay><AlertDialogContent><AlertDialogHeader>비밀번호 초기화 승인</AlertDialogHeader><AlertDialogBody>
           <Text><strong>{selected?.user_name}</strong>님의 비밀번호가 생년월일 6자리로 초기화되고 기존 로그인 세션이 종료됩니다.</Text>

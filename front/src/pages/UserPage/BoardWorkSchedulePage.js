@@ -7,6 +7,7 @@ import BoardPageTitle from "../../features/board/components/BoardPageTitle";
 import BoardWeekScheduleTable from "../../features/board/work_schedule/components/BoardWeekScheduleTable";
 import useBoardWorkSchedule from "../../features/board/work_schedule/hook/useBoardWorkSchedule";
 import { addDaysToDateValue, toLocalDateValue } from "../../features/common/utils/dateValue";
+import TodayButton from "../../features/common/TodayButton";
 
 export default function BoardWorkSchedulePage(props) {
   const [mobile] = useMediaQuery("(max-width: 47.99em)", { ssr: false });
@@ -28,7 +29,7 @@ export default function BoardWorkSchedulePage(props) {
           <IconButton size="sm" variant="outline" aria-label="이전 주" icon={<FiChevronLeft />} onClick={() => schedule.selectDate(addDaysToDateValue(schedule.date, -7))} />
           <ScheduleDatePicker month={schedule.selectedMonth} selectedDate={schedule.selectedDate} onSelect={schedule.selectDate} label={range} />
           <IconButton size="sm" variant="outline" aria-label="다음 주" icon={<FiChevronRight />} onClick={() => schedule.selectDate(addDaysToDateValue(schedule.date, 7))} />
-          <Button size="sm" variant="outline" onClick={schedule.goCurrentWeek}>이번 주</Button>
+          <TodayButton tooltip="오늘이 포함된 주로 이동" onClick={schedule.goCurrentWeek} />
         </HStack>
       </Flex>
       {schedule.error && <Box role="alert" color="red.600"><Text>근무표를 불러오지 못했습니다. 다시 조회해 주세요.</Text></Box>}

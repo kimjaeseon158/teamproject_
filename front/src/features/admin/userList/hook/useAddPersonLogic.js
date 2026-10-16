@@ -1,10 +1,11 @@
 import { useRef, useState } from "react";
 import { createEmployee } from "../api/adminPageAddPerson";
-import { formatPhoneNumber, formatResidentNumber } from "../utils/format";
+import { formatPhoneNumber, formatResidentNumber, getEmployeeSaveErrorMessage, validateEmployeeForm } from "../utils/format";
 
 export function useAddPersonLogic(onSave, onClose, toast) {
   const submitting = useRef(false);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     user_name: "",
     resident_number: "",
@@ -25,6 +26,12 @@ export function useAddPersonLogic(onSave, onClose, toast) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    setErrors((current) => {
+      if (!current[name]) return current;
+      const next = { ...current };
+      delete next[name];
+      return next;
+    });
 
     if (name === "resident_number") {
       setFormData((prev) => ({
@@ -56,46 +63,22 @@ export function useAddPersonLogic(onSave, onClose, toast) {
     e.preventDefault();
     if (submitting.current) return;
 
-    const {
-      user_name,
-      resident_number,
-      phone_number,
-      user_id,
-      mobile_carrier,
-      address,
-      address_detail,
-    } = formData;
-
-    if (!user_name || !resident_number || !phone_number || !user_id) {
+    const validationErrors = validateEmployeeForm(formData, { requireUserId: true });
+    if (Object.keys(validationErrors).length) {
+      setErrors(validationErrors);
       notify({
-        title: "필수 항목 누락",
-        description: "이름, 주민등록번호, 전화번호를 입력해주세요.",
+        title: "입력 정보를 확인해 주세요.",
+        description: Object.values(validationErrors)[0],
         status: "warning",
       });
       return;
     }
 
-    if (resident_number.replace(/\D/g, "").length !== 13) {
-      notify({
-        title: "주민등록번호 확인",
-        description: "주민등록번호 13자리를 모두 입력해 주세요.",
-        status: "warning",
-      });
-      return;
-    }
-
-    if (phone_number.replace(/\D/g, "").length !== 11) {
-      notify({
-        title: "전화번호 확인",
-        description: "전화번호 11자리를 모두 입력해 주세요.",
-        status: "warning",
-      });
-      return;
-    }
+    const { user_name, resident_number, phone_number, user_id, mobile_carrier, address, address_detail } = formData;
 
     const payload = {
-      user_name,
-      user_id,
+      user_name: user_name.trim(),
+      user_id: user_id.trim(),
       phone_number,
       mobile_carrier,
       resident_number,
@@ -117,14 +100,14 @@ export function useAddPersonLogic(onSave, onClose, toast) {
       } else {
         notify({
           title: "등록 실패",
-          description: result?.error || result?.message || "직원 정보를 등록하지 못했습니다.",
+          description: getEmployeeSaveErrorMessage(result?.error || result?.message, "직원 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요."),
           status: "error",
         });
       }
     } catch (err) {
       notify({
-        title: "서버 오류",
-        description: err.message || "직원 등록 중 오류가 발생했습니다.",
+        title: "등록 실패",
+        description: getEmployeeSaveErrorMessage(err?.message, "직원 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요."),
         status: "error",
       });
     } finally {
@@ -135,6 +118,7 @@ export function useAddPersonLogic(onSave, onClose, toast) {
 
   return {
     saving,
+    errors,
     formData,
     setFormData,
     handleChange,

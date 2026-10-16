@@ -17,11 +17,15 @@ import {
   Text,
   useToast,
   VStack,
+  Spinner,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { DownloadIcon } from "@chakra-ui/icons";
+import { FcGoogle } from "react-icons/fc";
 
 import useAdminWorkPlaceOptions from "../../../common/hooks/useAdminWorkPlaceOptions";
+import useGoogleLinkStatus from "../../api/google/useGoogleLinkStatus";
+import { login as googleLogin } from "../../api/google/googleAuth";
 
 const ALL_WORK_PLACES = "__ALL__";
 
@@ -38,6 +42,7 @@ export default function ExcelExportModal({
   const [year, setYear] = useState(today.getFullYear().toString());
   const [month, setMonth] = useState(String(today.getMonth() + 1).padStart(2, "0"));
   const workPlaceOptions = useAdminWorkPlaceOptions(toast, showWorkPlace);
+  const googleStatus = useGoogleLinkStatus();
 
   useEffect(() => {
     if (!isOpen) {
@@ -90,6 +95,29 @@ export default function ExcelExportModal({
         </ModalHeader>
 
         <ModalBody px={8} py={10}>
+          {googleStatus.loading ? (
+            <VStack py={10} spacing={4}>
+              <Spinner color="green.500" />
+              <Text color="gray.500">Google 연결 상태를 확인하고 있습니다.</Text>
+            </VStack>
+          ) : !googleStatus.linked ? (
+            <VStack py={6} spacing={5} textAlign="center">
+              <FcGoogle size={42} />
+              <Box>
+                <Text fontWeight="900" color="gray.800">Google Drive 연결이 필요합니다.</Text>
+                <Text mt={2} fontSize="sm" color="gray.500">
+                  한 번 연결하면 다른 Excel 생성 기능에서도 계속 사용할 수 있습니다.
+                </Text>
+              </Box>
+              <Button
+                leftIcon={<FcGoogle />}
+                colorScheme="blue"
+                onClick={() => googleLogin(window.location.pathname)}
+              >
+                Google 연결
+              </Button>
+            </VStack>
+          ) : (
           <VStack spacing={8} align="stretch">
             {showWorkPlace && (
               <FormControl>
@@ -170,11 +198,12 @@ export default function ExcelExportModal({
               </SimpleGrid>
             </FormControl>
           </VStack>
+          )}
         </ModalBody>
 
         <ModalFooter p={8} pt={0}>
           <VStack w="100%" spacing={3}>
-            <Button
+            {googleStatus.linked && <Button
               colorScheme="green"
               w="100%"
               h="60px"
@@ -192,7 +221,7 @@ export default function ExcelExportModal({
               _active={{ transform: "translateY(0)" }}
             >
               업로드 시작하기
-            </Button>
+            </Button>}
             <Button
               variant="ghost"
               color="gray.400"

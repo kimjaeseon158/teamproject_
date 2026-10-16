@@ -80,6 +80,10 @@ export default function useBoardContacts() {
     keyword,
     loading,
     copyPhoneNumber,
+    reset: () => {
+      setKeyword("");
+      load("");
+    },
     search: () => load(keyword),
     setKeyword,
   };

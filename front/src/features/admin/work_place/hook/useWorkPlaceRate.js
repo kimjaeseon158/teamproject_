@@ -1,4 +1,4 @@
-import { EMPTY_PLACE, RATE_FIELDS } from "../constants/rateFields";
+import { RATE_FIELDS } from "../constants/rateFields";
 import { addWorkPlaceRates, createWorkPlaceRate } from "../api/userWorkplace_addList";
 import { getWorkPlaceFiltering } from "../api/userWorkplaceFiltering";
 import { updateWorkPlaceRate } from "../api/userWorkplace_Update";
@@ -6,7 +6,6 @@ import { deleteWorkPlaceRate } from "../api/userWorkplace_Delete";
 
 const buildEmptyRatePayload = (rateUuid) => ({
   rate_uuid: rateUuid,
-  work_place: EMPTY_PLACE,
   ...RATE_FIELDS.reduce((payload, field) => {
     payload[field.key] = null;
     return payload;

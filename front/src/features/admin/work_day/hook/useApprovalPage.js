@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useDisclosure, useToast } from "@chakra-ui/react";
 
@@ -25,6 +25,20 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
   const table = useApprovalTableState();
   const approvalExport = useApprovalExport({ onExcelExportClose, toast });
   const workPlaceOptions = useAdminWorkPlaceOptions(toast);
+  const sortedRows = useMemo(() => {
+    const direction = table.sortOrder === "asc" ? 1 : -1;
+
+    return [...rows].sort((a, b) => {
+      if (table.sortField === "totalWorkMinutes") {
+        return ((Number(a.totalWorkMinutes) || 0) - (Number(b.totalWorkMinutes) || 0)) * direction;
+      }
+
+      return String(a[table.sortField] || "").localeCompare(
+        String(b[table.sortField] || ""),
+        "ko"
+      ) * direction;
+    });
+  }, [rows, table.sortField, table.sortOrder]);
 
   useEffect(() => {
     if (detailOpened.current || loading || !detailDate || !rows.length) return;
@@ -48,7 +62,7 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
   const searchWithFilters = async (
     nextFilters = {},
     requestedPage = table.currentPage,
-    requestedOrdering = table.getOrdering()
+    requestedPageSize = table.pageSize
   ) => {
     const searchParams = filters.getSearchParams(nextFilters);
     if (!searchParams.range?.from) {
@@ -69,7 +83,7 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
       startDate: toYMD(searchParams.range.from),
       endDate: toYMD(searchParams.range.to ?? searchParams.range.from),
       page: requestedPage,
-      ordering: requestedOrdering,
+      pageSize: requestedPageSize,
     };
     const nextPagination = await fetchList(request);
 
@@ -116,7 +130,7 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
       nextUserName: "",
       nextExtraWork: "",
       nextRange: filters.initialRange,
-    }, 1, "-work_date");
+    }, 1);
     // initial load only
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -127,25 +141,25 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
     searchWithFilters({}, page);
   };
 
-  const handleSort = (field) => {
-    const ordering = table.handleSort(field);
+  const handlePageSizeChange = (pageSize) => {
     selection.clearSelection();
-    searchWithFilters({}, 1, ordering);
+    table.setCurrentPage(1);
+    table.setPageSize(pageSize);
+    searchWithFilters({}, 1, pageSize);
+  };
+
+  const handleSort = (field) => {
+    table.handleSort(field);
+    selection.clearSelection();
+  };
+
+  const handleMobileSort = (field) => {
+    table.handleSortDescending(field);
+    selection.clearSelection();
   };
 
   const handleResetFilters = () => {
-    filters.resetFilters();
-    table.resetSort();
-    table.setCurrentPage(1);
-    selection.clearSelection();
-    searchWithFilters({
-      nextStatus: APPROVAL_INITIAL_STATUS,
-      nextWorkPlace: "",
-      nextWorkType: "",
-      nextUserName: "",
-      nextExtraWork: "",
-      nextRange: filters.initialRange,
-    }, 1, "-work_date");
+    window.location.reload();
   };
 
   const openDetail = (employee) => {
@@ -164,7 +178,9 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
     extraWork: filters.extraWork,
     handleExcelExport: approvalExport.handleExcelExport,
     handleMonthChange: filters.handleMonthChange,
+    handleMobileSort,
     handlePageChange,
+    handlePageSizeChange,
     handleRangeChange: filters.handleRangeChange,
     handleRangeReset: filters.handleRangeReset,
     handleResetFilters,
@@ -174,7 +190,7 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
     handleTogglePage: selection.handleTogglePage,
     loading,
     openDetail,
-    paginatedRows: rows,
+    paginatedRows: sortedRows,
     range: filters.range,
     rangeLabel: filters.rangeLabel,
     rejectEmployee: actions.rejectEmployee,
@@ -195,7 +211,7 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
     toggleOne: selection.toggleOne,
     totalCount: pagination.total_count,
     totalPages: pagination.total_pages,
-    pageSize: pagination.page_size,
+    pageSize: table.pageSize,
     updateBulkStatus: actions.updateBulkStatus,
     userName: filters.userName,
     workPlace: filters.workPlace,

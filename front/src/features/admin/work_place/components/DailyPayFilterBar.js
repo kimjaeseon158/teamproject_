@@ -10,7 +10,6 @@ export default function DailyPayFilterBar({
   onSearch,
   onUserNameChange,
   onWorkPlaceChange,
-  onExcelOpen,
   onResetSearch,
 }) {
   return (
@@ -60,7 +59,6 @@ export default function DailyPayFilterBar({
         <Box ml={{ base: 0, md: "auto" }} w={{ base: "100%", md: "auto" }}>
           <DailyPayActions
             loading={loading}
-            onExcelOpen={onExcelOpen}
             onResetSearch={onResetSearch}
           />
         </Box>

@@ -14,6 +14,7 @@ import {
 } from "@chakra-ui/react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import { useState, useEffect } from "react";
+import { FiCalendar } from "react-icons/fi";
 
 export default function MonthPicker({
   value,        // 반드시 "YYYY-MM"
@@ -70,6 +71,7 @@ export default function MonthPicker({
             <Button 
               size={size}
               variant={variant} 
+              leftIcon={<FiCalendar />}
               w={width} 
               h={height} 
               fontWeight="600"

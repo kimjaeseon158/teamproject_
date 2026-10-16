@@ -14,8 +14,6 @@ export default function useApproveSummary(workDays = []) {
     };
 
     workDays.forEach((item) => {
-      if (item.is_approved !== null) return;
-
       summary.total += 1;
 
       if (item.work_shift === "주간") summary.day += 1;

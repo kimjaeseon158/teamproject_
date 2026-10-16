@@ -12,6 +12,7 @@ export default function ApprovalResults({ approval }) {
           sortField={approval.sortField}
           sortOrder={approval.sortOrder}
           onSort={approval.handleSort}
+          onMobileSort={approval.handleMobileSort}
         />
 
         <ApprovePagination
@@ -20,6 +21,7 @@ export default function ApprovalResults({ approval }) {
           totalCount={approval.totalCount}
           pageSize={approval.pageSize}
           onChange={approval.handlePageChange}
+          onPageSizeChange={approval.handlePageSizeChange}
         />
 
  </>;

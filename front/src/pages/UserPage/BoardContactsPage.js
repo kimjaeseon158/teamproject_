@@ -25,6 +25,7 @@ export default function BoardContactsPage(props) {
               />
             </HStack>
             <Button colorScheme="blue" onClick={contacts.search} isLoading={contacts.loading}>조회</Button>
+            <Button variant="outline" onClick={contacts.reset} isDisabled={contacts.loading}>초기화</Button>
           </HStack>
         </HStack>
         <Box bg="white" borderWidth="1px" borderRadius="lg" overflow="hidden">

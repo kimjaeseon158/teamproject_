@@ -49,11 +49,8 @@ export default function useDailyPayPage({ onExcelExportClose } = {}) {
   }, [refreshDailyPay, searchUserName, searchWorkPlace, setCurrentPage]);
 
   const handleResetSearch = useCallback(() => {
-    setSearchUserName("");
-    setSearchWorkPlace("");
-    setCurrentPage(1);
-    refreshDailyPay();
-  }, [refreshDailyPay, setCurrentPage]);
+    window.location.reload();
+  }, []);
 
   const handleRateSuccess = useCallback(() => {
     refreshDailyPay();
@@ -80,10 +77,12 @@ export default function useDailyPayPage({ onExcelExportClose } = {}) {
     loading,
     mergedData,
     pagedData: table.pagedData,
+    pageSize: table.pageSize,
     searchUserName,
     searchWorkPlace,
     selectedUser,
     setCurrentPage: table.setCurrentPage,
+    setPageSize: table.setPageSize,
     setSearchUserName,
     setSearchWorkPlace,
     setSelectedUser,

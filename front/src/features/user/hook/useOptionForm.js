@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import { getAutomaticSpecialDay } from "../../../common/holidayCalendar";
 import { minutesToHM } from "../utils/timeUtils";
 import useExtraWorkRows from "./useExtraWorkRows";
 import { useOptionHandlers } from "./useOptionHandlers";
@@ -19,6 +20,11 @@ export default function useOptionForm({
   const [location, setLocation] = useState("");
   const [note, setNote] = useState("");
   const workTimeForm = useOptionWorkTime(isMobile);
+  const automaticSpecialDay = useMemo(
+    () => getAutomaticSpecialDay(selectedDate?.formatted),
+    [selectedDate?.formatted]
+  );
+  const isSpecial = automaticSpecialDay.isAutomatic;
   const extraWorkRows = useExtraWorkRows({
     finishTime: workTimeForm.finishTime,
     startTime: workTimeForm.startTime,
@@ -47,7 +53,7 @@ export default function useOptionForm({
     toast,
     resetForm,
     baseShift: workTimeForm.baseShift,
-    isSpecial: workTimeForm.isSpecial,
+    isSpecial,
     startTime: workTimeForm.startTime,
     finishTime: workTimeForm.finishTime,
     location,
@@ -91,13 +97,12 @@ export default function useOptionForm({
         extraWorkRows.applyExtraWorks(previousExtraWorks || []);
       }
     },
-    isSpecial: workTimeForm.isSpecial,
+    isSpecial,
     isSubmitConfirmOpen: cartState.isSubmitConfirmOpen,
     isSubmitting: cartState.isSubmitting,
     location,
     note,
     setExtraEnabled: extraWorkRows.setExtraEnabled,
-    setIsSpecial: workTimeForm.setIsSpecial,
     setIsSubmitConfirmOpen: cartState.setIsSubmitConfirmOpen,
     setLocation,
     setNote,

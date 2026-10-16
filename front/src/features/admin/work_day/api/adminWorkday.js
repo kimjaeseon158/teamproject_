@@ -1,4 +1,5 @@
 import { ApiGet, toQueryString } from "../../../../services/api/requestJson";
+import { DEFAULT_TABLE_PAGE_SIZE } from "../../../../constants/pagination";
 
 export async function getAdminWorkDays(
   {
@@ -12,8 +13,7 @@ export async function getAdminWorkDays(
     user_name,
     extra_work,
     page = 1,
-    page_size = 10,
-    ordering = "-work_date",
+    page_size = DEFAULT_TABLE_PAGE_SIZE,
   } = {},
   { toast } = {}
 ) {
@@ -33,7 +33,6 @@ export async function getAdminWorkDays(
       extra_work,
       page,
       page_size,
-      ordering,
     })}`,
     { toast }
   );

@@ -49,6 +49,8 @@ export default function RateEditModal({
         setTempRates: modal.setTempRates,
         updateTempRate: modal.updateTempRate,
         adminWorkPlaces: modal.adminWorkPlaces,
+        checkedItems: modal.checkedItems,
+        tableData: modal.tableData,
       }),
     [modal]
   );
@@ -63,6 +65,7 @@ export default function RateEditModal({
 
         <ModalBody bg="gray.50" px={7} py={6} overflow="auto">
           <RateEditToolbar
+            canAddRow={modal.canAddRow}
             deleting={modal.deleting}
             onAddRow={modal.handleAddRow}
             onDelete={modal.handleDeleteClick}
@@ -81,8 +84,44 @@ export default function RateEditModal({
               data={modal.tableData}
               rowKey="rate_uuid"
               selectable
+              selectionWidth="72px"
+              selectionHeaderProps={{
+                position: "sticky",
+                left: 0,
+                zIndex: 5,
+                bg: "gray.50",
+                whiteSpace: "nowrap",
+                boxShadow: "2px 0 0 #EDF2F7",
+              }}
+              selectionCellProps={(row) => ({
+                position: "sticky",
+                left: 0,
+                zIndex: 4,
+                bg: modal.checkedItems[row.rate_uuid] ? "green.50" : "white",
+                whiteSpace: "nowrap",
+                boxShadow: "2px 0 0 #EDF2F7",
+                _groupHover: {
+                  bg: modal.checkedItems[row.rate_uuid] ? "green.50" : "gray.50",
+                },
+              })}
               checkedItems={modal.checkedItems}
               onCheck={modal.handleCheckboxChange}
+              tableProps={{
+                w: "max-content",
+                minW: "100%",
+                tableLayout: "fixed",
+              }}
+              containerProps={{
+                p: 0,
+                maxW: "100%",
+                overflowX: "auto",
+                isolation: "isolate",
+                sx: {
+                  "&::-webkit-scrollbar": { height: "10px" },
+                  "&::-webkit-scrollbar-track": { background: "#EDF2F7" },
+                  "&::-webkit-scrollbar-thumb": { background: "#A0AEC0", borderRadius: "999px" },
+                },
+              }}
             />
           </Box>
         </ModalBody>

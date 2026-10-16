@@ -1,13 +1,13 @@
 import { Button, Flex, Icon } from "@chakra-ui/react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { FiCalendar, FiCheckSquare, FiMessageSquare, FiPhone, FiUsers } from "react-icons/fi";
+import { FiCheckSquare, FiGrid, FiMessageSquare, FiPhone, FiUsers } from "react-icons/fi";
 
 const ADMIN_MOBILE_NAV = [
   { label: "승인", path: "/dashboard/approval", icon: FiCheckSquare },
   { label: "직원", path: "/dashboard/admin", icon: FiUsers },
   { label: "게시판", path: "/note", icon: FiMessageSquare, exact: true },
   { label: "연락처", path: "/note/contacts", icon: FiPhone },
-  { label: "근무표", path: "/dashboard/work-schedules", icon: FiCalendar },
+  { label: "근무표", path: "/dashboard/work-schedules", icon: FiGrid },
 ];
 
 export default function AdminMobileNavigation() {

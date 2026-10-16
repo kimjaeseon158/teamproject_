@@ -54,6 +54,12 @@ export default function useBoardNotices() {
     });
   };
 
+  const resetFilters = () => {
+    setFilters({ title: "", author: "" });
+    setAppliedFilters({ title: "", author: "" });
+    setPage(1);
+  };
+
   return {
     ...data,
     error,
@@ -61,6 +67,7 @@ export default function useBoardNotices() {
     loading,
     page,
     reload: load,
+    resetFilters,
     search,
     setFilters,
     setPage,

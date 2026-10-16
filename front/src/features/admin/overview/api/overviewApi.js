@@ -30,6 +30,7 @@ export const fetchOverviewPendingWorkDays = async (currentDate, { toast } = {}) 
       status: "대기",
       start_date_str: startDate,
       end_date_str: endDate,
+      page_size: 50,
     },
     { toast }
   );

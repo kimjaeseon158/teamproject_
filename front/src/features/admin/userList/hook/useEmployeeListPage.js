@@ -20,6 +20,15 @@ export function useEmployeeListPage(toast) {
     [state.checkedItems]
   );
 
+  const sortedPeople = useMemo(() => {
+    const field = ordering.replace(/^-/, "");
+    const direction = ordering.startsWith("-") ? -1 : 1;
+
+    return [...state.peopleData].sort((a, b) =>
+      String(a[field] || "").localeCompare(String(b[field] || ""), "ko") * direction
+    );
+  }, [ordering, state.peopleData]);
+
   const hasSearchFilter = useMemo(() => {
     return (
       state.isSearchActive ||
@@ -58,7 +67,7 @@ export function useEmployeeListPage(toast) {
 
   const tableColumns = useMemo(
     () => [
-      ...userListColumns.map((column) => !["user_name", "phone_number"].includes(column.key) ? column : {
+      ...userListColumns.map((column) => !["user_name", "phone_number", "resident_number"].includes(column.key) ? column : {
         ...column,
         label: (
           <SortableHeaderLabel
@@ -96,7 +105,7 @@ export function useEmployeeListPage(toast) {
 
   return {
     handlers,
-    sortedPeople: state.peopleData,
+    sortedPeople,
     hasSearchFilter,
     selectAll,
     selectedCount,

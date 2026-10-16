@@ -8,6 +8,7 @@ import {
   ModalCloseButton,
   FormControl,
   FormLabel,
+  FormErrorMessage,
   Input,
   Select,
   Button,
@@ -21,6 +22,7 @@ import { useAdminInformationLogic } from "../hook/useAdminInformationLogic";
 const AdminInformation = ({ person, onClose, onSave, toast }) => {
   const {
     formData,
+    errors,
     handleChange,
     handleSubmit,
   } = useAdminInformationLogic(person, onClose, onSave, toast);
@@ -37,7 +39,7 @@ const AdminInformation = ({ person, onClose, onSave, toast }) => {
         <form onSubmit={handleSubmit}>
           <ModalBody>
             <VStack spacing={4} align="stretch">
-              <FormControl>
+              <FormControl isRequired isInvalid={Boolean(errors.user_name)}>
                 <FormLabel>이름</FormLabel>
                 <Input
                   name="user_name"
@@ -45,9 +47,10 @@ const AdminInformation = ({ person, onClose, onSave, toast }) => {
                   onChange={handleChange}
                   placeholder="이름 입력"
                 />
+                <FormErrorMessage>{errors.user_name}</FormErrorMessage>
               </FormControl>
 
-              <FormControl>
+              <FormControl isRequired isInvalid={Boolean(errors.resident_number)}>
                 <FormLabel>주민등록번호</FormLabel>
                 <Input
                   name="resident_number"
@@ -55,9 +58,10 @@ const AdminInformation = ({ person, onClose, onSave, toast }) => {
                   onChange={handleChange}
                   placeholder="000000-0000000"
                 />
+                <FormErrorMessage>{errors.resident_number}</FormErrorMessage>
               </FormControl>
 
-              <FormControl>
+              <FormControl isRequired isInvalid={Boolean(errors.address)}>
                 <FormLabel>주소</FormLabel>
                 <Input
                   name="address"
@@ -65,9 +69,10 @@ const AdminInformation = ({ person, onClose, onSave, toast }) => {
                   onChange={handleChange}
                   placeholder="주소 입력"
                 />
+                <FormErrorMessage>{errors.address}</FormErrorMessage>
               </FormControl>
 
-              <FormControl>
+              <FormControl isRequired isInvalid={Boolean(errors.mobile_carrier || errors.phone_number)}>
                 <FormLabel>전화번호</FormLabel>
                 <HStack spacing={2}>
                   <Select
@@ -90,6 +95,7 @@ const AdminInformation = ({ person, onClose, onSave, toast }) => {
                     placeholder="010-1234-5678"
                   />
                 </HStack>
+                <FormErrorMessage>{errors.mobile_carrier || errors.phone_number}</FormErrorMessage>
               </FormControl>
             </VStack>
           </ModalBody>

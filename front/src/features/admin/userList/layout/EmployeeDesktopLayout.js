@@ -1,21 +1,10 @@
 import { Box } from "@chakra-ui/react";
-import EmployeeListHeader from "../components/EmployeeListHeader";
 import EmployeeDesktopTable from "../components/EmployeeDesktopTable";
 import ApprovePagination from "../../work_day/section/ApprovePagination";
 
 export default function EmployeeDesktopLayout({ employeeList }) {
   const { state, handlers } = employeeList;
   return <Box>
-      <EmployeeListHeader
-        hasSearchFilter={employeeList.hasSearchFilter}
-        selectedCount={employeeList.selectedCount}
-        onAdd={() => state.setShowAddModal(true)}
-        onSearchOpen={handlers.openSearch}
-        onShowAll={handlers.handleShowAll}
-        showAllLoading={handlers.showAllLoading}
-        onDeleteSelected={handlers.handleDeleteSelected}
-      />
-
       <EmployeeDesktopTable
         peopleData={employeeList.sortedPeople}
         columns={employeeList.tableColumns}
@@ -24,7 +13,11 @@ export default function EmployeeDesktopLayout({ employeeList }) {
         selectAll={employeeList.selectAll}
         selectedCount={employeeList.selectedCount}
         totalCount={state.pagination.total_count}
-        onOpenPerson={state.setSelectedPerson}
+        onAdd={() => state.setShowAddModal(true)}
+        onSearchOpen={handlers.openSearch}
+        onReset={handlers.handleShowAll}
+        resetLoading={handlers.showAllLoading}
+        onDeleteSelected={handlers.handleDeleteSelected}
       />
       <ApprovePagination
         currentPage={state.pagination.page}
@@ -32,6 +25,7 @@ export default function EmployeeDesktopLayout({ employeeList }) {
         totalCount={state.pagination.total_count}
         pageSize={state.pagination.page_size}
         onChange={handlers.handlePageChange}
+        onPageSizeChange={handlers.handlePageSizeChange}
       />
   </Box>;
 }

@@ -8,6 +8,7 @@ import {
   ModalCloseButton,
   FormControl,
   FormLabel,
+  FormErrorMessage,
   Input,
   Button,
   VStack,
@@ -24,6 +25,7 @@ import { CARRIER_OPTIONS } from "../constants/carrierConstants";
 const AddPersonModal = ({ isOpen, onClose, onSave, toast }) => {
   const {
     saving,
+    errors,
     formData,
     handleChange,
     handleSubmitBase,
@@ -59,19 +61,20 @@ const AddPersonModal = ({ isOpen, onClose, onSave, toast }) => {
         <ModalHeader>직원 추가</ModalHeader>
         <ModalCloseButton isDisabled={saving} />
 
-        <form onSubmit={handleSubmitBase} style={{ display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
+        <form noValidate onSubmit={handleSubmitBase} style={{ display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
           <ModalBody overflowY="auto" px={{ base: 4, md: 6 }}>
             <VStack as="fieldset" disabled={saving} spacing={4} border={0} p={0} m={0} minW={0}>
-              <FormControl isRequired>
+              <FormControl isRequired isInvalid={Boolean(errors.user_name)}>
                 <FormLabel>이름</FormLabel>
                 <Input
                   name="user_name"
                   value={formData.user_name}
                   onChange={handleChange}
                 />
+                <FormErrorMessage>{errors.user_name}</FormErrorMessage>
               </FormControl>
 
-              <FormControl isRequired>
+              <FormControl isRequired isInvalid={Boolean(errors.resident_number)}>
                 <FormLabel>주민등록번호</FormLabel>
                 <Input
                   name="resident_number"
@@ -79,9 +82,10 @@ const AddPersonModal = ({ isOpen, onClose, onSave, toast }) => {
                   onChange={handleChange}
                   placeholder="000000-0000000"
                 />
+                <FormErrorMessage>{errors.resident_number}</FormErrorMessage>
               </FormControl>
 
-              <FormControl isRequired>
+              <FormControl isRequired isInvalid={Boolean(errors.mobile_carrier || errors.phone_number)}>
                 <FormLabel>통신사 / 전화번호</FormLabel>
                 <HStack spacing={2}>
                   <Select
@@ -104,9 +108,10 @@ const AddPersonModal = ({ isOpen, onClose, onSave, toast }) => {
                     placeholder="010-1234-5678"
                   />
                 </HStack>
+                <FormErrorMessage>{errors.mobile_carrier || errors.phone_number}</FormErrorMessage>
               </FormControl>
 
-              <FormControl isRequired>
+              <FormControl isRequired isInvalid={Boolean(errors.address)}>
                 <FormLabel>주소</FormLabel>
                 <Button
                   size="sm"
@@ -122,6 +127,7 @@ const AddPersonModal = ({ isOpen, onClose, onSave, toast }) => {
                   isReadOnly
                   placeholder="도로명 주소"
                 />
+                <FormErrorMessage>{errors.address}</FormErrorMessage>
               </FormControl>
 
               <FormControl>
@@ -133,13 +139,14 @@ const AddPersonModal = ({ isOpen, onClose, onSave, toast }) => {
                 />
               </FormControl>
 
-              <FormControl>
+              <FormControl isRequired isInvalid={Boolean(errors.user_id)}>
                 <FormLabel>아이디</FormLabel>
                 <Input
                   name="user_id"
                   value={formData.user_id}
                   onChange={handleChange}
                 />
+                <FormErrorMessage>{errors.user_id}</FormErrorMessage>
               </FormControl>
 
               <Alert status="info" borderRadius="md" alignItems="flex-start">

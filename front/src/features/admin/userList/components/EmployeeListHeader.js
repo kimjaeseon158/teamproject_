@@ -1,5 +1,5 @@
 import { AddIcon, DeleteIcon, RepeatIcon, SearchIcon } from "@chakra-ui/icons";
-import { Badge, Box, Button, Flex, Heading, HStack, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, HStack } from "@chakra-ui/react";
 
 export default function EmployeeListHeader({
   hasSearchFilter,
@@ -19,7 +19,7 @@ export default function EmployeeListHeader({
       mb={6}
     >
       <Box>
-        <HStack spacing={3} mb={2}>
+        {/* <HStack spacing={3} mb={2}>
           <Heading size="lg" color="gray.800">
             직원 관리
           </Heading>
@@ -31,10 +31,7 @@ export default function EmployeeListHeader({
           >
             {hasSearchFilter ? "검색 조건 입력됨" : "최신 데이터"}
           </Badge>
-        </HStack>
-        <Text display={{ base: "none", md: "block" }} color="gray.500" fontSize="sm">
-          직원 정보를 등록, 검색, 수정하고 선택 삭제합니다.
-        </Text>
+        </HStack> */}
       </Box>
 
       <HStack spacing={{ base: "clamp(8px, 2vw, 12px)", md: 2 }} flexWrap="wrap" rowGap={3} py={{ base: 1, md: 0 }}>
@@ -44,8 +41,19 @@ export default function EmployeeListHeader({
         <Button size={{ base: "xs", md: "md" }} minH={{ base: "32px", md: "40px" }} px={{ base: 2, md: 4 }} leftIcon={<SearchIcon />} colorScheme="teal" variant="outline" onClick={onSearchOpen}>
           직원 검색
         </Button>
-        <Button size={{ base: "sm", md: "md" }} leftIcon={<RepeatIcon />} colorScheme="gray" variant="ghost" onClick={onShowAll} isLoading={showAllLoading} loadingText="불러오는 중">
-          전체 보기
+        <Button
+          size={{ base: "sm", md: "md" }}
+          leftIcon={<RepeatIcon />}
+          color="gray.700"
+          borderColor="gray.400"
+          borderWidth="1px"
+          variant="outline"
+          _hover={{ bg: "gray.50", borderColor: "gray.500" }}
+          onClick={onShowAll}
+          isLoading={showAllLoading}
+          loadingText="불러오는 중"
+        >
+          초기화
         </Button>
         <Button
           display={{ base: selectedCount ? "inline-flex" : "none", md: "inline-flex" }}

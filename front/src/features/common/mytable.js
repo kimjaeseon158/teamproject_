@@ -11,8 +11,13 @@ export default function CommonTable({
   disabledRowIds = new Set(),
   onCheck,
   selectAll,
+  selectionWidth = "60px",
+  selectionHeaderProps = {},
+  selectionCellProps = {},
   onRowClick,
   rowKey = "id",
+  containerProps = {},
+  tableProps = {},
 }) {
   return (
     <Box
@@ -21,12 +26,19 @@ export default function CommonTable({
       borderRadius="xl"
       boxShadow="sm"
       overflowX="auto"
+      {...containerProps}
     >
-      <Table variant="simple" size="md">
+      <Table variant="simple" size="md" {...tableProps}>
         <Thead bg="gray.50" h="60px">
           <Tr>
             {selectable && (
-              <Th w="60px" textAlign="center">
+              <Th
+                w={selectionWidth}
+                minW={selectionWidth}
+                textAlign="center"
+                whiteSpace="nowrap"
+                {...selectionHeaderProps}
+              >
                 {selectAll ? (
                   <Checkbox
                     size="md"
@@ -42,7 +54,9 @@ export default function CommonTable({
               </Th>
             )}
             {columns.map(col => (
-              <Th key={col.key}  w={col.width || "auto"}  textAlign={col.align || "center"}>{col.label}</Th>
+              <Th key={col.key} w={col.width || "auto"} textAlign={col.align || "center"} {...col.headerProps}>
+                {col.label}
+              </Th>
             ))}
           </Tr>
         </Thead>
@@ -55,12 +69,17 @@ export default function CommonTable({
               bg={selectable && checkedItems[row[rowKey]] ? "green.50" : "transparent"}
               _hover={{ bg: selectable && checkedItems[row[rowKey]] ? "green.50" : "gray.50" }}
               cursor={onRowClick ? "pointer" : "default"}
+              role="group"
             >
               {selectable && (
                 <Td
-                  w="60px"
+                  w={selectionWidth}
+                  minW={selectionWidth}
                   textAlign="center"
                   onClick={(e) => e.stopPropagation()}
+                  {...(typeof selectionCellProps === "function"
+                    ? selectionCellProps(row)
+                    : selectionCellProps)}
                 >
                   <Checkbox
                     size="md"
@@ -72,13 +91,14 @@ export default function CommonTable({
                 </Td>
               )}
 
-              {columns.map(col => (
-                <Td key={col.key}  w={col.width || "auto"} textAlign={col.align || "center"}>
-                  {col.render
-                    ? col.render(row[col.key], row)
-                    : row[col.key]}
-                </Td>
-              ))}
+              {columns.map(col => {
+                const cellProps = typeof col.cellProps === "function" ? col.cellProps(row) : col.cellProps;
+                return (
+                  <Td key={col.key} w={col.width || "auto"} textAlign={col.align || "center"} {...cellProps}>
+                    {col.render ? col.render(row[col.key], row) : row[col.key]}
+                  </Td>
+                );
+              })}
             </Tr>
           ))}
         </Tbody>

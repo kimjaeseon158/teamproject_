@@ -1,4 +1,5 @@
-import { Badge, Box, Flex, Heading, HStack, Text } from "@chakra-ui/react";
+import { AddIcon, DeleteIcon, RepeatIcon, SearchIcon } from "@chakra-ui/icons";
+import { Badge, Box, Button, Flex, Heading, HStack } from "@chakra-ui/react";
 import CommonTable from "../../../common/mytable";
 
 export default function EmployeeDesktopTable({
@@ -9,6 +10,11 @@ export default function EmployeeDesktopTable({
   selectAll,
   selectedCount,
   totalCount,
+  onAdd,
+  onSearchOpen,
+  onReset,
+  resetLoading = false,
+  onDeleteSelected,
 }) {
   return (
     <Box
@@ -29,16 +35,12 @@ export default function EmployeeDesktopTable({
         borderBottom="1px solid"
         borderColor="gray.100"
       >
-        <Box>
-          <Heading size="sm" color="gray.800">
-            직원 목록
-          </Heading>
-          <Text fontSize="sm" color="gray.500" mt={1}>
-            테이블의 수정 버튼으로 직원 상세 정보를 확인하고 수정할 수 있습니다.
-          </Text>
-        </Box>
-
         <HStack spacing={2}>
+          <Box>
+            <Heading size="sm" color="gray.800">
+              직원 목록
+            </Heading>
+          </Box>
           {selectedCount > 0 && (
             <Badge colorScheme="green" borderRadius="full" px={3} py={1}>
               {selectedCount.toLocaleString()}명 선택
@@ -47,6 +49,28 @@ export default function EmployeeDesktopTable({
           <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
             {totalCount.toLocaleString()}명
           </Badge>
+        </HStack>
+
+        <HStack spacing={2} flexWrap="wrap" justify="flex-end">
+          <Button size="sm" leftIcon={<AddIcon />} colorScheme="teal" onClick={onAdd}>
+            직원 추가
+          </Button>
+          <Button size="sm" leftIcon={<SearchIcon />} colorScheme="teal" variant="outline" onClick={onSearchOpen}>
+            직원 검색
+          </Button>
+          <Button size="sm" leftIcon={<RepeatIcon />} variant="outline" onClick={onReset} isLoading={resetLoading}>
+            초기화
+          </Button>
+          <Button
+            size="sm"
+            leftIcon={<DeleteIcon />}
+            colorScheme="red"
+            variant="outline"
+            isDisabled={!selectedCount}
+            onClick={onDeleteSelected}
+          >
+            선택 삭제
+          </Button>
         </HStack>
       </Flex>
 

@@ -16,7 +16,6 @@ export default function useOptionWorkTime(isMobile) {
   const [startTime, setStartTime] = useState("");
   const [finishTime, setFinishTime] = useState("");
   const [baseShift, setBaseShift] = useState("주간");
-  const [isSpecial, setIsSpecial] = useState(false);
 
   const filteredWorkTimeList = useMemo(
     () => workTimeList.filter((time) => time.shift === baseShift),
@@ -66,7 +65,6 @@ export default function useOptionWorkTime(isMobile) {
     setWorkTime(isMobile ? `${defaults.startTime}~${defaults.finishTime}` : "");
     setStartTime(isMobile ? defaults.startTime : "");
     setFinishTime(isMobile ? defaults.finishTime : "");
-    setIsSpecial(false);
   };
 
   return {
@@ -78,9 +76,7 @@ export default function useOptionWorkTime(isMobile) {
     handleSelectWorkTime,
     handleShiftChange,
     handleStartTimeChange,
-    isSpecial,
     resetWorkTime,
-    setIsSpecial,
     startTime,
     workTime,
   };

@@ -1,4 +1,4 @@
-import { Box, Flex, Tag, Text, VStack } from "@chakra-ui/react";
+import { Box, Flex, Spinner, Tag, Text, VStack } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
 import DetailButton from "../components/DetailButton";
 
@@ -8,6 +8,7 @@ import SectionHeader from "../components/SectionHeader";
 export default function OverviewApprovalQueueSection({
   summary,
   pendingPreview,
+  loading = false,
   onNavigateApproval,
   onRemove,
 }) {
@@ -25,7 +26,11 @@ export default function OverviewApprovalQueueSection({
         승인·반려는 승인 관리에서 진행합니다.
       </Text>
       <VStack align="stretch" spacing={2} minH={0} flex="1" overflowY="auto">
-        {pendingPreview.length > 0 ? (
+        {loading ? (
+          <Flex flex="1" align="center" justify="center" minH="80px">
+            <Spinner size="sm" color="orange.400" />
+          </Flex>
+        ) : pendingPreview.length > 0 ? (
           pendingPreview.map((item, index) => (
             <Flex
               as={RouterLink}

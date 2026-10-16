@@ -2,6 +2,7 @@ import { Box, HStack, IconButton, SimpleGrid, Text } from "@chakra-ui/react";
 import { MinusIcon } from "@chakra-ui/icons";
 
 import DashboardCard from "../components/DashboardCard";
+import DetailButton from "../components/DetailButton";
 
 export default function OverviewKpiSection({ kpis, onNavigate, onRemove }) {
   return (
@@ -28,14 +29,10 @@ export default function OverviewKpiSection({ kpis, onNavigate, onRemove }) {
             h="88px"
             borderColor="gray.200"
             boxShadow="none"
-            cursor="pointer"
-            role="button"
-            aria-label={`${item.label} 페이지로 이동`}
             _hover={{ borderColor: item.color, boxShadow: "sm" }}
             transition="border-color 0.15s, box-shadow 0.15s"
-            onClick={() => onNavigate(item.path)}
           >
-            <HStack justify="space-between" align="start">
+            <HStack justify="space-between" align="start" h="100%">
               <Box minW={0}>
                 <Text fontSize="xs" fontWeight="800" color="gray.500" mb={1}>
                   {item.label}
@@ -44,7 +41,10 @@ export default function OverviewKpiSection({ kpis, onNavigate, onRemove }) {
                   {item.value}
                 </Text>
               </Box>
-              <Box w="8px" h="8px" borderRadius="full" bg={item.color} mt={1} />
+              <DetailButton
+                aria-label={`${item.label} 상세 보기`}
+                onClick={() => onNavigate(item.path)}
+              />
             </HStack>
           </DashboardCard>
         ))}

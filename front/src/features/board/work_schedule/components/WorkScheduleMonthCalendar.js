@@ -2,6 +2,7 @@ import { Box, Button, HStack, IconButton, SimpleGrid, Text } from "@chakra-ui/re
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { monthDates, shiftMonth } from "../utils/monthSchedule";
 import { toLocalDateValue } from "../../../common/utils/dateValue";
+import TodayButton from "../../../common/TodayButton";
 
 export default function WorkScheduleMonthCalendar({ month, selectedDate, onMonthChange, onDateSelect, onToday }) {
   const dates = monthDates(month);
@@ -11,7 +12,7 @@ export default function WorkScheduleMonthCalendar({ month, selectedDate, onMonth
     <HStack justify="space-between" mb={2}>
       <IconButton size="sm" variant="ghost" aria-label="근무표 이전 달" icon={<FiChevronLeft />} onClick={() => onMonthChange(shiftMonth(month, -1))} />
       <Text fontWeight="700" aria-live="polite">{month.replace("-", "년 ")}월</Text>
-      <Button size="xs" variant="outline" onClick={onToday}>오늘</Button>
+      <TodayButton size="xs" onClick={onToday} />
       <IconButton size="sm" variant="ghost" aria-label="근무표 다음 달" icon={<FiChevronRight />} onClick={() => onMonthChange(shiftMonth(month, 1))} />
     </HStack>
     <SimpleGrid columns={7} spacing={1}>

@@ -1,40 +1,25 @@
-import { Badge, Box, Button, Flex, Heading, HStack, Image, Text, Tooltip } from "@chakra-ui/react";
+import { Button, Tooltip } from "@chakra-ui/react";
 import { DownloadIcon } from "@chakra-ui/icons";
 
-import excelIcon from "../../../../assets/img/excel.png";
 
-export default function ApprovalPageHeader({ loading, totalCount, onExcelOpen }) {
+export default function ApprovalPageHeader({ onExcelOpen }) {
   return (
-    <Flex justify="space-between" align="center" direction="row" gap={2} mb={5}>
-      <Box>
-        <HStack spacing={3} mb={2}>
-          <Heading size="lg" color="gray.900">
-            승인 관리
-          </Heading>
-          <Badge colorScheme={loading ? "gray" : "orange"} borderRadius="full" px={3} py={1}>
-            {loading ? "조회 중" : `총 ${totalCount.toLocaleString()}건`}
-          </Badge>
-        </HStack>
-        <Text display={{ base: "none", md: "block" }} color="gray.500" fontSize="sm">
-          근무 내역을 조건별로 조회하고 승인 또는 반려 처리합니다.
-        </Text>
-      </Box>
-
-      <HStack display={{ base: "none", md: "flex" }} spacing={2} justify={{ base: "flex-start", md: "flex-end" }}>
-        <Tooltip label="승인관리 문서 생성" hasArrow>
-          <Button
-            leftIcon={<DownloadIcon />}
-            rightIcon={<Image src={excelIcon} w="22px" h="22px" alt="excel" />}
-            colorScheme="green"
-            variant="outline"
-            size="sm"
-            minW="92px"
-            onClick={onExcelOpen}
-          >
-            Excel
-          </Button>
-        </Tooltip>
-      </HStack>
-    </Flex>
+    <Tooltip label="승인관리 문서 생성" hasArrow>
+      <Button
+        display={{ base: "none", md: "inline-flex" }}
+        leftIcon={<DownloadIcon />}
+        bg="green.50"
+        color="green.700"
+        borderWidth="1px"
+        borderColor="green.200"
+        _hover={{ bg: "green.100", borderColor: "green.300" }}
+        _active={{ bg: "green.200" }}
+        size="sm"
+        minW="118px"
+        onClick={onExcelOpen}
+      >
+        엑셀 다운로드
+      </Button>
+    </Tooltip>
   );
 }

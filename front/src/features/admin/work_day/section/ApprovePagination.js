@@ -1,5 +1,6 @@
-import { Button, HStack, IconButton, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, HStack, IconButton, Select, Text } from "@chakra-ui/react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
+import { TABLE_PAGE_SIZE_OPTIONS } from "../../../../constants/pagination";
 
 export default function ApprovePagination({
   currentPage,
@@ -7,10 +8,9 @@ export default function ApprovePagination({
   totalCount,
   pageSize,
   onChange,
+  onPageSizeChange,
 }) {
-  if (totalPages <= 1) return null;
-
-  const start = (currentPage - 1) * pageSize + 1;
+  const start = totalCount ? (currentPage - 1) * pageSize + 1 : 0;
   const end = Math.min(currentPage * pageSize, totalCount);
   const pageGroupSize = 5;
   const groupIndex = Math.floor((currentPage - 1) / pageGroupSize);
@@ -26,59 +26,92 @@ export default function ApprovePagination({
   const nextGroupPage = Math.min(totalPages, lastPage + 1);
 
   return (
-    <HStack
-      position="relative"
-      flexDirection={{ base: "column", md: "row" }}
-      gap={2}
-      justify="center"
+    <Flex
+      direction={{ base: "column", md: "row" }}
+      gap={{ base: 3, md: 2 }}
+      align="center"
       px={5}
       py={4}
       borderTop="1px solid"
       borderColor="gray.100"
     >
-      <Text fontSize="sm" color="gray.500" position={{ base: "static", md: "absolute" }} left={5}>
-        {start.toLocaleString()}-{end.toLocaleString()} / {totalCount.toLocaleString()}건
-      </Text>
+      <Box w={{ base: "100%", md: "auto" }} flex={{ md: 1 }} textAlign={{ base: "center", md: "left" }}>
+        <Text fontSize="sm" color="gray.500" whiteSpace="nowrap">
+          {start.toLocaleString()}-{end.toLocaleString()} / {totalCount.toLocaleString()}건
+        </Text>
+      </Box>
 
-      <HStack spacing={1}>
-        <IconButton
-          aria-label="이전 페이지 그룹"
-          icon={<ChevronLeftIcon />}
-          size="sm"
-          variant="ghost"
-          isDisabled={!hasPreviousGroup}
-          onClick={() => onChange(previousGroupPage)}
-        />
-
-        {visiblePages.map((page) => (
-          <Button
-            key={page}
+      <Flex w={{ base: "100%", md: "auto" }} align="center" justify={{ base: "space-between", md: "center" }} gap={3}>
+        <HStack spacing={1}>
+          <IconButton
+            aria-label="이전 페이지 그룹"
+            icon={<ChevronLeftIcon />}
             size="sm"
-            minW="32px"
-            px={2}
-            variant={page === currentPage ? "solid" : "ghost"}
-            colorScheme={page === currentPage ? "blue" : "gray"}
-            onClick={() => onChange(page)}
+            variant="ghost"
+            isDisabled={!hasPreviousGroup}
+            onClick={() => onChange(previousGroupPage)}
+          />
+
+          {visiblePages.map((page) => (
+            <Button
+              key={page}
+              size="sm"
+              minW="32px"
+              px={2}
+              variant={page === currentPage ? "solid" : "ghost"}
+              colorScheme={page === currentPage ? "blue" : "gray"}
+              onClick={() => onChange(page)}
+            >
+              {page}
+            </Button>
+          ))}
+
+          {hasNextGroup && (
+            <Text px={2} color="gray.400" fontWeight="700">
+              ...
+            </Text>
+          )}
+
+          <IconButton
+            aria-label="다음 페이지 그룹"
+            icon={<ChevronRightIcon />}
+            size="sm"
+            variant="ghost"
+            isDisabled={!hasNextGroup}
+            onClick={() => onChange(nextGroupPage)}
+          />
+        </HStack>
+        {onPageSizeChange && (
+          <Select
+            display={{ base: "block", md: "none" }}
+            size="sm"
+            w="128px"
+            flexShrink={0}
+            value={pageSize}
+            onChange={(event) => onPageSizeChange(Number(event.target.value))}
           >
-            {page}
-          </Button>
-        ))}
-
-        {hasNextGroup && (
-          <Text px={2} color="gray.400" fontWeight="700">
-            ...
-          </Text>
+            {TABLE_PAGE_SIZE_OPTIONS.map((size) => (
+              <option key={size} value={size}>{size}개씩 보기</option>
+            ))}
+          </Select>
         )}
+      </Flex>
 
-        <IconButton
-          aria-label="다음 페이지 그룹"
-          icon={<ChevronRightIcon />}
-          size="sm"
-          variant="ghost"
-          isDisabled={!hasNextGroup}
-          onClick={() => onChange(nextGroupPage)}
-        />
-      </HStack>
-    </HStack>
+      <Box flex={{ md: 1 }} textAlign="right" display={{ base: "none", md: "block" }}>
+        {onPageSizeChange && (
+          <Select
+            display="inline-block"
+            size="sm"
+            w="140px"
+            value={pageSize}
+            onChange={(event) => onPageSizeChange(Number(event.target.value))}
+          >
+            {TABLE_PAGE_SIZE_OPTIONS.map((size) => (
+              <option key={size} value={size}>{size}개씩 보기</option>
+            ))}
+          </Select>
+        )}
+      </Box>
+    </Flex>
   );
 }

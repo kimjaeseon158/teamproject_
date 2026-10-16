@@ -4,12 +4,15 @@ import { ArrowBackIcon, ArrowForwardIcon } from "@chakra-ui/icons";
 import CalendarView from "../../../../common/CalendarView";
 import DashboardCard from "../components/DashboardCard";
 import SectionHeader from "../components/SectionHeader";
+import MonthPicker from "../../../common/MonthPicker";
+import { formatMonth } from "../utils/overviewFormat";
 
 export default function OverviewCalendarSection({
   currentDate,
   events,
   loading,
   onMoveMonth,
+  onMonthChange,
   onNavigateApproval,
   onRemove,
 }) {
@@ -30,6 +33,16 @@ export default function OverviewCalendarSection({
             <Text fontWeight="800" minW="86px" textAlign="center" fontSize="sm">
               {currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월
             </Text>
+            <MonthPicker
+              value={formatMonth(currentDate)}
+              onChange={onMonthChange}
+              size="xs"
+              width="68px"
+              borderRadius="md"
+              placement="bottom-end"
+              labelFormat="month"
+              buttonLabel="월 선택"
+            />
             <IconButton
               aria-label="다음 달"
               icon={<ArrowForwardIcon />}
@@ -69,6 +82,7 @@ export default function OverviewCalendarSection({
           onEventClick={onNavigateApproval}
           renderEventContent={(arg) => {
             const data = arg.event.extendedProps;
+            const extraCount = Number(data.extra_count) || 0;
             return (
               <Box
                 px={2}
@@ -83,6 +97,7 @@ export default function OverviewCalendarSection({
                 textOverflow="ellipsis"
               >
                 {[data.user_name, data.work_shift || "근무"].filter(Boolean).join(" - ")}
+                {extraCount > 0 && ` +${extraCount}건`}
               </Box>
             );
           }}

@@ -13,6 +13,32 @@ const getInitial = (name) => {
   return INITIALS[Math.floor((code - 0xac00) / 588)];
 };
 
+const writeClipboardText = async (value) => {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(value);
+      return;
+    } catch (error) {
+      // HTTP or browser permission restrictions can block the modern API.
+    }
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = value;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  textarea.setSelectionRange(0, value.length);
+  const copied = document.execCommand("copy");
+  textarea.remove();
+
+  if (!copied) throw new Error("Clipboard copy failed");
+};
+
 export default function useBoardContacts() {
   const toast = useToast();
   const { loginType } = useUser();
@@ -48,7 +74,8 @@ export default function useBoardContacts() {
   }, [contacts]);
 
   const copyPhoneNumber = async (phoneNumber) => {
-    if (!phoneNumber) {
+    const digits = String(phoneNumber || "").replace(/\D/g, "");
+    if (!digits) {
       toast({
         title: NOTIFICATION_MESSAGES.contacts.phoneNumberMissing,
         status: "warning",
@@ -58,9 +85,9 @@ export default function useBoardContacts() {
     }
 
     try {
-      await navigator.clipboard.writeText(phoneNumber);
+      await writeClipboardText(digits);
       toast({
-        title: NOTIFICATION_MESSAGES.contacts.copySuccess,
+        title: "복사되었습니다.",
         status: "success",
         duration: 1600,
       });

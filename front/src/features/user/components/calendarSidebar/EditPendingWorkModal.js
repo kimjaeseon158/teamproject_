@@ -151,7 +151,7 @@ export default function EditPendingWorkModal({
   const workDayId = getWorkDayId(work);
   const isRejected = work?.is_approved === false;
   const canEdit = work?.is_approved === null || isRejected;
-  const selectedWorkTime = `${startTime}~${finishTime}`;
+  const selectedWorkTime = startTime && finishTime ? `${startTime}~${finishTime}` : "";
   const baseMinutes = calculateNetMinutes(startTime, finishTime);
   const totalMinutes = baseMinutes + (extraEnabled ? extraRows.reduce((sum, row) => sum + (row.type && row.start && row.finish ? diffMinutes(row.start, row.finish) : 0), 0) : 0);
 
@@ -212,11 +212,17 @@ export default function EditPendingWorkModal({
   const handleShiftChange = (nextShift) => {
     if (isRejected) return;
     setBaseShift(nextShift);
-    const nextTime = workTimeList.find((time) => time.shift === nextShift);
-    if (nextTime) {
-      setStartTime(nextTime.startTime);
-      setFinishTime(nextTime.finishTime);
+    if (isBottomSheet) {
+      const nextTime = workTimeList.find((time) => time.shift === nextShift);
+      if (nextTime) {
+        setStartTime(nextTime.startTime);
+        setFinishTime(nextTime.finishTime);
+      }
+      return;
     }
+
+    setStartTime("");
+    setFinishTime("");
   };
 
   const handleWorkTimeChange = (value) => {
@@ -421,6 +427,7 @@ export default function EditPendingWorkModal({
                     </HStack>
                   ) : (
                     <Select value={selectedWorkTime} onChange={(e) => handleWorkTimeChange(e.target.value)} {...fieldStyle}>
+                      <option value="" disabled>근무 시간을 선택하세요</option>
                       {filteredWorkTimes.map((time) => (
                         <option key={`${time.startTime}-${time.finishTime}`} value={`${time.startTime}~${time.finishTime}`}>
                           {time.startTime} ~ {time.finishTime}

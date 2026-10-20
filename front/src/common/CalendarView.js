@@ -12,6 +12,12 @@ const formatWon = (value) => {
   return `${Number(value).toLocaleString()}원`;
 };
 
+const formatMobileCalendarAmount = (value) => {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return "-";
+  return amount.toLocaleString();
+};
+
 const isOvertimeType = (workType) =>
   String(workType || "").includes("잔업") || String(workType || "").includes("연장");
 
@@ -152,20 +158,36 @@ export default function CalendarView({
         const { amount, calendar_amount } = arg.event.extendedProps;
 
         if (isMobile) {
+          const mobileAmount = calendar_amount ?? amount;
+          const mobileLabel = mobileAmount !== undefined
+            ? formatMobileCalendarAmount(mobileAmount)
+            : arg.event.title;
+          const mobileFontSize = mobileLabel.length >= 9
+            ? "clamp(0.36rem, 1.7vw, 0.44rem)"
+            : mobileLabel.length >= 7
+              ? "clamp(0.44rem, 2vw, 0.52rem)"
+            : mobileLabel.length >= 5
+              ? "clamp(0.52rem, 2.3vw, 0.58rem)"
+              : "clamp(0.5rem, 2.4vw, 0.6rem)";
+
           return (
             <div style={{
-              fontSize: "0.6rem",
+              fontSize: mobileFontSize,
               textAlign: "center",
               fontWeight: "900",
               backgroundColor,
               color: textColor,
               borderRadius: "2px",
               width: "100%",
-              padding: "1px 0",
+              padding: "2px 0",
+              lineHeight: "1.2",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              boxSizing: "border-box",
+              minWidth: 0,
+              letterSpacing: mobileLabel.length >= 9 ? "-0.35px" : mobileLabel.length >= 7 ? "-0.2px" : "-0.1px",
             }}>
-              {(calendar_amount ?? amount) !== undefined
-                ? `${(calendar_amount ?? amount).toLocaleString()}원`
-                : arg.event.title}
+              {mobileLabel}
             </div>
           );
         }

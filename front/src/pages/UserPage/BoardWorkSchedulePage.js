@@ -12,7 +12,7 @@ import TodayButton from "../../features/common/TodayButton";
 export function BoardWorkScheduleContent({ mobileOverride, showTitle = true }) {
   const [mobile] = useMediaQuery("(max-width: 47.99em)", { ssr: false });
   const isMobile = mobileOverride ?? mobile;
-  const schedule = useBoardWorkSchedule({ enabled: !isMobile });
+  const schedule = useBoardWorkSchedule();
   const searchPlaceholder = { user_name: "직원 이름 검색", work_place: "근무지 검색", work_place_detail: "세부 근무지 검색" }[schedule.searchType];
   const range = `${schedule.date.replaceAll("-", ".")} – ${addDaysToDateValue(schedule.date, 6).slice(5).replace("-", ".")}`;
   return isMobile ? <BoardMobileSchedule schedule={schedule} showTitle={showTitle} /> : <VStack align="stretch" spacing={3} h="100%" minH="480px">

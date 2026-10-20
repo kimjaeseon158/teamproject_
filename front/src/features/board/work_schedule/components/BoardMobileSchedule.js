@@ -5,14 +5,15 @@ import { toLocalDateValue } from "../../../common/utils/dateValue";
 import ScheduleDatePicker from "./ScheduleDatePicker";
 import useMonthWorkSchedule from "../hook/useMonthWorkSchedule";
 import { filterDateUsers, monthDates } from "../utils/monthSchedule";
+import { getAutomaticSpecialDay } from "../../../../common/holidayCalendar";
+import { getScheduleStatus, SCHEDULE_STATUSES } from "../../../admin/work_schedule/constants/scheduleStatus";
 
-const STATUSES = { ALL: "전체", DAY: "주간", NIGHT: "야간", OFF: "휴무", TRAINING: "교육" };
-const COLORS = { DAY: "green", NIGHT: "blue", OFF: "gray", TRAINING: "orange" };
+const STATUSES = { ALL: "전체", ...Object.fromEntries(SCHEDULE_STATUSES.map((status) => [status.value, status.label])) };
 const DAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 export const filterDayUsers = filterDateUsers;
 
-export default function BoardMobileSchedule({ schedule }) {
+export default function BoardMobileSchedule({ schedule, showTitle = true }) {
   const today = toLocalDateValue();
   const [chosen, setChosen] = useState(today);
   const [query, setQuery] = useState("");
@@ -26,7 +27,7 @@ export default function BoardMobileSchedule({ schedule }) {
   const visibleDays = dates.map((date) => ({ date, users: filterDateUsers(monthly.data.users, date, query, status) })).filter(({ users }) => !onlyScheduled || selected || users.length);
   const chooseDate = (date) => { setMonth(date.slice(0, 7)); schedule.selectMonth(date.slice(0, 7)); setChosen(date); };
   return <Box>
-    <Heading fontSize="24px" letterSpacing="-0.8px">근무표 조회</Heading>
+    {showTitle && <Heading fontSize="24px" letterSpacing="-0.8px">근무표</Heading>}
     <Box my={3}>
       <ScheduleDatePicker month={month} selectedDate={selected} onSelect={chooseDate} onMonthSelect={changeMonth} label={selected ? `${selected.replaceAll("-", ".")} (${DAYS[new Date(selected + "T00:00:00").getDay()]})${selected === today ? " · 오늘" : ""}` : month.replace("-", "년 ") + "월 · 월 전체"} />
     </Box>
@@ -37,12 +38,13 @@ export default function BoardMobileSchedule({ schedule }) {
       {!visibleDays.length && <Text py={6} textAlign="center" color="gray.500">검색 조건에 맞는 근무가 없습니다.</Text>}
       {visibleDays.map(({ date, users }) => {
         const day = new Date(date + "T00:00:00");
+        const holiday = getAutomaticSpecialDay(date);
         return <Box key={date} as="section" aria-label={date + " 근무"}>
-          <HStack justify="space-between" mb={2}><Text fontWeight="700" fontSize="sm">{day.getMonth() + 1}월 {day.getDate()}일 {DAYS[day.getDay()]}요일 {date === today ? "· 오늘" : ""}</Text><Text color="gray.500" fontSize="sm">{users.length}명</Text></HStack>
+          <HStack justify="space-between" mb={2}><Box><Text fontWeight="700" fontSize="sm" color={holiday.isHoliday || day.getDay() === 0 ? "red.500" : day.getDay() === 6 ? "blue.500" : "gray.800"}>{day.getMonth() + 1}월 {day.getDate()}일 {DAYS[day.getDay()]}요일 {date === today ? "· 오늘" : ""}</Text>{holiday.isHoliday && <Text fontSize="xs" color="red.500">{holiday.name || "공휴일"}</Text>}</Box><Text color="gray.500" fontSize="sm">{users.length}명</Text></HStack>
           <VStack align="stretch" spacing={2}>
             {users.map((user) => <Box key={user.user_uuid} bg="white" p={3} borderRadius="xl" borderWidth="1px" borderColor="gray.100">
               <Text fontWeight="700">{user.user_name}</Text>
-              {user.items.map((item, index) => <Flex key={item.schedule_uuid || index} mt={2} gap={2} align="start" justify="space-between"><Box minW={0}><Text fontSize="sm" color="gray.600" overflowWrap="anywhere">{item.work_place || (item.status === "OFF" ? "배정 없음" : "근무지 미지정")}</Text>{item.work_place_detail && <Text fontSize="xs" color="gray.500" overflowWrap="anywhere">{item.work_place_detail}</Text>}</Box><Badge flexShrink={0} colorScheme={COLORS[item.status] || "gray"}>{STATUSES[item.status] || item.status_label}</Badge></Flex>)}
+              {user.items.map((item, index) => { const statusMeta = getScheduleStatus(item.status); return <Flex key={item.schedule_uuid || index} mt={2} gap={2} align="start" justify="space-between"><Box minW={0}><Text fontSize="sm" color="gray.600" overflowWrap="anywhere">{item.work_place || (item.status === "OFF" ? "배정 없음" : "근무지 미지정")}</Text>{item.work_place_detail && <Text fontSize="xs" color="gray.500" overflowWrap="anywhere">{item.work_place_detail}</Text>}</Box><Badge flexShrink={0} colorScheme={statusMeta.colorScheme}>{item.status_label || statusMeta.label}</Badge></Flex>; })}
             </Box>)}
             {!users.length && <Text bg="white" px={3} py={2} borderRadius="xl" fontSize="sm" color="gray.500">{query || status !== "ALL" ? "검색 조건에 맞는 근무가 없습니다." : "등록된 근무가 없습니다."}</Text>}
           </VStack>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { createIncome, updateIncome } from "../api/company_api";
+import { createIncome, deleteIncome, updateIncome } from "../api/company_api";
 import { income_filter_Data } from "../api/company_filter";
 import { toISODate } from "../../utils/dateUtils";
 
@@ -70,6 +70,21 @@ export function useCompanyIncome({ user, loading, toast }) {
     await loadIncome();
   };
 
+  const deleteIncomeItem = async (item) => {
+    const result = await deleteIncome({
+      Income_uuid: item.id,
+      start_date: toISODate(range.from),
+      end_date: toISODate(range.to),
+    }, toast);
+    if (!result?.success) {
+      toast?.({ title: "수입 삭제 실패", status: "error", duration: 3000, isClosable: true });
+      return false;
+    }
+    await loadIncome();
+    toast?.({ title: "수입 내역을 삭제했습니다.", status: "success", duration: 2500, isClosable: true });
+    return true;
+  };
+
   return {
     range,
     setRange,
@@ -78,5 +93,6 @@ export function useCompanyIncome({ user, loading, toast }) {
     totalIncome,
     saveIncomeItems,
     updateIncomeItem,
+    deleteIncomeItem,
   };
 }

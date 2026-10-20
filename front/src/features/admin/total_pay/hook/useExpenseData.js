@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { expense_filter_Data } from "../api/expense_filter";
-import { createExpense, updateExpense } from "../api/expense_API";
+import { createExpense, deleteExpense, updateExpense } from "../api/expense_API";
 import { toISODate } from "../../utils/dateUtils";
 
 const getInitialRange = () => {
@@ -28,6 +28,7 @@ export function useExpenseData({ toast }) {
         name: r.expense_name,
         detail: r.expense_detail,
         paymentMethod: r.payment_method || r.payment || "",
+        isSalary: Boolean(r.work_day),
         amount: Number(r.amount),
         date: new Date(`${r.date}T00:00:00`),
       })) || [];
@@ -72,6 +73,21 @@ export function useExpenseData({ toast }) {
     await loadExpenses();
   };
 
+  const deleteExpenseItem = async (item) => {
+    const result = await deleteExpense({
+      expense_uuid: item.id,
+      start_date: toISODate(range.from),
+      end_date: toISODate(range.to),
+    }, toast);
+    if (!result?.success) {
+      toast?.({ title: "지출 삭제 실패", status: "error", duration: 3000, isClosable: true });
+      return false;
+    }
+    await loadExpenses();
+    toast?.({ title: "지출 내역을 삭제했습니다.", status: "success", duration: 2500, isClosable: true });
+    return true;
+  };
+
   return {
     range,
     setRange,
@@ -80,5 +96,6 @@ export function useExpenseData({ toast }) {
     totalExpense,
     saveExpenseItems,
     updateExpenseItem,
+    deleteExpenseItem,
   };
 }

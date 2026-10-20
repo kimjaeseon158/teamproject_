@@ -63,9 +63,6 @@ export default function ApproveBulkActionBar({
       ),
     [isReject, selectedRows]
   );
-  const pendingTargetCount = targetRows.filter((row) => row.status === "대기").length;
-  const approvedTargetCount = targetRows.filter((row) => isApprovedStatus(row.status)).length;
-  const rejectedTargetCount = targetRows.filter((row) => isRejectedStatus(row.status)).length;
   const selectedNames = useMemo(
     () => targetRows.map((row) => row.name).filter(Boolean).slice(0, 3).join(", "),
     [targetRows]
@@ -164,21 +161,9 @@ export default function ApproveBulkActionBar({
           <ModalCloseButton isDisabled={saving} />
           <ModalBody>
             <Text fontSize="sm" color="gray.700">
-              선택한 {selectedCount.toLocaleString()}건 중 {targetRows.length.toLocaleString()}건을{" "}
+              선택한 {targetRows.length.toLocaleString()}건을{" "}
               {isReject ? "반려" : "승인"}하시겠습니까?
             </Text>
-            <Text mt={3} fontSize="sm" color="gray.600">
-              대기 중 {isReject ? "반려" : "승인"}: {pendingTargetCount.toLocaleString()}건
-            </Text>
-            {isReject ? (
-              <Text fontSize="sm" color="gray.600">
-                승인 후 반려: {approvedTargetCount.toLocaleString()}건
-              </Text>
-            ) : (
-              <Text fontSize="sm" color="gray.600">
-                반려 후 승인: {rejectedTargetCount.toLocaleString()}건
-              </Text>
-            )}
             {!!excludedRows.length && (
               <Text fontSize="sm" color="gray.500">
                 기존 {isReject ? "반려" : "승인"}: {excludedRows.length.toLocaleString()}건 제외

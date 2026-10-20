@@ -1,4 +1,4 @@
-import { ApiPatch, ApiPost } from "../../../../services/api/requestJson";
+import { ApiDelete, ApiPatch, ApiPost } from "../../../../services/api/requestJson";
 
 export async function createIncome(payload, toast) {
   try {
@@ -23,6 +23,21 @@ export async function updateIncome(payload, toast) {
   } catch (err) {
     toast?.({
       title: "수입 수정 실패",
+      description: err.message,
+      status: "error",
+      duration: 3000,
+      isClosable: true,
+    });
+    return null;
+  }
+}
+
+export async function deleteIncome(payload, toast) {
+  try {
+    return await ApiDelete("/api/income-delete/", payload, { toast });
+  } catch (err) {
+    toast?.({
+      title: "수입 삭제 실패",
       description: err.message,
       status: "error",
       duration: 3000,

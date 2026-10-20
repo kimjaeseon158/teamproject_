@@ -1,4 +1,4 @@
-import { Badge, Box, Button, Flex, Heading, HStack, Tooltip } from "@chakra-ui/react";
+import { Badge, Box, Button, Flex, Heading, HStack, Text, Tooltip, VStack } from "@chakra-ui/react";
 import { DownloadIcon } from "@chakra-ui/icons";
 
 import DailyPayFixedTable from "./DailyPayFixedTable";
@@ -31,36 +31,43 @@ export default function DailyPayTableSection({
     >
       <Flex
         justify="space-between"
-        align="center"
-        px={6}
+        align={{ base: "flex-start", sm: "center" }}
+        gap={3}
+        px={{ base: 4, md: 6 }}
         py={4}
         borderBottom="1px solid"
         borderColor="gray.100"
       >
-        <HStack spacing={3}>
-          <Heading size="sm" color="gray.800">
-            직원별 일급 평균
-          </Heading>
-          <Tooltip label="일급관리 문서 생성" hasArrow>
-            <Button
-              leftIcon={<DownloadIcon />}
-              bg="green.50"
-              color="green.700"
-              borderWidth="1px"
-              borderColor="green.200"
-              _hover={{ bg: "green.100", borderColor: "green.300" }}
-              _active={{ bg: "green.200" }}
-              size="sm"
-              minW="118px"
-              onClick={onExcelOpen}
-            >
-              엑셀 다운로드
-            </Button>
-          </Tooltip>
-        </HStack>
-        <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
-          {totalCount.toLocaleString()}건
-        </Badge>
+        <VStack minW={0} align="flex-start" spacing={1}>
+          <HStack spacing={2}>
+            <Heading size="sm" color="gray.800">
+              직원별 일급 평균
+            </Heading>
+            <Badge flexShrink={0} colorScheme="blue" borderRadius="full" px={3} py={1}>
+              {totalCount.toLocaleString()}건
+            </Badge>
+          </HStack>
+          <Text fontSize="xs" color="gray.500">
+            표시 금액은 8시간 기준 일급입니다.
+          </Text>
+        </VStack>
+        <Tooltip label="일급관리 문서 생성" hasArrow>
+          <Button
+            flexShrink={0}
+            leftIcon={<DownloadIcon />}
+            bg="green.50"
+            color="green.700"
+            borderWidth="1px"
+            borderColor="green.200"
+            _hover={{ bg: "green.100", borderColor: "green.300" }}
+            _active={{ bg: "green.200" }}
+            size="sm"
+            minW="118px"
+            onClick={onExcelOpen}
+          >
+            엑셀 다운로드
+          </Button>
+        </Tooltip>
       </Flex>
 
       <Box p={0}>

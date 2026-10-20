@@ -39,7 +39,7 @@ function ScheduleEditor({ schedule, workPlaces, onChange, onRemove, compact = fa
   return <VStack minW={0} align="stretch" spacing={1} p={compact ? 1 : 1.5} borderWidth="2px" borderColor="blue.300" borderRadius="md" bg="white">
     <HStack spacing={1}><Select size="xs" value={schedule.status} onChange={(e) => changeStatus(e.target.value)}>{SCHEDULE_STATUSES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</Select><Button aria-label="일정 삭제" size="xs" variant="ghost" colorScheme="red" minW="24px" px={1} onClick={onRemove}><FiTrash2 /></Button></HStack>
     <Select size="xs" value={status.requiresPlace ? schedule.admin_work_place_uuid || "" : ""} isDisabled={!status.requiresPlace} placeholder={status.requiresPlace ? "근무지 선택" : "근무지 없음"} onChange={(e) => { const place = workPlaces.find((item) => item.admin_work_place_uuid === e.target.value); onChange({ ...schedule, admin_work_place_uuid: e.target.value, work_place: place?.work_place || "" }); }}>{workPlaces.map((place) => <option key={place.admin_work_place_uuid} value={place.admin_work_place_uuid}>{place.work_place}</option>)}</Select>
-    <Input size="xs" value={schedule.work_place_detail || ""} placeholder="세부내용 (선택)" onChange={(e) => onChange({ ...schedule, work_place_detail: e.target.value })} />
+    <Input size="xs" value={schedule.work_place_detail || ""} placeholder="세부내용" onChange={(e) => onChange({ ...schedule, work_place_detail: e.target.value })} />
   </VStack>;
 }
 

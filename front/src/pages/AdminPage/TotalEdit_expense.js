@@ -12,6 +12,7 @@ export default function ExpensePage() {
     totalExpense,
     saveExpenseItems,
     updateExpenseItem,
+    deleteExpenseItem,
   } = useExpenseData({ toast });
 
   return (
@@ -19,6 +20,7 @@ export default function ExpensePage() {
         type="expense" data={expenseData} total={totalExpense} range={range} setRange={setRange}
         onSave={saveExpenseItems}
         onUpdate={updateExpenseItem}
+        onDelete={deleteExpenseItem}
       />
   );
 }

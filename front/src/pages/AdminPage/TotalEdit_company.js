@@ -14,6 +14,7 @@ export default function TotalEditCompanyPage() {
     totalIncome,
     saveIncomeItems,
     updateIncomeItem,
+    deleteIncomeItem,
   } = useCompanyIncome({ user: userUuid, loading, toast });
 
   return (
@@ -21,6 +22,7 @@ export default function TotalEditCompanyPage() {
         type="income" data={incomeData} total={totalIncome} range={range} setRange={setRange}
         onSave={saveIncomeItems}
         onUpdate={updateIncomeItem}
+        onDelete={deleteIncomeItem}
       />
   );
 }

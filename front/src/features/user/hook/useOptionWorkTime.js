@@ -37,11 +37,20 @@ export default function useOptionWorkTime(isMobile) {
   }, [startTime, finishTime]);
 
   const handleShiftChange = (shift) => {
+    if (shift === baseShift) return;
+
     setBaseShift(shift);
-    const defaults = getDefaultTime(shift);
-    setWorkTime(`${defaults.startTime}~${defaults.finishTime}`);
-    setStartTime(defaults.startTime);
-    setFinishTime(defaults.finishTime);
+    if (isMobile) {
+      const defaults = getDefaultTime(shift);
+      setWorkTime(`${defaults.startTime}~${defaults.finishTime}`);
+      setStartTime(defaults.startTime);
+      setFinishTime(defaults.finishTime);
+      return;
+    }
+
+    setWorkTime("");
+    setStartTime("");
+    setFinishTime("");
   };
 
   const handleSelectWorkTime = (start, finish) => {

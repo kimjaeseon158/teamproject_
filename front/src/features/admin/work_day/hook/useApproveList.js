@@ -136,7 +136,6 @@ export function useApproveList(toast) {
             extraWorkMinutes > 0
               ? `${minutesToHM(baseWorkMinutes)} + ${minutesToHM(extraWorkMinutes)}`
               : minutesToHM(baseWorkMinutes);
-
           return {
             id: workDay.id ?? `${workDay.user_uuid}-${index}`,
             user_uuid: workDay.user_uuid,

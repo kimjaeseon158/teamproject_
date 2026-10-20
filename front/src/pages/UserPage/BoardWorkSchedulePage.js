@@ -9,14 +9,14 @@ import useBoardWorkSchedule from "../../features/board/work_schedule/hook/useBoa
 import { addDaysToDateValue, toLocalDateValue } from "../../features/common/utils/dateValue";
 import TodayButton from "../../features/common/TodayButton";
 
-export default function BoardWorkSchedulePage(props) {
+export function BoardWorkScheduleContent({ mobileOverride, showTitle = true }) {
   const [mobile] = useMediaQuery("(max-width: 47.99em)", { ssr: false });
-  const schedule = useBoardWorkSchedule({ enabled: !mobile });
+  const isMobile = mobileOverride ?? mobile;
+  const schedule = useBoardWorkSchedule();
   const searchPlaceholder = { user_name: "직원 이름 검색", work_place: "근무지 검색", work_place_detail: "세부 근무지 검색" }[schedule.searchType];
   const range = `${schedule.date.replaceAll("-", ".")} – ${addDaysToDateValue(schedule.date, 6).slice(5).replace("-", ".")}`;
-  return <BoardLayout activeSection="work-schedule" {...props}>
-    {mobile ? <BoardMobileSchedule schedule={schedule} /> : <VStack align="stretch" spacing={3} h="100%" minH="480px">
-      <BoardPageTitle title="근무표 조회" />
+  return isMobile ? <BoardMobileSchedule schedule={schedule} showTitle={showTitle} /> : <VStack align="stretch" spacing={3} h="100%" minH="480px">
+      {showTitle && <BoardPageTitle title="근무표" />}
       <Flex gap={3} justify="space-between" wrap="wrap" bg="white" p={3} borderWidth="1px" borderColor="gray.200" borderRadius="lg">
         <HStack spacing={2} flexWrap="wrap">
           <Select aria-label="검색 대상" size="sm" w="90px" value={schedule.searchType} onChange={(e) => schedule.setSearchType(e.target.value)}><option value="user_name">직원</option><option value="work_place">근무지</option><option value="work_place_detail">세부</option></Select>
@@ -33,7 +33,12 @@ export default function BoardWorkSchedulePage(props) {
         </HStack>
       </Flex>
       {schedule.error && <Box role="alert" color="red.600"><Text>근무표를 불러오지 못했습니다. 다시 조회해 주세요.</Text></Box>}
-      <BoardWeekScheduleTable dates={schedule.data.dates} users={schedule.data.users} today={toLocalDateValue()} selectedDate={schedule.selectedDate} loading={schedule.loading} />
-    </VStack>}
+      <BoardWeekScheduleTable dates={schedule.data.dates} users={schedule.data.users} today={toLocalDateValue()} loading={schedule.loading} />
+    </VStack>;
+}
+
+export default function BoardWorkSchedulePage(props) {
+  return <BoardLayout activeSection="work-schedule" {...props}>
+    <BoardWorkScheduleContent />
   </BoardLayout>;
 }

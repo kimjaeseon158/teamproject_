@@ -8,7 +8,8 @@ export default function WorkPlaceRegistrationConfirmModal({ registration, saving
       <ModalContent w="90%" maxH="90dvh" borderRadius="xl" overflow="hidden">
         <ModalHeader>근무지 등록 확인</ModalHeader>
         <ModalBody overflowY="auto">
-          <Text><Text as="span" fontWeight="bold">{registration?.name}</Text> 근무지를 아래 내용으로 등록할까요?</Text>
+          <Text fontWeight="bold">{registration?.name}</Text>
+          <Text mt={1}>근무지를 아래 내용으로 등록할까요?</Text>
           <Box as="dl" mt={4}>
             {RATE_FIELDS.map((field) => <Flex key={field.key} justify="space-between" gap={3} py={2} borderBottomWidth="1px" borderColor="gray.100">
               <Text as="dt" fontSize="sm" color="gray.600">{field.label}</Text>

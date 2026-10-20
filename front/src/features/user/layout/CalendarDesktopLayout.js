@@ -1,4 +1,5 @@
-import { Box } from "@chakra-ui/react";
+import { Box, Button, Icon, useDisclosure } from "@chakra-ui/react";
+import { FiCalendar } from "react-icons/fi";
 
 import CalendarView from "../../../common/CalendarView";
 import CalendarHeader from "../components/CalendarHeader";
@@ -6,6 +7,7 @@ import CalendarSidebar from "../components/CalendarSidebar";
 import EditPendingWorkModal from "../components/calendarSidebar/EditPendingWorkModal";
 import PendingWorkSelectModal from "../components/calendarSidebar/PendingWorkSelectModal";
 import MonthlyComparisonDrawer from "../components/MonthlyComparisonDrawer";
+import WorkSchedulePreviewPanel from "../components/WorkSchedulePreviewPanel";
 
 export default function CalendarDesktopLayout({
   userName,
@@ -28,8 +30,38 @@ export default function CalendarDesktopLayout({
   onCloseComparison,
   onOpenComparison,
 }) {
+  const workSchedule = useDisclosure();
+
   return (
     <Box display="flex" height="100vh" overflow="hidden">
+      <WorkSchedulePreviewPanel
+        isOpen={workSchedule.isOpen}
+        onClose={workSchedule.onClose}
+        selectedDate={calendar.selectedDate}
+      />
+
+      <Button
+        position="fixed"
+        right={0}
+        top="50%"
+        transform="translateY(-50%)"
+        zIndex={10}
+        w="38px"
+        minW="38px"
+        h="124px"
+        px={0}
+        colorScheme="blue"
+        borderRightRadius={0}
+        borderLeftRadius="lg"
+        boxShadow="lg"
+        aria-label="근무표 조회"
+        onClick={workSchedule.onOpen}
+      >
+        <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
+          <Icon as={FiCalendar} boxSize={4} />
+          <Box as="span" sx={{ writingMode: "vertical-rl" }} letterSpacing="2px">근무표</Box>
+        </Box>
+      </Button>
       <PendingWorkSelectModal
         forceBottomSheet={isMobile}
         isOpen={selectableWorks.length > 0}

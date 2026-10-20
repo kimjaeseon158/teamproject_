@@ -1,5 +1,5 @@
 import { Badge, Box, Button, Flex, HStack, Text, useBreakpointValue } from "@chakra-ui/react";
-import { FiLogOut, FiBell, FiCalendar, FiUsers } from "react-icons/fi";
+import { FiLogOut, FiBell, FiUsers } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 
 import { Alarm } from "../../alarm";
@@ -10,7 +10,6 @@ import AdminDesktopLayout from "../../admin/layout/AdminDesktopLayout";
 export const BOARD_SECTIONS = [
   { key: "notice", label: "공지사항" },
   { key: "contacts", label: "연락처" },
-  { key: "work-schedule", label: "근무표 조회" },
 ];
 
 export default function BoardLayout({ activeSection, children, onSectionChange, onExit }) {
@@ -20,7 +19,6 @@ export default function BoardLayout({ activeSection, children, onSectionChange, 
   const sectionPaths = {
     notice: "/note",
     contacts: "/note/contacts",
-    "work-schedule": "/note/work-schedule",
   };
   if (loginType === "admin") {
     const Layout = mobile ? AdminMobileLayout : AdminDesktopLayout;
@@ -50,9 +48,9 @@ export default function BoardLayout({ activeSection, children, onSectionChange, 
         <HStack minW={0} spacing={{ base: 0, md: 3 }} align={{ base: "flex-start", md: "center" }} flexDirection={{ base: "column", md: "row" }}>
           <Text whiteSpace="nowrap" fontSize={{ base: "md", md: "2xl" }} fontWeight="900">사내 게시판</Text>
           <Badge display={{ base: "none", md: "inline-block" }} colorScheme="blue" borderRadius="full" px={3} py={1}>
-            {loginType === "admin" ? "어드민" : "유저"} ({userName || (loginType === "admin" ? "관리자" : "사용자")})
+            {loginType === "admin" ? "어드민" : "사원"} - {userName || (loginType === "admin" ? "관리자" : "사용자")}
           </Badge>
-          <Text display={{ base: "block", md: "none" }} fontSize="xs" color="gray.500" noOfLines={1}>{userName || "사용자"} · {loginType === "admin" ? "관리자" : "사용자"}</Text>
+          <Text display={{ base: "block", md: "none" }} fontSize="xs" color="gray.500" noOfLines={1}>{loginType === "admin" ? "어드민" : "사원"} - {userName || (loginType === "admin" ? "관리자" : "사용자")}</Text>
         </HStack>
 
         <HStack spacing={{ base: 1, md: 3 }} flexShrink={0}>
@@ -97,7 +95,7 @@ export default function BoardLayout({ activeSection, children, onSectionChange, 
       <Box p={{ base: 4, md: 8 }} pb={{ base: "100px", md: 8 }}>{children}</Box>
       <Flex as="nav" aria-label="게시판 메뉴" display={{ base: "flex", md: "none" }} position="fixed" bottom={0} left={0} right={0} zIndex={20} bg="white" borderTopWidth="1px" pb="env(safe-area-inset-bottom)">
         {BOARD_SECTIONS.map((section, index) => <Button key={section.key} flex={1} minW={0} h="70px" variant="ghost" borderRadius={0} flexDirection="column" gap={2} fontSize="xs" color={section.key === activeSection ? "blue.600" : "gray.500"} aria-current={section.key === activeSection ? "page" : undefined} onClick={() => changeSection(section.key)}>
-          <Box as={[FiBell, FiUsers, FiCalendar][index]} boxSize={5} />{section.label}
+          <Box as={[FiBell, FiUsers][index]} boxSize={5} />{section.label}
         </Button>)}
       </Flex>
     </Box>

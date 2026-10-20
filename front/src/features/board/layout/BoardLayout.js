@@ -48,9 +48,9 @@ export default function BoardLayout({ activeSection, children, onSectionChange, 
         <HStack minW={0} spacing={{ base: 0, md: 3 }} align={{ base: "flex-start", md: "center" }} flexDirection={{ base: "column", md: "row" }}>
           <Text whiteSpace="nowrap" fontSize={{ base: "md", md: "2xl" }} fontWeight="900">사내 게시판</Text>
           <Badge display={{ base: "none", md: "inline-block" }} colorScheme="blue" borderRadius="full" px={3} py={1}>
-            {loginType === "admin" ? "어드민" : "유저"} ({userName || (loginType === "admin" ? "관리자" : "사용자")})
+            {loginType === "admin" ? "어드민" : "사원"} - {userName || (loginType === "admin" ? "관리자" : "사용자")}
           </Badge>
-          <Text display={{ base: "block", md: "none" }} fontSize="xs" color="gray.500" noOfLines={1}>{userName || "사용자"} · {loginType === "admin" ? "관리자" : "사용자"}</Text>
+          <Text display={{ base: "block", md: "none" }} fontSize="xs" color="gray.500" noOfLines={1}>{loginType === "admin" ? "어드민" : "사원"} - {userName || (loginType === "admin" ? "관리자" : "사용자")}</Text>
         </HStack>
 
         <HStack spacing={{ base: 1, md: 3 }} flexShrink={0}>

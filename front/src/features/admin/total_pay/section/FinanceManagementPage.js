@@ -1,12 +1,13 @@
 import {
-  Badge, Box, Button, Card, Flex, FormControl, FormLabel, Grid, Heading,
+  AlertDialog, AlertDialogBody, AlertDialogContent, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogOverlay, Badge, Box, Button, Card, Flex, FormControl, FormLabel, Grid, Heading,
   Icon, Input, InputGroup, InputLeftElement, Select, SimpleGrid, Stack,
   Table, TableContainer, Tbody, Td, Text, Th, Thead, Tooltip, Tr,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   FiArrowDown, FiArrowUp, FiCheck, FiChevronLeft, FiChevronRight,
-  FiCreditCard, FiLock, FiSearch,
+  FiCreditCard, FiLock, FiSearch, FiTrash2,
 } from "react-icons/fi";
 import MonthPicker from "../../../common/MonthPicker";
 import DatePicker from "../../../common/DatePicker";
@@ -60,7 +61,7 @@ function SummaryCard({ label, value, icon, tone }) {
 }
 
 export default function FinanceManagementPage({
-  type, data, total, range, setRange, onSave, onUpdate,
+  type, data, total, range, setRange, onSave, onUpdate, onDelete,
 }) {
   const income = type === "income";
   const accent = income ? "#0aa683" : "#ff4545";
@@ -73,7 +74,10 @@ export default function FinanceManagementPage({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_TABLE_PAGE_SIZE);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
+  const cancelDeleteRef = useRef(null);
   const [form, setForm] = useState({
     amount: "",
     date: isoDate(new Date()),
@@ -146,6 +150,30 @@ export default function FinanceManagementPage({
       name: income ? (item.name || "") : (item.detail || ""),
       detail: income ? (item.detail || "") : "",
     });
+  };
+
+  const isSalaryExpense = (item) =>
+    !income && (item.isSalary || getFinanceCategory(item, income, categories) === "급여");
+
+  const requestDelete = (event, item) => {
+    event.stopPropagation();
+    if (isSalaryExpense(item)) return;
+    setDeleteTarget(item);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget || !onDelete) return;
+    try {
+      setDeleting(true);
+      const success = await onDelete(deleteTarget);
+      if (!success) return;
+      if (editingItem?.id === deleteTarget.id) resetForm();
+      setDeleteTarget(null);
+    } catch {
+      // API 계층에서 오류 토스트를 표시하므로 확인창을 유지한다.
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const submit = async () => {
@@ -242,7 +270,7 @@ export default function FinanceManagementPage({
             </Flex>
 
             <TableContainer border="1px solid #e2e8f0" borderRadius="8px" flex={{ xl: "1" }}>
-              <Table size="sm" tableLayout="fixed" minW={income ? "680px" : "810px"}>
+              <Table size="sm" tableLayout="fixed" minW={income ? "750px" : "880px"}>
                 <Thead bg="#f8fafc">
                   <Tr>
                     <Th w="130px" py={3} color="#4a5568" fontSize="xs">{income ? "입금일" : "일자"}</Th>
@@ -250,6 +278,7 @@ export default function FinanceManagementPage({
                     <Th w="160px" py={3} color="#4a5568" fontSize="xs">{itemLabel}</Th>
                     <Th w="150px" py={3} color="#4a5568" fontSize="xs" textAlign="right">금액</Th>
                     {!income && <Th w="130px" py={3} color="#4a5568" fontSize="xs">결제 수단</Th>}
+                    <Th w="64px" py={3} color="#4a5568" fontSize="xs" textAlign="center">삭제</Th>
                   </Tr>
                 </Thead>
                 <Tbody>
@@ -300,9 +329,33 @@ export default function FinanceManagementPage({
                           </Tooltip>
                         </Td>
                       )}
+                      <Td w="64px" px={2} textAlign="center">
+                        <Tooltip
+                          label={isSalaryExpense(item) ? "자동 계산된 급여는 근무 승인 내역에서 관리해주세요." : `${income ? "수입" : "지출"} 삭제`}
+                          hasArrow
+                        >
+                          <Box as="span" display="inline-block">
+                            <Button
+                              w="32px"
+                              h="32px"
+                              minW="32px"
+                              px={0}
+                              py={0}
+                              borderRadius="md"
+                              variant="outline"
+                              colorScheme="red"
+                              aria-label={`${income ? "수입" : "지출"} 삭제`}
+                              isDisabled={isSalaryExpense(item)}
+                              onClick={(event) => requestDelete(event, item)}
+                            >
+                              <Icon as={isSalaryExpense(item) ? FiLock : FiTrash2} boxSize={4} />
+                            </Button>
+                          </Box>
+                        </Tooltip>
+                      </Td>
                     </Tr>
                   ))}
-                  {!rows.length && <Tr><Td colSpan={income ? 4 : 5} py={12} textAlign="center" color="#94a3b8">표시할 내역이 없습니다.</Td></Tr>}
+                  {!rows.length && <Tr><Td colSpan={income ? 5 : 6} py={12} textAlign="center" color="#94a3b8">표시할 내역이 없습니다.</Td></Tr>}
                 </Tbody>
               </Table>
             </TableContainer>
@@ -432,6 +485,27 @@ export default function FinanceManagementPage({
           </Stack>
         </Card>
       </Grid>
+
+      <AlertDialog
+        isOpen={Boolean(deleteTarget)}
+        leastDestructiveRef={cancelDeleteRef}
+        onClose={() => !deleting && setDeleteTarget(null)}
+        isCentered
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader>{income ? "수입" : "지출"} 내역 삭제</AlertDialogHeader>
+            <AlertDialogBody>
+              <Text fontWeight="700" mb={2}>{deleteTarget?.detail || deleteTarget?.name || "선택한 내역"}</Text>
+              <Text color="gray.600">삭제한 내역은 복구할 수 없습니다. 정말 삭제하시겠습니까?</Text>
+            </AlertDialogBody>
+            <AlertDialogFooter>
+              <Button ref={cancelDeleteRef} onClick={() => setDeleteTarget(null)} isDisabled={deleting}>취소</Button>
+              <Button colorScheme="red" ml={3} onClick={confirmDelete} isLoading={deleting}>삭제</Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </Box>
   );
 }

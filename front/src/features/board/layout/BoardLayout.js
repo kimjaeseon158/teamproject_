@@ -46,7 +46,7 @@ export default function BoardLayout({ activeSection, children, onSectionChange, 
         overflow="hidden"
       >
         <HStack minW={0} spacing={{ base: 0, md: 3 }} align={{ base: "flex-start", md: "center" }} flexDirection={{ base: "column", md: "row" }}>
-          <Text whiteSpace="nowrap" fontSize={{ base: "md", md: "2xl" }} fontWeight="900">사내 게시판</Text>
+          <Text whiteSpace="nowrap" fontSize={{ base: "md", md: "2xl" }} fontWeight="900">커뮤니티</Text>
           <Badge display={{ base: "none", md: "inline-block" }} colorScheme="blue" borderRadius="full" px={3} py={1}>
             {loginType === "admin" ? "어드민" : "사원"} - {userName || (loginType === "admin" ? "관리자" : "사용자")}
           </Badge>
@@ -93,7 +93,7 @@ export default function BoardLayout({ activeSection, children, onSectionChange, 
       </HStack>
 
       <Box p={{ base: 4, md: 8 }} pb={{ base: "100px", md: 8 }}>{children}</Box>
-      <Flex as="nav" aria-label="게시판 메뉴" display={{ base: "flex", md: "none" }} position="fixed" bottom={0} left={0} right={0} zIndex={20} bg="white" borderTopWidth="1px" pb="env(safe-area-inset-bottom)">
+      <Flex as="nav" aria-label="커뮤니티 메뉴" display={{ base: "flex", md: "none" }} position="fixed" bottom={0} left={0} right={0} zIndex={20} bg="white" borderTopWidth="1px" pb="env(safe-area-inset-bottom)">
         {BOARD_SECTIONS.map((section, index) => <Button key={section.key} flex={1} minW={0} h="70px" variant="ghost" borderRadius={0} flexDirection="column" gap={2} fontSize="xs" color={section.key === activeSection ? "blue.600" : "gray.500"} aria-current={section.key === activeSection ? "page" : undefined} onClick={() => changeSection(section.key)}>
           <Box as={[FiBell, FiUsers][index]} boxSize={5} />{section.label}
         </Button>)}

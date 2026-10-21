@@ -186,6 +186,7 @@ class UserInfoFilteringAPIView(APIView):
     def get(self, request):
         filtering = request.query_params.dict()
         sorting = filtering.pop("sorting", None)
+        user_name = filtering.pop("user_name", "").strip()
 
         sensitive_filter_keys = {
             key for key in filtering if key == "address" or key.startswith("address__")
@@ -216,6 +217,8 @@ class UserInfoFilteringAPIView(APIView):
                 filters[key] = value
 
         queryset = User_Login_Info.objects.filter(**filters)
+        if user_name:
+            queryset = filter_by_name(queryset, user_name)
         if sorting:
             queryset = queryset.order_by(sorting)
 

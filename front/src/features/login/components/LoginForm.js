@@ -20,10 +20,9 @@ import { useEffect, useState } from "react";
 import { FiUser, FiLock, FiShield } from "react-icons/fi";
 import PasswordResetModal from "./PasswordResetModal";
 
-const LoginForm = ({ role, values, errors, loginError, onChange, onSubmit, isLoading, rememberId, onRememberIdChange, failureCount = 0, isLoginLocked = false, onClearLoginError, onRetryAfterApproval }) => {
+const LoginForm = ({ role, values, errors, loginError, onChange, onSubmit, isLoading, rememberId, onRememberIdChange, failureCount = 0, remainingSeconds = 0, requiresPasswordReset = false, isLoginLocked = false, onClearLoginError, onRetryAfterApproval }) => {
   const resetDisclosure = useDisclosure();
   const [resetRequestedFor, setResetRequestedFor] = useState("");
-  const remaining = Math.max(0, 5 - failureCount);
   const normalizedId = values.id.trim().toLowerCase();
   const resetRequested = !!normalizedId && resetRequestedFor === normalizedId;
 
@@ -128,7 +127,11 @@ const LoginForm = ({ role, values, errors, loginError, onChange, onSubmit, isLoa
         {role === "user" && failureCount > 0 && !resetRequested && (
           <Alert status={isLoginLocked ? "error" : "warning"} borderRadius="md" fontSize="sm">
             <AlertIcon />
-            {isLoginLocked ? "로그인 5회 실패로 재시도가 제한되었습니다." : `로그인에 실패했습니다. ${remaining}회 남았습니다.`}
+            {requiresPasswordReset
+              ? `로그인 ${failureCount}건 실패 · 비밀번호 초기화가 필요합니다.`
+              : remainingSeconds > 0
+              ? `로그인 ${failureCount}건 실패 · ${remainingSeconds}초 동안 로그인이 제한됩니다.`
+              : `로그인 ${failureCount}건 실패`}
           </Alert>
         )}
 
@@ -185,7 +188,6 @@ const LoginForm = ({ role, values, errors, loginError, onChange, onSubmit, isLoa
         onSubmitted={(requestedUserId) => {
           setResetRequestedFor(requestedUserId.trim().toLowerCase());
           onClearLoginError?.();
-          onRetryAfterApproval?.(requestedUserId);
         }}
       />
     </Flex>

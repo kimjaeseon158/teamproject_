@@ -5,6 +5,10 @@ const normalizeLoginError = (error) => ({
   success: false,
   message: getErrorMessage(error, ERROR_MESSAGES.login.invalidCredentials),
   status: error?.status,
+  failed_login_attempts:
+    typeof error?.data?.failed_login_attempts === "number"
+      ? error.data.failed_login_attempts
+      : undefined,
 });
 
 export const adminLoginAPI = async (id, password, admin_code) => {

@@ -4,24 +4,21 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from ..models import Notice, NoticeImage, User_WorkDay
 from django.db import transaction
+from .pending import get_pending_counts
 
 
 @receiver([post_save, post_delete], sender=User_WorkDay)
 def notify_count_change(sender, instance, **kwargs):
     def send_ws_update():
         channel_layer = get_channel_layer()
-        # status가 null인 전체 건수 카운트
-        # admin: 전체 대기(None) 카운트
-        current_null_count = User_WorkDay.objects.filter(
-            is_approved__isnull=True
-        ).count()
+        pending_counts = get_pending_counts()
 
         # 그룹 전체에 알림 (로직 처리는 Consumer에서 수행)
         async_to_sync(channel_layer.group_send)(
             "admin_request_monitor",
             {
                 "type": "count_update_message",
-                "count": current_null_count,
+                **pending_counts,
             },
         )
 

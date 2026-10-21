@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ...models import User_Login_Info
+from ..shared.name_search import filter_by_name
 from ..token import UserJWTAuthentication
 
 
@@ -16,7 +17,7 @@ class UserContactListAPIView(APIView):
         name = request.query_params.get("name", "").strip()
         users = User_Login_Info.objects.all()
         if name:
-            users = users.filter(user_name__icontains=name)
+            users = filter_by_name(users, name)
 
         contacts = list(
             users.order_by("user_name", "user_uuid").values(

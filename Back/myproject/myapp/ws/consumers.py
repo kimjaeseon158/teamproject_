@@ -3,6 +3,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 from django.contrib.auth.models import AnonymousUser  # 인증 확인을 위해 임포트
 from ..models import Notice
+from .pending import get_pending_counts
 
 class RequestMonitorConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -16,6 +17,7 @@ class RequestMonitorConsumer(AsyncWebsocketConsumer):
 
         self.group_name = "admin_request_monitor"
         self.last_count = None  # 직전 카운트 상태 저장용
+        self.last_counts_by_month = None
 
         # 3. 그룹 가입
         await self.channel_layer.group_add(self.group_name, self.channel_name)
@@ -28,19 +30,17 @@ class RequestMonitorConsumer(AsyncWebsocketConsumer):
             await self.accept()
 
         # 5. 최초 연결 시 현재 카운트 조회 및 전송
-        from ..models import User_WorkDay
-
         # DB 조회는 비동기적으로 처리
-        initial_count = await sync_to_async(
-            lambda: User_WorkDay.objects.filter(is_approved__isnull=True).count()
-        )()
+        payload = await sync_to_async(get_pending_counts)()
+        initial_count = payload["count"]
 
         self.last_count = initial_count
+        self.last_counts_by_month = payload["counts_by_month"]
 
         # 최초 접속 시 0보다 크면 데이터 전송
         if initial_count > 0:
             await self.send(
-                text_data=json.dumps({"count": initial_count, "is_initial": True})
+                text_data=json.dumps({**payload, "is_initial": True})
             )
 
     async def disconnect(self, close_code):
@@ -51,17 +51,23 @@ class RequestMonitorConsumer(AsyncWebsocketConsumer):
     # 스케줄러(operator.py)로부터 메시지를 받았을 때 실행
     async def count_update_message(self, event):
         new_count = event["count"]
+        counts_by_month = event["counts_by_month"]
 
-        # 비즈니스 로직: 0보다 커야 하고, 이전 값과 달라야 전송
-        if new_count > 0 and new_count != self.last_count:
-            self.last_count = new_count
-
+        changed = (
+            new_count != self.last_count
+            or counts_by_month != self.last_counts_by_month
+        )
+        self.last_count = new_count
+        self.last_counts_by_month = counts_by_month
+        # 전체 건수 또는 월별 분포가 바뀌었을 때 전송 (0건은 제외)
+        if new_count > 0 and changed:
             await self.send(
-                text_data=json.dumps({"count": new_count, "is_initial": False})
+                text_data=json.dumps({
+                    "count": new_count,
+                    "counts_by_month": counts_by_month,
+                    "is_initial": False,
+                })
             )
-        else:
-            # 0이거나 값이 같다면 서버 메모리만 업데이트하고 클라이언트에 쏘지 않음
-            self.last_count = new_count
 
 class UserRejectMonitorConsumer(AsyncWebsocketConsumer):
     async def connect(self):

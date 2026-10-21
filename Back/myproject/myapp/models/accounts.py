@@ -15,6 +15,7 @@ class User_Login_Info(models.Model):
     user_id              = models.CharField(max_length=50,unique=True)
     password             = models.CharField(max_length=100, default='1234')
     must_change_password = models.BooleanField(default=True)
+    failed_login_attempts = models.PositiveSmallIntegerField(default=0)
     phone_number         = models.CharField(max_length=20)
     mobile_carrier       = models.CharField(max_length=20)
     resident_number      = EncryptedTextField()
@@ -23,6 +24,10 @@ class User_Login_Info(models.Model):
     
     class Meta:
         constraints = [
+            models.CheckConstraint(
+                check=Q(failed_login_attempts__gte=0, failed_login_attempts__lte=20),
+                name="user_failed_login_attempts_range",
+            ),
             models.UniqueConstraint(fields=['phone_number'],    name='unique_phone_number'),
         ]
         indexes = [

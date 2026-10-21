@@ -11,13 +11,17 @@ export const getInitialApprovalRange = () => {
   return { from, to };
 };
 
-export default function useApprovalFilters(detailDate) {
+export default function useApprovalFilters(detailDate, initialMonth) {
   const initialRange = useMemo(() => {
     if (/^\d{4}-\d{2}-\d{2}$/.test(detailDate || "")) {
       const date = new Date(`${detailDate}T00:00:00`);
       if (!Number.isNaN(date.getTime()) && toYMD(date) === detailDate) {
         return getMonthRange(toMonthValue(date));
       }
+    }
+    if (/^\d{4}-(0[1-9]|1[0-2])$/.test(initialMonth || "")) {
+      const monthRange = getMonthRange(initialMonth);
+      if (toMonthValue(monthRange.from) === initialMonth) return monthRange;
     }
     return getInitialApprovalRange();
     // The URL determines the initial filters only.

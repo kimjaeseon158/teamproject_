@@ -5,8 +5,13 @@ import { useUser } from "../../auth/userContext";
 import useAuthenticatedRedirect from "./useAuthenticatedRedirect";
 import useLoginFormState from "./useLoginFormState";
 import useLoginSubmit from "./useLoginSubmit";
-import { useEffect, useState } from "react";
-import { clearLoginFailures, getLoginFailures, MAX_LOGIN_FAILURES } from "../utils/loginFailureStorage";
+import { useCallback, useEffect, useState } from "react";
+
+const LOGIN_LOCK_SECONDS = {
+  5: 30,
+  10: 60,
+  15: 300,
+};
 
 export const useLogin = () => {
   const navigate = useNavigate();
@@ -24,10 +29,47 @@ export const useLogin = () => {
   } = useUser();
   const form = useLoginFormState();
   const [failureCount, setFailureCount] = useState(0);
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const [requiresPasswordReset, setRequiresPasswordReset] = useState(false);
 
   useEffect(() => {
-    setFailureCount(form.role === "user" ? getLoginFailures(form.values.id) : 0);
+    setFailureCount(0);
+    setRemainingSeconds(0);
+    setRequiresPasswordReset(false);
   }, [form.role, form.values.id]);
+
+  useEffect(() => {
+    if (remainingSeconds <= 0) return;
+
+    const timer = setTimeout(() => {
+      setRemainingSeconds((current) => Math.max(0, current - 1));
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [remainingSeconds]);
+
+  const handleFailureCountChange = useCallback((count) => {
+    const serverCount = Math.max(0, Math.min(Number(count) || 0, 20));
+    setFailureCount(serverCount);
+
+    if (serverCount === 0) {
+      setRemainingSeconds(0);
+      setRequiresPasswordReset(false);
+      return;
+    }
+
+    if (serverCount === 20) {
+      setRemainingSeconds(0);
+      setRequiresPasswordReset(true);
+      return;
+    }
+
+    const lockSeconds = LOGIN_LOCK_SECONDS[serverCount];
+    if (!lockSeconds) return;
+
+    setRemainingSeconds(lockSeconds);
+    setRequiresPasswordReset(false);
+  }, []);
 
   useAuthenticatedRedirect({
     loading,
@@ -51,13 +93,14 @@ export const useLogin = () => {
     storageKey: form.storageKey,
     toast,
     values: form.values,
-    onFailureCountChange: setFailureCount,
+    onFailureCountChange: handleFailureCountChange,
     clearPassword: form.clearPassword,
   });
 
   const retryAfterApproval = (targetUserId = form.values.id) => {
-    clearLoginFailures(targetUserId);
     setFailureCount(0);
+    setRemainingSeconds(0);
+    setRequiresPasswordReset(false);
     form.setLoginError("");
     form.clearPassword();
     if (targetUserId && targetUserId !== form.values.id) {
@@ -82,6 +125,10 @@ export const useLogin = () => {
     clearLoginError: () => form.setLoginError(""),
     retryAfterApproval,
     failureCount,
-    isLoginLocked: form.role === "user" && failureCount >= MAX_LOGIN_FAILURES,
+    remainingSeconds,
+    requiresPasswordReset,
+    isLoginLocked:
+      form.role === "user" &&
+      (remainingSeconds > 0 || requiresPasswordReset),
   };
 };

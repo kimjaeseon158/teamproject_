@@ -36,6 +36,8 @@ const LoginMobileLayout = ({ login }) => {
                                 rememberId={login.rememberId}
                                 onRememberIdChange={login.onRememberIdChange}
                                 failureCount={login.failureCount}
+                                remainingSeconds={login.remainingSeconds}
+                                requiresPasswordReset={login.requiresPasswordReset}
                                 isLoginLocked={login.isLoginLocked}
                                 onClearLoginError={login.clearLoginError}
                                 onRetryAfterApproval={login.retryAfterApproval}

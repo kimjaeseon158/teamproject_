@@ -38,6 +38,12 @@ const Alarm = () => {
   const markAsRead = alarmCtx.markAsRead;
 
   const openAlarm = async (alarm) => {
+    if (alarm.type === "admin-approval") {
+      const monthQuery = /^\d{4}-(0[1-9]|1[0-2])$/.test(alarm.workMonth || "")
+        ? `?month=${encodeURIComponent(alarm.workMonth)}`
+        : "";
+      navigate(`/dashboard/approval${monthQuery}`);
+    }
     if (alarm.type === "notice") {
       try {
         const notices = await fetchNotices(
@@ -198,7 +204,9 @@ const Alarm = () => {
                     color="red.500"
                     mt={1}
                   >
-                  {alarm.type === "notice" ? alarm.description : `사유: ${alarm.description}`}
+                  {alarm.type === "notice" || alarm.type === "admin-approval"
+                    ? alarm.description
+                    : `사유: ${alarm.description}`}
                   </Text>
                 )}
 

@@ -85,19 +85,24 @@ export function UserProvider({ children, loginType: initialLoginType }) {
 
   const clearNoticeAlarms = useCallback(() => setNoticeAlarms([]), []);
   const addNoticeAlarm = useCallback((data) => {
-    noticeSequenceRef.current += 1;
-    setNoticeAlarms((current) => [
-      ...current,
-      {
-        id: `notice-${Date.now()}-${noticeSequenceRef.current}`,
-        type: "notice",
-        title: data.title.trim(),
-        description: "새 공지사항을 확인해주세요.",
-        date: "",
-        time: "",
-        read: false,
-      },
-    ]);
+    const title = data.title.trim();
+    setNoticeAlarms((current) => {
+      if (current.some((alarm) => alarm.title === title)) return current;
+
+      noticeSequenceRef.current += 1;
+      return [
+        ...current,
+        {
+          id: `notice-${Date.now()}-${noticeSequenceRef.current}`,
+          type: "notice",
+          title,
+          description: "새 공지사항을 확인해주세요.",
+          date: "",
+          time: "",
+          read: false,
+        },
+      ];
+    });
   }, []);
   const markNoticeAsRead = useCallback((title) => {
     setNoticeAlarms((current) => {
@@ -218,16 +223,29 @@ export function UserProvider({ children, loginType: initialLoginType }) {
          ADMIN 전용 처리
       ========================= */
       if (loginType === "admin") {
-        // 임시 reject 데이터 무시
-        if (data?.rejects) {
-        }
-
         if (typeof data?.count === "number") {
           setAlarmCount(data.count);
         }
 
-        if (Array.isArray(data?.alarms)) {
-          setAlarms(data.alarms);
+        if (Array.isArray(data?.counts_by_month)) {
+          const monthlyAlarms = data.counts_by_month
+            .filter((item) => /^\d{4}-(0[1-9]|1[0-2])$/.test(item?.work_month || ""))
+            .map((item) => {
+              const [year, month] = item.work_month.split("-");
+              const count = Math.max(0, Number(item.count) || 0);
+
+              return {
+                id: `admin-approval-${item.work_month}`,
+                type: "admin-approval",
+                workMonth: item.work_month,
+                title: `${year}년 ${Number(month)}월 승인 대기`,
+                description: `${count}건의 근무 승인이 대기 중입니다.`,
+                date: "",
+                time: "",
+                read: false,
+              };
+            });
+          setAlarms(monthlyAlarms);
         }
 
         return;

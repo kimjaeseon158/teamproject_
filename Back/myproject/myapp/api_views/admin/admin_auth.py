@@ -54,6 +54,7 @@ class CheckAdminLoginAPIView(APIView):
             {
                 "success": True,
                 "admin_uuid": admin_uuid,
+                "admin_name": admin_instance.admin_name,
                 "access": str(access),
             }
         )

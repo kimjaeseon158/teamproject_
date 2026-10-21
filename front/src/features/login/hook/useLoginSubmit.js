@@ -4,7 +4,6 @@ import { setAccessToken } from "../../../services/api/token";
 import { adminLoginAPI, userLoginAPI } from "../api/loginApi";
 import { validation } from "../utils/validation";
 import { ERROR_MESSAGES, getErrorMessage } from "../../../constants/errorMessages";
-import { clearLoginFailures, incrementLoginFailures } from "../utils/loginFailureStorage";
 
 export default function useLoginSubmit({
   navigate,
@@ -52,8 +51,11 @@ export default function useLoginSubmit({
 
       if (!response?.success) {
         const message = response?.message || ERROR_MESSAGES.login.invalidCredentials;
-        if (role === "user" && response?.status === 400) {
-          onFailureCountChange(incrementLoginFailures(values.id));
+        if (
+          role === "user" &&
+          typeof response?.failed_login_attempts === "number"
+        ) {
+          onFailureCountChange(response.failed_login_attempts);
         }
         setLoginError(message);
         clearPassword();
@@ -70,8 +72,7 @@ export default function useLoginSubmit({
       setAccessToken(response.access);
 
       if (role === "user") {
-        clearLoginFailures(values.id);
-        onFailureCountChange(0);
+        onFailureCountChange(response?.failed_login_attempts ?? 0);
       }
 
       if (rememberId) {

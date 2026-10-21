@@ -159,7 +159,7 @@ export default function CalendarHeader({
                     size="lg"
                     onClick={() => runMenuAction(openBoard)}
                   >
-                    사내 게시판
+                    커뮤니티
                   </Button>
                   <Button
                     justifyContent="flex-start"
@@ -199,7 +199,7 @@ export default function CalendarHeader({
             <HStack position="absolute" right="0" zIndex="1">
               <Alarm />
               <Button size="sm" colorScheme="blue" variant="outline" leftIcon={<HiOutlineMegaphone />} onClick={openBoard}>
-                사내 게시판
+                커뮤니티
               </Button>
               <Button size="sm" colorScheme="red" onClick={handleLogout}>
                 로그아웃

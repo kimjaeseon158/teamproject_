@@ -22,9 +22,12 @@ class CheckUserLoginAPIView(APIView):
         password = request.data.get("password")
 
         # (1) 로그인 검증
-        success, user_name, user_uuid = check_user_credentials(user_id, password)
+        success, user_name, user_uuid, failed_login_attempts = check_user_credentials(user_id, password)
         if not success:
-            return Response({"success": False}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"success": False, "failed_login_attempts": failed_login_attempts},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         user_instance = User_Login_Info.objects.get(user_uuid=user_uuid)
 
@@ -48,6 +51,7 @@ class CheckUserLoginAPIView(APIView):
         response = Response(
             {
                 "success": True,
+                "failed_login_attempts": 0,
                 "user_name": user_name,
                 "user_uuid": user_uuid,
                 "access": str(access),

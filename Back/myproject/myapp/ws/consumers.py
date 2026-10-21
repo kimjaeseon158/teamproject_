@@ -17,7 +17,7 @@ class RequestMonitorConsumer(AsyncWebsocketConsumer):
 
         self.group_name = "admin_request_monitor"
         self.last_count = None  # 직전 카운트 상태 저장용
-        self.last_counts_by_date = None
+        self.last_counts_by_month = None
 
         # 3. 그룹 가입
         await self.channel_layer.group_add(self.group_name, self.channel_name)
@@ -35,7 +35,7 @@ class RequestMonitorConsumer(AsyncWebsocketConsumer):
         initial_count = payload["count"]
 
         self.last_count = initial_count
-        self.last_counts_by_date = payload["counts_by_date"]
+        self.last_counts_by_month = payload["counts_by_month"]
 
         # 최초 접속 시 0보다 크면 데이터 전송
         if initial_count > 0:
@@ -51,20 +51,20 @@ class RequestMonitorConsumer(AsyncWebsocketConsumer):
     # 스케줄러(operator.py)로부터 메시지를 받았을 때 실행
     async def count_update_message(self, event):
         new_count = event["count"]
-        counts_by_date = event["counts_by_date"]
+        counts_by_month = event["counts_by_month"]
 
         changed = (
             new_count != self.last_count
-            or counts_by_date != self.last_counts_by_date
+            or counts_by_month != self.last_counts_by_month
         )
         self.last_count = new_count
-        self.last_counts_by_date = counts_by_date
-        # 전체 건수 또는 날짜별 분포가 바뀌었을 때 전송 (0건은 제외)
+        self.last_counts_by_month = counts_by_month
+        # 전체 건수 또는 월별 분포가 바뀌었을 때 전송 (0건은 제외)
         if new_count > 0 and changed:
             await self.send(
                 text_data=json.dumps({
                     "count": new_count,
-                    "counts_by_date": counts_by_date,
+                    "counts_by_month": counts_by_month,
                     "is_initial": False,
                 })
             )

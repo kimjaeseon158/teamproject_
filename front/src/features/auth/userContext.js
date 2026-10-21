@@ -85,19 +85,24 @@ export function UserProvider({ children, loginType: initialLoginType }) {
 
   const clearNoticeAlarms = useCallback(() => setNoticeAlarms([]), []);
   const addNoticeAlarm = useCallback((data) => {
-    noticeSequenceRef.current += 1;
-    setNoticeAlarms((current) => [
-      ...current,
-      {
-        id: `notice-${Date.now()}-${noticeSequenceRef.current}`,
-        type: "notice",
-        title: data.title.trim(),
-        description: "새 공지사항을 확인해주세요.",
-        date: "",
-        time: "",
-        read: false,
-      },
-    ]);
+    const title = data.title.trim();
+    setNoticeAlarms((current) => {
+      if (current.some((alarm) => alarm.title === title)) return current;
+
+      noticeSequenceRef.current += 1;
+      return [
+        ...current,
+        {
+          id: `notice-${Date.now()}-${noticeSequenceRef.current}`,
+          type: "notice",
+          title,
+          description: "새 공지사항을 확인해주세요.",
+          date: "",
+          time: "",
+          read: false,
+        },
+      ];
+    });
   }, []);
   const markNoticeAsRead = useCallback((title) => {
     setNoticeAlarms((current) => {

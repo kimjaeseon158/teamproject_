@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from ...encryption.crypto import resident_number_blind_index
 from ...models import User_Login_Info
+from ..shared.name_search import filter_by_name
 from ...serializers import User_InfoSerializer, User_Login_InfoSerializer
 from ..token import AdminJWTAuthentication
 
@@ -39,7 +40,7 @@ def _get_list_queryset(query_params):
     resident_number = query_params.get("resident_number", "").strip()
 
     if user_name:
-        queryset = queryset.filter(user_name__icontains=user_name)
+        queryset = filter_by_name(queryset, user_name)
     if phone_number:
         queryset = queryset.filter(phone_number=phone_number)
     if mobile_carrier:

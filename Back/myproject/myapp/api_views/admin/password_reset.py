@@ -68,7 +68,8 @@ class AdminPasswordResetRequestAPIView(APIView):
             )
             user.password = normalize_resident_number(user.resident_number)[:6]
             user.must_change_password = True
-            user.save(update_fields=["password", "must_change_password"])
+            user.failed_login_attempts = 0
+            user.save(update_fields=["password", "must_change_password", "failed_login_attempts"])
             UserRefreshToken.objects.filter(user_uuid=user).delete()
 
             reset_request.status = PasswordResetRequest.Status.APPROVED

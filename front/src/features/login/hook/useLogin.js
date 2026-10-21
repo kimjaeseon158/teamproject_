@@ -11,7 +11,6 @@ const LOGIN_LOCK_SECONDS = {
   5: 30,
   10: 60,
   15: 300,
-  20: 600,
 };
 
 export const useLogin = () => {
@@ -32,30 +31,22 @@ export const useLogin = () => {
   const [failureCount, setFailureCount] = useState(0);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [requiresPasswordReset, setRequiresPasswordReset] = useState(false);
-  const [finalLockActive, setFinalLockActive] = useState(false);
 
   useEffect(() => {
     setFailureCount(0);
     setRemainingSeconds(0);
     setRequiresPasswordReset(false);
-    setFinalLockActive(false);
   }, [form.role, form.values.id]);
 
   useEffect(() => {
-    if (remainingSeconds <= 0) {
-      if (finalLockActive) {
-        setRequiresPasswordReset(true);
-        setFinalLockActive(false);
-      }
-      return;
-    }
+    if (remainingSeconds <= 0) return;
 
     const timer = setTimeout(() => {
       setRemainingSeconds((current) => Math.max(0, current - 1));
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [finalLockActive, remainingSeconds]);
+  }, [remainingSeconds]);
 
   const handleFailureCountChange = useCallback((count) => {
     const serverCount = Math.max(0, Math.min(Number(count) || 0, 20));
@@ -64,7 +55,12 @@ export const useLogin = () => {
     if (serverCount === 0) {
       setRemainingSeconds(0);
       setRequiresPasswordReset(false);
-      setFinalLockActive(false);
+      return;
+    }
+
+    if (serverCount === 20) {
+      setRemainingSeconds(0);
+      setRequiresPasswordReset(true);
       return;
     }
 
@@ -73,7 +69,6 @@ export const useLogin = () => {
 
     setRemainingSeconds(lockSeconds);
     setRequiresPasswordReset(false);
-    setFinalLockActive(serverCount === 20);
   }, []);
 
   useAuthenticatedRedirect({
@@ -106,7 +101,6 @@ export const useLogin = () => {
     setFailureCount(0);
     setRemainingSeconds(0);
     setRequiresPasswordReset(false);
-    setFinalLockActive(false);
     form.setLoginError("");
     form.clearPassword();
     if (targetUserId && targetUserId !== form.values.id) {

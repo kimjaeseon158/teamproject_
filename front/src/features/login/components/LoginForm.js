@@ -128,10 +128,10 @@ const LoginForm = ({ role, values, errors, loginError, onChange, onSubmit, isLoa
           <Alert status={isLoginLocked ? "error" : "warning"} borderRadius="md" fontSize="sm">
             <AlertIcon />
             {requiresPasswordReset
-              ? `로그인 ${failureCount}건 실패 · 비밀번호 초기화가 필요합니다.`
+              ? `로그인 시도 ${failureCount}번 실패하였습니다. 비밀번호 초기화가 필요합니다.`
               : remainingSeconds > 0
-              ? `로그인 ${failureCount}건 실패 · ${remainingSeconds}초 동안 로그인이 제한됩니다.`
-              : `로그인 ${failureCount}건 실패`}
+              ? `로그인 시도 ${failureCount}번 실패하였습니다. ${remainingSeconds}초 동안 로그인이 제한됩니다.`
+              : `로그인 시도 ${failureCount}번 실패하였습니다.`}
           </Alert>
         )}
 

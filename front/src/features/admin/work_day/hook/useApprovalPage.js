@@ -10,6 +10,7 @@ import useApprovalSelection from "./useApprovalSelection";
 import useApprovalTableState from "./useApprovalTableState";
 import useAdminWorkPlaceOptions from "../../../common/hooks/useAdminWorkPlaceOptions";
 import { APPROVAL_INITIAL_STATUS } from "../constants/approvalConstants";
+import { getMonthRange } from "../utils/approveDateUtils";
 import { toYMD } from "../utils/approveUtils";
 
 export default function useApprovalPage({ onExcelExportClose } = {}) {
@@ -20,9 +21,11 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const detailDate = searchParams.get("date");
+  const approvalMonth = searchParams.get("month");
   const detailOpened = useRef(false);
   const detailRequested = useRef(false);
-  const filters = useApprovalFilters(detailDate);
+  const initialApprovalMonth = useRef(approvalMonth);
+  const filters = useApprovalFilters(detailDate, approvalMonth);
   const selection = useApprovalSelection(rows);
   const table = useApprovalTableState();
   const approvalExport = useApprovalExport({ onExcelExportClose, toast });
@@ -151,6 +154,24 @@ export default function useApprovalPage({ onExcelExportClose } = {}) {
     // initial load only
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (
+      !/^\d{4}-(0[1-9]|1[0-2])$/.test(approvalMonth || "") ||
+      approvalMonth === initialApprovalMonth.current
+    ) {
+      return;
+    }
+
+    initialApprovalMonth.current = approvalMonth;
+    const nextRange = getMonthRange(approvalMonth);
+    filters.handleMonthChange(approvalMonth);
+    table.setCurrentPage(1);
+    selection.clearSelection();
+    searchWithFilters({ nextRange }, 1);
+    // Respond only when the URL month changes while this page remains mounted.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [approvalMonth]);
 
   const handlePageChange = (page) => {
     selection.clearSelection();

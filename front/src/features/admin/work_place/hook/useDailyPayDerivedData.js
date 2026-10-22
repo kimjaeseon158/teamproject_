@@ -31,7 +31,13 @@ export default function useDailyPayDerivedData({
   const mergedData = useMemo(() => {
     return data?.map((user) => {
       const rates = (user.rates || []).filter(isCurrentRateHistory);
-      const workPlaces = rates.map((rate) => rate.work_place).filter(Boolean);
+      const workPlaces = [
+        ...new Set(
+          rates
+            .map((rate) => rate.work_place)
+            .filter((workPlace) => workPlace && workPlace !== EMPTY_PLACE)
+        ),
+      ];
 
       return {
         user_uuid: user.user_uuid,
@@ -63,7 +69,9 @@ export default function useDailyPayDerivedData({
     const places = new Set();
     data?.forEach((user) => {
       user.rates?.filter(isCurrentRateHistory).forEach((rate) => {
-        if (rate.work_place) places.add(rate.work_place);
+        if (rate.work_place && rate.work_place !== EMPTY_PLACE) {
+          places.add(rate.work_place);
+        }
       });
     });
 

@@ -14,9 +14,15 @@ class UserWorkDetailSerializer(serializers.ModelSerializer):
 
 class UserWorkDaySerializer(serializers.ModelSerializer):
     details = UserWorkDetailSerializer(many=True)
+    salary = serializers.SerializerMethodField()
+
+    def get_salary(self, obj):
+        from ..api_views.shared.salary_utils import get_workday_salary
+        return get_workday_salary(obj, self.context.get("rate_history"))
 
     class Meta:
         model = User_WorkDay
+        read_only_fields = ["is_approved"]
         fields = [
             "user_uuid",
             "user_name",
@@ -28,6 +34,7 @@ class UserWorkDaySerializer(serializers.ModelSerializer):
             "work_shift",
             "is_approved",
             "details",
+            "salary",
         ]
 
     @transaction.atomic
@@ -121,21 +128,37 @@ class UserWorkDaySerializer(serializers.ModelSerializer):
 class WorkPlaceRateSerializer(serializers.ModelSerializer):
     user_uuid = serializers.CharField(source="user_uuid_str", read_only=True)
     user_name = serializers.CharField(read_only=True)
+    can_delete = serializers.SerializerMethodField()
+    delete_block_reason = serializers.SerializerMethodField()
+
+    def get_can_delete(self, obj):
+        return not obj.used_for_approval and not obj.approved_workdays.exists()
+
+    def get_delete_block_reason(self, obj):
+        return None if self.get_can_delete(obj) else "승인에 사용된 단가 이력입니다."
+
+    def update(self, instance, validated_data):
+        from ..rate_history import save_rate_history
+        return save_rate_history(validated_data, instance)
 
     class Meta:
         model = WorkPlaceRate
         fields = "__all__"
+        validators = []
 
 
 class WorkPlaceRateCreateSerializer(serializers.ModelSerializer):
     user_uuid = serializers.UUIDField(write_only=True)
     admin_work_place_uuid = serializers.UUIDField(write_only=True, required=False)
+    work_place = serializers.CharField(max_length=100, required=False)
 
     class Meta:
         model = WorkPlaceRate
         fields = [
             "user_uuid",
             "admin_work_place_uuid",
+            "effective_start_date",
+            "effective_end_date",
             "work_place",
             "base_hourly_wage",
             "overtime_hourly_wage",

@@ -24,6 +24,13 @@ class User_WorkDay(models.Model):
     is_approved     = models.BooleanField(null=True,blank=True)                 # 승인 여부 (None=미처리)
     reject_reason   = models.TextField(null=True,blank=True)                    # 반려 사유
 
+    salary_amount   = models.IntegerField(null=True, blank=True)
+    salary_snapshot = models.JSONField(null=True, blank=True)
+    salary_rate     = models.ForeignKey(
+        "WorkPlaceRate", on_delete=models.RESTRICT, null=True, blank=True,
+        related_name="approved_workdays",
+    )
+
     # FK값 -> PK값 파싱 클래스 단순화
     @property
     def user_uuid_str(self):
@@ -68,7 +75,11 @@ class WorkPlaceRate(models.Model):
     )
     work_place = models.CharField(max_length=100)                       #  근무지 마다 금액이 다를경우 대비
 
-    #  전부 시간당 단가
+    used_for_approval    = models.BooleanField(default=False, editable=False)
+    effective_start_date = models.DateField()
+    effective_end_date   = models.DateField(null=True, blank=True)
+
+    # 주간/야간 기본은 8시간 일급, 잔업 등은 시간당 단가
     base_hourly_wage          = models.PositiveIntegerField(null=True, blank=True)  # 기본 시급
     overtime_hourly_wage      = models.PositiveIntegerField(null=True, blank=True)  # 잔업(연장)
     meal_ot_hourly_wage       = models.PositiveIntegerField(null=True, blank=True)  # 중식연장
@@ -81,8 +92,11 @@ class WorkPlaceRate(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["user", "work_place"], name="uniq_user_work_place_rate")
+            models.UniqueConstraint(fields=["user", "work_place", "effective_start_date"], name="uniq_user_place_rate_start"),
+            models.CheckConstraint(check=Q(effective_end_date__isnull=True) | Q(effective_end_date__gte=models.F("effective_start_date")), name="rate_valid_period"),
         ]                       
+
+        ordering = ["work_place", "-effective_start_date"]
 
     @property
     def user_uuid_str(self):

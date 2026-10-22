@@ -21,6 +21,11 @@ const StatusLegend = ({ summary, variant = "default" }) => {
             <Text fontSize="lg" fontWeight="900" color="gray.800">
               {summary.total_amount.toLocaleString()}원
             </Text>
+            {summary.uncalculated_count > 0 && (
+              <Text fontSize="xs" color="orange.600" fontWeight="700">
+                미계산 {summary.uncalculated_count}건 제외
+              </Text>
+            )}
           </Box>
           <Text fontSize="xs" color="gray.600" fontWeight="700">
             주간 {summary.day_shift_count}회 / 야간 {summary.night_shift_count}회
@@ -46,6 +51,11 @@ const StatusLegend = ({ summary, variant = "default" }) => {
       {summary?.total_amount !== undefined && !isCompact && (
         <Box fontSize="sm" fontWeight="800" color="gray.700" mt={2}>
           <Text>총 금액 : {summary.total_amount.toLocaleString()}원</Text>
+          {summary.uncalculated_count > 0 && (
+            <Text fontSize="xs" color="orange.600">
+              미계산 {summary.uncalculated_count}건 제외
+            </Text>
+          )}
           <Text fontSize="g" color="black.500" mt={0.5}>
             총 근무일수 : 주간 {summary.day_shift_count}회 / 야간 {summary.night_shift_count}회
           </Text>

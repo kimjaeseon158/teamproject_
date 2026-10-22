@@ -14,13 +14,18 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { CheckIcon } from "@chakra-ui/icons";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
-import CommonTable from "../../../common/mytable";
 import getRateColumns from "./rateColumns";
+import RateEditTable from "./RateEditTable";
 import RateEditModalHeader from "./RateEditModalHeader";
 import RateEditToolbar from "./RateEditToolbar";
 import useRateEditModal from "../hook/useRateEditModal";
+import { EMPTY_PLACE } from "../constants/rateFields";
+import {
+  isCurrentRateHistory,
+  isEndedRateHistory,
+} from "../utils/rateHistory";
 
 export default function RateEditModal({
   isOpen = true,
@@ -30,6 +35,7 @@ export default function RateEditModal({
   initialAdminWorkPlaces = [],
 }) {
   const toast = useToast();
+  const [rateView, setRateView] = useState("current");
   const modal = useRateEditModal({
     isOpen,
     user,
@@ -40,8 +46,8 @@ export default function RateEditModal({
   });
 
   const columns = useMemo(
-    () =>
-      getRateColumns({
+    () => {
+      const rateColumns = getRateColumns({
         editingId: modal.editingId,
         editedValues: modal.editedValues,
         setEditedValues: modal.setEditedValues,
@@ -50,26 +56,70 @@ export default function RateEditModal({
         updateTempRate: modal.updateTempRate,
         adminWorkPlaces: modal.adminWorkPlaces,
         checkedItems: modal.checkedItems,
-        tableData: modal.tableData,
-      }),
-    [modal]
+      });
+
+      return rateView === "ended"
+        ? rateColumns.filter((column) => column.key !== "manage")
+        : rateColumns;
+    },
+    [modal, rateView]
   );
+  const visibleRates = useMemo(() => {
+    const filteredRates = modal.tableData.filter((rate) =>
+        rateView === "ended"
+          ? isEndedRateHistory(rate)
+          : rate.isNew || isCurrentRateHistory(rate)
+      );
+
+    if (rateView === "current" && filteredRates.length === 0) {
+      return [{
+        rate_uuid: `unassigned-${user.user_uuid}`,
+        work_place: EMPTY_PLACE,
+        effective_start_date: "",
+        effective_end_date: null,
+        isPlaceholder: true,
+      }];
+    }
+
+    return filteredRates;
+  }, [modal.tableData, rateView, user.user_uuid]);
+
+  const handleRateViewChange = (nextView) => {
+    modal.setCheckedItems({});
+    setRateView(nextView);
+  };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered size="6xl" closeOnOverlayClick={false} closeOnEsc={false}>
-      <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(8px)" />
-      <ModalContent borderRadius="2xl" overflow="hidden" maxH="92vh">
+      <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(7px)" />
+      <ModalContent
+        borderRadius="2xl"
+        overflow="hidden"
+        maxH="92vh"
+        w="1680px"
+        maxW="calc(100vw - 32px)"
+        boxShadow="0 24px 70px rgba(15, 23, 42, 0.28)"
+      >
         <ModalHeader p={0}>
           <RateEditModalHeader summary={modal.summary} user={user} />
         </ModalHeader>
 
-        <ModalBody bg="gray.50" px={7} py={6} overflow="auto">
-          <RateEditToolbar
-            canAddRow={modal.canAddRow}
-            deleting={modal.deleting}
-            onAddRow={modal.handleAddRow}
-            onDelete={modal.handleDeleteClick}
-          />
+        <ModalBody
+          bg="gray.50"
+          px={0}
+          py={6}
+          overflow="auto"
+        >
+          <Box px={{ base: 4, md: 7 }}>
+            <RateEditToolbar
+              canAddRow={modal.canAddRow}
+              deleting={modal.deleting}
+              onAddRow={modal.handleAddRow}
+              onDelete={modal.handleDeleteClick}
+              rateView={rateView}
+              onRateViewChange={handleRateViewChange}
+            />
+          </Box>
 
           <Box
             bg="white"
@@ -77,59 +127,29 @@ export default function RateEditModal({
             borderColor="gray.100"
             borderRadius="xl"
             overflow="hidden"
+            boxShadow="sm"
+            mx={{ base: 4, md: 7 }}
             sx={{ "> div": { boxShadow: "none", borderRadius: 0 } }}
           >
-            <CommonTable
+            <RateEditTable
               columns={columns}
-              data={modal.tableData}
-              rowKey="rate_uuid"
-              selectable
-              selectionWidth="72px"
-              selectionHeaderProps={{
-                position: "sticky",
-                left: 0,
-                zIndex: 5,
-                bg: "gray.50",
-                whiteSpace: "nowrap",
-                boxShadow: "2px 0 0 #EDF2F7",
-              }}
-              selectionCellProps={(row) => ({
-                position: "sticky",
-                left: 0,
-                zIndex: 4,
-                bg: modal.checkedItems[row.rate_uuid] ? "green.50" : "white",
-                whiteSpace: "nowrap",
-                boxShadow: "2px 0 0 #EDF2F7",
-                _groupHover: {
-                  bg: modal.checkedItems[row.rate_uuid] ? "green.50" : "gray.50",
-                },
-              })}
+              data={visibleRates}
               checkedItems={modal.checkedItems}
               onCheck={modal.handleCheckboxChange}
-              tableProps={{
-                w: "max-content",
-                minW: "100%",
-                tableLayout: "fixed",
-              }}
-              containerProps={{
-                p: 0,
-                maxW: "100%",
-                overflowX: "auto",
-                isolation: "isolate",
-                sx: {
-                  "&::-webkit-scrollbar": { height: "10px" },
-                  "&::-webkit-scrollbar-track": { background: "#EDF2F7" },
-                  "&::-webkit-scrollbar-thumb": { background: "#A0AEC0", borderRadius: "999px" },
-                },
-              }}
             />
           </Box>
         </ModalBody>
 
         <Divider />
 
-        <ModalFooter bg="white" px={7} py={4}>
-          <Flex w="100%" justify="space-between" align="center" gap={3}>
+        <ModalFooter bg="white" px={{ base: 4, md: 7 }} py={4}>
+          <Flex
+            w="100%"
+            justify="space-between"
+            align={{ base: "stretch", md: "center" }}
+            direction={{ base: "column", md: "row" }}
+            gap={3}
+          >
             <Text fontSize="sm" color="gray.500">
               저장 전에 선택한 행의 입력값을 다시 한 번 확인해주세요.
             </Text>

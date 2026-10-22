@@ -328,6 +328,8 @@ class ExpenseUpdateAPIView(APIView):
 
         # 레코드 업데이트
         expense_instance = Expense.objects.get(expense_uuid=expense_uuid)
+        if expense_instance.work_day_id is not None:
+            return Response({"success": False, "message": "승인 급여 지출은 직접 수정할 수 없습니다."}, status=400)
         serializer = ExpenseSerializer(
             expense_instance, data=request.data, partial=True
         )
@@ -384,6 +386,8 @@ class ExpenseDeleteAPIView(APIView):
         try:
             # 레코드 삭제
             expense_instance = Expense.objects.get(expense_uuid=expense_uuid)
+            if expense_instance.work_day_id is not None:
+                return Response({"success": False, "message": "승인 급여 지출은 직접 삭제할 수 없습니다."}, status=400)
             expense_instance.delete()
 
             # 삭제 후 날짜 범위 필터링된 데이터 반환

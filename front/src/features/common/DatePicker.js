@@ -1,5 +1,5 @@
 import {
-  Box, Button, HStack, Popover, PopoverBody, PopoverContent, PopoverTrigger,
+  Box, Button, HStack, Popover, PopoverBody, PopoverContent, PopoverTrigger, Portal,
 } from "@chakra-ui/react";
 import { ko } from "date-fns/locale";
 import { DayPicker } from "react-day-picker";
@@ -9,7 +9,13 @@ import "react-day-picker/dist/style.css";
 import { toLocalDateValue } from "./utils/dateValue";
 import TodayButton from "./TodayButton";
 
-export default function DatePicker({ value, onChange, width = "100%", size = "md" }) {
+export default function DatePicker({
+  value,
+  onChange,
+  width = "100%",
+  size = "md",
+  isClearable = false,
+}) {
   const selected = value ? new Date(`${value}T00:00:00`) : undefined;
 
   return (
@@ -28,23 +34,24 @@ export default function DatePicker({ value, onChange, width = "100%", size = "md
               {value || "날짜 선택"}
             </Button>
           </PopoverTrigger>
-          <PopoverContent w="292px" p={1} zIndex={2000}>
-            <PopoverBody px={2} py={2}>
+          <Portal>
+            <PopoverContent w="292px" p={1} zIndex={2000}>
+              <PopoverBody px={2} py={2}>
               <Box
                 sx={{
                   ".rdp-selected .rdp-day_button": {
-                    bg: "#0aa683",
+                    bg: "#3182CE",
                     color: "white",
-                    borderColor: "#0aa683",
+                    borderColor: "#3182CE",
                     fontWeight: "700",
                   },
                   ".rdp-today:not(.rdp-selected) .rdp-day_button": {
-                    border: "1px solid #0aa683",
-                    color: "#087d64",
+                    border: "1px solid #3182CE",
+                    color: "#2B6CB0",
                     fontWeight: "700",
                   },
-                  ".rdp-day_button:hover": { bg: "#e1f7f1" },
-                  ".rdp-selected .rdp-day_button:hover": { bg: "#07866b" },
+                  ".rdp-day_button:hover": { bg: "#EBF8FF" },
+                  ".rdp-selected .rdp-day_button:hover": { bg: "#2B6CB0" },
                 }}
               >
                 <DayPicker
@@ -79,16 +86,30 @@ export default function DatePicker({ value, onChange, width = "100%", size = "md
                 />
               </Box>
               <HStack justify="flex-end" mt={2}>
+                {isClearable && value && (
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    onClick={() => {
+                      onChange("");
+                      onClose();
+                    }}
+                  >
+                    날짜 지우기
+                  </Button>
+                )}
                 <TodayButton
                   size="xs"
+                  colorScheme="blue"
                   onClick={() => {
                     onChange(toLocalDateValue(new Date()));
                     onClose();
                   }}
                 />
               </HStack>
-            </PopoverBody>
-          </PopoverContent>
+              </PopoverBody>
+            </PopoverContent>
+          </Portal>
         </>
       )}
     </Popover>

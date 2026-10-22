@@ -5,7 +5,7 @@ import os
 from openpyxl import load_workbook, Workbook
 from django.conf import settings
 from django.db.models import Sum
-from ...models import User_Login_Info, User_WorkDay, Expense, WorkPlaceRate
+from ...models import User_Login_Info, User_WorkDay, Expense
 from datetime import date
 from copy import copy
 from openpyxl.cell.cell import MergedCell
@@ -13,7 +13,9 @@ from openpyxl.utils import get_column_letter
 from openpyxl.formula.translate import Translator
 import calendar
 from ..shared import normalize_work_type
-from ..shared.salary_utils import WageRates, get_detail_salary_amount
+from ..shared.salary_utils import get_workday_salary
+from types import SimpleNamespace
+from rest_framework.exceptions import ValidationError
 
 
 # ----------------------
@@ -493,20 +495,6 @@ def _rate_value_for_work_type(rate, work_type):
     return int(value or 0)
 
 
-def _rates_to_wage_rates(rate):
-    return WageRates(
-        base_hourly_wage=rate.base_hourly_wage or 0,
-        overtime_hourly_wage=rate.overtime_hourly_wage or 0,
-        meal_ot_hourly_wage=rate.meal_ot_hourly_wage or 0,
-        special_hourly_wage=rate.special_hourly_wage or 0,
-        day_special_hourly_wage=rate.day_special_hourly_wage or rate.special_hourly_wage or 0,
-        night_special_hourly_wage=rate.night_special_hourly_wage or rate.special_hourly_wage or 0,
-        overnight_hourly_wage=rate.overnight_hourly_wage or 0,
-        overnight_ot_hourly_wage=rate.overnight_ot_hourly_wage or 0,
-        early_hourly_wage=rate.early_hourly_wage or 0,
-    )
-
-
 def _find_label_cell(ws, labels):
     for row in ws.iter_rows():
         for cell in row:
@@ -564,107 +552,50 @@ def _find_pay_table(ws):
     }
 
 
+def _approved_pay_days(user_uuid, year, month):
+    return User_WorkDay.objects.filter(
+        user_uuid_id=user_uuid, work_date__year=year, work_date__month=month,
+        is_approved=True,
+    ).select_related("salary_expense").prefetch_related("details").order_by("work_date", "pk")
+
+
 def _build_user_pay_rows(user_uuid, year, month):
-    work_days = (
-        User_WorkDay.objects
-        .filter(
-            user_uuid_id=user_uuid,
-            work_date__year=year,
-            work_date__month=month,
-            is_approved=True,
-        )
-        .prefetch_related("details")
-        .order_by("work_date", "work_place", "work_shift")
-    )
-
-    rate_map = {
-        rate.work_place: rate
-        for rate in WorkPlaceRate.objects.filter(user_id=user_uuid)
-    }
     grouped = {}
-
-    for work_day in work_days:
-        rate = rate_map.get(work_day.work_place)
-        if not rate:
+    for day in _approved_pay_days(user_uuid, year, month):
+        salary = get_workday_salary(day)
+        if salary["amount"] is None:
+            raise ValidationError({"code": "final_amount_missing", "work_date": str(day.work_date)})
+        snapshot = day.salary_snapshot or {}
+        rate = SimpleNamespace(**snapshot["rates"]) if snapshot.get("rates") else None
+        if not salary["details_available"]:
+            key = (day.work_place, "기존 확정 급여", None)
+            row = grouped.setdefault(key, {"work_place": day.work_place, "work_type": "기존 확정 급여", "quantity": 0, "unit_price": None, "amount": 0})
+            row["amount"] += salary["amount"]
             continue
-
-        wage_rates = _rates_to_wage_rates(rate)
-
-        for detail in work_day.details.all():
-            work_type = normalize_work_type(detail.work_type, work_day.work_shift)
-            if work_type not in WORK_TYPE_ROW:
-                continue
-
-            key = (work_day.work_place, work_type)
-            if key not in grouped:
-                grouped[key] = {
-                    "work_place": work_day.work_place,
-                    "work_type": work_type,
-                    "quantity": 0,
-                    "unit_price": _rate_value_for_work_type(rate, work_type),
-                    "amount": 0,
-                }
-
-            grouped[key]["quantity"] += _pay_quantity(work_type, detail.minutes)
-            grouped[key]["amount"] += get_detail_salary_amount(
-                detail.work_type,
-                detail.minutes,
-                wage_rates,
-                work_day.work_shift,
-            )
-
-    return sorted(grouped.values(), key=lambda row: (row["work_place"], WORK_TYPE_ROW[row["work_type"]]))
+        for detail in salary["detail_amounts"]:
+            wt = detail["work_type"]
+            unit = _rate_value_for_work_type(rate, wt) if rate else None
+            key = (day.work_place, wt, unit)
+            row = grouped.setdefault(key, {"work_place": day.work_place, "work_type": wt, "quantity": 0, "unit_price": unit, "amount": 0})
+            row["quantity"] += _pay_quantity(wt, detail["minutes"])
+            row["amount"] += detail["amount"]
+    return sorted(grouped.values(), key=lambda r: (r["work_place"], WORK_TYPE_ROW.get(r["work_type"], 999), r["unit_price"] or 0))
 
 
 def _build_user_pay_summary(user_uuid, year, month):
-    summary = {
-        work_type: {
-            "quantity": 0,
-            "unit_price": 0,
-        }
-        for _, work_type, _ in USER_PAY_WORK_TYPE_ROWS
-    }
-    rate_map = {
-        rate.work_place: rate
-        for rate in WorkPlaceRate.objects.filter(user_id=user_uuid)
-    }
-
-    work_days = (
-        User_WorkDay.objects
-        .filter(
-            user_uuid_id=user_uuid,
-            work_date__year=year,
-            work_date__month=month,
-            is_approved=True,
-        )
-        .prefetch_related("details")
-    )
-
-    month_work_places = work_days.values_list("work_place", flat=True).distinct()
-    base_rate = next(
-        (rate_map[work_place] for work_place in month_work_places if work_place in rate_map),
-        None,
-    )
-    if base_rate is None and rate_map:
-        base_rate = next(iter(rate_map.values()))
-
-    if base_rate:
-        for work_type in summary:
-            summary[work_type]["unit_price"] = _rate_value_for_work_type(base_rate, work_type)
-
-    for work_day in work_days:
-        rate = rate_map.get(work_day.work_place)
-
-        for detail in work_day.details.all():
-            work_type = normalize_work_type(detail.work_type, work_day.work_shift)
-            if work_type not in summary:
-                continue
-
-            summary[work_type]["quantity"] += _pay_quantity(work_type, detail.minutes)
-
-            if rate and not summary[work_type]["unit_price"]:
-                summary[work_type]["unit_price"] = _rate_value_for_work_type(rate, work_type)
-
+    summary = {wt: {"quantity": 0, "unit_price": 0, "amount": 0} for _, wt, _ in USER_PAY_WORK_TYPE_ROWS}
+    units = {wt: set() for wt in summary}
+    summary["legacy_amount"] = 0
+    for row in _build_user_pay_rows(user_uuid, year, month):
+        wt = row["work_type"]
+        if wt not in summary:
+            summary["legacy_amount"] += row["amount"]
+            continue
+        summary[wt]["quantity"] += row["quantity"]
+        summary[wt]["amount"] += row["amount"]
+        units[wt].add(row["unit_price"])
+    for wt, values in units.items():
+        summary[wt]["unit_price"] = next(iter(values)) if len(values) == 1 else ("복수 단가" if values else 0)
     return summary
 
 
@@ -682,10 +613,12 @@ def _fill_user_pay_sheet(ws, user_uuid, year, month):
         safe_set(ws, row, 10, label)
         safe_set(ws, row, 11, pay_summary[work_type]["quantity"])
         safe_set(ws, row, 12, pay_summary[work_type]["unit_price"])
-        safe_set(ws, row, 13, f"=K{row}*L{row}")
+        safe_set(ws, row, 13, pay_summary[work_type]["amount"])
 
+    safe_set(ws, 22, 10, "기존 확정 급여(상세 없음)")
+    safe_set(ws, 22, 13, pay_summary["legacy_amount"])
     safe_set(ws, 25, 10, "합계")
-    safe_set(ws, 25, 13, "=SUM(M13:M20)")
+    safe_set(ws, 25, 13, "=SUM(M13:M20)+M22")
 
     return user
 

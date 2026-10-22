@@ -1,12 +1,13 @@
 # 근무 유형별 급여 계산과 급여 지출 동기화 함수
 
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from django.db import transaction
-from myapp.models import WorkPlaceRate, Expense
+from myapp.models import WorkPlaceRate, Expense, User_WorkDay, User_Login_Info
+from django.db.models import Q
+from rest_framework.exceptions import ValidationError
 from collections import OrderedDict
 from django.core.exceptions import ObjectDoesNotExist
-
 
 MINUTES_PER_HOUR = 60
 FULL_DAY_MINUTES = 480
@@ -17,6 +18,7 @@ def _normalize_work_type(work_type: str, work_shift: str | None = None) -> str:
     from .work_type_utils import normalize_work_type
 
     return normalize_work_type(work_type, work_shift)
+
 
 @dataclass(frozen=True)
 class WageRates:
@@ -29,6 +31,7 @@ class WageRates:
     overnight_hourly_wage: int
     overnight_ot_hourly_wage: int
     early_hourly_wage: int
+
 
 def minutes_to_amount(hourly_wage: int, minutes: int) -> int:
     """
@@ -48,6 +51,7 @@ def minutes_to_daily_amount(daily_wage: int, minutes: int) -> int:
         return 0
 
     return (daily_wage * minutes) // FULL_DAY_MINUTES
+
 
 def get_detail_salary_amount(
     work_type: str,
@@ -127,12 +131,14 @@ def calculate_daily_salary_breakdown(
         if amount_type in by_work_type:
             by_work_type[amount_type] += amount
 
-        detail_amounts.append({
-            "work_type": amount_type,
-            "minutes": minutes,
-            "amount": amount,
-            "is_overtime_approved": d.is_overtime_approved,
-        })
+        detail_amounts.append(
+            {
+                "work_type": amount_type,
+                "minutes": minutes,
+                "amount": amount,
+                "is_overtime_approved": d.is_overtime_approved,
+            }
+        )
 
     total_amount = sum(by_work_type.values())
     by_work_type["합계"] = total_amount
@@ -144,75 +150,169 @@ def calculate_daily_salary_breakdown(
     }
 
 
-
-def get_rates_for_workday(work_day) -> WageRates:
-    try:
-        rate = WorkPlaceRate.objects.get(
-            user_id=work_day.user_uuid_id,      
+def get_rate_for_workday(work_day, rate_history=None):
+    if rate_history is None:
+        rate_history = WorkPlaceRate.objects.filter(
+            user_id=work_day.user_uuid_id,
             work_place=work_day.work_place,
+            effective_start_date__lte=work_day.work_date,
+        ).filter(
+            Q(effective_end_date__isnull=True)
+            | Q(effective_end_date__gte=work_day.work_date)
         )
-    except ObjectDoesNotExist:
-        raise ValueError("해당 근무지의 시급표(WorkPlaceRate)가 없습니다.")
-    
-    return wage_rates_from_model(rate)
+    matches = [
+        rate
+        for rate in rate_history
+        if rate.user_id == work_day.user_uuid_id
+        and rate.work_place == work_day.work_place
+        and rate.effective_start_date <= work_day.work_date
+        and (
+            rate.effective_end_date is None
+            or work_day.work_date <= rate.effective_end_date
+        )
+    ]
+    if len(matches) != 1:
+        raise ValidationError(
+            {
+                "code": "rate_missing" if not matches else "rate_overlap",
+                "work_date": str(work_day.work_date),
+                "message": "근무일에 적용할 단가가 없거나 적용 기간이 겹칩니다.",
+            }
+        )
+    return matches[0]
 
 
-def wage_rates_from_model(rate: WorkPlaceRate) -> WageRates:
-    """Convert one persisted workplace rate into the calculation value object."""
+def get_rates_for_workday(work_day):
+    return wage_rates_from_model(get_rate_for_workday(work_day))
+
+
+def wage_rates_from_model(rate):
     return WageRates(
-        base_hourly_wage=rate.base_hourly_wage,
-        overtime_hourly_wage=rate.overtime_hourly_wage,
-        meal_ot_hourly_wage=rate.meal_ot_hourly_wage,
-        special_hourly_wage=rate.special_hourly_wage,
-        day_special_hourly_wage=rate.day_special_hourly_wage or rate.special_hourly_wage,
-        night_special_hourly_wage=rate.night_special_hourly_wage or rate.special_hourly_wage,
-        overnight_hourly_wage=rate.overnight_hourly_wage,
-        overnight_ot_hourly_wage=rate.overnight_ot_hourly_wage,
-        early_hourly_wage=rate.early_hourly_wage,
+        base_hourly_wage=rate.base_hourly_wage or 0,
+        overtime_hourly_wage=rate.overtime_hourly_wage or 0,
+        meal_ot_hourly_wage=rate.meal_ot_hourly_wage or 0,
+        special_hourly_wage=rate.special_hourly_wage or 0,
+        day_special_hourly_wage=rate.day_special_hourly_wage
+        or rate.special_hourly_wage
+        or 0,
+        night_special_hourly_wage=rate.night_special_hourly_wage
+        or rate.special_hourly_wage
+        or 0,
+        overnight_hourly_wage=rate.overnight_hourly_wage or 0,
+        overnight_ot_hourly_wage=rate.overnight_ot_hourly_wage or 0,
+        early_hourly_wage=rate.early_hourly_wage or 0,
     )
 
 
-def get_rates_by_work_place(user) -> dict[str, WageRates]:
-    """Load all of one user's workplace rates in a single query."""
-    return {
-        rate.work_place: wage_rates_from_model(rate)
-        for rate in WorkPlaceRate.objects.filter(user=user)
+def get_workday_salary(work_day, rate_history=None):
+    result = {
+        "amount": None,
+        "amount_breakdown": {},
+        "detail_amounts": [],
+        "calculation_status": "rate_missing",
+        "details_available": False,
+        "is_final": work_day.is_approved is True,
     }
+    if work_day.is_approved is False:
+        return {**result, "amount": 0, "calculation_status": "rejected"}
+    if work_day.is_approved is True:
+        amount = work_day.salary_amount
+        if amount is None:
+            try:
+                amount = work_day.salary_expense.amount
+            except ObjectDoesNotExist:
+                return {**result, "calculation_status": "final_amount_missing"}
+        snapshot = work_day.salary_snapshot or {}
+        return {
+            **result,
+            "amount": amount,
+            "calculation_status": "confirmed",
+            "amount_breakdown": snapshot.get("by_work_type", {}),
+            "detail_amounts": snapshot.get("detail_amounts", []),
+            "details_available": "detail_amounts" in snapshot,
+        }
+    try:
+        rate = get_rate_for_workday(work_day, rate_history)
+    except ValidationError as exc:
+        return {**result, "calculation_status": str(exc.detail["code"])}
+    breakdown = calculate_daily_salary_breakdown(
+        work_day.details.all(), wage_rates_from_model(rate), work_day.work_shift
+    )
+    return {
+        **result,
+        "amount": breakdown["total_amount"],
+        "amount_breakdown": breakdown["by_work_type"],
+        "detail_amounts": breakdown["detail_amounts"],
+        "calculation_status": "calculated",
+        "details_available": True,
+    }
+
 
 @transaction.atomic
 def sync_salary_expense_for_workday(work_day):
-    """
-    work_day 상태 기준으로 Expense(급여 지출) 생성/갱신/삭제를 동기화
-    - 승인(True): 계산 후 Expense upsert
-    - 반려(False) or 대기(None): Expense 삭제
-    """
+    # 단가 이력 수정과 같은 사용자 행을 잠근다.
+    User_Login_Info.objects.select_for_update().get(pk=work_day.user_uuid_id)
     if work_day.is_approved is True:
-        rates = get_rates_for_workday(work_day)
-        details = work_day.details.all()  # related_name="details"
-        amount = calculate_daily_salary(details, rates, work_day.work_shift)
-
+        if work_day.salary_amount is None:
+            try:
+                existing_amount = work_day.salary_expense.amount
+            except ObjectDoesNotExist:
+                existing_amount = None
+            if existing_amount is not None:
+                work_day.salary_amount = existing_amount
+            else:
+                rate = get_rate_for_workday(work_day)
+                rates = wage_rates_from_model(rate)
+                breakdown = calculate_daily_salary_breakdown(
+                    work_day.details.all(), rates, work_day.work_shift
+                )
+                work_day.salary_amount = breakdown["total_amount"]
+                WorkPlaceRate.objects.filter(pk=rate.pk).update(used_for_approval=True)
+                work_day.salary_rate = rate
+                work_day.salary_snapshot = {
+                    **breakdown,
+                    "rates": asdict(rates),
+                    "rate_uuid": str(rate.pk),
+                    "effective_start_date": str(rate.effective_start_date),
+                    "effective_end_date": (
+                        str(rate.effective_end_date)
+                        if rate.effective_end_date
+                        else None
+                    ),
+                }
+            work_day.save(
+                update_fields=["salary_amount", "salary_rate", "salary_snapshot"]
+            )
         Expense.objects.update_or_create(
             work_day=work_day,
             defaults={
-                "date": work_day.work_date,           # 급여 발생일(근무일)
-                "expense_name": f"{work_day.user_name} 급여",               
+                "date": work_day.work_date,
+                "expense_name": f"{work_day.user_name} 급여",
                 "expense_detail": f"{work_day.work_place} {work_day.work_shift}",
-                "amount": amount,
+                "amount": work_day.salary_amount,
             },
         )
         return
-
-    # False 또는 None이면 삭제
     Expense.objects.filter(work_day=work_day).delete()
+    # 사용 이력 FK는 남겨 삭제를 방지하고, 재승인 금액은 새로 계산한다.
+    work_day.salary_amount = None
+    work_day.salary_snapshot = None
+    work_day.save(update_fields=["salary_amount", "salary_snapshot"])
 
 
 RATE_REMOVE_KEYS = {"user", "user_uuid", "user_name"}
+
 
 def group_rates_by_user(qs):
     # serializers가 salary를 참조하므로 모듈 로드 시의 순환 import를 피한다.
     from myapp.serializers import WorkPlaceRateSerializer
 
-    rate_list = WorkPlaceRateSerializer(qs, many=True).data
+    rate_list = WorkPlaceRateSerializer(
+        qs.prefetch_related("approved_workdays").order_by(
+            "work_place", "-effective_start_date"
+        ),
+        many=True,
+    ).data
     grouped = OrderedDict()
 
     for r in rate_list:

@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 
 import { userPlaceListColumns } from "../constants/dailyPayColumns";
+import { EMPTY_PLACE } from "../constants/rateFields";
+import { isCurrentRateHistory } from "../utils/rateHistory";
 
 export const formatWon = (value) => {
   if (value == null || Number.isNaN(Number(value))) return "-";
@@ -28,13 +30,14 @@ export default function useDailyPayDerivedData({
 }) {
   const mergedData = useMemo(() => {
     return data?.map((user) => {
-      const rates = user.rates || [];
+      const rates = (user.rates || []).filter(isCurrentRateHistory);
       const workPlaces = rates.map((rate) => rate.work_place).filter(Boolean);
 
       return {
         user_uuid: user.user_uuid,
         user_name: user.user_name,
-        work_place: workPlaces.join(" / "),
+        rates: user.rates || [],
+        work_place: workPlaces.length ? workPlaces.join(" / ") : EMPTY_PLACE,
         base_hourly_wage: averageRate(rates, "base_hourly_wage"),
         overtime_hourly_wage: averageRate(rates, "overtime_hourly_wage"),
         meal_ot_hourly_wage: averageRate(rates, "meal_ot_hourly_wage"),
@@ -59,7 +62,7 @@ export default function useDailyPayDerivedData({
   const summary = useMemo(() => {
     const places = new Set();
     data?.forEach((user) => {
-      user.rates?.forEach((rate) => {
+      user.rates?.filter(isCurrentRateHistory).forEach((rate) => {
         if (rate.work_place) places.add(rate.work_place);
       });
     });

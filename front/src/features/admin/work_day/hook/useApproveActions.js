@@ -16,6 +16,14 @@ export default function useApproveActions({ toast, refresh, closeDetail, clearSe
 
   const approveEmployee = useCallback(
     async (employee) => {
+      if (employee.canApprove === false) {
+        toast({
+          title: "승인할 수 없는 근무입니다.",
+          description: "적용 단가 또는 확정 금액을 먼저 확인해주세요.",
+          status: "warning",
+        });
+        return false;
+      }
       try {
         setDetailSaving(true);
         await adminWorkdayStatusUpdate(

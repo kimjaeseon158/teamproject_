@@ -1,60 +1,27 @@
-import { RATE_FIELDS } from "../constants/rateFields";
 import { addWorkPlaceRates, createWorkPlaceRate } from "../api/userWorkplace_addList";
 import { getWorkPlaceFiltering } from "../api/userWorkplaceFiltering";
 import { updateWorkPlaceRate } from "../api/userWorkplace_Update";
 import { deleteWorkPlaceRate } from "../api/userWorkplace_Delete";
-
-const buildEmptyRatePayload = (rateUuid) => ({
-  rate_uuid: rateUuid,
-  ...RATE_FIELDS.reduce((payload, field) => {
-    payload[field.key] = null;
-    return payload;
-  }, {}),
-});
+import { buildRateRequest } from "../utils/rateHistory";
 
 export function useWorkPlaceRate(toast) {
   const handleAdd = async (payload) =>
     await createWorkPlaceRate(
-      {
-        user_uuid: payload.user_uuid,
-        admin_work_place_uuid: payload.admin_work_place_uuid,
-        work_place: payload.work_place,
-        ...RATE_FIELDS.reduce((next, field) => {
-          next[field.key] = payload[field.key] ?? null;
-          return next;
-        }, {}),
-      },
+      buildRateRequest(payload, { includeUser: true }),
       toast
     );
 
   const handleAddMany = async (payloads) =>
     await addWorkPlaceRates(
-      payloads.map((payload) => ({
-        user_uuid: payload.user_uuid,
-        admin_work_place_uuid: payload.admin_work_place_uuid,
-        work_place: payload.work_place,
-        ...RATE_FIELDS.reduce((next, field) => {
-          next[field.key] = payload[field.key] ?? null;
-          return next;
-        }, {}),
-      })),
+      payloads.map((payload) => buildRateRequest(payload, { includeUser: true })),
       toast
     );
 
   const handleUpdate = async (payload) =>
     await updateWorkPlaceRate(payload, { toast });
 
-  const handleDelete = async ({ user, rate_uuid }) => {
+  const handleDelete = async ({ rate_uuid }) => {
     if (!rate_uuid) return null;
-
-    if (user.rates.length === 1) {
-      const rate = user.rates[0];
-      return await updateWorkPlaceRate(
-        buildEmptyRatePayload(rate.rate_uuid),
-        { toast }
-      );
-    }
-
     return await deleteWorkPlaceRate({ rate_uuid }, toast);
   };
 

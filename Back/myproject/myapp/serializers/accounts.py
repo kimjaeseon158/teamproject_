@@ -1,6 +1,8 @@
 # 사용자 계정 생성과 조회 serializer
 
 from django.db import transaction
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from rest_framework import serializers
 from ..encryption.crypto import normalize_resident_number, resident_number_blind_index
 from ..models import User_Login_Info, WorkPlaceRate
@@ -39,6 +41,7 @@ class User_Login_InfoSerializer(serializers.ModelSerializer):
         WorkPlaceRate.objects.get_or_create(
             user=user,
             work_place=DEFAULT_WORK_PLACE,
+            defaults={"effective_start_date": datetime.now(ZoneInfo("Asia/Seoul")).date()},
         )
         return user
 

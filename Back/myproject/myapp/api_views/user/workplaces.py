@@ -14,13 +14,17 @@ class UserWorkPlaceListAPIView(APIView):
     def get(self, request):
         work_places = (
             WorkPlaceRate.objects.filter(user=request.user)
-            .order_by("work_place")
-            .values("rate_uuid", "work_place")
+            .order_by("work_place", "-effective_start_date")
+            .values("rate_uuid", "work_place", "effective_start_date", "effective_end_date")
         )
+
+        unique_places = {}
+        for item in work_places:
+            unique_places.setdefault(item["work_place"], item)
 
         return Response(
             {
                 "success": True,
-                "work_places": list(work_places),
+                "work_places": list(unique_places.values()),
             }
         )

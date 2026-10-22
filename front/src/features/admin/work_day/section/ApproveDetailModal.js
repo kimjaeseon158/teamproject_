@@ -13,6 +13,7 @@ import {
   Flex,
   Textarea,
 } from "@chakra-ui/react";
+import { formatSalaryAmount, getSalaryStatusLabel } from "../utils/salaryStatus";
 
 const InfoCard = ({ title, children }) => (
   <Box border="1px solid" borderColor="gray.300" borderRadius="12px" p={4} mb={3}>
@@ -117,6 +118,15 @@ export default function ApproveDetailModal({
             </Text>
           </InfoCard>
 
+          <InfoCard title="급여 계산">
+            <Flex justify="space-between" align="center" gap={3}>
+              <Text color={employee.canApprove === false ? "red.500" : "gray.600"}>
+                {getSalaryStatusLabel(employee.salary?.calculation_status)}
+              </Text>
+              <Text fontWeight="800">{formatSalaryAmount(employee.salary)}</Text>
+            </Flex>
+          </InfoCard>
+
           <InfoCard title="반려 사유">
             <Textarea
               placeholder="반려 사유를 입력하세요."
@@ -131,6 +141,7 @@ export default function ApproveDetailModal({
             colorScheme="green"
             mr={2}
             isLoading={saving}
+            isDisabled={employee.canApprove === false}
             onClick={() => onApprove(employee)}
           >
             승인

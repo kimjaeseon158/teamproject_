@@ -58,6 +58,7 @@ const getColumns = ({ sortField, sortOrder, onSort }) => [
 export default function ApproveDesktopTable({ rows, selectedIds, toggleAll, toggleOne, onRowClick, sortField, sortOrder, onSort, selectableIds, selectedOnPageCount }) {
   const columns = getColumns({ sortField, sortOrder, onSort });
   const checkedItems = Object.fromEntries(rows.map(row => [row.id, selectedIds.has(row.id)]));
+  const disabledRowIds = new Set(rows.filter(row => row.canApprove === false).map(row => row.id));
   return (
     <CommonTable
       columns={columns}
@@ -65,6 +66,7 @@ export default function ApproveDesktopTable({ rows, selectedIds, toggleAll, togg
       rowKey="id"
       selectable
       checkedItems={checkedItems}
+      disabledRowIds={disabledRowIds}
       selectAll={{
         isChecked: selectableIds.length > 0 && selectedOnPageCount === selectableIds.length,
         isIndeterminate: selectedOnPageCount > 0 && selectedOnPageCount < selectableIds.length,

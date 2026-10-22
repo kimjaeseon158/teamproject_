@@ -3,6 +3,7 @@ import useRateEditPlaces from "./useRateEditPlaces";
 import useRateEditRowsState from "./useRateEditRowsState";
 import useRateEditSummary from "./useRateEditSummary";
 import { EMPTY_PLACE } from "../constants/rateFields";
+import { isCurrentRateHistory } from "../utils/rateHistory";
 
 export default function useRateEditModal({
   isOpen,
@@ -19,25 +20,20 @@ export default function useRateEditModal({
   });
   const rows = useRateEditRowsState(user);
   const summary = useRateEditSummary(rows.tableData);
-  const registeredRows = rows.tableData.filter(
-    (row) => row.work_place && row.work_place !== EMPTY_PLACE
-  );
-  const usedPlaceUuids = new Set(
-    registeredRows.map((row) => row.admin_work_place_uuid).filter(Boolean)
-  );
-  const usedPlaceNames = new Set(registeredRows.map((row) => row.work_place));
   const realAdminWorkPlaces = adminWorkPlaces.filter(
     (place) =>
       place.work_place &&
       place.work_place !== EMPTY_PLACE
   );
-  const availableWorkPlaces = realAdminWorkPlaces.filter(
-    (place) =>
-      !usedPlaceUuids.has(place.admin_work_place_uuid) &&
-      !usedPlaceNames.has(place.work_place)
+  const hasSavedCurrentRate = rows.tableData.some(
+    (row) =>
+      !row.isNew &&
+      isCurrentRateHistory(row) &&
+      row.work_place &&
+      row.work_place !== EMPTY_PLACE
   );
-  const canAddRow = registeredRows.length > 0 && realAdminWorkPlaces.length > 0;
-  const hasAvailableWorkPlace = availableWorkPlaces.length > 0;
+  const canAddRow = hasSavedCurrentRate && realAdminWorkPlaces.length > 0;
+  const hasAvailableWorkPlace = realAdminWorkPlaces.length > 0;
   const actions = useRateEditActions({
     canAddRow,
     hasAvailableWorkPlace,
@@ -62,6 +58,7 @@ export default function useRateEditModal({
     saving: actions.saving,
     setEditedValues: rows.setEditedValues,
     setEditingId: rows.setEditingId,
+    setCheckedItems: rows.setCheckedItems,
     setTempRates: rows.setTempRates,
     updateTempRate: rows.updateTempRate,
     summary,

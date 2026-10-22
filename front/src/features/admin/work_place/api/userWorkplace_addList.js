@@ -5,9 +5,9 @@ export async function createWorkPlaceRate(payload, toast) {
 }
 
 export async function addWorkPlaceRates(rates, toast) {
-  return await ApiPost(
-    "/api/work-place-rate-list-create/",
-    { rates },
-    { toast }
-  );
+  let result = null;
+  for (const rate of rates) {
+    result = await createWorkPlaceRate(rate, toast);
+  }
+  return result;
 }

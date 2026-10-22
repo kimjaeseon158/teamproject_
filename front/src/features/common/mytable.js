@@ -16,11 +16,13 @@ export default function CommonTable({
   selectionCellProps = {},
   onRowClick,
   rowKey = "id",
+  containerRef,
   containerProps = {},
   tableProps = {},
 }) {
   return (
     <Box
+      ref={containerRef}
       p={6}
       bg="white"
       borderRadius="xl"

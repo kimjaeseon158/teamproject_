@@ -20,5 +20,7 @@ export const initialRateForm = RATE_FIELDS.reduce(
   {
     admin_work_place_uuid: "",
     work_place: "",
+    effective_start_date: "",
+    effective_end_date: null,
   }
 );

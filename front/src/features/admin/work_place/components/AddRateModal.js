@@ -65,11 +65,30 @@ export default function RateEditModal({
     [modal, rateView]
   );
   const visibleRates = useMemo(() => {
-    const filteredRates = modal.tableData.filter((rate) =>
+    let filteredRates = modal.tableData.filter((rate) =>
         rateView === "ended"
           ? isEndedRateHistory(rate)
           : rate.isNew || isCurrentRateHistory(rate)
       );
+
+    if (rateView === "current") {
+      const hasAssignedRate = filteredRates.some(
+        (rate) =>
+          rate.isNew ||
+          (rate.work_place && rate.work_place !== EMPTY_PLACE)
+      );
+      if (hasAssignedRate) {
+        filteredRates = filteredRates.filter(
+          (rate) => rate.isNew || rate.work_place !== EMPTY_PLACE
+        );
+      }
+
+      filteredRates = filteredRates.map((rate) =>
+        !rate.isNew && rate.work_place === EMPTY_PLACE
+          ? { ...rate, isPlaceholder: true }
+          : rate
+      );
+    }
 
     if (rateView === "current" && filteredRates.length === 0) {
       return [{

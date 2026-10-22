@@ -5,6 +5,11 @@ from ..models import Expense, Income
 
 
 class ExpenseSerializer(serializers.ModelSerializer):
+    def validate(self, attrs):
+        if attrs.get("work_day") is not None:
+            raise serializers.ValidationError("급여 지출은 근무 승인에서만 생성할 수 있습니다.")
+        return attrs
+
     class Meta:
         model = Expense
         fields = "__all__"

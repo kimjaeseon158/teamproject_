@@ -6,9 +6,9 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from ...models import User_WorkDay
+from ...models import User_WorkDay, WorkPlaceRate
 from ..shared import normalize_work_type
-from ..shared.salary_utils import calculate_daily_salary_breakdown, get_rates_by_work_place
+from ..shared.salary_utils import get_workday_salary
 from ..token import UserJWTAuthentication
 
 
@@ -17,7 +17,7 @@ class UserMonthlyWorkSummaryAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user        = request.user
+        user = request.user
         if user.must_change_password:
             return Response(
                 {"success": False, "must_change_password": True},
@@ -38,24 +38,30 @@ class UserMonthlyWorkSummaryAPIView(APIView):
             year + (1 if month == 12 else 0), 1 if month == 12 else month + 1, 1
         )
 
-        work_days = User_WorkDay.objects.filter(
-            user_uuid=user,
-            work_date__gte=month_start,
-            work_date__lt=next_month_start,
-        ).prefetch_related("details").order_by("work_date")
-        rates_by_work_place = get_rates_by_work_place(user)
+        work_days = (
+            User_WorkDay.objects.filter(
+                user_uuid=user,
+                work_date__gte=month_start,
+                work_date__lt=next_month_start,
+            )
+            .select_related("salary_expense")
+            .prefetch_related("details")
+            .order_by("work_date")
+        )
+        rate_history = list(WorkPlaceRate.objects.filter(user=user))
+        uncalculated_count = 0
 
-        daily_list      = []
-        total_amount    = 0
+        daily_list = []
+        total_amount = 0
         approved_amount = 0
-        pending_amount  = 0
-        day_shift_count   = 0
+        pending_amount = 0
+        day_shift_count = 0
         night_shift_count = 0
         early_work_count = 0
         early_work_minutes = 0
 
         for wd in work_days:
-            
+
             day_amount = 0
             amount_breakdown = None
             detail_amounts = []
@@ -73,46 +79,46 @@ class UserMonthlyWorkSummaryAPIView(APIView):
             elif wd.work_shift == "야간":
                 night_shift_count += 1
 
-            # 승인 여부와 관계없이 현재 시급표를 기준으로 같은 방식으로 계산한다.
-            # Expense는 승인 시점의 저장값이라 시급 변경 후 상세 합계와 달라질 수 있다.
-            if is_approved is not False:
-                rates = rates_by_work_place.get(wd.work_place)
-                if rates is None:
-                    return Response(
-                        {"success": False},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-                breakdown = calculate_daily_salary_breakdown(details, rates, wd.work_shift)
-                day_amount = breakdown["total_amount"]
-                amount_breakdown = breakdown["by_work_type"]
-                detail_amounts = breakdown["detail_amounts"]
-            # is_approved가 False (반려됨)인 경우 day_amount는 기본값 0으로 유지됨
+            salary = get_workday_salary(wd, rate_history)
+            day_amount = salary["amount"]
+            amount_breakdown = salary["amount_breakdown"]
+            detail_amounts = salary["detail_amounts"]
+            if day_amount is None:
+                uncalculated_count += 1
 
-            daily_list.append({
-                "date": wd.work_date,
-                "work_place": wd.work_place if wd.work_place else "Unknown",
-                "work_shift": wd.work_shift,
-                "amount": day_amount,
-                "amount_breakdown": amount_breakdown or {},
-                "detail_amounts": detail_amounts,
-                "is_approved": is_approved
-            })
+            daily_list.append(
+                {
+                    "date": wd.work_date,
+                    "work_place": wd.work_place if wd.work_place else "Unknown",
+                    "work_shift": wd.work_shift,
+                    "amount": day_amount,
+                    "amount_breakdown": amount_breakdown or {},
+                    "detail_amounts": detail_amounts,
+                    "calculation_status": salary["calculation_status"],
+                    "details_available": salary["details_available"],
+                    "is_final": salary["is_final"],
+                    "is_approved": is_approved,
+                }
+            )
 
-            total_amount += day_amount
+            total_amount += day_amount or 0
 
             if is_approved is True:
-                approved_amount += day_amount
+                approved_amount += day_amount or 0
             elif is_approved is None:
-                pending_amount += day_amount
+                pending_amount += day_amount or 0
 
-        return Response({
-            "date": f"{year}-{month:02d}",  #2026-04
-            "total_amount": total_amount,
-            "approved_amount": approved_amount,
-            "pending_amount": pending_amount,
-            "day_shift_count": day_shift_count,
-            "night_shift_count": night_shift_count,
-            "early_work_count": early_work_count,
-            "early_work_minutes": early_work_minutes,
-            "daily_list": daily_list
-        })
+        return Response(
+            {
+                "date": f"{year}-{month:02d}",  # 2026-04
+                "total_amount": total_amount,
+                "approved_amount": approved_amount,
+                "pending_amount": pending_amount,
+                "day_shift_count": day_shift_count,
+                "night_shift_count": night_shift_count,
+                "early_work_count": early_work_count,
+                "early_work_minutes": early_work_minutes,
+                "uncalculated_count": uncalculated_count,
+                "daily_list": daily_list,
+            }
+        )

@@ -150,6 +150,7 @@ class WorkPlaceRateSerializer(serializers.ModelSerializer):
 class WorkPlaceRateCreateSerializer(serializers.ModelSerializer):
     user_uuid = serializers.UUIDField(write_only=True)
     admin_work_place_uuid = serializers.UUIDField(write_only=True, required=False)
+    work_place = serializers.CharField(max_length=100, required=False)
 
     class Meta:
         model = WorkPlaceRate

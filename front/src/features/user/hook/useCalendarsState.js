@@ -38,12 +38,15 @@ const toCalendarEvents = (dailyList = []) => {
       (sum, item) => sum + (Number(item.amount) || 0),
       0
     );
+    const hasMissingRate = items.some((item) => item.amount == null);
 
     return {
       id: `${date}-${primary.work_place}`,
-      title: `근무지 - ${primary.work_place}\n${workType} - ${Number(
-        primary.amount || 0
-      ).toLocaleString()}원`,
+      title: `근무지 - ${primary.work_place}\n${workType} - ${
+        primary.amount == null
+          ? "적용 단가 미설정"
+          : `${Number(primary.amount).toLocaleString()}원`
+      }`,
       start: date,
       backgroundColor: color,
       borderColor: color,
@@ -52,6 +55,7 @@ const toCalendarEvents = (dailyList = []) => {
         ...primary,
         work_type: workType,
         calendar_amount: totalAmount,
+        has_missing_rate: hasMissingRate,
         grouped_items: items,
         extra_count: Math.max(0, items.length - 1),
       },

@@ -11,13 +11,17 @@ const SUMMARY_CARDS = [
 
 export default function RateEditModalHeader({ summary, user }) {
   return (
-    <Box bg="linear-gradient(135deg, #F0FFF4 0%, #EBF8FF 100%)" px={7} py={6}>
+    <Box
+      bg="linear-gradient(135deg, #F0FFF4 0%, #ECFEF8 48%, #EBF8FF 100%)"
+      px={{ base: 4, md: 7 }}
+      py={6}
+    >
       <Flex justify="space-between" align="flex-start" gap={4}>
-        <HStack spacing={4}>
-          <Avatar name={user?.user_name} size="lg" bg="green.500" color="white" />
+        <HStack spacing={4} align="flex-start">
+          <Avatar name={user?.user_name} size="lg" bg="green.500" color="white" flexShrink={0} />
           <Box>
             <HStack spacing={2} mb={1}>
-              <Text fontSize="xl" fontWeight="900" color="gray.900">
+              <Text fontSize={{ base: "lg", md: "xl" }} fontWeight="900" color="gray.900">
                 {user?.user_name} 일급 상세
               </Text>
               <Badge colorScheme="green" borderRadius="full" px={3}>

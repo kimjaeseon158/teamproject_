@@ -2,11 +2,15 @@ import { useState } from "react";
 
 import { EMPTY_PLACE, RATE_FIELDS, initialRateForm } from "../constants/rateFields";
 import { notify } from "../utils/rateFormat";
+import {
+  buildRateRequest,
+  getRateApiErrorMessage,
+  getRateValidationMessage,
+} from "../utils/rateHistory";
 import { useWorkPlaceRate } from "./useWorkPlaceRate";
 
 const toRatePayload = (values) => {
-  const { isNew, user_uuid, rate_uuid, ...payload } = values;
-  return payload;
+  return buildRateRequest(values);
 };
 
 export default function useRateEditActions({
@@ -58,7 +62,7 @@ export default function useRateEditActions({
   };
 
   const handleDeleteClick = async () => {
-    const { selectedId, selectedRow, setCheckedItems, setEditedValues, setEditingId, setTempRates, tableData } = rows;
+    const { selectedId, selectedRow, setCheckedItems, setEditedValues, setEditingId, setTempRates } = rows;
     if (!selectedId) {
       notify(toast, {
         title: "삭제할 근무지를 선택해주세요.",
@@ -79,9 +83,11 @@ export default function useRateEditActions({
       return;
     }
 
-    if (!selectedRow?.work_place || selectedRow.work_place === EMPTY_PLACE) {
+    if (selectedRow?.can_delete === false || selectedRow?.used_for_approval) {
       notify(toast, {
-        title: "미지정 근무지는 삭제할 수 없습니다.",
+        title: "이 단가 이력은 삭제할 수 없습니다.",
+        description:
+          selectedRow.delete_block_reason || "승인에 사용된 단가 이력입니다.",
         status: "warning",
       });
       return;
@@ -90,28 +96,14 @@ export default function useRateEditActions({
     try {
       setDeleting(true);
 
-      let result;
-      if (tableData.length <= 1) {
-        result = await handleUpdate({
-          rate_uuid: selectedId,
-          ...RATE_FIELDS.reduce((payload, field) => {
-            payload[field.key] = null;
-            return payload;
-          }, {}),
-        });
-      } else {
-        result = await handleDelete({ user, rate_uuid: selectedId });
-      }
+      const result = await handleDelete({ rate_uuid: selectedId });
 
       if (result?.success === false) {
-        throw new Error(result?.message || "근무지 삭제에 실패했습니다.");
+        throw new Error(getRateApiErrorMessage(result, "단가 이력 삭제에 실패했습니다."));
       }
 
       notify(toast, {
-        title:
-          tableData.length <= 1
-            ? "마지막 근무지를 미지정으로 초기화했습니다."
-            : "근무지를 삭제했습니다.",
+        title: "단가 이력을 삭제했습니다.",
         status: "success",
       });
       setCheckedItems({});
@@ -119,7 +111,7 @@ export default function useRateEditActions({
     } catch (err) {
       notify(toast, {
         title: "삭제 중 오류가 발생했습니다.",
-        description: err?.message,
+        description: getRateApiErrorMessage(err, "단가 이력을 삭제하지 못했습니다."),
         status: "error",
       });
     } finally {
@@ -152,22 +144,9 @@ export default function useRateEditActions({
       return;
     }
 
-    const savedRows = tableData.filter(
-      (row) =>
-        !row.isNew &&
-        row.rate_uuid !== editingId &&
-        row.work_place &&
-        row.work_place !== EMPTY_PLACE
-    );
-    const placeKeys = [...savedRows, ...pendingRows].map((row) =>
-      row.admin_work_place_uuid || String(row.work_place).trim().toLowerCase()
-    );
-    if (new Set(placeKeys).size !== placeKeys.length) {
-      notify(toast, {
-        title: "이미 등록된 근무지입니다.",
-        description: "같은 근무지는 직원별로 한 번만 등록할 수 있습니다.",
-        status: "warning",
-      });
+    const periodError = getRateValidationMessage(pendingRows);
+    if (periodError) {
+      notify(toast, { title: periodError, status: "warning" });
       return;
     }
 
@@ -211,7 +190,7 @@ export default function useRateEditActions({
       }
 
       if (result?.success === false) {
-        throw new Error(result?.message || "저장에 실패했습니다.");
+        throw new Error(getRateApiErrorMessage(result, "저장에 실패했습니다."));
       }
 
       notify(toast, {
@@ -226,7 +205,7 @@ export default function useRateEditActions({
     } catch (err) {
       notify(toast, {
         title: "저장 중 오류가 발생했습니다.",
-        description: err?.message,
+        description: getRateApiErrorMessage(err, "단가 이력을 저장하지 못했습니다."),
         status: "error",
       });
     } finally {

@@ -23,7 +23,11 @@ const TEXT = {
   workCount: "\uac74\u0020\uadfc\ubb34",
   workInfo: "\uadfc\ubb34\uc9c0\u0020\uc815\ubcf4",
   workPlaceMissing: "\uadfc\ubb34\uc9c0\u0020\ubbf8\uc9c0\uc815",
+  rateMissing: "적용 단가 미설정",
 };
+
+const displayAmount = (item) =>
+  item?.amount == null ? TEXT.rateMissing : formatWon(item.amount);
 
 const EditAction = ({ canEdit, onEdit }) =>
   canEdit ? (
@@ -139,7 +143,9 @@ export default function WorkDetailView({
                   <Divider borderColor="whiteAlpha.200" />
                   <HStack justify="space-between" color="blue.200">
                     <Text fontWeight="800">{TEXT.totalAmount}</Text>
-                    <Text fontWeight="900">{formatWon(item.amount)}</Text>
+                    <Text fontWeight="900" color={item.amount == null ? "orange.200" : undefined}>
+                      {displayAmount(item)}
+                    </Text>
                   </HStack>
                 </VStack>
               </Box>
@@ -183,7 +189,7 @@ export default function WorkDetailView({
           {TEXT.wageTotal}
         </Text>
         <Text fontSize="2xl" fontWeight="900" color="blue.300">
-          {formatWon(data.amount)}
+          {displayAmount(data)}
         </Text>
       </Box>
 

@@ -1,9 +1,11 @@
 import { ApiGet, toQueryString } from "../../../../services/api/requestJson";
 import { EMPTY_PLACE, RATE_FIELDS } from "../constants/rateFields";
+import { normalizeRateHistory } from "../utils/rateHistory";
 
 const normalizeEmptyRates = (users) => users.map((user) => ({
   ...user,
-  rates: (user.rates || []).map((rate) => {
+  rates: (user.rates || []).map((rawRate) => {
+    const rate = normalizeRateHistory(rawRate);
     const isEmptyRate = RATE_FIELDS.every(
       (field) => rate[field.key] == null || rate[field.key] === ""
     );

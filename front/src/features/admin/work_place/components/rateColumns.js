@@ -1,7 +1,12 @@
 import { Button, IconButton, Input, Select } from "@chakra-ui/react";
 import { FaEdit, FaTrash } from "react-icons/fa";
 
-import { EMPTY_PLACE, RATE_FIELDS } from "../constants/rateFields";
+import DatePicker from "../../../common/DatePicker";
+import {
+  EMPTY_PLACE,
+  RATE_FIELDS,
+  initialRateForm,
+} from "../constants/rateFields";
 
 const getSelectedPlaceUuid = (row, adminWorkPlaces) => {
   if (row.admin_work_place_uuid) return row.admin_work_place_uuid;
@@ -14,6 +19,8 @@ const getSelectedPlaceUuid = (row, adminWorkPlaces) => {
 
 const formatNumber = (value) =>
   value != null && value !== "" ? Number(value).toLocaleString() : "-";
+
+const formatDate = (value, fallback) => value || fallback;
 
 const stickyManageColumn = {
   position: "sticky",
@@ -30,9 +37,25 @@ const stickyManageHeader = {
   bg: "gray.50",
 };
 
+const stickyDateColumn = (right, showDivider = false) => ({
+  position: "sticky",
+  right,
+  zIndex: 3,
+  bg: "white",
+  backgroundClip: "padding-box",
+  boxShadow: showDivider ? "-2px 0 0 #EDF2F7" : "none",
+  _groupHover: { bg: "gray.50" },
+});
+
+const stickyDateHeader = (right, showDivider = false) => ({
+  ...stickyDateColumn(right, showDivider),
+  zIndex: 4,
+  bg: "gray.50",
+});
+
 const stickyWorkPlaceColumn = {
   position: "sticky",
-  left: "72px",
+  left: { base: "56px", xl: "72px" },
   zIndex: 3,
   bg: "white",
   boxShadow: "2px 0 0 #EDF2F7",
@@ -54,7 +77,6 @@ const getRateColumns = ({
   updateTempRate,
   adminWorkPlaces = [],
   checkedItems = {},
-  tableData = [],
 }) => {
   const renderInput = (field, row, fallbackField) => (
     <Input
@@ -82,15 +104,16 @@ const getRateColumns = ({
     {
       key: "work_place",
       label: "근무지",
-      width: "240px",
+      width: { base: "150px", xl: "240px" },
       headerProps: {
-        minW: "240px",
+        minW: { base: "150px", xl: "240px" },
+        maxW: { base: "150px", xl: "240px" },
         whiteSpace: "nowrap",
         ...stickyWorkPlaceHeader,
       },
       cellProps: (row) => ({
-        minW: "240px",
-        maxW: "240px",
+        minW: { base: "150px", xl: "240px" },
+        maxW: { base: "150px", xl: "240px" },
         whiteSpace: "nowrap",
         ...stickyWorkPlaceColumn,
         bg: checkedItems[row.rate_uuid] ? "green.50" : "white",
@@ -105,24 +128,15 @@ const getRateColumns = ({
             : editedValues.admin_work_place_uuid !== undefined
               ? editedValues.admin_work_place_uuid
               : getSelectedPlaceUuid(row, adminWorkPlaces);
-          const selectablePlaces = adminWorkPlaces.filter((place) => {
-            if (!place.work_place || place.work_place === EMPTY_PLACE) return false;
-            if (place.admin_work_place_uuid === selectedPlaceUuid) return true;
-
-            return !tableData.some((other) =>
-              other.rate_uuid !== row.rate_uuid &&
-              other.work_place !== EMPTY_PLACE &&
-              (other.admin_work_place_uuid
-                ? other.admin_work_place_uuid === place.admin_work_place_uuid
-                : other.work_place === place.work_place)
-            );
-          });
+          const selectablePlaces = adminWorkPlaces.filter(
+            (place) => place.work_place && place.work_place !== EMPTY_PLACE
+          );
 
           return (
             <Select
               size="sm"
               width="100%"
-              minW="210px"
+              minW={{ base: "126px", xl: "210px" }}
               value={selectedPlaceUuid}
               onChange={(e) => {
                 const selectedPlace = adminWorkPlaces.find(
@@ -161,9 +175,9 @@ const getRateColumns = ({
       (field) => ({
         key: field.key,
         label: field.label,
-        width: "120px",
-        headerProps: { minW: "120px", whiteSpace: "nowrap" },
-        cellProps: { minW: "120px", whiteSpace: "nowrap" },
+        width: { base: "80px", xl: "120px" },
+        headerProps: { minW: { base: "80px", xl: "120px" }, whiteSpace: "nowrap" },
+        cellProps: { minW: { base: "80px", xl: "120px" }, whiteSpace: "nowrap", px: { base: 2, xl: 6 } },
         render: (value, row) => {
           const fallbackField =
             field.key === "day_special_hourly_wage" ||
@@ -179,16 +193,117 @@ const getRateColumns = ({
       })
     ),
     {
+      key: "effective_start_date",
+      label: "시작일",
+      width: { base: "80px", xl: "130px" },
+      headerProps: {
+        w: { base: "80px", xl: "130px" },
+        minW: { base: "80px", xl: "130px" },
+        maxW: { base: "80px", xl: "130px" },
+        whiteSpace: "nowrap",
+        ...stickyDateHeader({ base: "180px", xl: "220px" }, true),
+      },
+      cellProps: (row) => ({
+        w: { base: "80px", xl: "130px" },
+        minW: { base: "80px", xl: "130px" },
+        maxW: { base: "80px", xl: "130px" },
+        whiteSpace: "nowrap",
+        ...stickyDateColumn({ base: "180px", xl: "220px" }, true),
+        bg: checkedItems[row.rate_uuid] ? "green.50" : "white",
+        _groupHover: {
+          bg: checkedItems[row.rate_uuid] ? "green.50" : "gray.50",
+        },
+      }),
+      render: (value, row) => {
+        const displayValue =
+          row.isNew
+            ? row.effective_start_date || ""
+            : editedValues.effective_start_date !== undefined
+              ? editedValues.effective_start_date
+              : value ?? row.start_date ?? row.started_at ?? "";
+
+        if (row.isNew || editingId === row.rate_uuid) {
+          return (
+            <DatePicker
+              size="sm"
+              width="124px"
+              value={displayValue}
+              onChange={(date) => {
+                const changes = { effective_start_date: date };
+                if (row.isNew) updateTempRate(row.rate_uuid, changes);
+                else setEditedValues((prev) => ({ ...prev, ...changes }));
+              }}
+            />
+          );
+        }
+
+        return formatDate(displayValue, "-");
+      },
+    },
+    {
+      key: "effective_end_date",
+      label: "종료일",
+      width: { base: "80px", xl: "130px" },
+      headerProps: {
+        w: { base: "80px", xl: "130px" },
+        minW: { base: "80px", xl: "130px" },
+        maxW: { base: "80px", xl: "130px" },
+        whiteSpace: "nowrap",
+        ...stickyDateHeader({ base: "80px", xl: "90px" }),
+      },
+      cellProps: (row) => ({
+        w: { base: "80px", xl: "130px" },
+        minW: { base: "80px", xl: "130px" },
+        maxW: { base: "80px", xl: "130px" },
+        whiteSpace: "nowrap",
+        ...stickyDateColumn({ base: "80px", xl: "90px" }),
+        bg: checkedItems[row.rate_uuid] ? "green.50" : "white",
+        _groupHover: {
+          bg: checkedItems[row.rate_uuid] ? "green.50" : "gray.50",
+        },
+      }),
+      render: (value, row) => {
+        const displayValue =
+          row.isNew
+            ? row.effective_end_date || ""
+            : editedValues.effective_end_date !== undefined
+              ? editedValues.effective_end_date || ""
+              : value ?? row.end_date ?? row.ended_at ?? "";
+
+        if (row.isNew || editingId === row.rate_uuid) {
+          return (
+            <DatePicker
+              size="sm"
+              width="124px"
+              value={displayValue}
+              isClearable
+              onChange={(date) => {
+                const changes = { effective_end_date: date || null };
+                if (row.isNew) updateTempRate(row.rate_uuid, changes);
+                else setEditedValues((prev) => ({ ...prev, ...changes }));
+              }}
+            />
+          );
+        }
+
+        return formatDate(displayValue, "종료일 없음");
+      },
+    },
+    {
       key: "manage",
       label: "관리",
-      width: "90px",
+      width: { base: "70px", xl: "90px" },
       headerProps: {
-        minW: "90px",
+        w: { base: "70px", xl: "90px" },
+        minW: { base: "70px", xl: "90px" },
+        maxW: { base: "70px", xl: "90px" },
         whiteSpace: "nowrap",
         ...stickyManageHeader,
       },
       cellProps: (row) => ({
-        minW: "90px",
+        w: { base: "70px", xl: "90px" },
+        minW: { base: "70px", xl: "90px" },
+        maxW: { base: "70px", xl: "90px" },
         whiteSpace: "nowrap",
         ...stickyManageColumn,
         bg: checkedItems[row.rate_uuid] ? "green.50" : "white",
@@ -197,6 +312,32 @@ const getRateColumns = ({
         },
       }),
       render: (_, row) => {
+        if (row.isPlaceholder) {
+          return (
+            <Button
+              leftIcon={<FaEdit />}
+              size="xs"
+              minW="64px"
+              px={2}
+              iconSpacing={1.5}
+              colorScheme="green"
+              variant="ghost"
+              onClick={() => {
+                setTempRates((prev) => [
+                  ...prev,
+                  {
+                    rate_uuid: `temp-${Date.now()}`,
+                    ...initialRateForm,
+                    isNew: true,
+                  },
+                ]);
+              }}
+            >
+              수정
+            </Button>
+          );
+        }
+
         if (row.isNew) {
           return (
             <IconButton
@@ -221,7 +362,10 @@ const getRateColumns = ({
         return (
           <Button
             leftIcon={<FaEdit />}
-            size="sm"
+            size="xs"
+            minW="64px"
+            px={2}
+            iconSpacing={1.5}
             colorScheme="green"
             variant="ghost"
             onClick={() => {

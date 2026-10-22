@@ -13,6 +13,7 @@ import { addMinutesToTime } from "../../../common/workTimeUtils";
 import { EXTRA_WORK_TYPES, getExtraWorkTypeByLabel } from "../../../common/workTypes";
 import { getAdminWorkDays } from "../api/adminWorkday";
 import { DEFAULT_TABLE_PAGE_SIZE } from "../../../../constants/pagination";
+import { canApproveSalary } from "../utils/salaryStatus";
 
 const SPECIAL_WORK_SHIFT_MAP = {
   "주간 특근": { workShift: "주간", extraWork: "주간 특근" },
@@ -157,6 +158,8 @@ export function useApproveList(toast) {
             extraWorkDetails,
             totalWorkDisplay,
             status: deriveStatus(workDay),
+            salary: workDay.salary || null,
+            canApprove: canApproveSalary(workDay.salary),
           };
         });
 

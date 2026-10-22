@@ -37,7 +37,7 @@ export default function useDailyPayPage({ onExcelExportClose } = {}) {
 
   const handleEdit = useCallback((row) => {
     const user = data.find((item) => item.user_uuid === row.user_uuid);
-    setSelectedUser(user);
+    setSelectedUser(user || row);
   }, [data]);
 
   const handleSearch = useCallback(() => {

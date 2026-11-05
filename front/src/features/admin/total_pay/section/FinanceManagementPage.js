@@ -296,13 +296,14 @@ export default function FinanceManagementPage({
             </Flex>
 
             <TableContainer border="1px solid #e2e8f0" borderRadius="8px" flex={{ xl: "1" }}>
-              <Table size="sm" tableLayout="fixed" minW={income ? "750px" : "880px"}>
+              <Table size="sm" tableLayout="fixed" minW={income ? "900px" : "880px"}>
                 <Thead bg="#f8fafc">
                   <Tr>
                     <Th w="130px" py={3} color="#4a5568" fontSize="xs">{income ? "입금일" : "일자"}</Th>
                     <Th py={3} color="#4a5568" fontSize="xs">내역</Th>
+                    {income && <Th py={3} color="#4a5568" fontSize="xs">상세 내역</Th>}
                     <Th w="160px" py={3} color="#4a5568" fontSize="xs">{itemLabel}</Th>
-                    <Th w="150px" py={3} color="#4a5568" fontSize="xs" textAlign="right">금액</Th>
+                    <Th w="150px" py={3} color="#4a5568" fontSize="xs" textAlign="left">금액</Th>
                     {!income && <Th w="130px" py={3} color="#4a5568" fontSize="xs">결제 수단</Th>}
                     <Th w="64px" py={3} color="#4a5568" fontSize="xs" textAlign="center">삭제</Th>
                   </Tr>
@@ -317,17 +318,28 @@ export default function FinanceManagementPage({
                       onClick={() => startEdit(item)}
                     >
                       <Td w="130px" py={3} whiteSpace="nowrap">{isoDate(item.date)}</Td>
-                      <Td fontWeight="600" overflow="hidden">
+                      <Td overflow="hidden">
                         <Tooltip
                           label={income ? (item.name || "-") : (getFinanceCategory(item, income, categories) === "급여" ? (item.name || "-") : (item.detail || "-"))}
                           hasArrow
                           openDelay={400}
                         >
-                          <Text overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">
-                            {income ? (item.name || "-") : (getFinanceCategory(item, income, categories) === "급여" ? (item.name || "-") : (item.detail || "-"))}
-                          </Text>
+                          <Box minW={0}>
+                            <Text fontWeight="600" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">
+                              {income ? (item.name || "-") : (getFinanceCategory(item, income, categories) === "급여" ? (item.name || "-") : (item.detail || "-"))}
+                            </Text>
+                          </Box>
                         </Tooltip>
                       </Td>
+                      {income && (
+                        <Td color="gray.600" overflow="hidden">
+                          <Tooltip label={item.detail || "상세 내역 없음"} hasArrow openDelay={400}>
+                            <Text overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">
+                              {item.detail || "-"}
+                            </Text>
+                          </Tooltip>
+                        </Td>
+                      )}
                       <Td>
                         {!income && getFinanceCategory(item, income, categories) === "급여" ? (
                           <Tooltip label="근무 기록을 기준으로 자동 계산된 급여이므로 수정할 수 없습니다." hasArrow>
@@ -339,7 +351,7 @@ export default function FinanceManagementPage({
                           <Badge px={2} py={1} borderRadius="full" bg={softAccent} color={accent} textTransform="none">{getFinanceCategory(item, income, categories)}</Badge>
                         )}
                       </Td>
-                      <Td w="150px" fontWeight="700" whiteSpace="nowrap" textAlign="right">{won(item.amount)}</Td>
+                      <Td w="150px" fontWeight="700" whiteSpace="nowrap" textAlign="left">{won(item.amount)}</Td>
                       {!income && (
                         <Td w="130px" color="#435066" overflow="hidden">
                           <Tooltip
@@ -381,7 +393,7 @@ export default function FinanceManagementPage({
                       </Td>
                     </Tr>
                   ))}
-                  {!rows.length && <Tr><Td colSpan={income ? 5 : 6} py={12} textAlign="center" color="#94a3b8">표시할 내역이 없습니다.</Td></Tr>}
+                  {!rows.length && <Tr><Td colSpan={6} py={12} textAlign="center" color="#94a3b8">표시할 내역이 없습니다.</Td></Tr>}
                 </Tbody>
               </Table>
             </TableContainer>
@@ -450,10 +462,10 @@ export default function FinanceManagementPage({
               leftIcon={<FiDownload />}
               size="sm"
               variant="outline"
-              color={accent}
-              borderColor={income ? "#86e5bd" : "#ffaaaa"}
-              bg={income ? "#f4fff9" : "#fff7f7"}
-              _hover={{ bg: softAccent }}
+              color="green.700"
+              borderColor="green.200"
+              bg="green.50"
+              _hover={{ bg: "green.100", borderColor: "green.300" }}
               onClick={() => setExportOpen(true)}
             >
               엑셀 내보내기
@@ -519,6 +531,16 @@ export default function FinanceManagementPage({
               <DatePicker value={form.date} onChange={(date) => setForm({ ...form, date })} />
             </FormControl>
             <FormControl><FormLabel fontSize="sm">내역</FormLabel><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="내역을 입력하세요" /></FormControl>
+            {income && (
+              <FormControl>
+                <FormLabel fontSize="sm">상세 내역</FormLabel>
+                <Input
+                  value={form.detail}
+                  onChange={(e) => setForm({ ...form, detail: e.target.value })}
+                  placeholder="상세 내용을 입력하세요"
+                />
+              </FormControl>
+            )}
             <Flex gap={2} mt="auto" pt={3}>
               {editingItem && <Button flex="1" variant="outline" h="44px" onClick={resetForm} isDisabled={saving}>취소</Button>}
               <Button flex="1" bg={accent} color="white" _hover={{ opacity: .9 }} h="44px" isLoading={saving} onClick={submit}>

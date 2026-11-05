@@ -99,7 +99,7 @@ class GoogleDriveIncomeExcelExportAPIView(_GoogleDriveFinanceExcelExportAPIView)
 
 class GoogleDriveExpenseExcelExportAPIView(_GoogleDriveFinanceExcelExportAPIView):
     label = "지출"
-    folder_name = "expemse"
+    folder_name = "expense"
     filename_prefix = "expense"
     model = Expense
     generate_excel = staticmethod(generate_expense_excel)

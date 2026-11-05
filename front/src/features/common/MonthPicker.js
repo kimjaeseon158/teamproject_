@@ -10,6 +10,7 @@ import {
   IconButton,
   Button,
   HStack,
+  Portal,
   Text,
 } from "@chakra-ui/react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
@@ -30,6 +31,7 @@ export default function MonthPicker({
   placeholder,
   labelFormat = "year-month",
   buttonLabel,
+  shouldFlip = true,
 }) {
   const today = new Date();
 
@@ -64,7 +66,7 @@ export default function MonthPicker({
   const displayLabel = buttonLabel || (value ? formattedLabel : placeholder || formattedLabel);
 
   return (
-    <Popover placement={placement}>
+    <Popover placement={placement} flip={shouldFlip}>
       {({ onClose }) => (
         <>
           <PopoverTrigger>
@@ -81,76 +83,56 @@ export default function MonthPicker({
             </Button>
           </PopoverTrigger>
 
-          <PopoverContent w="280px" borderRadius="xl" boxShadow="2xl" zIndex={2000}>
-            <PopoverArrow />
-            <PopoverCloseButton aria-label="닫기" />
-            <PopoverHeader fontWeight="700" borderBottom="1px solid" borderColor="gray.100">
-              월 선택
-            </PopoverHeader>
+          <Portal>
+            <PopoverContent w="280px" borderRadius="xl" boxShadow="2xl" zIndex={2000}>
+              <PopoverArrow />
+              <PopoverCloseButton aria-label="닫기" />
+              <PopoverHeader fontWeight="700" borderBottom="1px solid" borderColor="gray.100">
+                월 선택
+              </PopoverHeader>
 
-            <PopoverBody py={4}>
-              {showToday && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  colorScheme="green"
-                  w="100%"
-                  mb={3}
-                  borderRadius="lg"
-                  onClick={() => {
-                    onChange(todayValue);
-                    onToday?.();
-                    onClose();
-                  }}
-                >
-                  오늘
-                </Button>
-              )}
+              <PopoverBody py={4}>
+                {showToday && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    colorScheme="green"
+                    w="100%"
+                    mb={3}
+                    borderRadius="lg"
+                    onClick={() => {
+                      onChange(todayValue);
+                      onToday?.();
+                      onClose();
+                    }}
+                  >
+                    오늘
+                  </Button>
+                )}
 
-              <HStack justify="space-between" mb={4}>
-                <IconButton
-                  size="sm"
-                  variant="ghost"
-                  icon={<ChevronLeftIcon />}
-                  onClick={() => setYear((y) => y - 1)}
-                  aria-label="이전 연도"
-                />
-                <Text fontWeight="800" fontSize="md">{year}년</Text>
-                <IconButton
-                  size="sm"
-                  variant="ghost"
-                  icon={<ChevronRightIcon />}
-                  onClick={() => setYear((y) => y + 1)}
-                  aria-label="다음 연도"
-                />
-              </HStack>
+                <HStack justify="space-between" mb={4}>
+                  <IconButton size="sm" variant="ghost" icon={<ChevronLeftIcon />} onClick={() => setYear((y) => y - 1)} aria-label="이전 연도" />
+                  <Text fontWeight="800" fontSize="md">{year}년</Text>
+                  <IconButton size="sm" variant="ghost" icon={<ChevronRightIcon />} onClick={() => setYear((y) => y + 1)} aria-label="다음 연도" />
+                </HStack>
 
-              <SimpleGrid columns={4} spacing={2}>
-                {Array.from({ length: 12 }).map((_, i) => {
-                  const month = i + 1;
-                  const formattedMonth = String(month).padStart(2, "0");
-                  const formatted = `${year}-${formattedMonth}`;
-                  const isSelected = value === formatted;
+                <SimpleGrid columns={4} spacing={2}>
+                  {Array.from({ length: 12 }).map((_, i) => {
+                    const month = i + 1;
+                    const formattedMonth = String(month).padStart(2, "0");
+                    const formatted = `${year}-${formattedMonth}`;
+                    const isSelected = value === formatted;
 
-                  return (
-                    <Button
-                      key={i}
-                      size="sm"
-                      variant={isSelected ? "solid" : "ghost"}
-                      colorScheme={isSelected ? "green" : "gray"}
-                      onClick={() => {
-                        onChange(formatted);
-                        onClose();
-                      }}
-                      borderRadius="lg"
-                    >
-                      {month}월
-                    </Button>
-                  );
-                })}
-              </SimpleGrid>
-            </PopoverBody>
-          </PopoverContent>
+                    return (
+                      <Button key={i} size="sm" variant={isSelected ? "solid" : "ghost"} colorScheme={isSelected ? "green" : "gray"} onClick={() => { onChange(formatted); onClose(); }} borderRadius="lg">
+                        {month}월
+                      </Button>
+                    );
+                  })}
+                </SimpleGrid>
+              </PopoverBody>
+            </PopoverContent>
+          </Portal>
         </>
       )}
     </Popover>

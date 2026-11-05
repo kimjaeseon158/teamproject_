@@ -1,11 +1,108 @@
 # Google Drive 근무·급여 Excel 내보내기 API
 
-from rest_framework.permissions import AllowAny
+import calendar
+from datetime import date
+from io import BytesIO
+import re
+from xml.etree.ElementTree import ParseError
+from zipfile import BadZipFile
+
+from openpyxl.utils.exceptions import InvalidFileException
+from requests import RequestException
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from ...models import User_Login_Info, User_WorkDay
-from .excel_utils import generate_salary_excel, generate_users_pay_excel, generate_workplace_excel
+from ...models import Expense, Income, User_Login_Info, User_WorkDay
+from ..token.authentication import AdminJWTAuthentication
+from .excel_utils import (
+    generate_expense_excel,
+    generate_income_excel,
+    generate_salary_excel,
+    generate_users_pay_excel,
+    generate_workplace_excel,
+)
 from .google_drive_utils import GoogleDriveService, GoogleDriveUploadError, download_drive_template, parse_year_month, save_workbook_to_drive, workbook_download_response
+
+
+class _GoogleDriveFinanceExcelExportAPIView(APIView):
+    authentication_classes = [AdminJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        start_month = request.query_params.get("start_month", "")
+        end_month = request.query_params.get("end_month", "")
+        try:
+            if not all(re.fullmatch(r"[0-9]{4}-[0-9]{2}", month) for month in (start_month, end_month)):
+                raise ValueError
+            start = date.fromisoformat(f"{start_month}-01")
+            end = date.fromisoformat(f"{end_month}-01")
+            end = end.replace(day=calendar.monthrange(end.year, end.month)[1])
+            if start > end:
+                raise ValueError
+        except ValueError:
+            return self._error("INVALID_PERIOD", "올바른 시작 월과 종료 월을 선택해주세요.", 400)
+
+        access_token = request.COOKIES.get("google_access_token")
+        if not access_token:
+            return self._google_auth_error()
+        drive = GoogleDriveService(access_token, strict_errors=True)
+
+        try:
+            folder_id = drive.get_or_create_folder(self.folder_name, parent_id="root")
+            template_file = download_drive_template(drive, folder_id, f"{self.folder_name}_template")
+        except RequestException as exc:
+            if exc.response is not None and exc.response.status_code == 401:
+                return self._google_auth_error()
+            return self._error("DRIVE_READ_FAILED", "Google Drive에서 템플릿을 가져오지 못했습니다.", 502)
+        if template_file is None:
+            return self._error("TEMPLATE_MISSING", f"Google Drive의 {self.folder_name} 폴더에 {self.label} 엑셀 템플릿이 없습니다.", 404)
+
+        records = self.model.objects.filter(date__range=(start, end)).order_by("date", "pk")
+        try:
+            workbook = self.generate_excel(records.iterator(), template_file)
+        except (BadZipFile, InvalidFileException, KeyError, ValueError, OSError, ParseError, SyntaxError):
+            return self._error("TEMPLATE_INVALID", f"{self.label} 엑셀 템플릿이 손상되었거나 형식이 올바르지 않습니다.", 422)
+        output = BytesIO()
+        workbook.save(output)
+        content = output.getvalue()
+
+        period = f"{start_month}_to_{end_month}"
+        try:
+            filename = save_workbook_to_drive(
+                drive, content, f"{self.filename_prefix}_{period}.xlsx", folder_id=folder_id
+            )
+        except (GoogleDriveUploadError, RequestException) as exc:
+            status = getattr(exc, "status_code", None)
+            if isinstance(exc, RequestException) and exc.response is not None:
+                status = exc.response.status_code
+            if status == 401:
+                return self._google_auth_error()
+            return self._error("DRIVE_SAVE_FAILED", f"{self.label} 엑셀을 Google Drive에 저장하지 못했습니다.", 502)
+
+        return workbook_download_response(content, filename)
+
+    @staticmethod
+    def _error(code, message, status):
+        return Response({"success": False, "code": code, "message": message}, status=status)
+
+    def _google_auth_error(self):
+        return self._error("GOOGLE_AUTH_EXPIRED", "Google Drive에 다시 연결해주세요.", 409)
+
+
+class GoogleDriveIncomeExcelExportAPIView(_GoogleDriveFinanceExcelExportAPIView):
+    label = "수입"
+    folder_name = "income"
+    filename_prefix = "income"
+    model = Income
+    generate_excel = staticmethod(generate_income_excel)
+
+
+class GoogleDriveExpenseExcelExportAPIView(_GoogleDriveFinanceExcelExportAPIView):
+    label = "지출"
+    folder_name = "expense"
+    filename_prefix = "expense"
+    model = Expense
+    generate_excel = staticmethod(generate_expense_excel)
 
 
 class GoogleDriveWorkplaceExcelExportAPIView(APIView):

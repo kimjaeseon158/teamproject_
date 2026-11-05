@@ -28,6 +28,7 @@ export default function BoardNoticeDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [unavailableImageRefs, setUnavailableImageRefs] = useState(() => new Set());
   const noticeList = useBoardNotices();
 
   useEffect(() => {
@@ -61,6 +62,21 @@ export default function BoardNoticeDetailPage() {
     return notice.author_type === "user" && notice.author_name === userName;
   }, [loginType, notice, userName]);
 
+  useEffect(() => {
+    setUnavailableImageRefs(new Set());
+  }, [noticeUuid]);
+
+  const handleContentImageError = (event) => {
+    const imageRef = event.target?.getAttribute?.("data-notice-image");
+    if (!imageRef) return;
+    setUnavailableImageRefs((current) => {
+      if (current.has(imageRef)) return current;
+      const next = new Set(current);
+      next.add(imageRef);
+      return next;
+    });
+  };
+
   const remove = async () => {
     if (!window.confirm("이 공지사항을 삭제하시겠습니까?")) return;
     setDeleting(true);
@@ -89,7 +105,27 @@ export default function BoardNoticeDetailPage() {
               </HStack>
               <Divider />
               <Box p={{ base: 5, md: 8 }} minH={{ base: "240px", md: "320px" }}>
-                <Box className="tiptap" lineHeight="1.8" sx={noticeContentStyles} dangerouslySetInnerHTML={{ __html: sanitizeNoticeHtml(notice.content, notice.images) }} />
+                <Box
+                  className="tiptap"
+                  lineHeight="1.8"
+                  sx={{
+                    ...noticeContentStyles,
+                    "[data-notice-image-unavailable]": {
+                      py: 6,
+                      px: 5,
+                      my: 4,
+                      color: "gray.600",
+                      bg: "gray.50",
+                      borderWidth: "1px",
+                      borderStyle: "dashed",
+                      borderColor: "gray.300",
+                      borderRadius: "md",
+                      textAlign: "center",
+                    },
+                  }}
+                  onErrorCapture={handleContentImageError}
+                  dangerouslySetInnerHTML={{ __html: sanitizeNoticeHtml(notice.content, notice.images, unavailableImageRefs) }}
+                />
                 {notice.images?.some((image) => !referencedImageOrders(notice.content).has(`order:${image.display_order}`)) && <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mt={8} pt={6} borderTopWidth="1px">{notice.images.filter((image) => !referencedImageOrders(notice.content).has(`order:${image.display_order}`)).map((image) => <a key={image.image_uuid} href={image.image_url} target="_blank" rel="noreferrer"><Image src={image.image_url} alt="공지 첨부 이미지" w="100%" maxH="360px" objectFit="contain" borderRadius="md" bg="gray.50" /></a>)}</SimpleGrid>}
               </Box>
               {canManage && <><Divider /><HStack justify="flex-end" p={4}>

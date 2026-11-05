@@ -95,7 +95,6 @@ const RecentTransactions = ({ overview }) => {
           />
           <TodayButton
             showIcon={false}
-            tooltip="오늘이 포함된 달로 이동"
             isDisabled={overview.month === currentMonth}
             onClick={() => overview.setMonth(currentMonth)}
           />

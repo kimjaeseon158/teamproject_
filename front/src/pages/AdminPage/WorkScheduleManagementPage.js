@@ -52,33 +52,33 @@ export default function WorkScheduleManagementPage() {
 
   const scheduleActions = (
     <HStack flexWrap="wrap" justify={{ base: "flex-start", lg: "flex-end" }}>
-          <Button
-            size="sm"
-            colorScheme="blue"
-            variant="outline"
-            leftIcon={<FiRefreshCw />}
-            title="이번 주의 직원별 최근 과거 근무를 작업 날짜에 덮어쓰기"
-            onClick={() => schedule.copyPreviousDay("replace")}
-            isLoading={schedule.copying}
-            isDisabled={dateChangeDisabled || !schedule.canCopyRecent}
-          >
-            최근 근무 덮어쓰기
-          </Button>
-          {schedule.changeCount > 0 && (
-            <Button leftIcon={<FiRefreshCw />} variant="outline" onClick={schedule.reload} isDisabled={schedule.saving || editing}>
-              변경 취소
-            </Button>
-          )}
-          <Button
-            size="sm"
-            colorScheme="blue"
-            leftIcon={<FiSave />}
-            onClick={schedule.save}
-            isLoading={schedule.saving}
-            isDisabled={!schedule.changeCount || editing || schedule.loading || schedule.copying}
-          >
-            일괄 저장 {schedule.changeCount > 0 && <Badge ml={2}>{schedule.changeCount}</Badge>}
-          </Button>
+      <Button
+        size="sm"
+        colorScheme="blue"
+        variant="outline"
+        leftIcon={<FiRefreshCw />}
+        title="이번 주의 직원별 최근 과거 근무를 작업 날짜에 덮어쓰기"
+        onClick={() => schedule.copyPreviousDay("replace")}
+        isLoading={schedule.copying}
+        isDisabled={dateChangeDisabled || !schedule.canCopyRecent}
+      >
+        최근 근무 덮어쓰기
+      </Button>
+      {schedule.changeCount > 0 && (
+        <Button leftIcon={<FiRefreshCw />} variant="outline" onClick={schedule.reload} isDisabled={schedule.saving || editing}>
+          변경 취소
+        </Button>
+      )}
+      <Button
+        size="sm"
+        colorScheme="blue"
+        leftIcon={<FiSave />}
+        onClick={schedule.save}
+        isLoading={schedule.saving}
+        isDisabled={!schedule.changeCount || editing || schedule.loading || schedule.copying}
+      >
+        일괄 저장 {schedule.changeCount > 0 && <Badge ml={2}>{schedule.changeCount}</Badge>}
+      </Button>
     </HStack>
   );
 

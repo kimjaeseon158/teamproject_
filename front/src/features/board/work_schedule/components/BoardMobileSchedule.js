@@ -34,7 +34,7 @@ export default function BoardMobileSchedule({ schedule, showTitle = true }) {
         <ScheduleDatePicker month={schedule.selectedMonth} selectedDate={schedule.selectedDate} onSelect={schedule.selectDate} label={range} />
       </Box>
       <IconButton flexShrink={0} size="sm" variant="outline" bg="white" aria-label="다음 주" icon={<FiChevronRight />} onClick={() => schedule.selectDate(addDaysToDateValue(schedule.date, 7))} />
-      <TodayButton flexShrink={0} size="sm" tooltip="오늘이 포함된 주로 이동" onClick={schedule.goCurrentWeek} />
+      <TodayButton flexShrink={0} size="sm" onClick={schedule.goCurrentWeek} />
     </HStack>
 
     <Flex gap={2} mb={3}>

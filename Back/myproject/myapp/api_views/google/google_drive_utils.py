@@ -35,14 +35,18 @@ def download_drive_template(drive, folder_id, template_name):
     return None
 
 
-def workbook_download_response(workbook, filename):
-    """openpyxl Workbook을 브라우저 다운로드 응답으로 변환합니다."""
+def _workbook_bytes(workbook):
+    if isinstance(workbook, bytes):
+        return workbook
     output = io.BytesIO()
     workbook.save(output)
-    output.seek(0)
+    return output.getvalue()
 
+
+def workbook_download_response(workbook, filename):
+    """Workbook 또는 직렬화된 XLSX를 브라우저 다운로드 응답으로 변환합니다."""
     response = HttpResponse(
-        output.read(),
+        _workbook_bytes(workbook),
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
     encoded_filename = urllib.parse.quote(filename)
@@ -50,12 +54,11 @@ def workbook_download_response(workbook, filename):
     return response
 
 
-def save_workbook_to_drive(drive, workbook, filename, folder_path):
-    """Drive 폴더 경로를 생성한 뒤 중복되지 않는 파일명으로 Workbook을 새로 업로드합니다."""
-    output = io.BytesIO()
-    workbook.save(output)
+def save_workbook_to_drive(drive, workbook, filename, folder_path=None, *, folder_id=None):
+    """지정한 Drive 폴더에 중복되지 않는 파일명으로 Workbook을 업로드합니다."""
+    output = io.BytesIO(_workbook_bytes(workbook))
 
-    target_folder_id = drive.get_folder_path_id(folder_path)
+    target_folder_id = folder_id if folder_id is not None else drive.get_folder_path_id(folder_path)
     save_filename = drive.get_available_filename(filename, target_folder_id)
     result = drive.upload_file(output, save_filename, target_folder_id)
 
@@ -80,8 +83,13 @@ class GoogleDriveService:
     API_URL = "https://www.googleapis.com/drive/v3/files"
     UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files"
 
-    def __init__(self, access_token):
+    def __init__(self, access_token, *, strict_errors=False):
         self.headers = {"Authorization": f"Bearer {access_token}"}
+        self.strict_errors = strict_errors
+
+    def _check_response(self, response):
+        if self.strict_errors:
+            response.raise_for_status()
 
 
     # ----------------------
@@ -96,6 +104,7 @@ class GoogleDriveService:
         
         params = {"q": query, "fields": "files(id, name)", "pageSize": 1}
         res = requests.get(self.API_URL, headers=self.headers, params=params)
+        self._check_response(res)
         files = res.json().get("files", [])
 
         if files:
@@ -114,6 +123,7 @@ class GoogleDriveService:
             headers={**self.headers, "Content-Type": "application/json"},
             data=json.dumps(metadata)
         )
+        self._check_response(create_res)
         return create_res.json().get("id")
 
     def get_folder_path_id(self, path_list):
@@ -133,6 +143,7 @@ class GoogleDriveService:
         query = f"name = '{filename}' and '{parent_id}' in parents and trashed = false"
         params = {"q": query, "fields": "files(id, name)", "pageSize": 1}
         res = requests.get(self.API_URL, headers=self.headers, params=params)
+        self._check_response(res)
         files = res.json().get("files", [])
         return files[0]["id"] if files else None
 
@@ -140,6 +151,8 @@ class GoogleDriveService:
         """파일을 다운로드하여 BytesIO 객체로 반환합니다."""
         download_url = f"{self.API_URL}/{file_id}?alt=media"
         res = requests.get(download_url, headers=self.headers)
+        if res.status_code != 404:
+            self._check_response(res)
         if res.status_code == 200:
             return io.BytesIO(res.content)
         return None

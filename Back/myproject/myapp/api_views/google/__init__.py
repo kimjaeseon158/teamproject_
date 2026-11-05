@@ -3,6 +3,8 @@
 from .auth import GoogleCallbackAPIView, GoogleLoginAPIView, GoogleLogoutAPIView
 from .calendar import GoogleCalendarEventsAPIView
 from .drive_export import (
+    GoogleDriveIncomeExcelExportAPIView,
+    GoogleDriveExpenseExcelExportAPIView,
     GoogleDriveSalaryExcelExportAPIView,
     GoogleDriveUserPayExcelExportAPIView,
     GoogleDriveWorkplaceExcelExportAPIView,

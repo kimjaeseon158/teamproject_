@@ -10,6 +10,13 @@ const ALLOWED_COLORS = new Set([
 ]);
 const ALLOWED_ALIGNMENTS = new Set(["left", "center", "right"]);
 
+const replaceWithImageMessage = (element, messageText) => {
+  const message = document.createElement("p");
+  message.setAttribute("data-notice-image-unavailable", "true");
+  message.textContent = messageText;
+  element.replaceWith(message);
+};
+
 export default function sanitizeNoticeHtml(html = "", images = [], unavailableImageRefs = new Set()) {
   const sanitized = DOMPurify.sanitize(String(html), {
     ALLOWED_TAGS: [...ALLOWED_TAGS, "img"],
@@ -21,12 +28,16 @@ export default function sanitizeNoticeHtml(html = "", images = [], unavailableIm
   template.content.querySelectorAll("img").forEach((element) => {
     const imageRef = element.getAttribute("data-notice-image");
     const match = images.find((image) => imageRef === `order:${image.display_order}`);
-    if (!match || !/^(https?:\/\/|\/(?!\/))/i.test(match.image_url)) { element.remove(); return; }
+    if (!match) {
+      replaceWithImageMessage(element, "이미지 정보를 찾을 수 없습니다.");
+      return;
+    }
+    if (!/^(https?:\/\/|\/(?!\/))/i.test(match.image_url)) {
+      replaceWithImageMessage(element, "이미지 정보를 찾을 수 없습니다.");
+      return;
+    }
     if (unavailableImageRefs.has(imageRef)) {
-      const message = document.createElement("p");
-      message.setAttribute("data-notice-image-unavailable", "true");
-      message.textContent = "이미지를 표시할 수 없습니다.";
-      element.replaceWith(message);
+      replaceWithImageMessage(element, "이미지를 불러오지 못했습니다. 이미지가 삭제되었거나 현재 접근할 수 없습니다.");
       return;
     }
     element.setAttribute("src", match.image_url);

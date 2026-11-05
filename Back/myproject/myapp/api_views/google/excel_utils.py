@@ -98,10 +98,26 @@ def copy_row_block(ws, source_start, source_end, target_start, start_col=1, end_
 
 
 def generate_income_excel(incomes, template_file):
+    return _generate_finance_excel(
+        incomes, template_file, "수입",
+        lambda income: (income.company_name, income.company_detail, income.amount, None),
+    )
+
+
+def generate_expense_excel(expenses, template_file):
+    return _generate_finance_excel(
+        expenses, template_file, "지출",
+        lambda expense: (
+            expense.expense_name, expense.expense_detail, expense.amount, expense.payment_method,
+        ),
+    )
+
+
+def _generate_finance_excel(records, template_file, sheet_name, detail_values):
     workbook = load_workbook(template_file)
-    sheet = workbook["수입"]
+    sheet = workbook[sheet_name]
     if sheet.max_row < 14 or not sheet["F8"].has_style:
-        raise ValueError("Invalid income template layout")
+        raise ValueError("Invalid finance template layout")
 
     row_styles = {
         row: ([copy(cell._style) for cell in sheet[row][1:7]], sheet.row_dimensions[row].height)
@@ -127,14 +143,14 @@ def generate_income_excel(incomes, template_file):
             if isinstance(value, str):
                 cell.data_type = "s"
 
-    groups = groupby(incomes, key=lambda income: (income.date.year, income.date.month))
-    for (_, month), records in groups:
+    groups = groupby(records, key=lambda record: (record.date.year, record.date.month))
+    for (_, month), monthly_records in groups:
         total = 0
-        for income in records:
+        for record in monthly_records:
             number += 1
-            total += income.amount
+            total += record.amount
             write_row(row, 3 if row == 3 else 4, (
-                number, income.date, income.company_name, income.company_detail, income.amount, None,
+                number, record.date, *detail_values(record),
             ))
             sheet.cell(row, 3).number_format = "yyyy-mm-dd"
             sheet.cell(row, 6).number_format = "#,##0"

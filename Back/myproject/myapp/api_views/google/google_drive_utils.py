@@ -54,11 +54,11 @@ def workbook_download_response(workbook, filename):
     return response
 
 
-def save_workbook_to_drive(drive, workbook, filename, folder_path):
-    """Drive 폴더 경로를 생성한 뒤 중복되지 않는 파일명으로 Workbook을 새로 업로드합니다."""
+def save_workbook_to_drive(drive, workbook, filename, folder_path=None, *, folder_id=None):
+    """지정한 Drive 폴더에 중복되지 않는 파일명으로 Workbook을 업로드합니다."""
     output = io.BytesIO(_workbook_bytes(workbook))
 
-    target_folder_id = drive.get_folder_path_id(folder_path)
+    target_folder_id = folder_id if folder_id is not None else drive.get_folder_path_id(folder_path)
     save_filename = drive.get_available_filename(filename, target_folder_id)
     result = drive.upload_file(output, save_filename, target_folder_id)
 

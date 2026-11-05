@@ -44,7 +44,7 @@ class GoogleDriveExcelExportAPIView(APIView):
         drive = GoogleDriveService(access_token, strict_errors=True)
 
         try:
-            folder_id = drive.get_or_create_folder("income")
+            folder_id = drive.get_or_create_folder("income", parent_id="root")
             template_file = download_drive_template(drive, folder_id, "income_template")
         except RequestException as exc:
             if exc.response is not None and exc.response.status_code == 401:
@@ -64,7 +64,9 @@ class GoogleDriveExcelExportAPIView(APIView):
 
         period = f"{start_month}_to_{end_month}"
         try:
-            filename = save_workbook_to_drive(drive, content, f"income_{period}.xlsx", ["income", period])
+            filename = save_workbook_to_drive(
+                drive, content, f"income_{period}.xlsx", folder_id=folder_id
+            )
         except (GoogleDriveUploadError, RequestException) as exc:
             status = getattr(exc, "status_code", None)
             if isinstance(exc, RequestException) and exc.response is not None:

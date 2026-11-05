@@ -80,3 +80,21 @@ export const exportUserPayExcel = async (date) =>
   requestGoogleDriveExport(
     `/api/google-drive-user-pay-excel-export/${toQueryString({ date })}`
   );
+
+export const exportIncomeExcel = async (startMonth, endMonth) =>
+  requestGoogleDriveExport(
+    `/api/google-drive-income-excel-export/${toQueryString({
+      start_month: startMonth,
+      end_month: endMonth,
+    })}`,
+    "Google Drive에 수입 엑셀 파일이 생성되었습니다."
+  );
+
+export const exportExpenseExcel = async (startMonth, endMonth) =>
+  requestGoogleDriveExport(
+    `/api/google-drive-expense-excel-export/${toQueryString({
+      start_month: startMonth,
+      end_month: endMonth,
+    })}`,
+    "Google Drive에 지출 엑셀 파일이 생성되었습니다."
+  );

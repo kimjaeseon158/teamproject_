@@ -49,7 +49,6 @@ export default function TotalSalesHeader({
         </Button>
         <TodayButton
           showIcon={false}
-          tooltip="오늘이 포함된 달로 이동"
           isDisabled={apiMonth === currentMonth}
           onClick={() => changeMonth(currentMonth)}
         />

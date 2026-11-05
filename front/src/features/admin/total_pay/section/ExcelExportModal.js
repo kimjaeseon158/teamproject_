@@ -23,6 +23,7 @@ import { useEffect, useState } from "react";
 import { DownloadIcon } from "@chakra-ui/icons";
 import { FcGoogle } from "react-icons/fc";
 
+import MonthPicker from "../../../common/MonthPicker";
 import useAdminWorkPlaceOptions from "../../../common/hooks/useAdminWorkPlaceOptions";
 import useGoogleLinkStatus from "../../api/google/useGoogleLinkStatus";
 import { login as googleLogin } from "../../api/google/googleAuth";
@@ -30,17 +31,22 @@ import { login as googleLogin } from "../../api/google/googleAuth";
 const ALL_WORK_PLACES = "__ALL__";
 
 export default function ExcelExportModal({
+  dateMode = "single",
+  initialMonth,
   isOpen,
   onClose,
   onConfirm,
   loading,
   showWorkPlace = true,
+  title = "EXCEL EXPORT",
 }) {
   const toast = useToast();
   const today = new Date();
   const [workPlace, setWorkPlace] = useState(ALL_WORK_PLACES);
   const [year, setYear] = useState(today.getFullYear().toString());
   const [month, setMonth] = useState(String(today.getMonth() + 1).padStart(2, "0"));
+  const [startMonth, setStartMonth] = useState(initialMonth || `${year}-${month}`);
+  const [endMonth, setEndMonth] = useState(initialMonth || `${year}-${month}`);
   const workPlaceOptions = useAdminWorkPlaceOptions(toast, showWorkPlace);
   const googleStatus = useGoogleLinkStatus();
 
@@ -50,10 +56,31 @@ export default function ExcelExportModal({
       setWorkPlace(ALL_WORK_PLACES);
       setYear(resetDate.getFullYear().toString());
       setMonth(String(resetDate.getMonth() + 1).padStart(2, "0"));
+      return;
     }
-  }, [isOpen]);
+
+    if (dateMode === "range") {
+      const currentDate = new Date();
+      const value = initialMonth || `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}`;
+      setStartMonth(value);
+      setEndMonth(value);
+    }
+  }, [dateMode, initialMonth, isOpen]);
 
   const handleConfirm = () => {
+    if (dateMode === "range") {
+      if (!startMonth || !endMonth) {
+        toast({ title: "기간을 선택해주세요.", status: "warning", duration: 2500, isClosable: true });
+        return;
+      }
+      if (startMonth > endMonth) {
+        toast({ title: "종료 월은 시작 월보다 빠를 수 없습니다.", status: "warning", duration: 2500, isClosable: true });
+        return;
+      }
+      onConfirm(startMonth, endMonth);
+      return;
+    }
+
     if (!year || !month) {
       toast({
         title: "날짜를 선택해주세요.",
@@ -86,7 +113,7 @@ export default function ExcelExportModal({
           <Box bgGradient="linear(to-r, green.400, teal.500)" px={6} py={8} textAlign="center">
             <Icon as={DownloadIcon} w={10} h={10} color="white" mb={3} />
             <Text color="white" fontSize="xl" fontWeight="900">
-              EXCEL EXPORT
+              {title}
             </Text>
             <Text color="whiteAlpha.800" fontSize="xs" mt={1}>
               Google Drive로 문서 파일을 업로드합니다.
@@ -156,7 +183,39 @@ export default function ExcelExportModal({
               </FormControl>
             )}
 
-            <FormControl>
+            {dateMode === "range" ? (
+              <FormControl>
+                <FormLabel fontSize="xs" fontWeight="900" color="gray.400" mb={2} ml={1} textTransform="uppercase">
+                  내보낼 기간
+                </FormLabel>
+                <SimpleGrid columns={2} spacing={4}>
+                  <Box>
+                    <Text mb={2} fontSize="xs" color="gray.500">시작 월</Text>
+                    <MonthPicker
+                      value={startMonth}
+                      onChange={setStartMonth}
+                      width="100%"
+                      height="56px"
+                      borderRadius="20px"
+                      placement="bottom-start"
+                      shouldFlip={false}
+                    />
+                  </Box>
+                  <Box>
+                    <Text mb={2} fontSize="xs" color="gray.500">종료 월</Text>
+                    <MonthPicker
+                      value={endMonth}
+                      onChange={setEndMonth}
+                      width="100%"
+                      height="56px"
+                      borderRadius="20px"
+                      placement="bottom-end"
+                      shouldFlip={false}
+                    />
+                  </Box>
+                </SimpleGrid>
+              </FormControl>
+            ) : <FormControl>
               <FormLabel fontSize="xs" fontWeight="900" color="gray.400" mb={2} ml={1} textTransform="uppercase">
                 연도 및 월 선택
               </FormLabel>
@@ -196,7 +255,7 @@ export default function ExcelExportModal({
                   ))}
                 </Select>
               </SimpleGrid>
-            </FormControl>
+            </FormControl>}
           </VStack>
           )}
         </ModalBody>
@@ -220,7 +279,7 @@ export default function ExcelExportModal({
               }}
               _active={{ transform: "translateY(0)" }}
             >
-              업로드 시작하기
+              {dateMode === "range" ? "엑셀 파일 내보내기" : "업로드 시작하기"}
             </Button>}
             <Button
               variant="ghost"

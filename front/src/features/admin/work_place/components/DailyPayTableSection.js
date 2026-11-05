@@ -1,6 +1,6 @@
-import { Badge, Box, Button, Flex, Heading, HStack, Text, Tooltip, VStack } from "@chakra-ui/react";
-import { DownloadIcon } from "@chakra-ui/icons";
+import { Badge, Box, Flex, Heading, HStack, Text, VStack } from "@chakra-ui/react";
 
+import ExcelActionMenu from "../../components/ExcelActionMenu";
 import DailyPayFixedTable from "./DailyPayFixedTable";
 import DailyPayPagination from "./DailyPayPagination";
 
@@ -51,23 +51,7 @@ export default function DailyPayTableSection({
             표시 금액은 8시간 기준 일급입니다.
           </Text>
         </VStack>
-        <Tooltip label="일급관리 문서 생성" hasArrow>
-          <Button
-            flexShrink={0}
-            leftIcon={<DownloadIcon />}
-            bg="green.50"
-            color="green.700"
-            borderWidth="1px"
-            borderColor="green.200"
-            _hover={{ bg: "green.100", borderColor: "green.300" }}
-            _active={{ bg: "green.200" }}
-            size="sm"
-            minW="118px"
-            onClick={onExcelOpen}
-          >
-            엑셀 다운로드
-          </Button>
-        </Tooltip>
+        <ExcelActionMenu onExport={onExcelOpen} />
       </Flex>
 
       <Box p={0}>

@@ -2,17 +2,20 @@ import {
   AlertDialog, AlertDialogBody, AlertDialogContent, AlertDialogFooter,
   AlertDialogHeader, AlertDialogOverlay, Badge, Box, Button, Card, Flex, FormControl, FormLabel, Grid, Heading,
   Icon, Input, InputGroup, InputLeftElement, Select, SimpleGrid, Stack,
-  Table, TableContainer, Tbody, Td, Text, Th, Thead, Tooltip, Tr,
+  Table, TableContainer, Tbody, Td, Text, Th, Thead, Tooltip, Tr, useToast,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
 import {
   FiArrowDown, FiArrowUp, FiCheck, FiChevronLeft, FiChevronRight,
-  FiCreditCard, FiLock, FiSearch, FiTrash2,
+  FiCreditCard, FiDownload, FiLock, FiSearch, FiTrash2,
 } from "react-icons/fi";
 import MonthPicker from "../../../common/MonthPicker";
 import DatePicker from "../../../common/DatePicker";
 import TodayButton from "../../../common/TodayButton";
 import { DEFAULT_TABLE_PAGE_SIZE, TABLE_PAGE_SIZE_OPTIONS } from "../../../../constants/pagination";
+import { exportExpenseExcel, exportIncomeExcel } from "../../api/google/GoogleDrive";
+import { consumeGoogleExportReturnPath } from "../../api/google/googleAuth";
+import ExcelExportModal from "./ExcelExportModal";
 
 const isoDate = (date) => {
   const value = date instanceof Date ? date : new Date(date);
@@ -64,6 +67,7 @@ export default function FinanceManagementPage({
   type, data, total, range, setRange, onSave, onUpdate, onDelete,
 }) {
   const income = type === "income";
+  const toast = useToast();
   const accent = income ? "#0aa683" : "#ff4545";
   const softAccent = income ? "#e1f7f1" : "#ffe5e5";
   const itemLabel = "카테고리";
@@ -77,6 +81,8 @@ export default function FinanceManagementPage({
   const [deleting, setDeleting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const cancelDeleteRef = useRef(null);
   const [form, setForm] = useState({
     amount: "",
@@ -106,6 +112,10 @@ export default function FinanceManagementPage({
   useEffect(() => {
     setCurrentPage((page) => Math.min(page, totalPages));
   }, [totalPages]);
+
+  useEffect(() => {
+    if (consumeGoogleExportReturnPath(window.location.pathname)) setExportOpen(true);
+  }, []);
 
   const changeMonth = (value) => {
     if (!value) return;
@@ -197,6 +207,23 @@ export default function FinanceManagementPage({
     }
   };
 
+  const exportExcel = async (startMonth, endMonth) => {
+    setExporting(true);
+    try {
+      const result = income
+        ? await exportIncomeExcel(startMonth, endMonth)
+        : await exportExpenseExcel(startMonth, endMonth);
+
+      if (!result?.success) throw new Error(result?.message || "엑셀 생성에 실패했습니다.");
+      toast({ title: "엑셀 생성 완료", description: result.message, status: "success", duration: 3000, isClosable: true });
+      setExportOpen(false);
+    } catch (error) {
+      toast({ title: "엑셀 생성 실패", description: error.message, status: "error", duration: 3500, isClosable: true });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <Box minH="calc(100vh - 92px)" bg="#f7f9fc" p={{ base: 2, lg: 4 }}>
       <Grid
@@ -262,7 +289,6 @@ export default function FinanceManagementPage({
                 <TodayButton
                   showIcon={false}
                   h="42px"
-                  tooltip="오늘이 포함된 달로 이동"
                   isDisabled={monthValue === currentMonth}
                   onClick={moveToToday}
                 />
@@ -270,13 +296,14 @@ export default function FinanceManagementPage({
             </Flex>
 
             <TableContainer border="1px solid #e2e8f0" borderRadius="8px" flex={{ xl: "1" }}>
-              <Table size="sm" tableLayout="fixed" minW={income ? "750px" : "880px"}>
+              <Table size="sm" tableLayout="fixed" minW={income ? "900px" : "880px"}>
                 <Thead bg="#f8fafc">
                   <Tr>
                     <Th w="130px" py={3} color="#4a5568" fontSize="xs">{income ? "입금일" : "일자"}</Th>
                     <Th py={3} color="#4a5568" fontSize="xs">내역</Th>
+                    {income && <Th py={3} color="#4a5568" fontSize="xs">상세 내역</Th>}
                     <Th w="160px" py={3} color="#4a5568" fontSize="xs">{itemLabel}</Th>
-                    <Th w="150px" py={3} color="#4a5568" fontSize="xs" textAlign="right">금액</Th>
+                    <Th w="150px" py={3} color="#4a5568" fontSize="xs" textAlign="left">금액</Th>
                     {!income && <Th w="130px" py={3} color="#4a5568" fontSize="xs">결제 수단</Th>}
                     <Th w="64px" py={3} color="#4a5568" fontSize="xs" textAlign="center">삭제</Th>
                   </Tr>
@@ -291,17 +318,28 @@ export default function FinanceManagementPage({
                       onClick={() => startEdit(item)}
                     >
                       <Td w="130px" py={3} whiteSpace="nowrap">{isoDate(item.date)}</Td>
-                      <Td fontWeight="600" overflow="hidden">
+                      <Td overflow="hidden">
                         <Tooltip
                           label={income ? (item.name || "-") : (getFinanceCategory(item, income, categories) === "급여" ? (item.name || "-") : (item.detail || "-"))}
                           hasArrow
                           openDelay={400}
                         >
-                          <Text overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">
-                            {income ? (item.name || "-") : (getFinanceCategory(item, income, categories) === "급여" ? (item.name || "-") : (item.detail || "-"))}
-                          </Text>
+                          <Box minW={0}>
+                            <Text fontWeight="600" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">
+                              {income ? (item.name || "-") : (getFinanceCategory(item, income, categories) === "급여" ? (item.name || "-") : (item.detail || "-"))}
+                            </Text>
+                          </Box>
                         </Tooltip>
                       </Td>
+                      {income && (
+                        <Td color="gray.600" overflow="hidden">
+                          <Tooltip label={item.detail || "상세 내역 없음"} hasArrow openDelay={400}>
+                            <Text overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">
+                              {item.detail || "-"}
+                            </Text>
+                          </Tooltip>
+                        </Td>
+                      )}
                       <Td>
                         {!income && getFinanceCategory(item, income, categories) === "급여" ? (
                           <Tooltip label="근무 기록을 기준으로 자동 계산된 급여이므로 수정할 수 없습니다." hasArrow>
@@ -313,7 +351,7 @@ export default function FinanceManagementPage({
                           <Badge px={2} py={1} borderRadius="full" bg={softAccent} color={accent} textTransform="none">{getFinanceCategory(item, income, categories)}</Badge>
                         )}
                       </Td>
-                      <Td w="150px" fontWeight="700" whiteSpace="nowrap" textAlign="right">{won(item.amount)}</Td>
+                      <Td w="150px" fontWeight="700" whiteSpace="nowrap" textAlign="left">{won(item.amount)}</Td>
                       {!income && (
                         <Td w="130px" color="#435066" overflow="hidden">
                           <Tooltip
@@ -355,7 +393,7 @@ export default function FinanceManagementPage({
                       </Td>
                     </Tr>
                   ))}
-                  {!rows.length && <Tr><Td colSpan={income ? 5 : 6} py={12} textAlign="center" color="#94a3b8">표시할 내역이 없습니다.</Td></Tr>}
+                  {!rows.length && <Tr><Td colSpan={6} py={12} textAlign="center" color="#94a3b8">표시할 내역이 없습니다.</Td></Tr>}
                 </Tbody>
               </Table>
             </TableContainer>
@@ -415,7 +453,24 @@ export default function FinanceManagementPage({
           display="flex"
           flexDirection="column"
         >
-          <Flex align="center" gap={3} mb={6}><Icon as={FiCreditCard} boxSize={7} color={accent} /><Heading fontSize="22px">빠른 {income ? "수입" : "지출"} 등록</Heading></Flex>
+          <Flex align="center" justify="space-between" gap={3} mb={6} wrap="wrap">
+            <Flex align="center" gap={3}>
+              <Icon as={FiCreditCard} boxSize={7} color={accent} />
+              <Heading fontSize="22px">빠른 {income ? "수입" : "지출"} 등록</Heading>
+            </Flex>
+            <Button
+              leftIcon={<FiDownload />}
+              size="sm"
+              variant="outline"
+              color="green.700"
+              borderColor="green.200"
+              bg="green.50"
+              _hover={{ bg: "green.100", borderColor: "green.300" }}
+              onClick={() => setExportOpen(true)}
+            >
+              엑셀 내보내기
+            </Button>
+          </Flex>
           <Stack spacing={{ base: 4, xl: 5 }} flex="1">
             <FormControl>
               <FormLabel fontSize="sm">{itemLabel}</FormLabel>
@@ -476,6 +531,16 @@ export default function FinanceManagementPage({
               <DatePicker value={form.date} onChange={(date) => setForm({ ...form, date })} />
             </FormControl>
             <FormControl><FormLabel fontSize="sm">내역</FormLabel><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="내역을 입력하세요" /></FormControl>
+            {income && (
+              <FormControl>
+                <FormLabel fontSize="sm">상세 내역</FormLabel>
+                <Input
+                  value={form.detail}
+                  onChange={(e) => setForm({ ...form, detail: e.target.value })}
+                  placeholder="상세 내용을 입력하세요"
+                />
+              </FormControl>
+            )}
             <Flex gap={2} mt="auto" pt={3}>
               {editingItem && <Button flex="1" variant="outline" h="44px" onClick={resetForm} isDisabled={saving}>취소</Button>}
               <Button flex="1" bg={accent} color="white" _hover={{ opacity: .9 }} h="44px" isLoading={saving} onClick={submit}>
@@ -485,6 +550,17 @@ export default function FinanceManagementPage({
           </Stack>
         </Card>
       </Grid>
+
+      <ExcelExportModal
+        dateMode="range"
+        title={`${income ? "수입" : "지출"} EXCEL EXPORT`}
+        showWorkPlace={false}
+        initialMonth={monthValue || currentMonth}
+        isOpen={exportOpen}
+        loading={exporting}
+        onClose={() => !exporting && setExportOpen(false)}
+        onConfirm={exportExcel}
+      />
 
       <AlertDialog
         isOpen={Boolean(deleteTarget)}

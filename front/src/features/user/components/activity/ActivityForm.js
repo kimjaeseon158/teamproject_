@@ -32,7 +32,7 @@ export default function ActivityForm({
     extraWorks,
   } = state;
 
-   const {
+  const {
     setBaseShift,
     setIsSpecial,
     setLocation,
@@ -41,7 +41,7 @@ export default function ActivityForm({
     updateExtraWork,
     handleRemoveExtraRow,
     formatTimeInput,
-    } = handlers;
+  } = handlers;
   const { filteredWorkTimeList, locationsList } = lists;
 
   return (

@@ -10,7 +10,7 @@ const ALLOWED_COLORS = new Set([
 ]);
 const ALLOWED_ALIGNMENTS = new Set(["left", "center", "right"]);
 
-export default function sanitizeNoticeHtml(html = "", images = []) {
+export default function sanitizeNoticeHtml(html = "", images = [], unavailableImageRefs = new Set()) {
   const sanitized = DOMPurify.sanitize(String(html), {
     ALLOWED_TAGS: [...ALLOWED_TAGS, "img"],
     ALLOWED_ATTR: ["href", "target", "rel", "style", "data-notice-image"],
@@ -19,8 +19,16 @@ export default function sanitizeNoticeHtml(html = "", images = []) {
   const template = document.createElement("template");
   template.innerHTML = sanitized;
   template.content.querySelectorAll("img").forEach((element) => {
-    const match = images.find((image) => element.getAttribute("data-notice-image") === `order:${image.display_order}`);
+    const imageRef = element.getAttribute("data-notice-image");
+    const match = images.find((image) => imageRef === `order:${image.display_order}`);
     if (!match || !/^(https?:\/\/|\/(?!\/))/i.test(match.image_url)) { element.remove(); return; }
+    if (unavailableImageRefs.has(imageRef)) {
+      const message = document.createElement("p");
+      message.setAttribute("data-notice-image-unavailable", "true");
+      message.textContent = "이미지를 표시할 수 없습니다.";
+      element.replaceWith(message);
+      return;
+    }
     element.setAttribute("src", match.image_url);
     element.setAttribute("alt", "첨부 이미지");
   });

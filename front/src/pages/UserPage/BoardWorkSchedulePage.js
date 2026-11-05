@@ -29,7 +29,7 @@ export function BoardWorkScheduleContent({ mobileOverride, showTitle = true }) {
           <IconButton size="sm" variant="outline" aria-label="이전 주" icon={<FiChevronLeft />} onClick={() => schedule.selectDate(addDaysToDateValue(schedule.date, -7))} />
           <ScheduleDatePicker month={schedule.selectedMonth} selectedDate={schedule.selectedDate} onSelect={schedule.selectDate} label={range} />
           <IconButton size="sm" variant="outline" aria-label="다음 주" icon={<FiChevronRight />} onClick={() => schedule.selectDate(addDaysToDateValue(schedule.date, 7))} />
-          <TodayButton tooltip="오늘이 포함된 주로 이동" onClick={schedule.goCurrentWeek} />
+          <TodayButton onClick={schedule.goCurrentWeek} />
         </HStack>
       </Flex>
       {schedule.error && <Box role="alert" color="red.600"><Text>근무표를 불러오지 못했습니다. 다시 조회해 주세요.</Text></Box>}

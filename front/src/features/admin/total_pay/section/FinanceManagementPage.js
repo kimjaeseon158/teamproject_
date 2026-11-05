@@ -262,7 +262,6 @@ export default function FinanceManagementPage({
                 <TodayButton
                   showIcon={false}
                   h="42px"
-                  tooltip="오늘이 포함된 달로 이동"
                   isDisabled={monthValue === currentMonth}
                   onClick={moveToToday}
                 />

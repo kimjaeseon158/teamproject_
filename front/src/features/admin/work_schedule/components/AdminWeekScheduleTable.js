@@ -101,7 +101,7 @@ export default function AdminWeekScheduleTable({ data, selectedDate, workPlaces,
           <WorkScheduleDatePicker value={selectedDate} onChange={onDateChange} isDisabled={dateChangeDisabled} />
           <Button size="sm" variant="outline" minW="32px" px={0} aria-label="다음 주" isDisabled={dateChangeDisabled} onClick={() => onDateChange(addDaysToDateValue(selectedDate, 7))}><FiChevronRight /></Button>
         </HStack>
-        <TodayButton showIcon={false} isDisabled={dateChangeDisabled} tooltip="오늘이 포함된 주로 이동" onClick={() => onDateChange(toLocalDateValue())} />
+        <TodayButton showIcon={false} isDisabled={dateChangeDisabled} onClick={() => onDateChange(toLocalDateValue())} />
         {editing ? <>
           <Badge colorScheme="blue">{visibleUsers.length}명 편집 중</Badge>
           <Button size="sm" leftIcon={<FiX />} variant="outline" onClick={cancelEditing}>편집 취소</Button>

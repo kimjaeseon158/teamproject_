@@ -2,6 +2,7 @@
 
 
 import os
+from itertools import groupby
 from openpyxl import load_workbook, Workbook
 from django.conf import settings
 from django.db.models import Sum
@@ -94,6 +95,61 @@ def copy_row_block(ws, source_start, source_end, target_start, start_col=1, end_
                 continue
 
             copy_cell(src, dst)
+
+
+def generate_income_excel(incomes, template_file):
+    workbook = load_workbook(template_file)
+    sheet = workbook["수입"]
+    if sheet.max_row < 14 or not sheet["F8"].has_style:
+        raise ValueError("Invalid income template layout")
+
+    row_styles = {
+        row: ([copy(cell._style) for cell in sheet[row][1:7]], sheet.row_dimensions[row].height)
+        for row in (3, 4, 8)
+    }
+    bottom_borders = [copy(cell.border) for cell in sheet[14][1:7]]
+    sheet.delete_rows(3, sheet.max_row - 2)
+    for row in list(sheet.row_dimensions):
+        if row >= 3:
+            del sheet.row_dimensions[row]
+
+    row = 3
+    number = 0
+
+    def write_row(row, style_row, values):
+        styles, height = row_styles[style_row]
+        if height is not None:
+            sheet.row_dimensions[row].height = height
+        for column, (style, value) in enumerate(zip(styles, values), start=2):
+            cell = sheet.cell(row, column)
+            cell._style = copy(style)
+            cell.value = value
+            if isinstance(value, str):
+                cell.data_type = "s"
+
+    groups = groupby(incomes, key=lambda income: (income.date.year, income.date.month))
+    for (_, month), records in groups:
+        total = 0
+        for income in records:
+            number += 1
+            total += income.amount
+            write_row(row, 3 if row == 3 else 4, (
+                number, income.date, income.company_name, income.company_detail, income.amount, None,
+            ))
+            sheet.cell(row, 3).number_format = "yyyy-mm-dd"
+            sheet.cell(row, 6).number_format = "#,##0"
+            row += 1
+        write_row(row, 8, (None, f"{month}월", None, None, total, None))
+        sheet.cell(row, 6).number_format = "#,##0"
+        font = copy(sheet.cell(row, 6).font)
+        font.bold = True
+        sheet.cell(row, 6).font = font
+        row += 1
+
+    if number:
+        for column, border in enumerate(bottom_borders, start=2):
+            sheet.cell(row - 1, column).border = border
+    return workbook
 
 
 def hour_value(minutes):

@@ -89,7 +89,7 @@ class _GoogleDriveFinanceExcelExportAPIView(APIView):
         return self._error("GOOGLE_AUTH_EXPIRED", "Google Drive에 다시 연결해주세요.", 409)
 
 
-class GoogleDriveExcelExportAPIView(_GoogleDriveFinanceExcelExportAPIView):
+class GoogleDriveIncomeExcelExportAPIView(_GoogleDriveFinanceExcelExportAPIView):
     label = "수입"
     folder_name = "income"
     filename_prefix = "income"

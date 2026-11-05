@@ -1,6 +1,6 @@
-import { DownloadIcon } from "@chakra-ui/icons";
-import { Badge, Box, Button, Card, CardBody, Flex, Heading, HStack, SimpleGrid, Tooltip } from "@chakra-ui/react";
+import { Badge, Box, Card, CardBody, Flex, Heading, HStack, SimpleGrid } from "@chakra-ui/react";
 
+import ExcelActionMenu from "../../components/ExcelActionMenu";
 import SelectedMonthSummary from "../components/SelectedMonthSummary";
 import WorkerPayCard from "../components/WorkerPayCard";
 
@@ -16,11 +16,7 @@ export default function WorkerPaySummarySection({ selectedMonthTotal, workerSumm
             <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
               {workerSummary.length.toLocaleString()}명
             </Badge>
-            <Tooltip label="Excel 생성" hasArrow>
-              <Button leftIcon={<DownloadIcon />} colorScheme="green" variant="outline" size="sm" minW="92px" onClick={onExcelOpen}>
-                Excel
-              </Button>
-            </Tooltip>
+            <ExcelActionMenu onExport={onExcelOpen} />
           </HStack>
         </Flex>
 

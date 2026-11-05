@@ -2,17 +2,20 @@ import {
   AlertDialog, AlertDialogBody, AlertDialogContent, AlertDialogFooter,
   AlertDialogHeader, AlertDialogOverlay, Badge, Box, Button, Card, Flex, FormControl, FormLabel, Grid, Heading,
   Icon, Input, InputGroup, InputLeftElement, Select, SimpleGrid, Stack,
-  Table, TableContainer, Tbody, Td, Text, Th, Thead, Tooltip, Tr,
+  Table, TableContainer, Tbody, Td, Text, Th, Thead, Tooltip, Tr, useToast,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
 import {
   FiArrowDown, FiArrowUp, FiCheck, FiChevronLeft, FiChevronRight,
-  FiCreditCard, FiLock, FiSearch, FiTrash2,
+  FiCreditCard, FiDownload, FiLock, FiSearch, FiTrash2,
 } from "react-icons/fi";
 import MonthPicker from "../../../common/MonthPicker";
 import DatePicker from "../../../common/DatePicker";
 import TodayButton from "../../../common/TodayButton";
 import { DEFAULT_TABLE_PAGE_SIZE, TABLE_PAGE_SIZE_OPTIONS } from "../../../../constants/pagination";
+import { exportExpenseExcel, exportIncomeExcel } from "../../api/google/GoogleDrive";
+import { consumeGoogleExportReturnPath } from "../../api/google/googleAuth";
+import ExcelExportModal from "./ExcelExportModal";
 
 const isoDate = (date) => {
   const value = date instanceof Date ? date : new Date(date);
@@ -64,6 +67,7 @@ export default function FinanceManagementPage({
   type, data, total, range, setRange, onSave, onUpdate, onDelete,
 }) {
   const income = type === "income";
+  const toast = useToast();
   const accent = income ? "#0aa683" : "#ff4545";
   const softAccent = income ? "#e1f7f1" : "#ffe5e5";
   const itemLabel = "카테고리";
@@ -77,6 +81,8 @@ export default function FinanceManagementPage({
   const [deleting, setDeleting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const cancelDeleteRef = useRef(null);
   const [form, setForm] = useState({
     amount: "",
@@ -106,6 +112,10 @@ export default function FinanceManagementPage({
   useEffect(() => {
     setCurrentPage((page) => Math.min(page, totalPages));
   }, [totalPages]);
+
+  useEffect(() => {
+    if (consumeGoogleExportReturnPath(window.location.pathname)) setExportOpen(true);
+  }, []);
 
   const changeMonth = (value) => {
     if (!value) return;
@@ -194,6 +204,23 @@ export default function FinanceManagementPage({
       resetForm();
     } finally {
       setSaving(false);
+    }
+  };
+
+  const exportExcel = async (startMonth, endMonth) => {
+    setExporting(true);
+    try {
+      const result = income
+        ? await exportIncomeExcel(startMonth, endMonth)
+        : await exportExpenseExcel(startMonth, endMonth);
+
+      if (!result?.success) throw new Error(result?.message || "엑셀 생성에 실패했습니다.");
+      toast({ title: "엑셀 생성 완료", description: result.message, status: "success", duration: 3000, isClosable: true });
+      setExportOpen(false);
+    } catch (error) {
+      toast({ title: "엑셀 생성 실패", description: error.message, status: "error", duration: 3500, isClosable: true });
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -414,7 +441,24 @@ export default function FinanceManagementPage({
           display="flex"
           flexDirection="column"
         >
-          <Flex align="center" gap={3} mb={6}><Icon as={FiCreditCard} boxSize={7} color={accent} /><Heading fontSize="22px">빠른 {income ? "수입" : "지출"} 등록</Heading></Flex>
+          <Flex align="center" justify="space-between" gap={3} mb={6} wrap="wrap">
+            <Flex align="center" gap={3}>
+              <Icon as={FiCreditCard} boxSize={7} color={accent} />
+              <Heading fontSize="22px">빠른 {income ? "수입" : "지출"} 등록</Heading>
+            </Flex>
+            <Button
+              leftIcon={<FiDownload />}
+              size="sm"
+              variant="outline"
+              color={accent}
+              borderColor={income ? "#86e5bd" : "#ffaaaa"}
+              bg={income ? "#f4fff9" : "#fff7f7"}
+              _hover={{ bg: softAccent }}
+              onClick={() => setExportOpen(true)}
+            >
+              엑셀 내보내기
+            </Button>
+          </Flex>
           <Stack spacing={{ base: 4, xl: 5 }} flex="1">
             <FormControl>
               <FormLabel fontSize="sm">{itemLabel}</FormLabel>
@@ -484,6 +528,17 @@ export default function FinanceManagementPage({
           </Stack>
         </Card>
       </Grid>
+
+      <ExcelExportModal
+        dateMode="range"
+        title={`${income ? "수입" : "지출"} EXCEL EXPORT`}
+        showWorkPlace={false}
+        initialMonth={monthValue || currentMonth}
+        isOpen={exportOpen}
+        loading={exporting}
+        onClose={() => !exporting && setExportOpen(false)}
+        onConfirm={exportExcel}
+      />
 
       <AlertDialog
         isOpen={Boolean(deleteTarget)}

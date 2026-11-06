@@ -1,12 +1,15 @@
 # 관리자 사용자 정보 관리 API
 
+from collections import Counter
 from uuid import UUID
 
 from django.core.paginator import EmptyPage, Paginator
+from django.db import IntegrityError, connection
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from ...encryption.crypto import resident_number_blind_index
+from ...encryption.crypto import normalize_resident_number, resident_number_blind_index
 from ...models import User_Login_Info
 from ..shared.name_search import filter_by_name
 from ...serializers import User_InfoSerializer, User_Login_InfoSerializer
@@ -15,6 +18,12 @@ from ..token import AdminJWTAuthentication
 
 DEFAULT_USER_LIST_PAGE_SIZE = 10
 MAX_USER_LIST_PAGE_SIZE = 100
+MAX_BULK_USERS = 100
+BULK_USER_DUPLICATE_CODES = {
+    "resident_number": "DUPLICATE_RESIDENT_NUMBER",
+    "user_id": "DUPLICATE_USER_ID",
+    "phone_number": "DUPLICATE_PHONE_NUMBER",
+}
 USER_LIST_ORDERING = {
     "user_name": "user_name",
     "phone_number": "phone_number",
@@ -176,6 +185,104 @@ class UserInfoAddAPIView(APIView):
                 status=201,
             )
         return Response({"success": False, "errors": serializer.errors}, status=400)
+
+
+def _bulk_user_keys(row, fields):
+    if not isinstance(row, dict):
+        return {}
+
+    keys = {}
+    for name in BULK_USER_DUPLICATE_CODES:
+        field = fields[name]
+        try:
+            value = field.to_internal_value(row.get(name))
+        except ValidationError:
+            continue
+        if not value or (field.max_length is not None and len(value) > field.max_length):
+            continue
+        if name == "resident_number":
+            value = normalize_resident_number(value)
+            if len(value) != 13:
+                continue
+        keys[name] = value
+    return keys
+
+
+def _bulk_user_integrity_code(error):
+    cause = error.__cause__
+    table = User_Login_Info._meta.db_table
+    if getattr(cause, "pgcode", None) != "23505" or cause.diag.table_name != table:
+        return None
+
+    with connection.cursor() as cursor:
+        constraints = connection.introspection.get_constraints(cursor, table)
+    constraint = constraints.get(cause.diag.constraint_name)
+    if constraint is None or len(constraint["columns"]) != 1:
+        return None
+
+    column = constraint["columns"][0]
+    if column == "resident_number_hash":
+        column = "resident_number"
+    return BULK_USER_DUPLICATE_CODES.get(column)
+
+
+class UserInfoBulkAddAPIView(APIView):
+    authentication_classes = [AdminJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        rows = request.data
+        if not isinstance(rows, list) or not 1 <= len(rows) <= MAX_BULK_USERS:
+            return Response({"code": "INVALID_BATCH"}, status=400)
+
+        fields = User_Login_InfoSerializer().fields
+        row_keys = [_bulk_user_keys(row, fields) for row in rows]
+        key_counts = Counter(key for keys in row_keys for key in keys.items())
+
+        errors = []
+        saved_count = 0
+        for row_number, (row, keys) in enumerate(zip(rows, row_keys), start=1):
+            codes = {
+                BULK_USER_DUPLICATE_CODES[name]
+                for name, value in keys.items()
+                if key_counts[name, value] > 1
+            }
+            serializer = User_Login_InfoSerializer(data=row)
+            if serializer.is_valid():
+                if serializer.validated_data.get("failed_login_attempts", 0) > 20:
+                    codes.add("INVALID_DATA")
+            else:
+                for field, field_errors in serializer.errors.items():
+                    for error in field_errors:
+                        code = None
+                        if error.code == "unique":
+                            code = BULK_USER_DUPLICATE_CODES.get(field)
+                        codes.add(code or "INVALID_DATA")
+
+            if not codes:
+                try:
+                    serializer.save()
+                except IntegrityError as error:
+                    code = _bulk_user_integrity_code(error)
+                    if code is None:
+                        raise
+                    codes.add(code)
+                else:
+                    saved_count += 1
+                    continue
+
+            name = row.get("user_name") if isinstance(row, dict) else None
+            errors.append(
+                {
+                    "row": row_number,
+                    "user_name": name if isinstance(name, str) else None,
+                    "codes": sorted(codes),
+                }
+            )
+
+        return Response(
+            {"saved_count": saved_count, "failed_count": len(errors), "errors": errors}
+        )
 
 
 class UserInfoFilteringAPIView(APIView):

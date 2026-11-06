@@ -25,6 +25,7 @@ from .notices import (
 from .schedules import AdminWorkScheduleBatchAPIView, AdminWorkScheduleWeekAPIView
 from .user_management import (
     UserInfoAddAPIView,
+    UserInfoBulkAddAPIView,
     UserInfoDeleteAPIView,
     UserInfoFilteringAPIView,
     UserInfoListAPIView,

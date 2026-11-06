@@ -1,6 +1,7 @@
 import { AddIcon, DeleteIcon, RepeatIcon, SearchIcon } from "@chakra-ui/icons";
 import { Badge, Box, Button, Flex, Heading, HStack } from "@chakra-ui/react";
 import CommonTable from "../../../common/mytable";
+import { FiUpload } from "react-icons/fi";
 
 export default function EmployeeDesktopTable({
   peopleData,
@@ -15,6 +16,7 @@ export default function EmployeeDesktopTable({
   onReset,
   resetLoading = false,
   onDeleteSelected,
+  onExcelImport,
 }) {
   return (
     <Box
@@ -54,6 +56,9 @@ export default function EmployeeDesktopTable({
         <HStack spacing={2} flexWrap="wrap" justify="flex-end">
           <Button size="sm" leftIcon={<AddIcon />} colorScheme="teal" onClick={onAdd}>
             직원 추가
+          </Button>
+          <Button size="sm" leftIcon={<FiUpload />} colorScheme="green" variant="outline" onClick={onExcelImport}>
+            엑셀 가져오기
           </Button>
           <Button size="sm" leftIcon={<SearchIcon />} colorScheme="teal" variant="outline" onClick={onSearchOpen}>
             직원 검색

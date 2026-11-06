@@ -1,4 +1,4 @@
-import { Badge, Box, Tab, TabList, TabPanel, TabPanels, Tabs, useBreakpointValue, useToast } from "@chakra-ui/react";
+import { Badge, Box, Tab, TabList, TabPanel, TabPanels, Tabs, useBreakpointValue, useDisclosure, useToast } from "@chakra-ui/react";
 import { useState } from "react";
 
 import AddPersonModal from "../../features/admin/userList/components/AddPersonModal";
@@ -6,6 +6,7 @@ import AdminInformation from "../../features/admin/userList/components/AdminInfo
 import SearchModal from "../../features/admin/userList/components/searchModal";
 import { useEmployeeListPage } from "../../features/admin/userList/hook/useEmployeeListPage";
 import PasswordResetRequestSection from "../../features/admin/userList/components/PasswordResetRequestSection";
+import EmployeeExcelImportModal from "../../features/admin/userList/components/EmployeeExcelImportModal";
 
 import EmployeeMobileLayout from "../../features/admin/userList/layout/EmployeeMobileLayout";
 import EmployeeDesktopLayout from "../../features/admin/userList/layout/EmployeeDesktopLayout";
@@ -15,6 +16,7 @@ export default function EmployeeList() {
   const mobile = useBreakpointValue({ base: true, md: false });
   const Layout = mobile ? EmployeeMobileLayout : EmployeeDesktopLayout;
   const employeeList = useEmployeeListPage(toast);
+  const excelImportDisclosure = useDisclosure();
   const { state, handlers } = employeeList;
   const [resetRequestCount, setResetRequestCount] = useState(0);
 
@@ -27,7 +29,7 @@ export default function EmployeeList() {
         </TabList>
         <TabPanels p={0}>
           <TabPanel p={0}>
-            <Layout employeeList={employeeList} />
+            <Layout employeeList={employeeList} onExcelImport={excelImportDisclosure.onOpen} />
           </TabPanel>
           <TabPanel p={0}>
             <PasswordResetRequestSection onCountChange={setResetRequestCount} />
@@ -62,6 +64,13 @@ export default function EmployeeList() {
         searchForm={state.searchForm}
         onChange={handlers.handleSearchChange}
         onSearch={handlers.applySearch}
+      />
+
+      <EmployeeExcelImportModal
+        isOpen={excelImportDisclosure.isOpen}
+        onClose={excelImportDisclosure.onClose}
+        onSuccess={handlers.handleAddSuccess}
+        toast={toast}
       />
     </Box>
   );

@@ -3,7 +3,7 @@ import EmployeeListHeader from "../components/EmployeeListHeader";
 import EmployeeMobileTable from "../components/EmployeeMobileTable";
 import ApprovePagination from "../../work_day/section/ApprovePagination";
 
-export default function EmployeeMobileLayout({ employeeList }) {
+export default function EmployeeMobileLayout({ employeeList, onExcelImport }) {
   const { state, handlers } = employeeList;
   return <Box>
       <EmployeeListHeader
@@ -14,6 +14,7 @@ export default function EmployeeMobileLayout({ employeeList }) {
         onShowAll={handlers.handleShowAll}
         showAllLoading={handlers.showAllLoading}
         onDeleteSelected={handlers.handleDeleteSelected}
+        onExcelImport={onExcelImport}
       />
 
       <EmployeeMobileTable

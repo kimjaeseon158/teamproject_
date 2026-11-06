@@ -28,7 +28,7 @@ class User_Login_InfoSerializer(serializers.ModelSerializer):
             queryset = queryset.exclude(pk=self.instance.pk)
         if queryset.exists():
             raise serializers.ValidationError(
-                "A user with this resident number already exists."
+                "A user with this resident number already exists.", code="unique"
             )
         return value
 

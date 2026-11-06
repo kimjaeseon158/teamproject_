@@ -16,7 +16,7 @@ const RESIDENT_CENTURY_BY_CODE = {
   8: 2000,
 };
 
-const INVALID_BIRTH_DATE_MESSAGE = "생년월일의 날짜를 정확히 입력해 주세요.";
+const INVALID_BIRTH_DATE_MESSAGE = "주민등록번호를 정확히 입력해 주세요.";
 
 export const validateResidentNumber = (value, today = new Date()) => {
   const digits = String(value || "").replace(/\D/g, "");

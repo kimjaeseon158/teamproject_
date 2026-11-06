@@ -1,5 +1,6 @@
 import { AddIcon, DeleteIcon, RepeatIcon, SearchIcon } from "@chakra-ui/icons";
 import { Box, Button, Flex, HStack } from "@chakra-ui/react";
+import { FiUpload } from "react-icons/fi";
 
 export default function EmployeeListHeader({
   hasSearchFilter,
@@ -9,6 +10,7 @@ export default function EmployeeListHeader({
   onShowAll,
   showAllLoading = false,
   onDeleteSelected,
+  onExcelImport,
 }) {
   return (
     <Flex
@@ -37,6 +39,9 @@ export default function EmployeeListHeader({
       <HStack spacing={{ base: "clamp(8px, 2vw, 12px)", md: 2 }} flexWrap="wrap" rowGap={3} py={{ base: 1, md: 0 }}>
         <Button size={{ base: "xs", md: "md" }} minH={{ base: "32px", md: "40px" }} px={{ base: 2, md: 4 }} leftIcon={<AddIcon />} colorScheme="teal" onClick={onAdd}>
           직원 추가
+        </Button>
+        <Button size={{ base: "xs", md: "md" }} minH={{ base: "32px", md: "40px" }} px={{ base: 2, md: 4 }} leftIcon={<FiUpload />} colorScheme="green" variant="outline" onClick={onExcelImport}>
+          엑셀 가져오기
         </Button>
         <Button size={{ base: "xs", md: "md" }} minH={{ base: "32px", md: "40px" }} px={{ base: 2, md: 4 }} leftIcon={<SearchIcon />} colorScheme="teal" variant="outline" onClick={onSearchOpen}>
           직원 검색

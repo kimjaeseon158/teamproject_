@@ -58,3 +58,9 @@ class User_InfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = User_Login_Info
         exclude = ("user_id", "password", "resident_number_hash")
+
+
+class UserInfoListAllSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User_Login_Info
+        fields = ("user_id", "user_name", "phone_number", "mobile_carrier", "resident_number", "address")

@@ -13,6 +13,7 @@ from ...encryption.crypto import normalize_resident_number, resident_number_blin
 from ...models import User_Login_Info
 from ..shared.name_search import filter_by_name
 from ...serializers import User_InfoSerializer, User_Login_InfoSerializer
+from ...serializers.accounts import UserInfoListAllSerializer
 from ..token import AdminJWTAuthentication
 
 
@@ -68,6 +69,16 @@ def _get_list_queryset(query_params):
     return queryset, None
 
 
+def _get_user_list_ordering(ordering):
+    descending = ordering.startswith("-")
+    ordering_key = ordering[1:] if descending else ordering
+    ordering_field = USER_LIST_ORDERING.get(ordering_key)
+    if ordering_field is None:
+        return None
+
+    return f"-{ordering_field}" if descending else ordering_field
+
+
 class UserInfoListAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
 
@@ -94,16 +105,13 @@ class UserInfoListAPIView(APIView):
                 status=400,
             )
 
-        descending = ordering.startswith("-")
-        ordering_key = ordering[1:] if descending else ordering
-        ordering_field = USER_LIST_ORDERING.get(ordering_key)
-        if ordering_field is None:
+        order_by = _get_user_list_ordering(ordering)
+        if order_by is None:
             return Response(
                 {"success": False},
                 status=400,
             )
 
-        order_by = f"-{ordering_field}" if descending else ordering_field
         queryset = queryset.order_by(order_by, "user_uuid")
         paginator = Paginator(queryset, page_size)
         try:
@@ -125,6 +133,25 @@ class UserInfoListAPIView(APIView):
                     "total_pages": paginator.num_pages,
                 },
             }
+        )
+
+
+class UserInfoListAllAPIView(APIView):
+    authentication_classes = [AdminJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        queryset, error = _get_list_queryset(request.query_params)
+        if error:
+            return Response({"success": False}, status=400)
+
+        order_by = _get_user_list_ordering(request.query_params.get("ordering", "user_name"))
+        if order_by is None:
+            return Response({"success": False}, status=400)
+
+        queryset = queryset.order_by(order_by, "user_uuid")
+        return Response(
+            {"success": True, "users": UserInfoListAllSerializer(queryset, many=True).data}
         )
 
 

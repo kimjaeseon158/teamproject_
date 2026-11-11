@@ -12,6 +12,7 @@ from .views import (
     CheckUserLoginAPIView,
     UserInfoFilteringAPIView,
     UserInfoListAPIView,
+    UserInfoListAllAPIView,
     UserInfoAddAPIView,
     UserInfoBulkAddAPIView,
     AdminPasswordResetRequestAPIView,
@@ -73,6 +74,7 @@ urlpatterns = [
 
     
     # 
+    path('user-info-list-all/',             UserInfoListAllAPIView.as_view(),             name='user-info-list-all'),
     path('user-info-list/',                 UserInfoListAPIView.as_view(),                name='user-info-list'),
     path('user-info-delete/',               UserInfoDeleteAPIView.as_view(),              name='user-info-delete'),
     path('user-info-update/',               UserInfoUpdateAPIView.as_view(),              name='user-info-update'),

@@ -4,7 +4,7 @@ from collections import Counter
 from uuid import UUID
 
 from django.core.paginator import EmptyPage, Paginator
-from django.db import IntegrityError, connection
+from django.db import IntegrityError, connection, transaction
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -202,8 +202,6 @@ def _bulk_user_keys(row, fields):
             continue
         if name == "resident_number":
             value = normalize_resident_number(value)
-            if len(value) != 13:
-                continue
         keys[name] = value
     return keys
 
@@ -226,6 +224,22 @@ def _bulk_user_integrity_code(error):
     return BULK_USER_DUPLICATE_CODES.get(column)
 
 
+class BulkUserInfoSerializer(User_Login_InfoSerializer):
+    validate_resident_number_length = False
+
+    def update(self, instance, validated_data):
+        if validated_data:
+            for field, value in validated_data.items():
+                setattr(instance, field, value)
+            instance.save(update_fields=validated_data.keys())
+        return instance
+
+
+BULK_USER_UPDATE_FIELDS = (
+    "user_name", "user_id", "phone_number", "mobile_carrier", "address",
+)
+
+
 class UserInfoBulkAddAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -235,7 +249,7 @@ class UserInfoBulkAddAPIView(APIView):
         if not isinstance(rows, list) or not 1 <= len(rows) <= MAX_BULK_USERS:
             return Response({"code": "INVALID_BATCH"}, status=400)
 
-        fields = User_Login_InfoSerializer().fields
+        fields = BulkUserInfoSerializer().fields
         row_keys = [_bulk_user_keys(row, fields) for row in rows]
         key_counts = Counter(key for keys in row_keys for key in keys.items())
 
@@ -247,29 +261,44 @@ class UserInfoBulkAddAPIView(APIView):
                 for name, value in keys.items()
                 if key_counts[name, value] > 1
             }
-            serializer = User_Login_InfoSerializer(data=row)
-            if serializer.is_valid():
-                if serializer.validated_data.get("failed_login_attempts", 0) > 20:
-                    codes.add("INVALID_DATA")
-            else:
-                for field, field_errors in serializer.errors.items():
-                    for error in field_errors:
-                        code = None
-                        if error.code == "unique":
-                            code = BULK_USER_DUPLICATE_CODES.get(field)
-                        codes.add(code or "INVALID_DATA")
+            try:
+                with transaction.atomic():
+                    resident_number = keys.get("resident_number")
+                    instance = None
+                    if resident_number is not None:
+                        instance = User_Login_Info.objects.select_for_update().filter(
+                            resident_number_hash=resident_number_blind_index(resident_number)
+                        ).first()
 
-            if not codes:
-                try:
-                    serializer.save()
-                except IntegrityError as error:
-                    code = _bulk_user_integrity_code(error)
-                    if code is None:
-                        raise
-                    codes.add(code)
-                else:
+                    if instance is None:
+                        serializer = BulkUserInfoSerializer(data=row)
+                    else:
+                        update_data = {
+                            field: row[field] for field in BULK_USER_UPDATE_FIELDS if field in row
+                        }
+                        serializer = BulkUserInfoSerializer(instance, data=update_data, partial=True)
+
+                    if serializer.is_valid():
+                        if serializer.validated_data.get("failed_login_attempts", 0) > 20:
+                            codes.add("INVALID_DATA")
+                    else:
+                        for field, field_errors in serializer.errors.items():
+                            for error in field_errors:
+                                code = None
+                                if error.code == "unique":
+                                    code = BULK_USER_DUPLICATE_CODES.get(field)
+                                codes.add(code or "INVALID_DATA")
+
+                    if not codes:
+                        serializer.save()
+                if not codes:
                     saved_count += 1
                     continue
+            except IntegrityError as error:
+                code = _bulk_user_integrity_code(error)
+                if code is None:
+                    raise
+                codes.add(code)
 
             name = row.get("user_name") if isinstance(row, dict) else None
             errors.append(

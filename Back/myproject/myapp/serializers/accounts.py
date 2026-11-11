@@ -12,13 +12,15 @@ DEFAULT_WORK_PLACE = "\ubbf8\uc9c0\uc815"
 
 
 class User_Login_InfoSerializer(serializers.ModelSerializer):
+    validate_resident_number_length = True
+
     class Meta:
         model = User_Login_Info
         exclude = ("resident_number_hash",)
 
     def validate_resident_number(self, value):
         normalized = normalize_resident_number(value)
-        if len(normalized) != 13:
+        if self.validate_resident_number_length and len(normalized) != 13:
             raise serializers.ValidationError(
                 "Resident number must contain exactly 13 digits."
             )

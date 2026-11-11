@@ -12,6 +12,7 @@ from .views import (
     CheckUserLoginAPIView,
     UserInfoFilteringAPIView,
     UserInfoListAPIView,
+    UserInfoListAllAPIView,
     UserInfoAddAPIView,
     UserInfoBulkAddAPIView,
     AdminPasswordResetRequestAPIView,
@@ -73,6 +74,7 @@ urlpatterns = [
 
     
     # 
+    path('user-info-list-all/',             UserInfoListAllAPIView.as_view(),             name='user-info-list-all'),
     path('user-info-list/',                 UserInfoListAPIView.as_view(),                name='user-info-list'),
     path('user-info-delete/',               UserInfoDeleteAPIView.as_view(),              name='user-info-delete'),
     path('user-info-update/',               UserInfoUpdateAPIView.as_view(),              name='user-info-update'),
@@ -97,8 +99,8 @@ urlpatterns = [
     path('google/logout/',                      GoogleLogoutAPIView.as_view(),                    name='google-logout'),
     path('google/callback/',                    GoogleCallbackAPIView.as_view(),                  name='google-callback'),
     path('google/calendar/events/',             GoogleCalendarEventsAPIView.as_view(),            name='google-calendar-events'),
-    path('google-drive-income-excel-export/',   GoogleDriveIncomeExcelExportAPIView.as_view(),   name='google-drive-income-excel-export'),
-    path('google-drive-expense-excel-export/',  GoogleDriveExpenseExcelExportAPIView.as_view(),  name='google-drive-expense-excel-export'),
+    path('google-drive-income-excel-export/',   GoogleDriveIncomeExcelExportAPIView.as_view(),    name='google-drive-income-excel-export'),
+    path('google-drive-expense-excel-export/',  GoogleDriveExpenseExcelExportAPIView.as_view(),   name='google-drive-expense-excel-export'),
     path('google-drive-excel-export/',          GoogleDriveWorkplaceExcelExportAPIView.as_view(), name='google-drive-excel-export'),
     path('google-drive-salary-excel-export/',   GoogleDriveSalaryExcelExportAPIView.as_view(),    name='google-drive-salary-excel-export'),
     path('google-drive-user-pay-excel-export/', GoogleDriveUserPayExcelExportAPIView.as_view(),   name='google-drive-user-pay-excel-export'),

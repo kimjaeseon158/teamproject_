@@ -4,7 +4,7 @@ from collections import Counter
 from uuid import UUID
 
 from django.core.paginator import EmptyPage, Paginator
-from django.db import IntegrityError, connection
+from django.db import IntegrityError, connection, transaction
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -13,6 +13,7 @@ from ...encryption.crypto import normalize_resident_number, resident_number_blin
 from ...models import User_Login_Info
 from ..shared.name_search import filter_by_name
 from ...serializers import User_InfoSerializer, User_Login_InfoSerializer
+from ...serializers.accounts import UserInfoListAllSerializer
 from ..token import AdminJWTAuthentication
 
 
@@ -68,6 +69,16 @@ def _get_list_queryset(query_params):
     return queryset, None
 
 
+def _get_user_list_ordering(ordering):
+    descending = ordering.startswith("-")
+    ordering_key = ordering[1:] if descending else ordering
+    ordering_field = USER_LIST_ORDERING.get(ordering_key)
+    if ordering_field is None:
+        return None
+
+    return f"-{ordering_field}" if descending else ordering_field
+
+
 class UserInfoListAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
 
@@ -94,16 +105,13 @@ class UserInfoListAPIView(APIView):
                 status=400,
             )
 
-        descending = ordering.startswith("-")
-        ordering_key = ordering[1:] if descending else ordering
-        ordering_field = USER_LIST_ORDERING.get(ordering_key)
-        if ordering_field is None:
+        order_by = _get_user_list_ordering(ordering)
+        if order_by is None:
             return Response(
                 {"success": False},
                 status=400,
             )
 
-        order_by = f"-{ordering_field}" if descending else ordering_field
         queryset = queryset.order_by(order_by, "user_uuid")
         paginator = Paginator(queryset, page_size)
         try:
@@ -125,6 +133,25 @@ class UserInfoListAPIView(APIView):
                     "total_pages": paginator.num_pages,
                 },
             }
+        )
+
+
+class UserInfoListAllAPIView(APIView):
+    authentication_classes = [AdminJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        queryset, error = _get_list_queryset(request.query_params)
+        if error:
+            return Response({"success": False}, status=400)
+
+        order_by = _get_user_list_ordering(request.query_params.get("ordering", "user_name"))
+        if order_by is None:
+            return Response({"success": False}, status=400)
+
+        queryset = queryset.order_by(order_by, "user_uuid")
+        return Response(
+            {"success": True, "users": UserInfoListAllSerializer(queryset, many=True).data}
         )
 
 
@@ -202,8 +229,6 @@ def _bulk_user_keys(row, fields):
             continue
         if name == "resident_number":
             value = normalize_resident_number(value)
-            if len(value) != 13:
-                continue
         keys[name] = value
     return keys
 
@@ -226,6 +251,22 @@ def _bulk_user_integrity_code(error):
     return BULK_USER_DUPLICATE_CODES.get(column)
 
 
+class BulkUserInfoSerializer(User_Login_InfoSerializer):
+    validate_resident_number_length = False
+
+    def update(self, instance, validated_data):
+        if validated_data:
+            for field, value in validated_data.items():
+                setattr(instance, field, value)
+            instance.save(update_fields=validated_data.keys())
+        return instance
+
+
+BULK_USER_UPDATE_FIELDS = (
+    "user_name", "user_id", "phone_number", "mobile_carrier", "address",
+)
+
+
 class UserInfoBulkAddAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -235,7 +276,7 @@ class UserInfoBulkAddAPIView(APIView):
         if not isinstance(rows, list) or not 1 <= len(rows) <= MAX_BULK_USERS:
             return Response({"code": "INVALID_BATCH"}, status=400)
 
-        fields = User_Login_InfoSerializer().fields
+        fields = BulkUserInfoSerializer().fields
         row_keys = [_bulk_user_keys(row, fields) for row in rows]
         key_counts = Counter(key for keys in row_keys for key in keys.items())
 
@@ -247,29 +288,44 @@ class UserInfoBulkAddAPIView(APIView):
                 for name, value in keys.items()
                 if key_counts[name, value] > 1
             }
-            serializer = User_Login_InfoSerializer(data=row)
-            if serializer.is_valid():
-                if serializer.validated_data.get("failed_login_attempts", 0) > 20:
-                    codes.add("INVALID_DATA")
-            else:
-                for field, field_errors in serializer.errors.items():
-                    for error in field_errors:
-                        code = None
-                        if error.code == "unique":
-                            code = BULK_USER_DUPLICATE_CODES.get(field)
-                        codes.add(code or "INVALID_DATA")
+            try:
+                with transaction.atomic():
+                    resident_number = keys.get("resident_number")
+                    instance = None
+                    if resident_number is not None:
+                        instance = User_Login_Info.objects.select_for_update().filter(
+                            resident_number_hash=resident_number_blind_index(resident_number)
+                        ).first()
 
-            if not codes:
-                try:
-                    serializer.save()
-                except IntegrityError as error:
-                    code = _bulk_user_integrity_code(error)
-                    if code is None:
-                        raise
-                    codes.add(code)
-                else:
+                    if instance is None:
+                        serializer = BulkUserInfoSerializer(data=row)
+                    else:
+                        update_data = {
+                            field: row[field] for field in BULK_USER_UPDATE_FIELDS if field in row
+                        }
+                        serializer = BulkUserInfoSerializer(instance, data=update_data, partial=True)
+
+                    if serializer.is_valid():
+                        if serializer.validated_data.get("failed_login_attempts", 0) > 20:
+                            codes.add("INVALID_DATA")
+                    else:
+                        for field, field_errors in serializer.errors.items():
+                            for error in field_errors:
+                                code = None
+                                if error.code == "unique":
+                                    code = BULK_USER_DUPLICATE_CODES.get(field)
+                                codes.add(code or "INVALID_DATA")
+
+                    if not codes:
+                        serializer.save()
+                if not codes:
                     saved_count += 1
                     continue
+            except IntegrityError as error:
+                code = _bulk_user_integrity_code(error)
+                if code is None:
+                    raise
+                codes.add(code)
 
             name = row.get("user_name") if isinstance(row, dict) else None
             errors.append(

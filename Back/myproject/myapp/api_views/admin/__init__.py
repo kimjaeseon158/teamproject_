@@ -29,6 +29,7 @@ from .user_management import (
     UserInfoDeleteAPIView,
     UserInfoFilteringAPIView,
     UserInfoListAPIView,
+    UserInfoListAllAPIView,
     UserInfoUpdateAPIView,
 )
 from .workdays import AdminPageWorkDayListAPIView, AdminWorkDayStatusUpdateAPIView

@@ -18,3 +18,20 @@ export const fetchEmployees = async (queryParams = {}, toast) => {
     return null;
   }
 };
+
+export const fetchAllEmployeesForExcel = async (toast) => {
+  try {
+    return await ApiGet("/api/user-info-list-all/", { toast });
+  } catch (error) {
+    if (toast) {
+      toast({
+        title: "전체 직원 정보 조회 실패",
+        description: error.message,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+    return null;
+  }
+};

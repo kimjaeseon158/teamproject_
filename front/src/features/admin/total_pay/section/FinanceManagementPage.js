@@ -7,15 +7,18 @@ import {
 import { useEffect, useRef, useState } from "react";
 import {
   FiArrowDown, FiArrowUp, FiCheck, FiChevronLeft, FiChevronRight,
-  FiCreditCard, FiDownload, FiLock, FiSearch, FiTrash2,
+  FiCreditCard, FiLock, FiSearch, FiTrash2,
 } from "react-icons/fi";
 import MonthPicker from "../../../common/MonthPicker";
 import DatePicker from "../../../common/DatePicker";
 import TodayButton from "../../../common/TodayButton";
 import { DEFAULT_TABLE_PAGE_SIZE, TABLE_PAGE_SIZE_OPTIONS } from "../../../../constants/pagination";
+import ExcelActionMenu from "../../components/ExcelActionMenu";
 import { exportFinanceTemplate } from "../../excel/templateExcel";
-import { income_filter_Data } from "../api/company_filter";
-import { expense_filter_Data } from "../api/expense_filter";
+import {
+  getExpenseExcelExportData,
+  getIncomeExcelExportData,
+} from "../../excel/excelExportApi";
 import ExcelExportModal from "./ExcelExportModal";
 
 const isoDate = (date) => {
@@ -207,12 +210,9 @@ export default function FinanceManagementPage({
   const exportExcel = async (startMonth, endMonth) => {
     setExporting(true);
     try {
-      const from = new Date(`${startMonth}-01T00:00:00`);
-      const [endYear, endValue] = endMonth.split("-").map(Number);
-      const to = new Date(endYear, endValue, 0, 23, 59, 59, 999);
       const response = income
-        ? await income_filter_Data({ start: from, end: to }, toast)
-        : await expense_filter_Data({ start: from, end: to }, toast);
+        ? await getIncomeExcelExportData(startMonth, endMonth, toast)
+        : await getExpenseExcelExportData(startMonth, endMonth, toast);
       const exportRows = (response?.data || []).map((item) => income ? ({
         date: item.date,
         name: item.company_name,
@@ -474,18 +474,7 @@ export default function FinanceManagementPage({
               <Icon as={FiCreditCard} boxSize={7} color={accent} />
               <Heading fontSize="22px">빠른 {income ? "수입" : "지출"} 등록</Heading>
             </Flex>
-            <Button
-              leftIcon={<FiDownload />}
-              size="sm"
-              variant="outline"
-              color="green.700"
-              borderColor="green.200"
-              bg="green.50"
-              _hover={{ bg: "green.100", borderColor: "green.300" }}
-              onClick={() => setExportOpen(true)}
-            >
-              엑셀 내보내기
-            </Button>
+            <ExcelActionMenu onExport={() => setExportOpen(true)} />
           </Flex>
           <Stack spacing={{ base: 4, xl: 5 }} flex="1">
             <FormControl>
@@ -569,7 +558,7 @@ export default function FinanceManagementPage({
 
       <ExcelExportModal
         dateMode="range"
-        title={`${income ? "수입" : "지출"} EXCEL EXPORT`}
+        title="엑셀 다운로드"
         showWorkPlace={false}
         initialMonth={monthValue || currentMonth}
         isOpen={exportOpen}

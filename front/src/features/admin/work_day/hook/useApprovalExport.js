@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { exportWorkloadTemplate } from "../../excel/templateExcel";
-import { fetchApprovedWorkDays } from "../../excel/workDayExportData";
+import { getWorkplaceExcelExportData } from "../../excel/excelExportApi";
 import { ERROR_MESSAGES, getErrorMessage } from "../../../../constants/errorMessages";
 
 export default function useApprovalExport({ onExcelExportClose, toast } = {}) {
@@ -10,8 +10,9 @@ export default function useApprovalExport({ onExcelExportClose, toast } = {}) {
   const handleExcelExport = async (workPlace, date) => {
     try {
       setExportLoading(true);
-      const workDays = await fetchApprovedWorkDays(date, workPlace, toast);
-      await exportWorkloadTemplate({ workDays, month: date });
+      const response = await getWorkplaceExcelExportData(date, workPlace, toast);
+      const workDays = Array.isArray(response?.data) ? response.data : [];
+      await exportWorkloadTemplate({ workDays, month: date, workPlace });
 
       toast({
         title: "문서 생성 완료",

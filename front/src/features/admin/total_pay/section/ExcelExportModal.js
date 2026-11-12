@@ -12,7 +12,7 @@ const ALL_WORK_PLACES = "__ALL__";
 
 export default function ExcelExportModal({
   dateMode = "single", initialMonth, isOpen, onClose, onConfirm,
-  loading, showWorkPlace = true, title = "EXCEL DOWNLOAD",
+  loading, showWorkPlace = true, title = "엑셀 다운로드",
 }) {
   const toast = useToast();
   const today = new Date();

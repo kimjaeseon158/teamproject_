@@ -32,7 +32,7 @@ export default function useDailyPayPage() {
     workPlacesLoading,
   });
   const table = useDailyPayTableState(mergedData);
-  const dailyPayExport = useDailyPayExport({ rows: mergedData, toast });
+  const dailyPayExport = useDailyPayExport({ toast });
   const { setCurrentPage } = table;
 
   const handleEdit = useCallback((row) => {

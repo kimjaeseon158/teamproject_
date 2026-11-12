@@ -26,6 +26,7 @@
     "dompurify": "^3.4.14",
     "express": "^4.21.2",
     "framer-motion": "^12.23.12",
+    "jszip": "^3.10.1",
     "moment": "^2.30.1",
     "react": "^19.0.0",
     "react-big-calendar": "^1.19.4",

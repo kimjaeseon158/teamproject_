@@ -41,7 +41,7 @@ export default function EmployeeListHeader({
           직원 추가
         </Button>
         <Button size={{ base: "xs", md: "md" }} minH={{ base: "32px", md: "40px" }} px={{ base: 2, md: 4 }} leftIcon={<FiUpload />} colorScheme="green" variant="outline" onClick={onExcelImport}>
-          엑셀 가져오기
+          직원 엑셀 등록
         </Button>
         <Button size={{ base: "xs", md: "md" }} minH={{ base: "32px", md: "40px" }} px={{ base: 2, md: 4 }} leftIcon={<SearchIcon />} colorScheme="teal" variant="outline" onClick={onSearchOpen}>
           직원 검색

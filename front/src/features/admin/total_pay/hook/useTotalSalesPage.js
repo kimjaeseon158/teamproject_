@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { useDisclosure, useToast } from "@chakra-ui/react";
 
-import { exportUserPayTemplate } from "../../excel/templateExcel";
-import { fetchApprovedWorkDays } from "../../excel/workDayExportData";
+import { exportSalaryTemplate } from "../../excel/templateExcel";
+import { getSalaryExcelExportData } from "../../excel/excelExportApi";
 import { ERROR_MESSAGES, getErrorMessage } from "../../../../constants/errorMessages";
 import { useTotalFinance } from "./useTotalFinance";
 
@@ -48,12 +48,13 @@ export default function useTotalSalesPage() {
   const handleExport = async (_workPlace, date) => {
     try {
       setExportLoading(true);
-      const workDays = await fetchApprovedWorkDays(date, "", toast);
-      await exportUserPayTemplate({ workDays, month: date });
+      const response = await getSalaryExcelExportData(date, toast);
+      const salaryRows = Array.isArray(response?.data) ? response.data : [];
+      await exportSalaryTemplate({ salaryRows, month: date });
 
       toast({
         title: "엑셀 생성 완료",
-        description: "개인별 급여명세서가 다운로드되었습니다.",
+        description: "급여 지급 대장이 다운로드되었습니다.",
         status: "success",
         duration: 3000,
       });

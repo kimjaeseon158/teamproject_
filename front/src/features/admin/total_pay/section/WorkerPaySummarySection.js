@@ -20,7 +20,7 @@ export default function WorkerPaySummarySection({
             <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
               {workerSummary.length.toLocaleString()}명
             </Badge>
-            <ExcelActionMenu label="급여명세서" onExport={onExcelOpen} />
+            <ExcelActionMenu onExport={onExcelOpen} />
           </HStack>
         </Flex>
 

@@ -1,15 +1,18 @@
 import { useCallback, useState } from "react";
 
 import { exportDailyPayRates } from "../../excel/templateExcel";
+import { getUserPayExcelExportData } from "../../excel/excelExportApi";
 import { ERROR_MESSAGES, getErrorMessage } from "../../../../constants/errorMessages";
 
-export default function useDailyPayExport({ rows = [], toast } = {}) {
+export default function useDailyPayExport({ toast } = {}) {
   const [exportLoading, setExportLoading] = useState(false);
 
-  const handleExcelExport = useCallback(async () => {
+  const handleExcelExport = useCallback(async (date) => {
     try {
       setExportLoading(true);
-      exportDailyPayRates(rows);
+      const response = await getUserPayExcelExportData(date, [], toast);
+      const payRows = Array.isArray(response?.data) ? response.data : [];
+      await exportDailyPayRates(payRows, { month: date });
 
       toast({
         title: "엑셀 생성 완료",
@@ -17,6 +20,7 @@ export default function useDailyPayExport({ rows = [], toast } = {}) {
         status: "success",
         duration: 3000,
       });
+      return true;
     } catch (err) {
       toast({
         title: "엑셀 생성 실패",
@@ -24,10 +28,11 @@ export default function useDailyPayExport({ rows = [], toast } = {}) {
         status: "error",
         duration: 3000,
       });
+      return false;
     } finally {
       setExportLoading(false);
     }
-  }, [rows, toast]);
+  }, [toast]);
 
   return {
     exportLoading,

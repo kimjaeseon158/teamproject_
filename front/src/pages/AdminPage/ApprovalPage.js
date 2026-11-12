@@ -29,7 +29,6 @@ export default function ApprovePage() {
         onClose={exportDisclosure.onClose}
         onConfirm={approval.handleExcelExport}
         loading={approval.exportLoading}
-        showWorkPlace={false}
       />
   </>;
 }

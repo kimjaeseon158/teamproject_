@@ -81,7 +81,7 @@ export default function TotalSalesPage() {
         onConfirm={totalSales.handleExport}
         loading={totalSales.exportLoading}
         showWorkPlace={false}
-        title="PAY STATEMENTS"
+        title="엑셀 다운로드"
       />
     </Box>
   );

@@ -5,11 +5,18 @@ import AdminWorkPlaceModal from "../../features/admin/work_place/components/Admi
 import DailyPayFilterBar from "../../features/admin/work_place/components/DailyPayFilterBar";
 import DailyPaySummaryCards from "../../features/admin/work_place/components/DailyPaySummaryCards";
 import DailyPayTableSection from "../../features/admin/work_place/components/DailyPayTableSection";
+import ExcelExportModal from "../../features/admin/total_pay/section/ExcelExportModal";
 import useDailyPayPage from "../../features/admin/work_place/hook/useDailyPayPage";
 
 export default function DailyPayPage() {
   const adminWorkPlaceDisclosure = useDisclosure();
+  const exportDisclosure = useDisclosure();
   const dailyPay = useDailyPayPage();
+
+  const handleExcelExport = async (_workPlace, date) => {
+    const success = await dailyPay.handleExcelExport(date);
+    if (success) exportDisclosure.onClose();
+  };
 
   const statCards = dailyPay.statCards.map((card) => (
     card.label === "근무지 수"
@@ -50,7 +57,7 @@ export default function DailyPayPage() {
         onSort={dailyPay.handleSort}
         sortField={dailyPay.sortField}
         sortOrder={dailyPay.sortOrder}
-        onExcelOpen={dailyPay.handleExcelExport}
+        onExcelOpen={exportDisclosure.onOpen}
       />
 
       {dailyPay.selectedUser && (
@@ -70,6 +77,14 @@ export default function DailyPayPage() {
         workPlaceCount={dailyPay.adminWorkPlaces.length}
         workPlaces={dailyPay.adminWorkPlaces}
         onSuccess={dailyPay.handleAdminWorkPlaceSuccess}
+      />
+
+      <ExcelExportModal
+        isOpen={exportDisclosure.isOpen}
+        onClose={exportDisclosure.onClose}
+        onConfirm={handleExcelExport}
+        loading={dailyPay.exportLoading}
+        showWorkPlace={false}
       />
 
     </Box>

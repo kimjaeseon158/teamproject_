@@ -12,6 +12,23 @@ class UserWorkDetailSerializer(serializers.ModelSerializer):
         fields = ["work_type", "minutes", "is_overtime_approved"]
 
 
+class WorkplaceExcelExportSerializer(serializers.ModelSerializer):
+    details = serializers.SerializerMethodField()
+
+    def get_details(self, obj):
+        return [
+            {
+                "work_type": normalize_work_type(detail.work_type, obj.work_shift),
+                "minutes": detail.minutes,
+            }
+            for detail in obj.details.all()
+        ]
+
+    class Meta:
+        model = User_WorkDay
+        fields = ("user_uuid", "user_name", "work_date", "work_place", "details")
+
+
 class UserWorkDaySerializer(serializers.ModelSerializer):
     details = UserWorkDetailSerializer(many=True)
     salary = serializers.SerializerMethodField()

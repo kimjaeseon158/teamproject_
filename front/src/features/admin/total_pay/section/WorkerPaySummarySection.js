@@ -4,7 +4,11 @@ import ExcelActionMenu from "../../components/ExcelActionMenu";
 import SelectedMonthSummary from "../components/SelectedMonthSummary";
 import WorkerPayCard from "../components/WorkerPayCard";
 
-export default function WorkerPaySummarySection({ selectedMonthTotal, workerSummary, onExcelOpen }) {
+export default function WorkerPaySummarySection({
+  selectedMonthTotal,
+  workerSummary,
+  onExcelOpen,
+}) {
   return (
     <Card border="1px solid" borderColor="gray.100" boxShadow="sm" flexShrink={0}>
       <CardBody py={4}>
@@ -12,7 +16,7 @@ export default function WorkerPaySummarySection({ selectedMonthTotal, workerSumm
           <Heading size="sm" color="gray.800">
             근무자별 지급 현황
           </Heading>
-          <HStack spacing={3}>
+          <HStack spacing={2} flexWrap="wrap" justify="flex-end">
             <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
               {workerSummary.length.toLocaleString()}명
             </Badge>

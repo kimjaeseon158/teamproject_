@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useDisclosure, useToast } from "@chakra-ui/react";
 
-import { exportToGoogleExcel } from "../../api/google/GoogleDrive";
+import { exportSalaryTemplate } from "../../excel/templateExcel";
+import { getSalaryExcelExportData } from "../../excel/excelExportApi";
 import { ERROR_MESSAGES, getErrorMessage } from "../../../../constants/errorMessages";
 import { useTotalFinance } from "./useTotalFinance";
 
@@ -44,18 +45,16 @@ export default function useTotalSalesPage() {
       }));
   }, [detailData, selectedMonthTotal]);
 
-  const handleExport = async (workPlace, date) => {
+  const handleExport = async (_workPlace, date) => {
     try {
       setExportLoading(true);
-      const result = await exportToGoogleExcel(workPlace, date);
-
-      if (!result.success) {
-        throw new Error(result.message || ERROR_MESSAGES.document.excelFailed);
-      }
+      const response = await getSalaryExcelExportData(date, toast);
+      const salaryRows = Array.isArray(response?.data) ? response.data : [];
+      await exportSalaryTemplate({ salaryRows, month: date });
 
       toast({
         title: "엑셀 생성 완료",
-        description: result.message || "Google Drive에 파일이 생성되었습니다.",
+        description: "급여 지급 대장이 다운로드되었습니다.",
         status: "success",
         duration: 3000,
       });

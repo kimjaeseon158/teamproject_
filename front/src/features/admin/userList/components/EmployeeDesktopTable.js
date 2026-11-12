@@ -58,7 +58,7 @@ export default function EmployeeDesktopTable({
             직원 추가
           </Button>
           <Button size="sm" leftIcon={<FiUpload />} colorScheme="green" variant="outline" onClick={onExcelImport}>
-            엑셀 가져오기
+            직원 엑셀 등록
           </Button>
           <Button size="sm" leftIcon={<SearchIcon />} colorScheme="teal" variant="outline" onClick={onSearchOpen}>
             직원 검색

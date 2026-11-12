@@ -1,6 +1,11 @@
 # myapp/urls.py
 from django.urls import path
 from .views import (
+    ExpenseExcelExportAPIView,
+    IncomeExcelExportAPIView,
+    SalaryExcelExportAPIView,
+    UserPayExcelExportAPIView,
+    WorkplaceExcelExportAPIView,
     AdminRegistrationAPIView,
     AdminWidgetLayoutAPIView,
     CheckAdminLoginAPIView,
@@ -27,15 +32,6 @@ from .views import (
     ExpenseUpdateAPIView,
     IncomeDeleteAPIView,
     ExpenseDeleteAPIView,
-    GoogleLoginAPIView,
-    GoogleLogoutAPIView,
-    GoogleCallbackAPIView,
-    GoogleCalendarEventsAPIView,
-    GoogleDriveIncomeExcelExportAPIView,
-    GoogleDriveExpenseExcelExportAPIView,
-    GoogleDriveWorkplaceExcelExportAPIView,
-    GoogleDriveSalaryExcelExportAPIView,
-    GoogleDriveUserPayExcelExportAPIView,
     AdminLogoutAPIView,
     UserLogoutAPIView,
     AdminPageWorkDayListAPIView,
@@ -93,17 +89,13 @@ urlpatterns = [
     path('admin-work-schedules/batch/',     AdminWorkScheduleBatchAPIView.as_view(),      name='admin-work-schedules-batch'),
     
 
+    # Excel Export
+    path('income-excel-export/',    IncomeExcelExportAPIView.as_view(),    name='income-excel-export'),
+    path('expense-excel-export/',   ExpenseExcelExportAPIView.as_view(),   name='expense-excel-export'),
+    path('workplace-excel-export/', WorkplaceExcelExportAPIView.as_view(), name='workplace-excel-export'),
+    path('salary-excel-export/',    SalaryExcelExportAPIView.as_view(),    name='salary-excel-export'),
+    path('user-pay-excel-export/',  UserPayExcelExportAPIView.as_view(),   name='user-pay-excel-export'),
 
-    # Google OAuth / Calendar
-    path('google/login/',                       GoogleLoginAPIView.as_view(),                     name='google-login'),
-    path('google/logout/',                      GoogleLogoutAPIView.as_view(),                    name='google-logout'),
-    path('google/callback/',                    GoogleCallbackAPIView.as_view(),                  name='google-callback'),
-    path('google/calendar/events/',             GoogleCalendarEventsAPIView.as_view(),            name='google-calendar-events'),
-    path('google-drive-income-excel-export/',   GoogleDriveIncomeExcelExportAPIView.as_view(),    name='google-drive-income-excel-export'),
-    path('google-drive-expense-excel-export/',  GoogleDriveExpenseExcelExportAPIView.as_view(),   name='google-drive-expense-excel-export'),
-    path('google-drive-excel-export/',          GoogleDriveWorkplaceExcelExportAPIView.as_view(), name='google-drive-excel-export'),
-    path('google-drive-salary-excel-export/',   GoogleDriveSalaryExcelExportAPIView.as_view(),    name='google-drive-salary-excel-export'),
-    path('google-drive-user-pay-excel-export/', GoogleDriveUserPayExcelExportAPIView.as_view(),   name='google-drive-user-pay-excel-export'),
 
     
     # Dashboard-Total-sales

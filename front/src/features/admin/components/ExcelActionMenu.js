@@ -3,6 +3,7 @@ import { FiDownload } from "react-icons/fi";
 
 export default function ExcelActionMenu({
   display,
+  label = "엑셀 다운로드",
   onExport,
 }) {
   return (
@@ -19,7 +20,7 @@ export default function ExcelActionMenu({
         minW="132px"
         onClick={onExport}
       >
-        엑셀 다운로드
+        {label}
       </Button>
     </Box>
   );

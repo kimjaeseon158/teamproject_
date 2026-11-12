@@ -1,6 +1,5 @@
 import { Box, Flex } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
 
 import useOverviewPage from "../../features/admin/overview/hook/useOverviewPage";
 import OverviewApprovalQueueSection from "../../features/admin/overview/section/OverviewApprovalQueueSection";
@@ -9,19 +8,10 @@ import OverviewEmployeeSnapshotSection from "../../features/admin/overview/secti
 import OverviewFinanceSection from "../../features/admin/overview/section/OverviewFinanceSection";
 import OverviewKpiSection from "../../features/admin/overview/section/OverviewKpiSection";
 import OverviewWidgetLayout from "../../features/admin/overview/components/OverviewWidgetLayout";
-import { getGoogleExportReturnPath } from "../../features/admin/api/google/googleAuth";
 
 export default function OverviewPage() {
   const navigate = useNavigate();
   const overview = useOverviewPage();
-
-  useEffect(() => {
-    const authResult = new URLSearchParams(window.location.search).get("google_auth");
-    const returnPath = getGoogleExportReturnPath();
-    if (authResult === "success" && returnPath?.startsWith("/dashboard/")) {
-      navigate(returnPath, { replace: true });
-    }
-  }, [navigate]);
 
   const goApproval = () => navigate("/dashboard/approval");
 

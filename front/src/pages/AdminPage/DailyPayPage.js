@@ -1,27 +1,22 @@
 import { Box, useDisclosure } from "@chakra-ui/react";
-import { useEffect } from "react";
 
-import ExcelExportModal from "../../features/admin/total_pay/section/ExcelExportModal";
 import AddRateModal from "../../features/admin/work_place/components/AddRateModal";
 import AdminWorkPlaceModal from "../../features/admin/work_place/components/AdminWorkPlaceModal";
 import DailyPayFilterBar from "../../features/admin/work_place/components/DailyPayFilterBar";
 import DailyPaySummaryCards from "../../features/admin/work_place/components/DailyPaySummaryCards";
 import DailyPayTableSection from "../../features/admin/work_place/components/DailyPayTableSection";
+import ExcelExportModal from "../../features/admin/total_pay/section/ExcelExportModal";
 import useDailyPayPage from "../../features/admin/work_place/hook/useDailyPayPage";
-import { consumeGoogleExportReturnPath } from "../../features/admin/api/google/googleAuth";
 
 export default function DailyPayPage() {
-  const exportDisclosure = useDisclosure();
   const adminWorkPlaceDisclosure = useDisclosure();
-  const dailyPay = useDailyPayPage({
-    onExcelExportClose: exportDisclosure.onClose,
-  });
+  const exportDisclosure = useDisclosure();
+  const dailyPay = useDailyPayPage();
 
-  useEffect(() => {
-    if (consumeGoogleExportReturnPath(window.location.pathname)) {
-      exportDisclosure.onOpen();
-    }
-  }, [exportDisclosure]);
+  const handleExcelExport = async (_workPlace, date) => {
+    const success = await dailyPay.handleExcelExport(date);
+    if (success) exportDisclosure.onClose();
+  };
 
   const statCards = dailyPay.statCards.map((card) => (
     card.label === "근무지 수"
@@ -87,7 +82,7 @@ export default function DailyPayPage() {
       <ExcelExportModal
         isOpen={exportDisclosure.isOpen}
         onClose={exportDisclosure.onClose}
-        onConfirm={dailyPay.handleExcelExport}
+        onConfirm={handleExcelExport}
         loading={dailyPay.exportLoading}
         showWorkPlace={false}
       />

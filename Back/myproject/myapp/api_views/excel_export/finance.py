@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ...models import Expense, Income
-from ...serializers.finance import ExpenseSerializer, IncomeSerializer
+from ...serializers.finance import ExpenseExcelExportSerializer, IncomeExcelExportSerializer
 from ..token.authentication import AdminJWTAuthentication
 
 
@@ -44,9 +44,9 @@ class _FinanceExcelExportAPIView(APIView):
 
 class IncomeExcelExportAPIView(_FinanceExcelExportAPIView):
     model = Income
-    serializer_class = IncomeSerializer
+    serializer_class = IncomeExcelExportSerializer
 
 
 class ExpenseExcelExportAPIView(_FinanceExcelExportAPIView):
     model = Expense
-    serializer_class = ExpenseSerializer
+    serializer_class = ExpenseExcelExportSerializer

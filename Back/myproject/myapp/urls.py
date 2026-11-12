@@ -4,6 +4,7 @@ from .views import (
     ExpenseExcelExportAPIView,
     IncomeExcelExportAPIView,
     SalaryExcelExportAPIView,
+    UserPayExcelExportAPIView,
     WorkplaceExcelExportAPIView,
     AdminRegistrationAPIView,
     AdminWidgetLayoutAPIView,
@@ -102,6 +103,7 @@ urlpatterns = [
     path('expense-excel-export/',   ExpenseExcelExportAPIView.as_view(),   name='expense-excel-export'),
     path('workplace-excel-export/', WorkplaceExcelExportAPIView.as_view(), name='workplace-excel-export'),
     path('salary-excel-export/',    SalaryExcelExportAPIView.as_view(),    name='salary-excel-export'),
+    path('user-pay-excel-export/',  UserPayExcelExportAPIView.as_view(),   name='user-pay-excel-export'),
 
     # Google OAuth / Calendar
     path('google/login/',                       GoogleLoginAPIView.as_view(),                     name='google-login'),

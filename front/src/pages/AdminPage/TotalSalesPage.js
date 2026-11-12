@@ -75,10 +75,13 @@ export default function TotalSalesPage() {
       </Flex>
 
       <ExcelExportModal
+        initialMonth={totalSales.selectedDetailMonth}
         isOpen={totalSales.exportDisclosure.isOpen}
         onClose={totalSales.exportDisclosure.onClose}
         onConfirm={totalSales.handleExport}
         loading={totalSales.exportLoading}
+        showWorkPlace={false}
+        title="PAY STATEMENTS"
       />
     </Box>
   );

@@ -28,19 +28,34 @@ const setCell = (sheet, address, value) => {
 
 const cloneSheet = (sheet) => JSON.parse(JSON.stringify(sheet));
 
+const removeBrokenWorkbookLinks = (workbook) => {
+  if (!workbook?.Workbook) return;
+
+  // workload 원본에는 삭제된 외부 세금표를 가리키는 이름 범위가 남아 있다.
+  // SheetJS로 다시 저장하면 외부 파일은 제외되지만 이름만 남아 Excel 복구가 발생한다.
+  workbook.Workbook.Names = [];
+  delete workbook.Deps;
+};
+
 const safeSheetName = (value, fallback) => {
   const name = String(value || fallback).replace(/[\\/?*[\]:]/g, " ").trim();
   return (name || fallback).slice(0, 31);
 };
 
 const replaceWorkbookSheets = (workbook, sheets) => {
-  workbook.SheetNames = [];
-  workbook.Sheets = {};
-  sheets.forEach(({ name, sheet }, index) => {
-    let nextName = safeSheetName(name, `Sheet${index + 1}`);
-    while (workbook.Sheets[nextName]) nextName = `${nextName.slice(0, 27)}_${index + 1}`;
-    workbook.SheetNames.push(nextName);
-    workbook.Sheets[nextName] = sheet;
+  if (!sheets.length) return;
+  const XLSX = requireXlsx();
+  const primaryName = workbook.SheetNames[0];
+  workbook.Sheets[primaryName] = sheets[0].sheet;
+
+  sheets.slice(1).forEach(({ name, sheet }, index) => {
+    let nextName = safeSheetName(name, `Sheet${index + 2}`);
+    let suffix = index + 2;
+    while (workbook.Sheets[nextName]) {
+      nextName = `${safeSheetName(name, "Sheet").slice(0, 27)}_${suffix}`;
+      suffix += 1;
+    }
+    XLSX.utils.book_append_sheet(workbook, sheet, nextName);
   });
 };
 
@@ -75,7 +90,14 @@ const groupWorkDays = (workDays = []) => {
     if (!groups.has(key)) groups.set(key, { name: item.user_name || "", rows: [] });
     groups.get(key).rows.push(item);
   });
-  return [...groups.values()];
+  return [...groups.values()]
+    .map((group) => ({
+      ...group,
+      rows: [...group.rows].sort((a, b) =>
+        String(a.work_date || "").localeCompare(String(b.work_date || ""))
+      ),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "ko"));
 };
 
 const salaryAmount = (item) => Number(item?.salary?.amount ?? item?.salary_amount ?? 0) || 0;
@@ -115,7 +137,6 @@ export async function exportSalaryTemplate({ workDays, month }) {
   const employees = groupWorkDays(workDays).map((employee) => ({
     ...employee,
     amount: employee.rows.reduce((sum, item) => sum + salaryAmount(item), 0),
-    workPlace: employee.rows.find((item) => item.work_place)?.work_place || "",
   }));
   const sheets = [];
 
@@ -125,7 +146,7 @@ export async function exportSalaryTemplate({ workDays, month }) {
     employees.slice(page * 2, page * 2 + 2).forEach((employee, index) => {
       const row = 5 + index;
       setCell(sheet, `A${row}`, page * 2 + index + 1);
-      setCell(sheet, `B${row}`, employee.workPlace);
+      setCell(sheet, `B${row}`, "");
       setCell(sheet, `C${row}`, employee.name);
       setCell(sheet, `H${row}`, employee.amount);
       setCell(sheet, `K${row}`, employee.amount);
@@ -140,20 +161,54 @@ export async function exportSalaryTemplate({ workDays, month }) {
   }
 
   replaceWorkbookSheets(workbook, sheets);
-  download(workbook, `approval_${todayFileDate()}.xlsx`);
+  download(workbook, `salary_ledger_${todayFileDate()}.xlsx`);
 }
 
 const WORK_TYPE_ROW = {
   "평일주간": 13,
   "주간": 13,
   "평일잔업": 14,
+  "평일 잔업": 14,
   "중식연장": 15,
+  "중식 연장": 15,
   "주간 특근": 16,
   "야간 특근": 17,
   "평일야간": 18,
   "야간": 18,
   "야간잔업": 19,
+  "야간 잔업": 19,
   "조기출근": 20,
+  "조기 출근": 20,
+};
+
+const USER_PAY_DAY_COUNT_TYPES = new Set([
+  "평일주간",
+  "주간",
+  "주간 특근",
+  "야간 특근",
+  "평일야간",
+  "야간",
+]);
+
+const USER_PAY_LABEL_BY_ROW = {
+  13: "평일주간",
+  14: "평일잔업",
+  15: "중식연장",
+  16: "주간특근",
+  17: "야간특근",
+  18: "평일야간",
+  19: "야간잔업",
+  20: "조기출근",
+};
+
+const normalizedWorkType = (detail, workDay) => {
+  const label = String(detail?.work_type || "").trim();
+  if (label === "특근" || label === "휴일 특근") {
+    return String(workDay?.work_shift || "").includes("야간")
+      ? "야간 특근"
+      : "주간 특근";
+  }
+  return label;
 };
 
 export async function exportUserPayTemplate({ workDays, month }) {
@@ -164,30 +219,59 @@ export async function exportUserPayTemplate({ workDays, month }) {
   const employees = groupWorkDays(workDays);
   const sheets = (employees.length ? employees : [{ name: "급여명세", rows: [] }]).map((employee, index) => {
     const sheet = cloneSheet(baseSheet);
+    delete sheet.FC1;
+    sheet["!ref"] = "A1:M34";
     setCell(sheet, "B2", `${year} 년  ${monthNumber}월 급여명세서`);
     setCell(sheet, "B4", `업무기간 (${year}.${monthNumber}.1 ~ ${year}.${monthNumber}.${lastDay})`);
-    setCell(sheet, "C5", employee.name);
-    setCell(sheet, "D6", employee.rows.find((item) => item.work_place)?.work_place || "");
-    const quantities = {};
-    const rates = {};
+    setCell(sheet, "D5", employee.name);
+    setCell(sheet, "F5", "");
+    setCell(sheet, "D6", "");
+    setCell(sheet, "F6", "");
+    setCell(sheet, "D7", "");
+    setCell(sheet, "F7", "");
+    const summary = {};
+    Object.values(WORK_TYPE_ROW).forEach((row) => {
+      summary[row] = { amount: 0, quantity: 0, units: new Set() };
+    });
+    let legacyAmount = 0;
+
     employee.rows.forEach((item) => {
-      (item.details || []).forEach((detail) => {
-        const label = String(detail.work_type || "").trim();
+      const salary = item.salary || {};
+      if (!salary.details_available) {
+        legacyAmount += Number(salary.amount || 0);
+        return;
+      }
+
+      (salary.detail_amounts || []).forEach((detail) => {
+        const label = normalizedWorkType(detail, item);
         const row = WORK_TYPE_ROW[label];
         if (!row) return;
-        quantities[row] = (quantities[row] || 0) + (Number(detail.minutes) || 0) / 60;
-        const rate = Number(detail.hourly_wage ?? detail.rate ?? 0) || 0;
-        if (rate) rates[row] = rate;
+        const minutes = Number(detail.minutes) || 0;
+        const quantity = USER_PAY_DAY_COUNT_TYPES.has(label)
+          ? (minutes ? 1 : 0)
+          : minutes / 60;
+        const amount = Number(detail.amount) || 0;
+        summary[row].quantity += quantity;
+        summary[row].amount += amount;
+        if (quantity) summary[row].units.add(Math.round(amount / quantity));
       });
     });
-    Object.entries(WORK_TYPE_ROW).forEach(([, row]) => {
-      setCell(sheet, `K${row}`, quantities[row] || 0);
-      if (rates[row]) setCell(sheet, `L${row}`, rates[row]);
+
+    Object.entries(USER_PAY_LABEL_BY_ROW).forEach(([rowKey, label]) => {
+      const row = Number(rowKey);
+      const values = summary[row];
+      const units = [...values.units];
+      setCell(sheet, `J${row}`, label);
+      setCell(sheet, `K${row}`, values.quantity);
+      setCell(sheet, `L${row}`, units.length === 1 ? units[0] : units.length ? "복수 단가" : 0);
+      setCell(sheet, `M${row}`, values.amount);
     });
+    setCell(sheet, "J22", "기존 확정 급여(상세 없음)");
+    setCell(sheet, "M22", legacyAmount);
     return { name: safeSheetName(employee.name, `급여명세${index + 1}`), sheet };
   });
   replaceWorkbookSheets(workbook, sheets);
-  download(workbook, `pay_statements_${month}.xlsx`);
+  download(workbook, `salary_${todayFileDate()}.xlsx`);
 }
 
 export function exportDailyPayRates(rows = []) {
@@ -231,37 +315,84 @@ const WORKLOAD_ROW_OFFSET = {
   "평일주간": 0,
   "주간": 0,
   "평일잔업": 1,
+  "평일 잔업": 1,
   "중식연장": 2,
+  "중식 연장": 2,
   "주간 특근": 3,
   "야간 특근": 4,
   "평일야간": 5,
   "야간": 5,
   "야간잔업": 6,
+  "야간 잔업": 6,
   "조기출근": 7,
+  "조기 출근": 7,
   "평일 연장": 8,
+  "평일연장": 8,
 };
 
 export async function exportWorkloadTemplate({ workDays, month }) {
   const XLSX = requireXlsx();
   const workbook = await loadTemplate("workload_template.xlsx");
+  removeBrokenWorkbookLinks(workbook);
   const baseSheet = workbook.Sheets[workbook.SheetNames[0]];
   const employees = groupWorkDays(workDays);
   const sheets = [];
   const [year, monthNumber] = String(month).split("-").map(Number);
+  const lastDay = new Date(year, monthNumber, 0).getDate();
+  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+  const dayCountTypes = new Set([
+    "평일주간",
+    "주간",
+    "주간 특근",
+    "야간 특근",
+    "평일야간",
+    "야간",
+  ]);
 
   for (let page = 0; page < Math.max(1, Math.ceil(employees.length / 2)); page += 1) {
     const sheet = cloneSheet(baseSheet);
-    setCell(sheet, "D2", `_${String(year).slice(-2)}년 ${monthNumber}월 근무 기록표`);
+    setCell(sheet, "D2", `${year}년 ${monthNumber}월 전체 근무 현황`);
+    for (let day = 1; day <= 31; day += 1) {
+      const column = XLSX.utils.encode_col(14 + day);
+      if (day <= lastDay) {
+        const date = new Date(year, monthNumber - 1, day);
+        setCell(sheet, `${column}3`, weekdays[date.getDay()]);
+        setCell(sheet, `${column}4`, `${String(monthNumber).padStart(2, "0")}/${String(day).padStart(2, "0")}`);
+      } else {
+        setCell(sheet, `${column}3`, "");
+        setCell(sheet, `${column}4`, "");
+      }
+    }
+
+    [5, 14].forEach((startRow) => {
+      setCell(sheet, `C${startRow}`, "");
+      setCell(sheet, `D${startRow}`, "");
+      for (let offset = 0; offset < 9; offset += 1) {
+        for (let day = 1; day <= 31; day += 1) {
+          const column = XLSX.utils.encode_col(14 + day);
+          setCell(sheet, `${column}${startRow + offset}`, "");
+        }
+      }
+    });
+
     employees.slice(page * 2, page * 2 + 2).forEach((employee, employeeIndex) => {
       const startRow = employeeIndex === 0 ? 5 : 14;
+      setCell(sheet, `C${startRow}`, page * 2 + employeeIndex + 1);
       setCell(sheet, `D${startRow}`, employee.name);
       employee.rows.forEach((item) => {
         const day = new Date(item.work_date).getDate();
         const column = XLSX.utils.encode_col(14 + day);
         (item.details || []).forEach((detail) => {
-          const offset = WORKLOAD_ROW_OFFSET[String(detail.work_type || "").trim()];
+          const workType = normalizedWorkType(detail, item);
+          const offset = WORKLOAD_ROW_OFFSET[workType];
           if (offset == null) return;
-          setCell(sheet, `${column}${startRow + offset}`, (Number(detail.minutes) || 0) / 60);
+          const minutes = Number(detail.minutes) || 0;
+          const value = dayCountTypes.has(workType)
+            ? (minutes ? 1 : 0)
+            : minutes / 60;
+          const address = `${column}${startRow + offset}`;
+          const previousValue = Number(sheet[address]?.v) || 0;
+          setCell(sheet, address, value ? previousValue + value : previousValue || "");
         });
       });
     });
@@ -269,5 +400,5 @@ export async function exportWorkloadTemplate({ workDays, month }) {
   }
 
   replaceWorkbookSheets(workbook, sheets);
-  download(workbook, `workload_${month}.xlsx`);
+  download(workbook, `approval_${todayFileDate()}.xlsx`);
 }

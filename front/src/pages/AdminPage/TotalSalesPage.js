@@ -1,5 +1,4 @@
 import { Box, Flex, Spinner, Text } from "@chakra-ui/react";
-import { useEffect } from "react";
 
 import ExcelExportModal from "../../features/admin/total_pay/section/ExcelExportModal";
 import PayDetailSection from "../../features/admin/total_pay/section/PayDetailSection";
@@ -8,16 +7,9 @@ import TotalSalesHeader from "../../features/admin/total_pay/section/TotalSalesH
 import TotalSalesSummaryCards from "../../features/admin/total_pay/section/TotalSalesSummaryCards";
 import WorkerPaySummarySection from "../../features/admin/total_pay/section/WorkerPaySummarySection";
 import useTotalSalesPage from "../../features/admin/total_pay/hook/useTotalSalesPage";
-import { consumeGoogleExportReturnPath } from "../../features/admin/api/google/googleAuth";
 
 export default function TotalSalesPage() {
   const totalSales = useTotalSalesPage();
-
-  useEffect(() => {
-    if (consumeGoogleExportReturnPath(window.location.pathname)) {
-      totalSales.exportDisclosure.onOpen();
-    }
-  }, [totalSales.exportDisclosure]);
 
   return (
     <Box
@@ -83,10 +75,13 @@ export default function TotalSalesPage() {
       </Flex>
 
       <ExcelExportModal
+        initialMonth={totalSales.selectedDetailMonth}
         isOpen={totalSales.exportDisclosure.isOpen}
         onClose={totalSales.exportDisclosure.onClose}
         onConfirm={totalSales.handleExport}
         loading={totalSales.exportLoading}
+        showWorkPlace={false}
+        title="엑셀 다운로드"
       />
     </Box>
   );

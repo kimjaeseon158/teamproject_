@@ -21,3 +21,15 @@ class IncomeSerializer(serializers.ModelSerializer):
         model = Income
         fields = "__all__"
         read_only_fields = ("Income_uuid",)
+
+
+class IncomeExcelExportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Income
+        fields = ("date", "company_name", "company_detail", "amount")
+
+
+class ExpenseExcelExportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Expense
+        fields = ("date", "expense_name", "expense_detail", "amount", "payment_method")

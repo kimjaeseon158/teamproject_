@@ -267,7 +267,7 @@ export default function EmployeeExcelImportModal({ isOpen, onClose, onSuccess, t
     <Modal isOpen={isOpen} onClose={saving ? () => {} : onClose} size="lg" isCentered closeOnOverlayClick={!saving}>
       <ModalOverlay />
       <ModalContent borderRadius="xl">
-        <ModalHeader>직원 엑셀 가져오기</ModalHeader>
+        <ModalHeader>직원 엑셀 등록</ModalHeader>
         <ModalCloseButton isDisabled={saving} />
         <ModalBody>
           <VStack align="stretch" spacing={5}>

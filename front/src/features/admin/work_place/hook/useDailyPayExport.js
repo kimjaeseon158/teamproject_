@@ -1,27 +1,22 @@
 import { useCallback, useState } from "react";
 
-import { exportUserPayExcel } from "../../api/google/GoogleDrive";
+import { exportDailyPayRates } from "../../excel/templateExcel";
 import { ERROR_MESSAGES, getErrorMessage } from "../../../../constants/errorMessages";
 
-export default function useDailyPayExport({ onExcelExportClose, toast } = {}) {
+export default function useDailyPayExport({ rows = [], toast } = {}) {
   const [exportLoading, setExportLoading] = useState(false);
 
-  const handleExcelExport = useCallback(async (_workPlace, date) => {
+  const handleExcelExport = useCallback(async () => {
     try {
       setExportLoading(true);
-      const result = await exportUserPayExcel(date);
-
-      if (!result.success) {
-        throw new Error(result.message || ERROR_MESSAGES.document.excelFailed);
-      }
+      exportDailyPayRates(rows);
 
       toast({
         title: "엑셀 생성 완료",
-        description: result.message || "일급관리 엑셀 파일이 Google Drive에 생성되었습니다.",
+        description: "직원별 일급 기준표가 다운로드되었습니다.",
         status: "success",
         duration: 3000,
       });
-      onExcelExportClose?.();
     } catch (err) {
       toast({
         title: "엑셀 생성 실패",
@@ -32,7 +27,7 @@ export default function useDailyPayExport({ onExcelExportClose, toast } = {}) {
     } finally {
       setExportLoading(false);
     }
-  }, [onExcelExportClose, toast]);
+  }, [rows, toast]);
 
   return {
     exportLoading,

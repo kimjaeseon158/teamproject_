@@ -7,7 +7,7 @@ import useDailyPayDerivedData from "./useDailyPayDerivedData";
 import useDailyPayExport from "./useDailyPayExport";
 import useDailyPayTableState from "./useDailyPayTableState";
 
-export default function useDailyPayPage({ onExcelExportClose } = {}) {
+export default function useDailyPayPage() {
   const toast = useToast();
   const { data, loading, fetchDailyPay } = useDailyPay();
   const { adminWorkPlaces, loadAdminWorkPlaces, workPlacesLoading } =
@@ -32,7 +32,7 @@ export default function useDailyPayPage({ onExcelExportClose } = {}) {
     workPlacesLoading,
   });
   const table = useDailyPayTableState(mergedData);
-  const dailyPayExport = useDailyPayExport({ onExcelExportClose, toast });
+  const dailyPayExport = useDailyPayExport({ rows: mergedData, toast });
   const { setCurrentPage } = table;
 
   const handleEdit = useCallback((row) => {

@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useDisclosure, useToast } from "@chakra-ui/react";
 
-import { exportToGoogleExcel } from "../../api/google/GoogleDrive";
+import { exportWorkloadTemplate } from "../../excel/templateExcel";
+import { fetchApprovedWorkDays } from "../../excel/workDayExportData";
 import { ERROR_MESSAGES, getErrorMessage } from "../../../../constants/errorMessages";
 import { useTotalFinance } from "./useTotalFinance";
 
@@ -47,15 +48,12 @@ export default function useTotalSalesPage() {
   const handleExport = async (workPlace, date) => {
     try {
       setExportLoading(true);
-      const result = await exportToGoogleExcel(workPlace, date);
-
-      if (!result.success) {
-        throw new Error(result.message || ERROR_MESSAGES.document.excelFailed);
-      }
+      const workDays = await fetchApprovedWorkDays(date, workPlace, toast);
+      await exportWorkloadTemplate({ workDays, month: date });
 
       toast({
         title: "엑셀 생성 완료",
-        description: result.message || "Google Drive에 파일이 생성되었습니다.",
+        description: "근무 기록표가 다운로드되었습니다.",
         status: "success",
         duration: 3000,
       });

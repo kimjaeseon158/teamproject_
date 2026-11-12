@@ -13,8 +13,9 @@ import MonthPicker from "../../../common/MonthPicker";
 import DatePicker from "../../../common/DatePicker";
 import TodayButton from "../../../common/TodayButton";
 import { DEFAULT_TABLE_PAGE_SIZE, TABLE_PAGE_SIZE_OPTIONS } from "../../../../constants/pagination";
-import { exportExpenseExcel, exportIncomeExcel } from "../../api/google/GoogleDrive";
-import { consumeGoogleExportReturnPath } from "../../api/google/googleAuth";
+import { exportFinanceTemplate } from "../../excel/templateExcel";
+import { income_filter_Data } from "../api/company_filter";
+import { expense_filter_Data } from "../api/expense_filter";
 import ExcelExportModal from "./ExcelExportModal";
 
 const isoDate = (date) => {
@@ -113,10 +114,6 @@ export default function FinanceManagementPage({
     setCurrentPage((page) => Math.min(page, totalPages));
   }, [totalPages]);
 
-  useEffect(() => {
-    if (consumeGoogleExportReturnPath(window.location.pathname)) setExportOpen(true);
-  }, []);
-
   const changeMonth = (value) => {
     if (!value) return;
     const [year, month] = value.split("-").map(Number);
@@ -210,12 +207,31 @@ export default function FinanceManagementPage({
   const exportExcel = async (startMonth, endMonth) => {
     setExporting(true);
     try {
-      const result = income
-        ? await exportIncomeExcel(startMonth, endMonth)
-        : await exportExpenseExcel(startMonth, endMonth);
-
-      if (!result?.success) throw new Error(result?.message || "엑셀 생성에 실패했습니다.");
-      toast({ title: "엑셀 생성 완료", description: result.message, status: "success", duration: 3000, isClosable: true });
+      const from = new Date(`${startMonth}-01T00:00:00`);
+      const [endYear, endValue] = endMonth.split("-").map(Number);
+      const to = new Date(endYear, endValue, 0, 23, 59, 59, 999);
+      const response = income
+        ? await income_filter_Data({ start: from, end: to }, toast)
+        : await expense_filter_Data({ start: from, end: to }, toast);
+      const exportRows = (response?.data || []).map((item) => income ? ({
+        date: item.date,
+        name: item.company_name,
+        detail: item.company_detail,
+        amount: Number(item.amount),
+      }) : ({
+        date: item.date,
+        name: item.expense_name,
+        detail: item.expense_detail,
+        paymentMethod: item.payment_method || item.payment || "",
+        amount: Number(item.amount),
+      }));
+      await exportFinanceTemplate({
+        type,
+        rows: exportRows,
+        startMonth,
+        endMonth,
+      });
+      toast({ title: "엑셀 생성 완료", description: `${income ? "수입" : "지출"} 내역이 다운로드되었습니다.`, status: "success", duration: 3000, isClosable: true });
       setExportOpen(false);
     } catch (error) {
       toast({ title: "엑셀 생성 실패", description: error.message, status: "error", duration: 3500, isClosable: true });

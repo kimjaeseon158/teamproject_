@@ -2,6 +2,5 @@
 
 from .api_views.admin import *  # noqa: F401,F403
 from .api_views.excel_export import *  # noqa: F401,F403
-from .api_views.google import *  # noqa: F401,F403
 from .api_views.token import *  # noqa: F401,F403
 from .api_views.user import *  # noqa: F401,F403

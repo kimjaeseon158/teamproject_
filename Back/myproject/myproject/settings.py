@@ -57,24 +57,6 @@ SIMPLE_JWT = {
     "USER_ID_CLAIM": "sub",
 }
 
-GOOGLE_CLIENT_ID = env("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = env("GOOGLE_CLIENT_SECRET")
-GOOGLE_REDIRECT_URI = env("GOOGLE_REDIRECT_URI")
-
-GOOGLE_OAUTH2_CLIENT_CONFIG = {
-    "web": {
-        "client_id": GOOGLE_CLIENT_ID,
-        "project_id": "my-django-react-app",
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "auth_provider_x509_cert_url": (
-            "https://www.googleapis.com/oauth2/v1/certs"
-        ),
-        "client_secret": GOOGLE_CLIENT_SECRET,
-        "redirect_uris": [GOOGLE_REDIRECT_URI],
-    }
-}
-
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",

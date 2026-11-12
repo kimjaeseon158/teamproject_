@@ -7,12 +7,12 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ...models import Income
-from ...serializers.finance import IncomeSerializer
+from ...models import Expense, Income
+from ...serializers.finance import ExpenseSerializer, IncomeSerializer
 from ..token.authentication import AdminJWTAuthentication
 
 
-class IncomeExcelExportAPIView(APIView):
+class _FinanceExcelExportAPIView(APIView):
     authentication_classes = [AdminJWTAuthentication]
     permission_classes = [IsAuthenticated]
     renderer_classes = [JSONRenderer]
@@ -38,5 +38,15 @@ class IncomeExcelExportAPIView(APIView):
             )
 
         end = end.replace(day=calendar.monthrange(end.year, end.month)[1])
-        incomes = Income.objects.filter(date__range=(start, end)).order_by("date", "pk")
-        return Response({"success": True, "data": IncomeSerializer(incomes, many=True).data})
+        records = self.model.objects.filter(date__range=(start, end)).order_by("date", "pk")
+        return Response({"success": True, "data": self.serializer_class(records, many=True).data})
+
+
+class IncomeExcelExportAPIView(_FinanceExcelExportAPIView):
+    model = Income
+    serializer_class = IncomeSerializer
+
+
+class ExpenseExcelExportAPIView(_FinanceExcelExportAPIView):
+    model = Expense
+    serializer_class = ExpenseSerializer

@@ -1,3 +1,3 @@
-from .finance import IncomeExcelExportAPIView
+from .finance import ExpenseExcelExportAPIView, IncomeExcelExportAPIView
 
-__all__ = ["IncomeExcelExportAPIView"]
+__all__ = ["ExpenseExcelExportAPIView", "IncomeExcelExportAPIView"]

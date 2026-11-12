@@ -1,6 +1,7 @@
 # myapp/urls.py
 from django.urls import path
 from .views import (
+    ExpenseExcelExportAPIView,
     IncomeExcelExportAPIView,
     AdminRegistrationAPIView,
     AdminWidgetLayoutAPIView,
@@ -95,7 +96,8 @@ urlpatterns = [
     
 
     # Excel Export
-    path('income-excel-export/', IncomeExcelExportAPIView.as_view(), name='income-excel-export'),
+    path('income-excel-export/',  IncomeExcelExportAPIView.as_view(), name='income-excel-export'),
+    path('expense-excel-export/', ExpenseExcelExportAPIView.as_view(), name='expense-excel-export'),
 
     # Google OAuth / Calendar
     path('google/login/',                       GoogleLoginAPIView.as_view(),                     name='google-login'),

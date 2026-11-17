@@ -22,7 +22,7 @@ const joinAddress = (employee) =>
     .filter(Boolean)
     .join(" ");
 
-const TEMPLATE_VERSION = "20261111-user-layout-v3";
+const TEMPLATE_VERSION = "20261117-centered-input-v4";
 const EMPLOYEE_TEMPLATE_FILE_NAME = "employee_registration.xlsx";
 const EMPLOYEE_TEMPLATE_PATH = `${process.env.PUBLIC_URL || ""}/templates/${EMPLOYEE_TEMPLATE_FILE_NAME}?v=${TEMPLATE_VERSION}`;
 

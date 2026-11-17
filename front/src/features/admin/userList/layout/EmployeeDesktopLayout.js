@@ -2,7 +2,7 @@ import { Box } from "@chakra-ui/react";
 import EmployeeDesktopTable from "../components/EmployeeDesktopTable";
 import ApprovePagination from "../../work_day/section/ApprovePagination";
 
-export default function EmployeeDesktopLayout({ employeeList, onExcelImport }) {
+export default function EmployeeDesktopLayout({ employeeList, onExcelImport, onExcelDownloadAll, excelDownloading }) {
   const { state, handlers } = employeeList;
   return <Box>
       <EmployeeDesktopTable
@@ -19,6 +19,8 @@ export default function EmployeeDesktopLayout({ employeeList, onExcelImport }) {
         resetLoading={handlers.showAllLoading}
         onDeleteSelected={handlers.handleDeleteSelected}
         onExcelImport={onExcelImport}
+        onExcelDownloadAll={onExcelDownloadAll}
+        excelDownloading={excelDownloading}
       />
       <ApprovePagination
         currentPage={state.pagination.page}

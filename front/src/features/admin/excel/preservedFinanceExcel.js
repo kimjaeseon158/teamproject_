@@ -51,7 +51,16 @@ export const ensureCell = (document, address) => {
   if (!cell) {
     cell = document.createElementNS(SPREADSHEET_NS, "c");
     cell.setAttribute("r", address);
-    row.appendChild(cell);
+    const columnNumber = (cellAddress) =>
+      [...(cellAddress.match(/^[A-Z]+/)?.[0] || "")]
+        .reduce((value, letter) => value * 26 + letter.charCodeAt(0) - 64, 0);
+    const targetColumn = columnNumber(address);
+    const nextCell = [...row.children].find(
+      (candidate) =>
+        candidate.localName === "c" &&
+        columnNumber(candidate.getAttribute("r") || "") > targetColumn
+    );
+    row.insertBefore(cell, nextCell || null);
   }
   return cell;
 };

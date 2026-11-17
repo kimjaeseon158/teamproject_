@@ -10,6 +10,8 @@ import EmployeeExcelImportModal from "../../features/admin/userList/components/E
 
 import EmployeeMobileLayout from "../../features/admin/userList/layout/EmployeeMobileLayout";
 import EmployeeDesktopLayout from "../../features/admin/userList/layout/EmployeeDesktopLayout";
+import { fetchAllEmployeesForExcel } from "../../features/admin/userList/api/admnsdbPost";
+import { downloadEmployeeExcel } from "../../features/admin/userList/utils/employeeExcel";
 
 export default function EmployeeList() {
   const toast = useToast();
@@ -19,6 +21,35 @@ export default function EmployeeList() {
   const excelImportDisclosure = useDisclosure();
   const { state, handlers } = employeeList;
   const [resetRequestCount, setResetRequestCount] = useState(0);
+  const [excelDownloading, setExcelDownloading] = useState(false);
+
+  const handleDownloadAllEmployees = async () => {
+    if (excelDownloading) return;
+    setExcelDownloading(true);
+    try {
+      const response = await fetchAllEmployeesForExcel();
+      if (!response?.success || !Array.isArray(response.users)) {
+        throw new Error("전체 직원 정보를 불러오지 못했습니다. 다시 시도해 주세요.");
+      }
+      await downloadEmployeeExcel(response.users);
+      toast({
+        title: "직원 목록 다운로드 완료",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: "직원 목록 다운로드 실패",
+        description: error?.message || "엑셀 파일을 만들지 못했습니다.",
+        status: "error",
+        duration: 3500,
+        isClosable: true,
+      });
+    } finally {
+      setExcelDownloading(false);
+    }
+  };
 
   return (
     <Box minH="100%" bg={{ base: "white", md: "gray.50" }} px={{ base: "clamp(18px, 5vw, 32px)", md: "clamp(24px, 2.5vw, 40px)" }} py={{ base: 5, md: 6 }}>
@@ -29,7 +60,12 @@ export default function EmployeeList() {
         </TabList>
         <TabPanels p={0}>
           <TabPanel p={0}>
-            <Layout employeeList={employeeList} onExcelImport={excelImportDisclosure.onOpen} />
+            <Layout
+              employeeList={employeeList}
+              onExcelImport={excelImportDisclosure.onOpen}
+              onExcelDownloadAll={handleDownloadAllEmployees}
+              excelDownloading={excelDownloading}
+            />
           </TabPanel>
           <TabPanel p={0}>
             <PasswordResetRequestSection onCountChange={setResetRequestCount} />

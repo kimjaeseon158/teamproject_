@@ -1,6 +1,6 @@
 import { AddIcon, DeleteIcon, RepeatIcon, SearchIcon } from "@chakra-ui/icons";
 import { Box, Button, Flex, HStack } from "@chakra-ui/react";
-import { FiUpload } from "react-icons/fi";
+import EmployeeExcelActions from "./EmployeeExcelActions";
 
 export default function EmployeeListHeader({
   hasSearchFilter,
@@ -11,6 +11,8 @@ export default function EmployeeListHeader({
   showAllLoading = false,
   onDeleteSelected,
   onExcelImport,
+  onExcelDownloadAll,
+  excelDownloading = false,
 }) {
   return (
     <Flex
@@ -40,9 +42,14 @@ export default function EmployeeListHeader({
         <Button size={{ base: "xs", md: "md" }} minH={{ base: "32px", md: "40px" }} px={{ base: 2, md: 4 }} leftIcon={<AddIcon />} colorScheme="teal" onClick={onAdd}>
           직원 추가
         </Button>
-        <Button size={{ base: "xs", md: "md" }} minH={{ base: "32px", md: "40px" }} px={{ base: 2, md: 4 }} leftIcon={<FiUpload />} colorScheme="green" variant="outline" onClick={onExcelImport}>
-          직원 엑셀 등록
-        </Button>
+        <EmployeeExcelActions
+          buttonSize={{ base: "xs", md: "md" }}
+          buttonMinH={{ base: "32px", md: "40px" }}
+          buttonPx={{ base: 2, md: 4 }}
+          onExcelImport={onExcelImport}
+          onDownloadAll={onExcelDownloadAll}
+          downloading={excelDownloading}
+        />
         <Button size={{ base: "xs", md: "md" }} minH={{ base: "32px", md: "40px" }} px={{ base: 2, md: 4 }} leftIcon={<SearchIcon />} colorScheme="teal" variant="outline" onClick={onSearchOpen}>
           직원 검색
         </Button>

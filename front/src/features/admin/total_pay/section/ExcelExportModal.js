@@ -71,8 +71,8 @@ export default function ExcelExportModal({
             {showWorkPlace && (
               <FormControl>
                 <HStack mb={2} justify="space-between">
-                  <FormLabel fontSize="xs" fontWeight="900" color="gray.400" m={0}>근무지</FormLabel>
-                  <Badge colorScheme="green" variant="subtle" borderRadius="full" px={2}>선택</Badge>
+                  <FormLabel fontSize="xs" fontWeight="900" color="gray.400" m={0}>근무지 (선택사항)</FormLabel>
+                  <Badge colorScheme="green" variant="subtle" borderRadius="full" px={2}>기본: 전체</Badge>
                 </HStack>
                 <Select value={workPlace} onChange={(event) => setWorkPlace(event.target.value)} h="56px" borderRadius="20px" bg="gray.50" border="none" fontWeight="700" isDisabled={workPlaceOptions.loading}>
                   <option value={ALL_WORK_PLACES}>{workPlaceOptions.loading ? "근무지 불러오는 중..." : "전체"}</option>

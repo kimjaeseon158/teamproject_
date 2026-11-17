@@ -1,3 +1,13 @@
+import JSZip from "jszip";
+
+import {
+  downloadBlob,
+  ensureCell,
+  parseXml,
+  serializeXml,
+  setNumberCell,
+  setTextCell,
+} from "../../excel/preservedFinanceExcel";
 import { formatPhoneNumber, formatResidentNumber, validateEmployeeForm } from "./format";
 
 const normalizeText = (value) => String(value ?? "").trim();
@@ -13,27 +23,24 @@ const joinAddress = (employee) =>
     .join(" ");
 
 const TEMPLATE_VERSION = "20261111-user-layout-v3";
-const TEMPLATE_PATH = `${process.env.PUBLIC_URL || ""}/templates/employee_registration.xlsx?v=${TEMPLATE_VERSION}`;
+const EMPLOYEE_TEMPLATE_FILE_NAME = "employee_registration.xlsx";
+const EMPLOYEE_TEMPLATE_PATH = `${process.env.PUBLIC_URL || ""}/templates/${EMPLOYEE_TEMPLATE_FILE_NAME}?v=${TEMPLATE_VERSION}`;
 
-const clearCellValue = (cell) => {
-  if (!cell) return;
-  delete cell.v;
-  delete cell.w;
-  delete cell.f;
-  delete cell.t;
-};
+const SPREADSHEET_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
 
 export async function downloadEmployeeExcel(employees) {
-  if (!window.XLSX) throw new Error("엑셀 처리 모듈을 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.");
-
-  const templateResponse = await fetch(TEMPLATE_PATH, { cache: "no-store" });
+  const templateResponse = await fetch(EMPLOYEE_TEMPLATE_PATH, { cache: "no-store" });
   if (!templateResponse.ok) throw new Error("직원등록 엑셀 템플릿을 불러오지 못했습니다.");
-  const workbook = window.XLSX.read(await templateResponse.arrayBuffer(), {
-    type: "array",
-    cellStyles: true,
-  });
-  const employeeSheet = workbook.Sheets["직원등록"];
-  if (!employeeSheet) throw new Error("템플릿에서 '직원등록' 시트를 찾을 수 없습니다.");
+  const zip = await JSZip.loadAsync(await templateResponse.arrayBuffer());
+  const worksheetPath = "xl/worksheets/sheet1.xml";
+  const worksheetXml = await zip.file(worksheetPath)?.async("string");
+  if (!worksheetXml) throw new Error("템플릿에서 '직원등록' 시트를 찾을 수 없습니다.");
+  const worksheetDocument = parseXml(worksheetXml);
+  const templateStyles = new Map(
+    [...worksheetDocument.getElementsByTagNameNS(SPREADSHEET_NS, "c")]
+      .filter((cell) => /^[A-G]3$/.test(cell.getAttribute("r") || ""))
+      .map((cell) => [cell.getAttribute("r")[0], cell.getAttribute("s")])
+  );
 
   const rows = employees.map((employee, index) => [
     index + 1,
@@ -45,42 +52,40 @@ export async function downloadEmployeeExcel(employees) {
     normalizeText(employee?.user_id),
   ]);
 
-  const originalRange = window.XLSX.utils.decode_range(employeeSheet["!ref"] || "A1:G2");
-  const lastDataRow = Math.max(originalRange.e.r, rows.length + 1);
-  for (let row = 2; row <= lastDataRow; row += 1) {
-    for (let column = 0; column < EXPECTED_HEADERS.length; column += 1) {
-      const address = window.XLSX.utils.encode_cell({ r: row, c: column });
-      if (!employeeSheet[address] && row <= rows.length + 1) {
-        const styleSourceAddress = window.XLSX.utils.encode_cell({
-          r: Math.min(originalRange.e.r - 1, 1000),
-          c: column,
-        });
-        employeeSheet[address] = { ...(employeeSheet[styleSourceAddress] || {}) };
-      }
-      clearCellValue(employeeSheet[address]);
-    }
-  }
-
   rows.forEach((values, index) => {
-    for (let column = 0; column < EXPECTED_HEADERS.length; column += 1) {
-      const address = window.XLSX.utils.encode_cell({ r: index + 2, c: column });
-      employeeSheet[address].v = values[column];
-      employeeSheet[address].t = column === 0 ? "n" : "s";
-      delete employeeSheet[address].w;
-    }
+    const rowNumber = index + 3;
+    setNumberCell(worksheetDocument, `A${rowNumber}`, values[0]);
+    setTextCell(worksheetDocument, `B${rowNumber}`, values[1]);
+    setTextCell(worksheetDocument, `C${rowNumber}`, values[2]);
+    setTextCell(worksheetDocument, `D${rowNumber}`, values[3]);
+    setTextCell(worksheetDocument, `E${rowNumber}`, values[4]);
+    setTextCell(worksheetDocument, `F${rowNumber}`, values[5]);
+    setTextCell(worksheetDocument, `G${rowNumber}`, values[6]);
+    EXPECTED_HEADERS.forEach((_, columnIndex) => {
+      const column = String.fromCharCode(65 + columnIndex);
+      const cell = ensureCell(worksheetDocument, `${column}${rowNumber}`);
+      const style = templateStyles.get(column);
+      if (style == null) cell.removeAttribute("s");
+      else cell.setAttribute("s", style);
+    });
   });
-  employeeSheet["!ref"] = window.XLSX.utils.encode_range({
-    s: originalRange.s,
-    e: { r: Math.max(originalRange.e.r, rows.length + 1), c: Math.max(originalRange.e.c, 6) },
-  });
+
+  const dimension = worksheetDocument.getElementsByTagNameNS(SPREADSHEET_NS, "dimension")[0];
+  dimension?.setAttribute("ref", `A1:G${Math.max(1002, rows.length + 2)}`);
+  zip.file(worksheetPath, serializeXml(worksheetDocument));
 
   const today = new Date();
   const date = [today.getFullYear(), String(today.getMonth() + 1).padStart(2, "0"), String(today.getDate()).padStart(2, "0")].join("");
-  window.XLSX.writeFile(workbook, `employee_list_${date}.xlsx`, {
-    compression: true,
-    cellStyles: true,
+  const workbookBytes = await zip.generateAsync({
+    type: "uint8array",
+    compression: "DEFLATE",
   });
+  downloadBlob(new Blob([workbookBytes], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  }), `employee_list_${date}.xlsx`);
 }
+
+export { EMPLOYEE_TEMPLATE_FILE_NAME, EMPLOYEE_TEMPLATE_PATH };
 
 const getDigits = (cell, length) => {
   const raw = String(cell?.v ?? "").replace(/\D/g, "");

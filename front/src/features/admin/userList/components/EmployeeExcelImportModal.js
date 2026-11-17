@@ -7,7 +7,12 @@ import { useEffect, useRef, useState } from "react";
 import { FiDownload, FiFile, FiUploadCloud, FiX } from "react-icons/fi";
 import { createEmployeesBulk } from "../api/adminPageAddPerson";
 import { fetchAllEmployeesForExcel } from "../api/admnsdbPost";
-import { downloadEmployeeExcel, parseEmployeeExcel, validateEmployeeImportAgainstExisting } from "../utils/employeeExcel";
+import {
+  EMPLOYEE_TEMPLATE_FILE_NAME,
+  EMPLOYEE_TEMPLATE_PATH,
+  parseEmployeeExcel,
+  validateEmployeeImportAgainstExisting,
+} from "../utils/employeeExcel";
 
 const ERROR_CODE_FIELDS = {
   DUPLICATE_RESIDENT_NUMBER: { type: "duplicate", label: "주민등록번호" },
@@ -95,7 +100,6 @@ export default function EmployeeExcelImportModal({ isOpen, onClose, onSuccess, t
   const [validationSummary, setValidationSummary] = useState(null);
   const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -236,33 +240,6 @@ export default function EmployeeExcelImportModal({ isOpen, onClose, onSuccess, t
     }
   };
 
-  const handleDownloadAll = async () => {
-    if (downloading) return;
-    setDownloading(true);
-    try {
-      const allEmployees = await fetchAllEmployees();
-
-      await downloadEmployeeExcel(allEmployees);
-      toast?.({
-        title: "직원 목록 다운로드 완료",
-        description: `${allEmployees.length.toLocaleString()}명을 직원등록 템플릿 순서로 저장했습니다.`,
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (error) {
-      toast?.({
-        title: "직원 목록 다운로드 실패",
-        description: error?.message || "엑셀 파일을 만들지 못했습니다.",
-        status: "error",
-        duration: 3500,
-        isClosable: true,
-      });
-    } finally {
-      setDownloading(false);
-    }
-  };
-
   return (
     <Modal isOpen={isOpen} onClose={saving ? () => {} : onClose} size="lg" isCentered closeOnOverlayClick={!saving}>
       <ModalOverlay />
@@ -372,18 +349,18 @@ export default function EmployeeExcelImportModal({ isOpen, onClose, onSuccess, t
         </ModalBody>
         <ModalFooter>
           <Button
+            as="a"
+            href={EMPLOYEE_TEMPLATE_PATH}
+            download={EMPLOYEE_TEMPLATE_FILE_NAME}
             mr="auto"
             leftIcon={<FiDownload />}
             colorScheme="blue"
             variant="outline"
-            onClick={handleDownloadAll}
-            isLoading={downloading}
-            loadingText="다운로드 중"
             isDisabled={saving || parsing}
           >
-            전체 다운로드
+            템플릿 다운로드
           </Button>
-          <Button mr={2} onClick={onClose} isDisabled={saving || downloading}>{resultSummary ? "닫기" : "취소"}</Button>
+          <Button mr={2} onClick={onClose} isDisabled={saving}>{resultSummary ? "닫기" : "취소"}</Button>
           {!resultSummary && (
             <Button
               colorScheme="green"

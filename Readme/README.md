@@ -13,8 +13,11 @@
 - 제출한 근무 기록의 승인/반려 상태 확인
 - 반려된 근무 기록과 반려 사유 확인
 - 월별 근무 요약과 예상·확정 급여 확인
+- 선택한 월과 이전 달의 근무 시간·급여 비교
+- 이전 근무 기록을 불러와 새 근무 입력에 재사용
 - 본인의 주간 근무 일정과 연락처 목록 조회
 - 공지 게시판 조회 및 읽음 처리
+- 새 공지 등록 시 WebSocket 알림 수신
 - 비밀번호 변경 및 재설정 요청
 
 ### 관리자 기능
@@ -23,6 +26,7 @@
 - 직원 목록 조회, 추가, 수정, 삭제, 필터링
 - 직원별 근무지 및 근무지별 시급 관리
 - 제출된 근무 기록 승인/반려 처리
+- 여러 근무 기록을 선택해 승인·반려 상태 일괄 변경
 - 승인 대기 건수 실시간 알림 확인
 - 수입/지출 등록, 수정, 삭제, 기간별 조회
 - 최근 3개월 지출 합계 조회
@@ -33,11 +37,13 @@
 - 공지 등록·수정·삭제, 이미지 첨부 및 사용자 읽음 상태 관리
 - 관리자 계정별 대시보드 위젯 배치 조회·저장
 - 수입·지출, 근무지별 근무 기록, 급여명세서의 Excel 내보내기용 JSON 데이터 제공
+- 프론트엔드에서 내보내기 데이터를 기존 Excel 템플릿에 반영하고 파일로 다운로드
 
 ### WebSocket 실시간 알림
 
 - 관리자는 승인 대기 근무 기록 건수를 실시간으로 받습니다.
 - 사용자는 본인의 반려 근무 기록 수와 반려 사유를 실시간으로 받습니다.
+- 사용자는 새 공지가 등록되면 읽지 않은 공지 정보와 건수를 실시간으로 받습니다.
 - Django Channels와 Redis Channel Layer를 사용합니다.
 
 ### JWT 인증
@@ -98,24 +104,35 @@ teamproject_/
 │  ├─ package.json
 │  ├─ vercel.json
 │  ├─ public/
-│  └─ src/                          # 프론트 구조 정리 예정
+│  │  ├─ index.html
+│  │  └─ templates/                 # Excel 가져오기·내보내기 템플릿
+│  │     ├─ employee_registration.xlsx
+│  │     ├─ expense_template.xlsx
+│  │     ├─ income_template.xlsx
+│  │     ├─ salary_template.xlsx
+│  │     ├─ user_pay_template.xlsx
+│  │     └─ workload_template.xlsx
+│  └─ src/
 │     ├─ app/                       # 라우팅·인증 접근 제어·앱 설정
 │     ├─ pages/                     # 페이지 진입점
-│     │  ├─ admin/
-│     │  ├─ user/
-│     │  └─ board/                  # 관리자·사용자 공용
+│     │  ├─ AdminPage/
+│     │  ├─ UserPage/
+│     │  └─ LoginPage/
 │     ├─ features/                  # 기능별 UI·상태·API
 │     │  ├─ admin/
 │     │  ├─ user/
 │     │  ├─ board/
 │     │  ├─ auth/
-│     │  └─ notifications/
-│     ├─ shared/                    # 공통 UI·API 통신·유틸리티
-│     └─ assets/                    # 이미지·아이콘
+│     │  ├─ alarm/
+│     │  ├─ login/
+│     │  └─ common/
+│     ├─ common/                    # 공통 컴포넌트·공휴일 처리
+│     ├─ config/                    # API·WebSocket 환경 설정
+│     ├─ constants/                 # 프론트 공통 상수
+│     └─ services/                  # 공통 API 및 WebSocket 연결
 │
 └─ Readme/
-   ├─ README.md
-   └─ Code_Review/
+   └─ README.md
 ```
 
 ## Backend 파일별 역할
@@ -204,6 +221,8 @@ teamproject_/
 | `myapp/api_views/shared/work_type_utils.py` | 근무 유형 별칭과 정규화 공통 함수 |
 | `myapp/api_views/shared/salary_utils.py` | 근무 유형별 급여 계산과 급여 지출 동기화 함수 |
 | `myapp/api_views/shared/schedule_utils.py` | 근무 일정 검증과 주간 응답 공통 함수 |
+| `myapp/api_views/shared/name_search.py` | 암호화된 사용자 이름의 검색용 정규화와 조회 공통 함수 |
+| `myapp/api_views/shared/notices.py` | 공지 조회 권한과 공통 응답 처리 함수 |
 
 ### 프로젝트·인프라
 
@@ -222,6 +241,8 @@ teamproject_/
 | `myapp/tests.py` | Django 테스트 모듈; 현재 등록된 테스트 없음 |
 | `myapp/encryption/crypto.py` | 민감 정보 암복호화·정규화·blind index 함수 |
 | `myapp/encryption/fields.py` | Django 암호화 TextField |
+| `myapp/sanitizers/notices.py` | 공지 HTML 허용 태그·속성 기준과 본문 정제 함수 |
+| `myapp/rate_history.py` | 근무일 기준 적용 단가 이력 조회와 기간 중복 검증 함수 |
 | `myapp/management/commands/rotate_field_encryption_key.py` | 필드 암호화 키 교체 명령 |
 | `myapp/migrations/` | Django DB schema와 data migration 이력; 기존 파일 수정 금지 |
 
@@ -239,6 +260,7 @@ WebSocket endpoint:
 ```text
 ws/admin/request-monitor/
 ws/user/request-monitor/
+ws/user/notices/
 ```
 ### Frontend
 
@@ -247,6 +269,12 @@ ws/user/request-monitor/
 | `front/package.json` | 프론트엔드 의존성 및 실행 스크립트 |
 | `front/vercel.json` | Vercel 배포 설정 |
 | `front/public/index.html` | React 앱이 마운트되는 HTML 템플릿 |
+| `front/public/templates/employee_registration.xlsx` | 직원 일괄 등록용 Excel 템플릿 |
+| `front/public/templates/income_template.xlsx` | 수입 내보내기용 Excel 템플릿 |
+| `front/public/templates/expense_template.xlsx` | 지출 내보내기용 Excel 템플릿 |
+| `front/public/templates/salary_template.xlsx` | 급여명세서 내보내기용 Excel 템플릿 |
+| `front/public/templates/user_pay_template.xlsx` | 직원별 급여 내보내기용 Excel 템플릿 |
+| `front/public/templates/workload_template.xlsx` | 근무지별 근무 기록 내보내기용 Excel 템플릿 |
 | `front/src/index.js` | React 앱 진입점 |
 | `front/src/index.css` | 전역 스타일 |
 | `front/src/app/AppRoutes.js` | 로그인, 사용자, 관리자 페이지 라우팅 |
@@ -260,13 +288,26 @@ ws/user/request-monitor/
 | `front/src/pages/AdminPage/TotalSalesPage.js` | 매출/지출 통계 화면 |
 | `front/src/services/api/` | 공통 API 호출, 토큰 처리, 인증 요청 로직 |
 | `front/src/services/ws/useNotifySocket.js` | WebSocket 알림 연결 훅 |
-| `front/src/feactures/auth/` | 로그인 사용자 상태 Context |
-| `front/src/feactures/alarm/` | 알림 상태와 알림 UI |
-| `front/src/feactures/login/` | 로그인 폼, 검증, 로그인 API, 로그인 레이아웃 |
-| `front/src/feactures/user/` | 사용자 캘린더, 근무 입력 폼, 근무 시간/날짜 유틸리티 |
-| `front/src/feactures/admin/` | 관리자 직원 관리, 근무 승인, 근무지 시급, 재무 통계, Google 연동 기능 |
+| `front/src/services/ws/useNoticeSocket.js` | 사용자 새 공지 WebSocket 연결과 재연결 처리 훅 |
+| `front/src/config/api/apiEnv.js` | API 프록시와 WebSocket 주소 선택 및 운영 HTTPS 처리 |
+| `front/src/features/board/notices/` | 공지 목록·상세·작성 화면, 이미지 처리와 HTML 정제 |
+| `front/src/features/board/contacts/` | 사용자 연락처 조회 화면과 API 훅 |
+| `front/src/features/board/work_schedule/` | 사용자·관리자 공용 근무 일정 화면 |
+| `front/src/features/admin/excel/` | 기존 Excel 템플릿을 보존한 재무·근무 데이터 내보내기 |
+| `front/src/features/admin/userList/utils/employeeExcel.js` | 직원 Excel 가져오기·내보내기와 데이터 변환 |
+| `front/src/features/admin/overview/` | 관리자 KPI·승인 대기·재무·직원 현황과 위젯 배치 대시보드 |
+| `front/src/features/admin/work_day/` | 근무 기록 조회·필터·다중 선택·일괄 승인 및 반려 처리 |
+| `front/src/features/admin/work_place/` | 근무지와 직원별 적용 기간 단가 조회·등록·수정 |
+| `front/src/features/admin/work_schedule/` | 직원별 주간 근무 일정 조회와 일괄 편집 |
+| `front/src/features/admin/total_pay/` | 수입·지출 관리, 기간별 통계와 급여 상세 조회 |
+| `front/src/features/user/` | 사용자 근무 입력·수정, 월별 요약·비교와 이전 근무 불러오기 |
+| `front/src/features/auth/userContext.js` | 로그인 사용자 상태, 토큰 갱신과 실시간 알림 연결 관리 |
+| `front/src/constants/` | 오류·알림 문구와 페이지네이션 공통 상수 |
+| `front/src/common/holidayCalendar.js` | 국가별 공휴일 데이터 계산 |
+| `front/src/features/alarm/` | 알림 상태와 알림 UI |
+| `front/src/features/login/` | 로그인 폼, 검증, 로그인 API와 반응형 레이아웃 |
+| `front/src/features/common/` | 날짜·시간 선택과 테이블 등 기능 공통 컴포넌트 |
 | `front/src/common/` | 공통 버튼, 캘린더, 테이블, 날짜 선택 컴포넌트 |
-| `front/src/assets/` | 이미지 등 정적 리소스 |
 
 ## 프론트/백엔드 필드명 약속
 
@@ -364,6 +405,11 @@ ws/user/request-monitor/
 | `date-fns`, `moment` | 날짜 및 시간 처리 |
 | `recharts` | 매출/지출 차트 시각화 |
 | `react-icons` | 아이콘 |
+| `@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/extension-*` | 공지 리치 텍스트 편집기 |
+| `dompurify` | 브라우저에서 공지 HTML 출력 전 정제 |
+| `jszip` | Excel 템플릿 압축 구조 보존과 파일 생성 |
+| `date-holidays` | 국가별 공휴일 계산 |
+| `web-vitals` | 프론트엔드 성능 지표 수집 |
 | `concurrently` | 프론트엔드와 백엔드 동시 실행 |
 
 ## 주요 API 분류
@@ -375,6 +421,7 @@ ws/user/request-monitor/
 | 로그인/로그아웃 | `check-admin-login/`, `check-user-login/`, `admin-logout/`, `user-logout/`, `refresh-token/` |
 | 직원 관리 | `user-info-list/`, `user-info-add/`, `user-info-update/`, `user-info-delete/`, `user-info-filtering/` |
 | 근무 기록 | `user-work-info/`, `user-monthly-work-summary/`, `admin-page-workday/`, `admin-workday-status-update/` |
+| 직원 일괄 등록 | `user-info-bulk-add/` |
 | 근무지/시급 | `admin-work-place-list-create/`, `admin-work-place-update-delete/`, `work-place-rate-list-create/`, `work-place-rate-update-delete/` |
 | 재무 관리 | `finance-total/`, `income-filtered/`, `expense-filtered/`, `income-add/`, `expense-add/` |
 | 근무 일정 | `admin-work-schedules/`, `admin-work-schedules/batch/`, `user-work-schedule/` |
@@ -439,5 +486,3 @@ REACT_APP_WS_BASE_URL=ws://localhost:8000/ws
 
 - [근무일 기준 단가 이력 및 급여 확정 API](../Back/myproject/docs/rate-history-api.md)
 - [관리자 위젯 배치 API](../Back/myproject/WIDGET_LAYOUT_API.md)
-
-구현 기록과 코드 리뷰 문서는 `Readme/Code_Review/` 폴더에 정리합니다.

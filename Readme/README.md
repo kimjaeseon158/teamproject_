@@ -1,8 +1,8 @@
 # 일일 근무 기록 및 일급 관리 시스템
 
-직원이 근무 내용을 직접 등록하고, 관리자가 근무 기록 승인, 급여 계산, 매출/지출, Google 연동, 실시간 알림을 관리하는 Django + React 기반 웹 애플리케이션입니다.
+직원이 근무 내용을 직접 등록하고, 관리자가 근무 기록 승인, 급여 계산, 매출/지출, 공지, 실시간 알림을 관리하는 Django + React 기반 웹 애플리케이션입니다.
 
-프론트엔드는 React로 사용자/관리자 화면을 제공하고, 백엔드는 Django REST API와 Django Channels WebSocket으로 로그인, 근무 기록, 급여 계산, 재무 데이터, Google Drive Excel export, 실시간 알림을 처리합니다.
+프론트엔드는 React로 사용자/관리자 화면을 제공하고, 백엔드는 Django REST API와 Django Channels WebSocket으로 로그인, 근무 기록, 급여 계산, 재무 데이터, Excel 내보내기용 데이터, 실시간 알림을 처리합니다.
 
 ## 주요 기능
 
@@ -12,7 +12,10 @@
 - 근무 날짜, 근무지, 근무 시간, 근무 형태 입력
 - 제출한 근무 기록의 승인/반려 상태 확인
 - 반려된 근무 기록과 반려 사유 확인
-- 월별 근무 요약 및 예상 일급 확인
+- 월별 근무 요약과 예상·확정 급여 확인
+- 본인의 주간 근무 일정과 연락처 목록 조회
+- 공지 게시판 조회 및 읽음 처리
+- 비밀번호 변경 및 재설정 요청
 
 ### 관리자 기능
 
@@ -23,9 +26,13 @@
 - 승인 대기 건수 실시간 알림 확인
 - 수입/지출 등록, 수정, 삭제, 기간별 조회
 - 최근 3개월 지출 합계 조회
-- Google OAuth 연동
-- Google Calendar 이벤트 조회
-- Google Drive 템플릿 기반 근무지/급여/사용자 급여 Excel export
+- 직원 일괄 등록, 비밀번호 재설정 요청 처리, 등록 코드 기반 관리자 계정 등록
+- 직원별 주간 근무 일정 조회 및 일괄 편집
+- 직원·근무지별 적용 기간 단가 관리와 근무일 기준 급여 계산
+- 근무 승인 시 적용 단가와 급여 금액을 스냅샷으로 저장하고 급여 지출에 반영
+- 공지 등록·수정·삭제, 이미지 첨부 및 사용자 읽음 상태 관리
+- 관리자 계정별 대시보드 위젯 배치 조회·저장
+- 수입·지출, 근무지별 근무 기록, 급여명세서의 Excel 내보내기용 JSON 데이터 제공
 
 ### WebSocket 실시간 알림
 
@@ -61,19 +68,26 @@ teamproject_/
 │        │  ├─ work.py
 │        │  ├─ schedules.py
 │        │  ├─ finance.py
+│        │  ├─ notices.py
+│        │  ├─ widget_layouts.py
 │        │  └─ tokens.py
 │        ├─ serializers/            # 기능별 DRF serializer
 │        │  ├─ accounts.py
 │        │  ├─ work.py
 │        │  ├─ schedules.py
-│        │  └─ finance.py
+│        │  ├─ finance.py
+│        │  ├─ notices.py
+│        │  ├─ registration.py
+│        │  └─ widget_layouts.py
 │        ├─ api_views/              # API 요청 처리
 │        │  ├─ admin/               # 관리자 API
 │        │  ├─ user/                # 사용자 API
-│        │  ├─ google/              # Google 연동
+│        │  ├─ excel_export/        # Excel 내보내기용 데이터 API
 │        │  ├─ token/               # JWT·refresh token
 │        │  └─ shared/              # API 공통 로직
 │        ├─ encryption/             # 민감 정보 암호화
+│        ├─ sanitizers/             # 공지 본문 정제
+│        ├─ rate_history.py         # 적용 기간별 단가 이력 조회·검증
 │        ├─ management/             # Django 관리 명령
 │        ├─ migrations/             # DB migration 이력
 │        ├─ ws/                     # Channels WebSocket
@@ -115,6 +129,8 @@ teamproject_/
 | `myapp/models/work.py` | 근무일·근무 상세·근무지·급여율 모델 |
 | `myapp/models/schedules.py` | 직원 근무 일정 모델과 과거 파일 경로 함수 |
 | `myapp/models/finance.py` | 수입과 지출 모델 |
+| `myapp/models/notices.py` | 공지 본문, 첨부 이미지, 사용자별 읽음 상태 |
+| `myapp/models/widget_layouts.py` | 관리자별 위젯 배치 |
 | `myapp/models/tokens.py` | 사용자와 관리자 refresh token 모델 |
 
 ### Serializer
@@ -126,6 +142,9 @@ teamproject_/
 | `myapp/serializers/work.py` | 근무일·근무지·급여율 serializer |
 | `myapp/serializers/schedules.py` | 직원 근무 일정 입력 serializer |
 | `myapp/serializers/finance.py` | 수입과 지출 serializer |
+| `myapp/serializers/notices.py` | 공지 본문 및 이미지 입력·출력 |
+| `myapp/serializers/registration.py` | 관리자 등록 입력 검증 |
+| `myapp/serializers/widget_layouts.py` | 관리자 위젯 배치 입력 검증 |
 ### 관리자 API
 
 | 경로 | 역할 |
@@ -140,6 +159,9 @@ teamproject_/
 | `myapp/api_views/admin/workplace_helpers.py` | 관리자 근무지와 급여율 공통 처리 함수 |
 | `myapp/api_views/admin/schedules.py` | 관리자 주간 근무 일정 조회와 일괄 변경 API |
 | `myapp/api_views/admin/finance.py` | 관리자 수입/지출 관리 |
+| `myapp/api_views/admin/notices.py` | 관리자 공지 및 이미지 관리 API |
+| `myapp/api_views/admin/registration.py` | 관리자 계정 등록 API |
+| `myapp/api_views/admin/widget_layouts.py` | 관리자별 위젯 배치 조회·저장 API |
 
 ### 사용자 API
 
@@ -152,17 +174,16 @@ teamproject_/
 | `myapp/api_views/user/workplaces.py` | 사용자 근무지 조회 API |
 | `myapp/api_views/user/salary.py` | 사용자 월별 근무와 급여 요약 API |
 | `myapp/api_views/user/schedules.py` | 사용자 주간 근무 일정 조회 API |
+| `myapp/api_views/user/contacts.py` | 사용자 연락처 목록 조회 API |
+| `myapp/api_views/user/notices.py` | 사용자 공지 게시판과 읽음 처리 API |
 
-### Google 연동
+### Excel 내보내기 데이터 API
 
 | 경로 | 역할 |
 |---|---|
-| `myapp/api_views/google/__init__.py` | Google 인증·Calendar·Drive 연동 API를 제공하는 패키지 |
-| `myapp/api_views/google/auth.py` | Google 로그인·콜백·로그아웃 API |
-| `myapp/api_views/google/calendar.py` | Google Calendar 일정 조회 API |
-| `myapp/api_views/google/drive_export.py` | Google Drive 근무·급여 Excel 내보내기 API |
-| `myapp/api_views/google/google_drive_utils.py` | Google Drive 다운로드·업로드 공통 함수 |
-| `myapp/api_views/google/excel_utils.py` | Google Drive용 Excel 생성과 셀 처리 함수 |
+| `myapp/api_views/excel_export/finance.py` | 수입·지출 내보내기 데이터 조회 |
+| `myapp/api_views/excel_export/workplace.py` | 근무지별 근무 기록 조회 |
+| `myapp/api_views/excel_export/salary.py` | 급여명세서와 직원별 급여 내보내기 데이터 조회 |
 
 ### Token·JWT
 
@@ -190,7 +211,7 @@ teamproject_/
 |---|---|
 | `manage.py` | Django 관리 명령 실행 진입점 |
 | `requirements.txt` | Python 패키지 의존성 목록 |
-| `myproject/settings.py` | Django·DB·JWT·Channels·Google 환경 설정 |
+| `myproject/settings.py` | Django·DB·JWT·Channels 환경 설정 |
 | `myproject/urls.py` | 최상위 HTTP URL과 `myapp.urls` 연결 |
 | `myproject/middlewares.py` | WebSocket token 인증 middleware |
 | `myproject/asgi.py` | HTTP와 WebSocket ASGI 진입점 |
@@ -320,10 +341,11 @@ ws/user/request-monitor/
 | `psycopg2-binary` | PostgreSQL 연결 |
 | `django-redis` | Redis 캐시 연결 |
 | `channels`, `channels-redis`, `daphne` | WebSocket 실시간 알림 |
-| `google-auth`, `google-auth-oauthlib` | Google OAuth 인증 |
-| `requests` | 외부 HTTP 요청 |
-| `django-apscheduler` | 예약 작업 처리 |
-| `openpyxl` | Excel 파일 생성/처리 |
+| `cryptography` | 민감한 계정 정보의 필드 암호화 |
+| `nh3` | 공지 HTML 정제 |
+| `Pillow` | 공지 첨부 이미지 검증 및 처리 |
+| `uvicorn[standard]` | ASGI 서버 실행 |
+| `requests`, `django-apscheduler` | HTTP 요청 및 작업 스케줄링 의존성 |
 | `gunicorn`, `whitenoise` | 배포 서버 및 정적 파일 처리 |
 | `black` | Python 코드 포맷팅 |
 
@@ -346,14 +368,19 @@ ws/user/request-monitor/
 
 ## 주요 API 분류
 
+아래 경로는 공통 접두사 `/api/` 뒤에 붙습니다.
+
 | 분류 | Endpoint 예시 |
 | --- | --- |
 | 로그인/로그아웃 | `check-admin-login/`, `check-user-login/`, `admin-logout/`, `user-logout/`, `refresh-token/` |
 | 직원 관리 | `user-info-list/`, `user-info-add/`, `user-info-update/`, `user-info-delete/`, `user-info-filtering/` |
 | 근무 기록 | `user-work-info/`, `user-monthly-work-summary/`, `admin-page-workday/`, `admin-workday-status-update/` |
-| 근무지/시급 | `work-place-list-create/`, `work-place-update-delete/`, `work-place-rate-list-create/`, `work-place-rate-update-delete/` |
-| 재무 관리 | `finance-table-date-filtered/`, `income-date-filtered/`, `expense-date-filtered/`, `income-add/`, `expense-add/` |
-| Google 연동 | `google-login/`, `google-callback/`, `google-calendar-events/`, Google Drive Excel export 관련 endpoint |
+| 근무지/시급 | `admin-work-place-list-create/`, `admin-work-place-update-delete/`, `work-place-rate-list-create/`, `work-place-rate-update-delete/` |
+| 재무 관리 | `finance-total/`, `income-filtered/`, `expense-filtered/`, `income-add/`, `expense-add/` |
+| 근무 일정 | `admin-work-schedules/`, `admin-work-schedules/batch/`, `user-work-schedule/` |
+| 공지 | `admin/notices/`, `user/notices/`, `user/notices/<notice_uuid>/read/` |
+| 관리자 등록·위젯 배치 | `admin/register/`, `admin/widget-layout/` |
+| Excel 내보내기 | `income-excel-export/`, `expense-excel-export/`, `workplace-excel-export/`, `salary-excel-export/`, `user-pay-excel-export/` |
 
 ## 실행 방법
 
@@ -399,9 +426,6 @@ DB_PASSWORD=
 DB_HOST=
 DB_PORT=
 UPSTASH_REDIS_REST_URL=
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-GOOGLE_REDIRECT_URI=
 FRONTEND_URL=http://localhost:3000
 ```
 
@@ -412,5 +436,8 @@ REACT_APP_WS_BASE_URL=ws://localhost:8000/ws
 ```
 
 ## 참고 문서
+
+- [근무일 기준 단가 이력 및 급여 확정 API](../Back/myproject/docs/rate-history-api.md)
+- [관리자 위젯 배치 API](../Back/myproject/WIDGET_LAYOUT_API.md)
 
 구현 기록과 코드 리뷰 문서는 `Readme/Code_Review/` 폴더에 정리합니다.
